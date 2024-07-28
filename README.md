@@ -5,7 +5,7 @@
 ![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.11-black?color=FFE873&labelColor=3776AB)
 [![License](https://img.shields.io/github/license/nessshon/tonutils)](https://github.com/nessshon/tonutils/blob/main/LICENSE)
 
-![Image](https://telegra.ph//file/8bfd0873357eb10472e97.jpg)
+![Image](https://telegra.ph//file/068ea06087c9ce8c6bfed.jpg)
 
 ![Downloads](https://pepy.tech/badge/tonutils)
 ![Downloads](https://pepy.tech/badge/tonutils/month)
@@ -134,16 +134,20 @@ pip install tonutils
     - [Revoke Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/revoke_item.py)
     - [Destroy Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/destroy_item.py)
 
-## Contribution
-
-We welcome your contributions! If you have ideas for improvement or have identified a bug, please create an issue or
-submit a pull request.
-
 ## Donations
 
 **TON** - `EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess`
 
 **USDT** (TRC-20) - `TJjADKFT2i7jqNJAxkgeRm5o9uarcoLUeR`
+
+## Contribution
+
+We welcome your contributions! If you have ideas for improvement or have identified a bug, please create an issue or
+submit a pull request.
+
+## Support
+
+Supported by [TON Society](https://github.com/ton-society/grants-and-bounties), Grants and Bounties program.
 
 ## License
 
