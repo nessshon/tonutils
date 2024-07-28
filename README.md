@@ -5,20 +5,27 @@
 ![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.11-black?color=FFE873&labelColor=3776AB)
 [![License](https://img.shields.io/github/license/nessshon/tonutils)](https://github.com/nessshon/tonutils/blob/main/LICENSE)
 
+![Image](https://telegra.ph//file/8bfd0873357eb10472e97.jpg)
+
+![Downloads](https://pepy.tech/badge/tonutils)
+![Downloads](https://pepy.tech/badge/tonutils/month)
+![Downloads](https://pepy.tech/badge/tonutils/week)
+
 **Tonutils** is a high-level OOP library for Python designed for interacting with the TON. It is built on
 top of three of the most popular libraries for working with TON in
 Python: [pytoniq](https://github.com/yungwine/pytoniq), [pytonapi](https://github.com/tonkeeper/pytonapi),
 and [pytoncenter](https://github.com/Ton-Dynasty/pytoncenter). By integrating these libraries, tonutils offers a
 convenient and flexible tool for developers.
 
-![Downloads](https://pepy.tech/badge/tonutils)
-![Downloads](https://pepy.tech/badge/tonutils/month)
-![Downloads](https://pepy.tech/badge/tonutils/week)
 ## Installation
 
 ```bash
 pip install tonutils
 ```
+
+## Important Notice
+
+**To avoid confusion with the original `pytoniq` library, the `pytoniq-tools` library has been renamed to `tonutils`. The `pytoniq-tools` library will no longer be updated and all future updates and support will be provided through [tonutils](https://github.com/nessshon/tonutils).**
 
 ## Usage
 
@@ -27,7 +34,8 @@ pip install tonutils
 - #### **LiteClient**
   Uses `LiteBalancer` from the [pytoniq](https://github.com/yungwine/pytoniq) library and interacts with the blockchain
   via lite servers.\
-  For better performance, you can pass your own config from a private lite server, which can be acquired from the <a href="https://t.me/liteserver_bot" target="_blank">bot</a>.
+  For better performance, you can pass your own config from a private lite server, which can be acquired from
+  the <a href="https://t.me/liteserver_bot" target="_blank">bot</a>.
 
   <details>
   <summary>Client Initialization</summary>
@@ -86,45 +94,45 @@ pip install tonutils
 
 - ##### **Common Wallet**
 
-  - [Transfer TON](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/transfer_ton.py)
-  - [Transfer NFT](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/transfer_nft.py)
-  - [Transfer Jetton](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/transfer_jetton.py)
-  - [Batch Transfer TON](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/batch_transfer_ton.py)
-  - [Batch Transfer NFT](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/batch_transfer_nft.py)
-  - [Batch Transfer Jetton](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/batch_transfer_jetton.py)
+    - [Transfer TON](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/transfer_ton.py)
+    - [Transfer NFT](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/transfer_nft.py)
+    - [Transfer Jetton](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/transfer_jetton.py)
+    - [Batch Transfer TON](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/batch_transfer_ton.py)
+    - [Batch Transfer NFT](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/batch_transfer_nft.py)
+    - [Batch Transfer Jetton](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/batch_transfer_jetton.py)
 
 - ##### **Highload Wallet**
-  - [Transfer TON](https://github.com/nessshon/tonutils/blob/main/examples/wallet/highload/transfer_ton.py)
-  - [Transfer NFT](https://github.com/nessshon/tonutils/blob/main/examples/wallet/highload/transfer_nft.py)
-  - [Transfer Jetton](https://github.com/nessshon/tonutils/blob/main/examples/wallet/highload/transfer_jetton.py)
+    - [Transfer TON](https://github.com/nessshon/tonutils/blob/main/examples/wallet/highload/transfer_ton.py)
+    - [Transfer NFT](https://github.com/nessshon/tonutils/blob/main/examples/wallet/highload/transfer_nft.py)
+    - [Transfer Jetton](https://github.com/nessshon/tonutils/blob/main/examples/wallet/highload/transfer_jetton.py)
 
 ### NFT Operations Guide
- 
+
 - ##### **Standard NFTs**
 
-  - [Deploy Collection](https://github.com/nessshon/tonutils/blob/main/examples/nft/standard/deploy_collection.py)
-  - [Mint Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/standard/mint_item.py)
-  - [Batch Mint](https://github.com/nessshon/tonutils/blob/main/examples/nft/standard/batch_mint.py)
-  - [Transfer Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/transfer_item.py)
+    - [Deploy Collection](https://github.com/nessshon/tonutils/blob/main/examples/nft/standard/deploy_collection.py)
+    - [Mint Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/standard/mint_item.py)
+    - [Batch Mint](https://github.com/nessshon/tonutils/blob/main/examples/nft/standard/batch_mint.py)
+    - [Transfer Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/transfer_item.py)
 
 - ##### **Editable NFTs**
 
-  - [Deploy Collection](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/deploy_collection.py)
-  - [Mint Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/mint_item.py)
-  - [Batch Mint](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/batch_mint.py)
-  - [Transfer Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/transfer_item.py)
-  - [Edit Item Content](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/edit_item_content.py)
-  - [Change Item Editorship](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/change_item_editorship.py)
-  - [Edit Collection Content](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/edit_collection_content.py)
-  - [Change Collection Owner](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/change_collection_owner.py)
+    - [Deploy Collection](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/deploy_collection.py)
+    - [Mint Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/mint_item.py)
+    - [Batch Mint](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/batch_mint.py)
+    - [Transfer Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/transfer_item.py)
+    - [Edit Item Content](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/edit_item_content.py)
+    - [Change Item Editorship](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/change_item_editorship.py)
+    - [Edit Collection Content](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/edit_collection_content.py)
+    - [Change Collection Owner](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/change_collection_owner.py)
 
 - ##### **Soulbound NFTs**
 
-  - [Deploy Collection](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/deploy_collection.py)
-  - [Mint Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/mint_item.py)
-  - [Batch Mint](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/batch_mint.py)
-  - [Revoke Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/revoke_item.py)
-  - [Destroy Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/destroy_item.py)
+    - [Deploy Collection](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/deploy_collection.py)
+    - [Mint Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/mint_item.py)
+    - [Batch Mint](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/batch_mint.py)
+    - [Revoke Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/revoke_item.py)
+    - [Destroy Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/destroy_item.py)
 
 ## Contribution
 
