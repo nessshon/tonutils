@@ -1,0 +1,3 @@
+pytoniq~=0.1.39
+pytoncenter~=0.0.14
+pytonapi~=0.3.2
