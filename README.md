@@ -23,10 +23,6 @@ convenient and flexible tool for developers.
 pip install tonutils
 ```
 
-## Important Notice
-
-**To avoid confusion with the original `pytoniq` library, the `pytoniq-tools` library has been renamed to `tonutils`. The `pytoniq-tools` library will no longer be updated and all future updates and support will be provided through [tonutils](https://github.com/nessshon/tonutils).**
-
 ## Usage
 
 ### Providers
