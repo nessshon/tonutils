@@ -27,60 +27,59 @@ pip install tonutils
 
 ### Providers
 
-- #### **LiteClient**
-  Uses `LiteBalancer` from the [pytoniq](https://github.com/yungwine/pytoniq) library and interacts with the blockchain
-  via lite servers.\
-  For better performance, you can pass your own config from a private lite server, which can be acquired from
-  the <a href="https://t.me/liteserver_bot" target="_blank">bot</a>.
+<details>
+<summary><b>• LiteClient</b> For better performance, pass your own config, available from the <a href="https://t.me/liteserver_bot" target="_blank">bot</a>.</summary>
 
-  <details>
-  <summary>Client Initialization</summary>
+Uses `LiteBalancer` from the [pytoniq](https://github.com/yungwine/pytoniq) library and interacts with the blockchain
+via lite servers.
 
-  ```python
-  from tonutils.client import LiteClient
+Client Initialization:
 
-  config = None
-  IS_TESTNET = True
-  client = LiteClient(config=config, is_testnet=IS_TESTNET)
-  ```
+```python
+from tonutils.client import LiteClient
 
-  </details>
+config = None
+IS_TESTNET = True
+client = LiteClient(config=config, is_testnet=IS_TESTNET)
+```
 
-- #### **TonapiClient**
-  Uses `AsyncTonapi` from the [pytonapi](https://github.com/tonkeeper/pytonapi) library and interacts with the
-  blockchain via the tonapi.io API.\
-  To use you need to obtain an API key on the <a href="https://tonconsole.com" target="_blank">tonconsole.com</a>.
+</details>
 
-  <details>
-  <summary>Client Initialization</summary>
+<details>
+<summary><b>• TonapiClient</b> To use you need to obtain an API key on the <a href="https://tonconsole.com" target="_blank">tonconsole.com</a>.</summary>
 
-  ```python
-  from tonutils.client import TonapiClient
+Uses `AsyncTonapi` from the [pytonapi](https://github.com/tonkeeper/pytonapi) library and interacts with the
+blockchain via the tonapi.io API.
 
-  API_KEY = ""
-  IS_TESTNET = True
-  client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
-  ```
+Client Initialization
 
-  </details>
+```python
+from tonutils.client import TonapiClient
 
-- #### **ToncenterClient**
-  Uses `AsyncTonCenterClientV3` from the [pytoncenter](https://github.com/Ton-Dynasty/pytoncenter) library and interacts
-  with the blockchain via the toncenter.com API.\
-  To use you need to obtain an API key from the <a href="https://t.me/tonapibot" target="_blank">bot</a>.
+API_KEY = ""
+IS_TESTNET = True
+client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+```
 
-  <details>
-  <summary>Client Initialization</summary>
+</details>
 
-  ```python
-  from tonutils.client import ToncenterClient
+<details>
+<summary><b>• ToncenterClient</b> To use you need to obtain an API key from the <a href="https://t.me/tonapibot" target="_blank">bot</a>.</summary>
 
-  API_KEY = ""
-  IS_TESTNET = True
-  client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
-  ```
+Uses `AsyncTonCenterClientV3` from the [pytoncenter](https://github.com/Ton-Dynasty/pytoncenter) library and interacts
+with the blockchain via the toncenter.com API.
 
-  </details>
+Client Initialization
+
+```python
+from tonutils.client import ToncenterClient
+
+API_KEY = ""
+IS_TESTNET = True
+client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+```
+
+</details>
 
 ### Wallet Operation Guide
 
