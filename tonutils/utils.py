@@ -1,7 +1,8 @@
+import base64
 import hashlib
 import hmac
 import os
-from typing import Tuple
+from typing import Tuple, Union
 
 from Cryptodome.Cipher import AES
 # noinspection PyPackageRequirements
@@ -22,6 +23,19 @@ def message_to_boc_hex(message: MessageAny) -> Tuple[str, str]:
     message_boc = message_cell.to_boc()
 
     return message_boc.hex(), message_cell.hash.hex()
+
+
+def boc_to_base64_string(boc: Union[str, bytes]) -> str:
+    """
+    Convert a BoC string or bytes to base64.
+
+    :param boc: The BoC string or bytes to be converted.
+    :return: The base64-encoded string.
+    """
+    if isinstance(boc, str):
+        boc = bytes.fromhex(boc)
+
+    return base64.b64encode(boc).decode()
 
 
 def create_encrypted_comment_cell(
@@ -86,3 +100,36 @@ def create_encrypted_comment_cell(
     root.store_snake_bytes(encrypted_data)
 
     return root.end_cell()
+
+
+def nano_to_amount(value: int, precision: int = 2) -> Union[float, int]:
+    """
+    Converts a value from nanoton to TON and rounds it to the specified precision.
+
+    :param value: The value to convert, in nanoton. This should be a positive integer.
+    :param precision: The number of decimal places to round the converted value to. Defaults to 2.
+    :return: The converted value in TON, rounded to the specified precision.
+    """
+    if not isinstance(value, int) or value < 0:
+        raise ValueError("Value must be a positive integer.")
+
+    if not isinstance(precision, int) or precision < 0:
+        raise ValueError("Precision must be a non-negative integer.")
+
+    ton_value = value / 1e9
+    rounded_ton_value = round(ton_value, precision)
+
+    return rounded_ton_value if rounded_ton_value % 1 != 0 else int(rounded_ton_value)
+
+
+def amount_to_nano(value: Union[int, float]) -> int:
+    """
+    Converts TON value to nanoton.
+
+    :param value: TON value to be converted. Can be a float or an integer.
+    :return: The value of the input in nanoton.
+    """
+    if not isinstance(value, (int, float)):
+        raise ValueError("Value must be a positive integer or float.")
+
+    return int(value * 1e9)
