@@ -1,3 +1,7 @@
-pytoniq~=0.1.39
-pytoncenter~=0.0.14
-pytonapi~=0.3.2
+# Core dependencies
+aiohttp~=3.9.5
+pytoniq-core~=0.1.36
+
+# Optional dependencies
+# pytoniq (for working with Lite servers) - install if needed
+# pytoniq~=0.1.39
