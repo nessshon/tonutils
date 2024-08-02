@@ -1,6 +1,47 @@
+from __future__ import annotations
+
 from typing import Optional, Any, Dict, List
 
-from pytoniq import LiteBalancer
+from ..exceptions import PytoniqDependencyError
+
+try:
+    # noinspection PyPackageRequirements
+    from pytoniq import LiteBalancer
+
+    pytoniq_available = True
+except ImportError:
+    pytoniq_available = False
+
+
+    class LiteBalancer:
+        """
+        Placeholder class for LiteBalancer when pytoniq is not available.
+        Provides stubs for methods that raise errors when called.
+        """
+
+        @staticmethod
+        def from_config(config: Dict[str, Any], trust_level: int) -> LiteBalancer:
+            raise PytoniqDependencyError()
+
+        @staticmethod
+        def from_testnet_config(trust_level: int) -> LiteBalancer:
+            raise PytoniqDependencyError()
+
+        @staticmethod
+        def from_mainnet_config(trust_level: int) -> LiteBalancer:
+            raise PytoniqDependencyError()
+
+        async def __aenter__(self) -> LiteBalancer:
+            raise PytoniqDependencyError()
+
+        async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+            raise PytoniqDependencyError()
+
+        async def run_get_method(self, address: str, method_name: str, stack: List[Any]) -> Any:
+            raise PytoniqDependencyError()
+
+        async def raw_send_message(self, message: bytes) -> None:
+            raise PytoniqDependencyError()
 
 from ._base import Client
 
@@ -28,10 +69,15 @@ class LiteClient(Client):
         :param is_testnet: Flag to indicate if testnet configuration should be used. Defaults to False.
         :param trust_level: The trust level for the LiteBalancer.
             Defines the level of trust for Liteserver communication. Defaults to 2.
-            For trustless communication with Liteservers, there are "Proofs" in TON. The trust_level argument
+            For trustless communication with Lite servers, there are "Proofs" in TON. The trust_level argument
             in the LiteClient constructor defines how much you trust the Liteserver you communicate with.
             Refer to the documentation for more details: https://yungwine.gitbook.io/pytoniq-doc/liteclient/trust-levels
         """
+        super().__init__()
+
+        if not pytoniq_available:
+            raise PytoniqDependencyError()
+
         if config is not None:
             self.client = LiteBalancer.from_config(config=config, trust_level=trust_level)
         elif is_testnet:
@@ -45,9 +91,15 @@ class LiteClient(Client):
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> Any:
+        if not pytoniq_available:
+            raise PytoniqDependencyError()
+
         async with self.client:
             return await self.client.run_get_method(address, method_name, stack or [])
 
     async def send_message(self, boc: str) -> None:
+        if not pytoniq_available:
+            raise PytoniqDependencyError()
+
         async with self.client:
             return await self.client.raw_send_message(bytes.fromhex(boc))

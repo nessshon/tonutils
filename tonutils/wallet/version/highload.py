@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import time
 from typing import List, Optional, Tuple, Union
 
-from pytoniq.contract.utils import generate_query_id
 from pytoniq_core import (
     Builder,
     Cell,
@@ -126,7 +126,7 @@ class HighloadWalletV2(Wallet):
         signing_message = begin_cell().store_uint(wallet_id, 32)
 
         if not query_id:
-            signing_message.store_uint(generate_query_id(offset), 64)
+            signing_message.store_uint(int(time.time() + offset) << 32, 64)
         else:
             signing_message.store_uint(query_id, 64)
 

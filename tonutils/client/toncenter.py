@@ -1,15 +1,12 @@
-import base64
 from typing import Optional, Any, List
 
-from pytoncenter import AsyncTonCenterClientV3
-from pytoncenter.v3.models import RunGetMethodRequest, ExternalMessage
-
 from ._base import Client
+from ..utils import boc_to_base64_string
 
 
 class ToncenterClient(Client):
     """
-    ToncenterClient class for interacting with the TON blockchain using AsyncTonCenterClientV3.
+    ToncenterClient class for interacting with the TON blockchain.
 
     This class provides methods to run get methods and send messages to the blockchain,
     with options for network selection.
@@ -27,10 +24,10 @@ class ToncenterClient(Client):
             You can get API key here: https://t.me/tonapibot
         :param is_testnet: Flag to indicate if testnet configuration should be used. Defaults to False.
         """
-        self.client = AsyncTonCenterClientV3(
-            network="testnet" if is_testnet else "mainnet",
-            api_key=api_key,
-        )
+        base_url = "https://toncenter.com/api/" if not is_testnet else "https://testnet.toncenter.com/api/"
+        headers = {"X-Api-Key": api_key}
+
+        super().__init__(base_url=base_url, headers=headers)
 
     async def run_get_method(
             self,
@@ -38,14 +35,23 @@ class ToncenterClient(Client):
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> Any:
-        req = RunGetMethodRequest(
-            address=address,
-            method=method_name,
-            stack=stack or [],
-        )
+        method = f"v3/runGetMethod"
+        body = {
+            "address": address,
+            "method": method_name,
+            "stack": [],
+        }
+        if stack is not None:
+            body["stack"] = [
+                {
+                    "type": "num" if isinstance(value, int) else "cell",
+                    "value": value
+                } for value in stack
+            ]
 
-        return await self.client.run_get_method(req)
+        return await self._post(method=method, body=body)
 
     async def send_message(self, boc: str) -> None:
-        req = ExternalMessage(boc=base64.b64encode(bytes.fromhex(boc)).decode())
-        await self.client.send_message(req)
+        method = "v3/message"
+
+        await self._post(method=method, body={"boc": boc_to_base64_string(boc)})

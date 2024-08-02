@@ -1,12 +1,11 @@
-import base64
 from typing import Optional
 
-from pytoncenter.v3.models import GetMethodParameterInput
 from pytoniq_core import Cell, begin_cell, Address, Slice
 
 from .op_codes import *
 from ..client import Client, TonapiClient, ToncenterClient, LiteClient
 from ..exceptions import UnknownClientError
+from ..utils import boc_to_base64_string
 
 
 class Jetton:
@@ -19,36 +18,31 @@ class Jetton:
 
     async def get_jetton_wallet_address(self, jetton_master_address: str, owner_address: str) -> Address:
         if isinstance(self.client, TonapiClient):
-            result = await self.client.run_get_method(
+            method_result = await self.client.run_get_method(
                 address=jetton_master_address, method_name="get_wallet_address", stack=[owner_address],
             )
-            address = Address(result.decoded.get("jetton_wallet_address"))
+            result = Address(method_result["decoded"]["jetton_wallet_address"])
 
         elif isinstance(self.client, ToncenterClient):
-            stack = GetMethodParameterInput(
-                type="slice",
-                value=base64.b64encode(begin_cell().store_address(owner_address).end_cell().to_boc()).decode(),
-            )
-            result = await self.client.run_get_method(
+            method_result = await self.client.run_get_method(
                 address=jetton_master_address,
                 method_name="get_wallet_address",
-                stack=[stack],
+                stack=[boc_to_base64_string(begin_cell().store_address(owner_address).end_cell().to_boc())],
             )
-            address = Slice.one_from_boc(result.stack[0].value).load_address()
+            result = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
 
         elif isinstance(self.client, LiteClient):
-            stack = Address(owner_address).to_cell().to_slice()
-            result = await self.client.run_get_method(
+            method_result = await self.client.run_get_method(
                 address=jetton_master_address,
                 method_name="get_wallet_address",
-                stack=[stack],
+                stack=[Address(owner_address).to_cell().to_slice()],
             )
-            address = result[0].load_address()
+            result = method_result[0].load_address()
 
         else:
             raise UnknownClientError(self.client.__class__.__name__)
 
-        return address
+        return result
 
     @classmethod
     def build_transfer_body(

@@ -3,7 +3,6 @@ from __future__ import annotations
 import time
 from typing import Optional, List, Union, Tuple
 
-from pytonapi.utils import amount_to_nano
 from pytoniq_core import (
     Address,
     Cell,
@@ -38,7 +37,7 @@ from ..jetton import Jetton
 from ..nft import ItemStandard
 from ..utils import (
     create_encrypted_comment_cell,
-    message_to_boc_hex,
+    message_to_boc_hex, amount_to_nano,
 )
 
 
@@ -250,9 +249,9 @@ class Wallet(Contract):
         )
 
         if isinstance(self.client, TonapiClient):
-            seqno = int(method_result.decoded.get("state", 0))
+            seqno = int(method_result["decoded"]["state"] or 0)
         elif isinstance(self.client, ToncenterClient):
-            seqno = int(method_result.stack[0].value, 16)
+            seqno = int(method_result["stack"][0]["value"], 16)
         elif isinstance(self.client, LiteClient):
             seqno = int(method_result[0])
         else:
@@ -273,9 +272,9 @@ class Wallet(Contract):
         )
 
         if isinstance(self.client, TonapiClient):
-            seqno = int(method_result.decoded.get("public_key", 0))
+            seqno = int(method_result["decoded"]["public_key"] or 0)
         elif isinstance(self.client, ToncenterClient):
-            seqno = int(method_result.stack[0].value, 16)
+            seqno = int(method_result["stack"][0]["value"], 16)
         elif isinstance(self.client, LiteClient):
             seqno = int(method_result[0])
         else:
