@@ -11,16 +11,27 @@
 ![Downloads](https://pepy.tech/badge/tonutils/month)
 ![Downloads](https://pepy.tech/badge/tonutils/week)
 
-**Tonutils** is a high-level OOP library for Python designed for interacting with the TON. It is built on
-top of three of the most popular libraries for working with TON in
-Python: [pytoniq](https://github.com/yungwine/pytoniq), [pytonapi](https://github.com/tonkeeper/pytonapi),
-and [pytoncenter](https://github.com/Ton-Dynasty/pytoncenter). By integrating these libraries, tonutils offers a
-convenient and flexible tool for developers.
+**Tonutils** is a high-level object-oriented library for Python designed to facilitate interactions with the TON
+blockchain. It seamlessly integrates three prominent services for working with TON:
+
+- [tonapi.io](https://tonapi.io) - REST api to TON blockchain explorer.
+- [toncenter.com](https://toncenter.com) - Fast and reliable HTTP API for The Open Network.
+- [pytoniq](https://github.com/yungwine/pytoniq) - Library for direct interaction with Lite servers.
+
+By combining these services, Tonutils provides a powerful and flexible toolset for developers, making it easier to work
+with the TON ecosystem.
 
 ## Installation
 
 ```bash
 pip install tonutils
+```
+
+To use the `LiteClient`, which requires the [pytoniq](https://github.com/yungwine/pytoniq) library, install it with the
+optional dependencies:
+
+```bash
+pip install 'tonutils[pytoniq]'
 ```
 
 ## Usage
@@ -29,9 +40,6 @@ pip install tonutils
 
 <details>
 <summary><b>• LiteClient</b> For better performance, pass your own config, available from the <a href="https://t.me/liteserver_bot" target="_blank">bot</a>.</summary>
-
-Uses `LiteBalancer` from the [pytoniq](https://github.com/yungwine/pytoniq) library and interacts with the blockchain
-via lite servers.
 
 Client Initialization:
 
@@ -48,9 +56,6 @@ client = LiteClient(config=config, is_testnet=IS_TESTNET)
 <details>
 <summary><b>• TonapiClient</b> To use you need to obtain an API key on the <a href="https://tonconsole.com" target="_blank">tonconsole.com</a>.</summary>
 
-Uses `AsyncTonapi` from the [pytonapi](https://github.com/tonkeeper/pytonapi) library and interacts with the
-blockchain via the tonapi.io API.
-
 Client Initialization
 
 ```python
@@ -65,9 +70,6 @@ client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 
 <details>
 <summary><b>• ToncenterClient</b> To use you need to obtain an API key from the <a href="https://t.me/tonapibot" target="_blank">bot</a>.</summary>
-
-Uses `AsyncTonCenterClientV3` from the [pytoncenter](https://github.com/Ton-Dynasty/pytoncenter) library and interacts
-with the blockchain via the toncenter.com API.
 
 Client Initialization
 
@@ -133,7 +135,7 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 
 **TON** - `EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess`
 
-**USDT** (TRC-20) - `TJjADKFT2i7jqNJAxkgeRm5o9uarcoLUeR`
+**USDT** (TRC-20) - `TXuPpjZvqhjM3X7BFnzR6bBarB6svmCpt8`
 
 ## Contribution
 
