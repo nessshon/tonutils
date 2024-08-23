@@ -25,9 +25,9 @@ async def main() -> None:
     wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     tx_hash = await wallet.transfer(
-        destination="UQ...",
+        destination=DESTINATION_ADDRESS,
         amount=AMOUNT,
-        body="Hello from tonutils!",
+        body=COMMENT,
     )
 
     print(f"Successfully transferred {AMOUNT} TON!")
