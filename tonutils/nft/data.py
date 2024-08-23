@@ -4,7 +4,7 @@ from typing import Optional
 
 from pytoniq_core import Address, Cell, Slice, TlbScheme, begin_cell
 
-from .content import OffchainContent
+from .content import OffchainContent, OffchainCommonContent
 from .royalty_params import RoyaltyParams
 
 
@@ -37,27 +37,38 @@ class CollectionData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cell_slice: Slice) -> CollectionData:
-        pass
+        raise NotImplementedError
 
 
-class ItemData(TlbScheme):
+class NFTData(TlbScheme):
 
     def __init__(
             self,
             index: int,
-            collection_address: Address,
+            collection_address: Optional[Address] = None,
+            owner_address: Optional[Address] = None,
+            content: Optional[OffchainCommonContent] = None,
     ) -> None:
         self.index = index
         self.collection_address = collection_address
+        self.owner_address = owner_address
+        self.content = content
 
     def serialize(self) -> Cell:
-        return (
+        cell = (
             begin_cell()
             .store_uint(self.index, 64)
             .store_address(self.collection_address)
-            .end_cell()
         )
 
+        if self.owner_address is not None:
+            cell = cell.store_address(self.owner_address)
+
+        if self.content is not None:
+            cell = cell.store_ref(self.content.serialize())
+
+        return cell.end_cell()
+
     @classmethod
-    def deserialize(cls, cell_slice: Slice) -> ItemData:
-        pass
+    def deserialize(cls, cell_slice: Slice) -> NFTData:
+        raise NotImplementedError

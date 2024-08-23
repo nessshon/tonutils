@@ -11,37 +11,7 @@ try:
     pytoniq_available = True
 except ImportError:
     pytoniq_available = False
-
-
-    class LiteBalancer:
-        """
-        Placeholder class for LiteBalancer when pytoniq is not available.
-        Provides stubs for methods that raise errors when called.
-        """
-
-        @staticmethod
-        def from_config(config: Dict[str, Any], trust_level: int) -> LiteBalancer:
-            raise PytoniqDependencyError()
-
-        @staticmethod
-        def from_testnet_config(trust_level: int) -> LiteBalancer:
-            raise PytoniqDependencyError()
-
-        @staticmethod
-        def from_mainnet_config(trust_level: int) -> LiteBalancer:
-            raise PytoniqDependencyError()
-
-        async def __aenter__(self) -> LiteBalancer:
-            raise PytoniqDependencyError()
-
-        async def __aexit__(self, exc_type, exc_value, traceback) -> None:
-            raise PytoniqDependencyError()
-
-        async def run_get_method(self, address: str, method_name: str, stack: List[Any]) -> Any:
-            raise PytoniqDependencyError()
-
-        async def raw_send_message(self, message: bytes) -> None:
-            raise PytoniqDependencyError()
+    from ._base import LiteBalancer
 
 from ._base import Client
 
@@ -58,7 +28,7 @@ class LiteClient(Client):
             self,
             config: Optional[Dict[str, Any]] = None,
             is_testnet: Optional[bool] = False,
-            trust_level: Optional[int] = 2,
+            trust_level: int = 2,
     ) -> None:
         """
         Initialize the LiteClient.

@@ -1,12 +1,16 @@
-from .editable import CollectionEditable, ItemEditable
-from .soulbound import CollectionSoulbound, ItemSoulbound
-from .standard import CollectionStandard, ItemStandard
+from .contract.base import Collection, NFT
+from .contract.editable import CollectionEditable, NFTEditable
+from .contract.soulbound import CollectionSoulbound, NFTSoulbound
+from .contract.standard import CollectionStandard, NFTStandard
 
 __all__ = [
+    "Collection",
+    "NFT",
+
     "CollectionEditable",
-    "ItemEditable",
+    "NFTEditable",
     "CollectionSoulbound",
-    "ItemSoulbound",
+    "NFTSoulbound",
     "CollectionStandard",
-    "ItemStandard",
+    "NFTStandard",
 ]

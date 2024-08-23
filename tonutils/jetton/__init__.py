@@ -1,5 +1,6 @@
-from ._base import Jetton
+from .contract import JettonMaster, JettonWallet
 
 __all__ = [
-    "Jetton",
+    "JettonMaster",
+    "JettonWallet",
 ]

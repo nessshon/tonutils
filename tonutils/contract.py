@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 from pytoniq_core import (
     Address,
@@ -58,11 +58,21 @@ class Contract:
         )
 
     @classmethod
+    def create_data(cls, *args, **kwargs) -> Any:
+        """
+        Create contract data.
+
+        :param kwargs: Additional arguments.
+        :return: Contract data instance.
+        """
+        raise NotImplementedError
+
+    @classmethod
     def _create_external_msg(
             cls,
             src: Optional[Address] = None,
             dest: Optional[Address] = None,
-            import_fee: Optional[int] = 0,
+            import_fee: int = 0,
             body: Optional[Cell] = Cell.empty(),
             state_init: Optional[StateInit] = None,
     ) -> MessageAny:
@@ -88,11 +98,11 @@ class Contract:
             bounced: Optional[bool] = False,
             src: Optional[Address] = None,
             dest: Optional[Address] = None,
-            value: Optional[Union[CurrencyCollection, int]] = 0,
-            ihr_fee: Optional[int] = 0,
-            fwd_fee: Optional[int] = 0,
-            created_lt: Optional[int] = 0,
-            created_at: Optional[int] = 0,
+            value: Union[CurrencyCollection, int] = 0,
+            ihr_fee: int = 0,
+            fwd_fee: int = 0,
+            created_lt: int = 0,
+            created_at: int = 0,
             body: Optional[Cell] = None,
             state_init: Optional[StateInit] = None,
     ) -> MessageAny:
@@ -117,7 +127,7 @@ class Contract:
             value = CurrencyCollection(value)
 
         if bounce is None:
-            bounce = dest.is_bounceable
+            bounce = dest.is_bounceable if dest is not None else False
 
         info = InternalMsgInfo(
             ihr_disabled,

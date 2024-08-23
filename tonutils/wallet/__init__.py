@@ -1,5 +1,6 @@
-from ._base import Wallet
-from .version import (
+from .contract import (
+    Wallet,
+
     HighloadWalletV2,
     WalletV3R1,
     WalletV3R2,
@@ -9,6 +10,7 @@ from .version import (
 
 __all__ = [
     "Wallet",
+
     "HighloadWalletV2",
     "WalletV3R1",
     "WalletV3R2",

@@ -26,4 +26,4 @@ class RoyaltyParams(TlbScheme):
 
     @classmethod
     def deserialize(cls, cell_slice: Slice) -> RoyaltyParams:
-        pass
+        raise NotImplementedError

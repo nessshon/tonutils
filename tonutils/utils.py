@@ -5,11 +5,10 @@ import os
 from typing import Tuple, Union
 
 from Cryptodome.Cipher import AES
-# noinspection PyPackageRequirements
 from nacl.bindings import crypto_scalarmult
-# noinspection PyPackageRequirements
 from nacl.signing import SigningKey
 from pytoniq_core import Address, Cell, MessageAny, begin_cell
+from pytoniq_core.boc.deserialize import Boc
 
 
 def message_to_boc_hex(message: MessageAny) -> Tuple[str, str]:
@@ -33,7 +32,10 @@ def boc_to_base64_string(boc: Union[str, bytes]) -> str:
     :return: The base64-encoded string.
     """
     if isinstance(boc, str):
-        boc = bytes.fromhex(boc)
+        boc = Boc(boc).data
+
+    if not isinstance(boc, bytes):
+        raise TypeError("Expected boc to be bytes, but got something else.")
 
     return base64.b64encode(boc).decode()
 
@@ -57,11 +59,13 @@ def create_encrypted_comment_cell(
     :return: A cell containing the encrypted comment.
     """
     root = begin_cell().store_uint(0x2167da4b, 32)
-    their_public_key, our_private_key = their_public_key.to_bytes(32, byteorder='big'), our_private_key[:32]
+
+    our_private_key_bytes = our_private_key[:32]
+    their_public_key_bytes = their_public_key.to_bytes(32, byteorder='big')
 
     # Convert keys to Curve25519
-    _our_private_key = SigningKey(our_private_key).to_curve25519_private_key().encode()
-    _their_public_key = SigningKey(their_public_key).verify_key.to_curve25519_public_key().encode()
+    _our_private_key = SigningKey(our_private_key_bytes).to_curve25519_private_key().encode()
+    _their_public_key = SigningKey(their_public_key_bytes).verify_key.to_curve25519_public_key().encode()
 
     # Compute shared key
     shared_key = crypto_scalarmult(_our_private_key, _their_public_key)
@@ -90,9 +94,9 @@ def create_encrypted_comment_cell(
     encrypted_data = c.encrypt(data)
 
     # XOR public keys
-    xor_key = bytearray(SigningKey(our_private_key).verify_key.encode())
+    xor_key = bytearray(SigningKey(our_private_key_bytes).verify_key.encode())
     for i in range(32):
-        xor_key[i] ^= SigningKey(their_public_key).verify_key.encode()[i]
+        xor_key[i] ^= SigningKey(their_public_key_bytes).verify_key.encode()[i]
 
     # Store data
     root.store_bytes(xor_key)

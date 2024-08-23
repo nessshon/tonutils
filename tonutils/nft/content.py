@@ -18,7 +18,7 @@ class OffchainBaseContent(TlbScheme):
 
     @classmethod
     def deserialize(cls, cell_slice: Slice) -> OffchainBaseContent:
-        pass
+        raise NotImplementedError
 
 
 class OffchainCommonContent(TlbScheme):
@@ -35,23 +35,23 @@ class OffchainCommonContent(TlbScheme):
 
     @classmethod
     def deserialize(cls, cell_slice: Slice) -> OffchainCommonContent:
-        pass
+        raise NotImplementedError
 
 
 class OffchainContent(TlbScheme):
 
-    def __init__(self, uri: str, suffix_uri: str) -> None:
+    def __init__(self, uri: str, prefix_uri: str) -> None:
         self.uri = uri
-        self.suffix_uri = suffix_uri
+        self.prefix_uri = prefix_uri
 
     def serialize(self) -> Cell:
         return (
             begin_cell()
             .store_ref(OffchainBaseContent(self.uri).serialize())
-            .store_ref(OffchainCommonContent(self.suffix_uri).serialize())
+            .store_ref(OffchainCommonContent(self.prefix_uri).serialize())
             .end_cell()
         )
 
     @classmethod
     def deserialize(cls, cell_slice: Slice) -> OffchainContent:
-        pass
+        raise NotImplementedError

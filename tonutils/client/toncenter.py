@@ -39,15 +39,13 @@ class ToncenterClient(Client):
         body = {
             "address": address,
             "method": method_name,
-            "stack": [],
+            "stack": [
+                {"type": "num", "value": str(v)}
+                if isinstance(v, int) else
+                {"type": "slice", "value": v}
+                for v in (stack or [])
+            ],
         }
-        if stack is not None:
-            body["stack"] = [
-                {
-                    "type": "num" if isinstance(value, int) else "cell",
-                    "value": value
-                } for value in stack
-            ]
 
         return await self._post(method=method, body=body)
 
