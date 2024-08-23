@@ -3,7 +3,7 @@
 [![TON](https://img.shields.io/badge/TON-grey?logo=TON&logoColor=40AEF0)](https://ton.org)
 [![PyPI](https://img.shields.io/pypi/v/tonutils.svg?color=FFE873&labelColor=3776AB)](https://pypi.python.org/pypi/tonutils)
 ![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.12-black?color=FFE873&labelColor=3776AB)
-[![License](https://img.shields.io/github/license/nessshon/tonutils)](https://github.com/nessshon/tonutils/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/nessshon/tonutils)](LICENSE)
 
 ![Image](https://telegra.ph//file/068ea06087c9ce8c6bfed.jpg)
 
@@ -83,55 +83,102 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 
 </details>
 
-### Wallet Operation Guide
+### Guide
 
-- [Create Wallet](https://github.com/nessshon/tonutils/blob/main/examples/wallet/create_wallet.py)
-- [Deploy Wallet](https://github.com/nessshon/tonutils/blob/main/examples/wallet/deploy_wallet.py)
-- [Encrypt Comment](https://github.com/nessshon/tonutils/blob/main/examples/wallet/encrypt_comment.py)
+#### Wallet Operations
 
-- ##### **Common Wallet**
+- [Create Wallet](examples/wallet/create_wallet.py)
+- [Deploy Wallet](examples/wallet/deploy_wallet.py)
+- [Encrypt Comment](examples/wallet/encrypt_comment.py)
 
-    - [Transfer TON](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/transfer_ton.py)
-    - [Transfer NFT](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/transfer_nft.py)
-    - [Transfer Jetton](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/transfer_jetton.py)
-    - [Batch Transfer TON](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/batch_transfer_ton.py)
-    - [Batch Transfer NFT](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/batch_transfer_nft.py)
-    - [Batch Transfer Jetton](https://github.com/nessshon/tonutils/blob/main/examples/wallet/common/batch_transfer_jetton.py)
+- ##### Standard Wallet
 
-- ##### **Highload Wallet**
-    - [Transfer TON](https://github.com/nessshon/tonutils/blob/main/examples/wallet/highload/transfer_ton.py)
-    - [Transfer NFT](https://github.com/nessshon/tonutils/blob/main/examples/wallet/highload/transfer_nft.py)
-    - [Transfer Jetton](https://github.com/nessshon/tonutils/blob/main/examples/wallet/highload/transfer_jetton.py)
+  - [Transfer TON](examples/wallet/common/transfer_ton.py)
+  - [Transfer NFT](examples/wallet/common/transfer_nft.py)
+  - [Transfer Jetton](examples/wallet/common/transfer_jetton.py)
+  - [Swap TON to Jetton](examples/wallet/common/dex/dedust/swap_ton_to_jetton.py)
+  - [Swap Jetton to TON](examples/wallet/common/dex/dedust/swap_jetton_to_ton.py)
+  - [Swap Jetton to Jetton](examples/wallet/common/dex/dedust/swap_jetton_to_jetton.py)
+  - [Batch Transfer TON](examples/wallet/common/batch_transfer_ton.py)
+  - [Batch Transfer NFT](examples/wallet/common/batch_transfer_nft.py)
+  - [Batch Transfer Jetton](examples/wallet/common/batch_transfer_jetton.py)
 
-### NFT Operations Guide
+- ##### Highload Wallet
 
-- ##### **Standard NFTs**
+  - [Transfer TON](examples/wallet/highload/transfer_ton.py)
+  - [Transfer NFT](examples/wallet/highload/transfer_nft.py)
+  - [Transfer Jetton](examples/wallet/highload/transfer_jetton.py)
+  - [Swap TON to Jetton](examples/wallet/highload/dex/dedust/swap_ton_to_jetton.py)
+  - [Swap Jetton to TON](examples/wallet/highload/dex/dedust/swap_jetton_to_ton.py)
+  - [Swap Jetton to Jetton](examples/wallet/highload/dex/dedust/swap_jetton_to_jetton.py)
 
-    - [Deploy Collection](https://github.com/nessshon/tonutils/blob/main/examples/nft/standard/deploy_collection.py)
-    - [Mint Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/standard/mint_item.py)
-    - [Batch Mint](https://github.com/nessshon/tonutils/blob/main/examples/nft/standard/batch_mint.py)
-    - [Transfer Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/transfer_item.py)
+#### Jetton Operations
 
-- ##### **Editable NFTs**
+- [Deploy Jetton Master](examples/jetton/deploy_master.py)
+- [Mint Jetton](examples/jetton/mint_jetton.py)
+- [Burn Jetton](examples/jetton/burn_jetton.py)
+- [Change Admin](examples/jetton/change_admin.py)
+- [Transfer Jetton](examples/jetton/transfer_jetton.py)
 
-    - [Deploy Collection](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/deploy_collection.py)
-    - [Mint Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/mint_item.py)
-    - [Batch Mint](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/batch_mint.py)
-    - [Transfer Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/transfer_item.py)
-    - [Edit Item Content](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/edit_item_content.py)
-    - [Change Item Editorship](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/change_item_editorship.py)
-    - [Edit Collection Content](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/edit_collection_content.py)
-    - [Change Collection Owner](https://github.com/nessshon/tonutils/blob/main/examples/nft/editbale/change_collection_owner.py)
+- ##### DEX DeDust.io
 
-- ##### **Soulbound NFTs**
+  - [Swap TON to Jetton](examples/jetton/dex/dedust/swap_ton_to_jetton.py)
+  - [Swap Jetton to TON](examples/jetton/dex/dedust/swap_jetton_to_ton.py)
+  - [Swap Jetton to Jetton](examples/jetton/dex/dedust/swap_jetton_to_jetton.py)
 
-    - [Deploy Collection](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/deploy_collection.py)
-    - [Mint Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/mint_item.py)
-    - [Batch Mint](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/batch_mint.py)
-    - [Revoke Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/revoke_item.py)
-    - [Destroy Item](https://github.com/nessshon/tonutils/blob/main/examples/nft/soulbound/destroy_item.py)
+#### NFT Operations
+
+- ##### Standard NFTs
+
+  - [Deploy Collection](examples/nft/standard/deploy_collection.py)
+  - [Mint NFT](examples/nft/standard/mint_nft.py)
+  - [Batch Mint](examples/nft/standard/batch_mint.py)
+  - [Transfer NFT](examples/nft/transfer_nft.py)
+
+- ##### Editable NFTs
+
+  - [Deploy Collection](examples/nft/editbale/deploy_collection.py)
+  - [Mint NFT](examples/nft/editbale/mint_nft.py)
+  - [Batch Mint](examples/nft/editbale/batch_mint.py)
+  - [Transfer NFT](examples/nft/transfer_nft.py)
+  - [Edit NFT Content](examples/nft/editbale/edit_nft_content.py)
+  - [Change NFT Editorship](examples/nft/editbale/change_nft_editorship.py)
+  - [Edit Collection Content](examples/nft/editbale/edit_collection_content.py)
+  - [Change Collection Owner](examples/nft/editbale/change_collection_owner.py)
+
+- ##### Soulbound NFTs
+
+  - [Deploy Collection](examples/nft/soulbound/deploy_collection.py)
+  - [Mint NFT](examples/nft/soulbound/mint_nft.py)
+  - [Batch Mint](examples/nft/soulbound/batch_mint.py)
+  - [Revoke NFT](examples/nft/soulbound/revoke_nft.py)
+  - [Destroy NFT](examples/nft/soulbound/destroy_nft.py)
+
+- ##### Marketplace Getgems.io
+
+  - [Put NFT On Sale](examples/nft/marketplace/getgems/put_on_sale.py)
+  - [Cancel NFT Sale](examples/nft/marketplace/getgems/cancel_sale.py)
+  - [Change NFT Price](examples/nft/marketplace/getgems/change_price.py)
+
+#### DNS Operations
+
+- [Set Site Record](examples/dns/set_site.py)
+- [Set Wallet Record](examples/dns/set_wallet.py)
+- [Set Storage Record](examples/dns/set_storage.py)
+- [Set Next Resolver Record](examples/dns/set_next_resolver.py)
+
+- ##### Simple Subdomain Manager
+
+  - [Deploy Manager](examples/dns/simple_subdomain/deploy_manager.py)
+  - [Set Site Record](examples/dns/simple_subdomain/set_site.py)
+  - [Set Wallet Record](examples/dns/simple_subdomain/set_wallet.py)
+  - [Set Storage Record](examples/dns/simple_subdomain/set_storage.py)
+  - [Set Next Resolver Record](examples/dns/simple_subdomain/set_next_resolver.py)
 
 ## Donations
+
+Your donation supports the future of this project. Every contribution helps stimulate innovation and sustain
+development!
 
 **TON** - `EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess`
 
@@ -148,5 +195,5 @@ Supported by [TON Society](https://github.com/ton-society/grants-and-bounties), 
 
 ## License
 
-This repository is distributed under the [MIT License](https://github.com/nessshon/tonutils/blob/main/LICENSE).
+This repository is distributed under the [MIT License](LICENSE).
 Feel free to use, modify, and distribute the code in accordance with the terms of the license.
