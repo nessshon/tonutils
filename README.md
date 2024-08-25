@@ -189,10 +189,6 @@ development!
 We welcome your contributions! If you have ideas for improvement or have identified a bug, please create an issue or
 submit a pull request.
 
-## Support
-
-Supported by [TON Society](https://github.com/ton-society/grants-and-bounties), Grants and Bounties program.
-
 ## License
 
 This repository is distributed under the [MIT License](LICENSE).
