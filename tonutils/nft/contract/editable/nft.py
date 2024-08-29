@@ -58,8 +58,8 @@ class NFTEditable(NFT):
             cls,
             editor_address: Address,
             response_address: Optional[Address] = None,
-            custom_payload: Optional[Cell] = Cell.empty(),
-            forward_payload: Optional[Cell] = Cell.empty(),
+            custom_payload: Optional[Cell] = None,
+            forward_payload: Optional[Cell] = None,
             forward_amount: int = 0,
             query_id: int = 0,
     ) -> Cell:

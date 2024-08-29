@@ -45,11 +45,10 @@ class WalletV4R1(Wallet):
             messages: List[WalletMessage],
             **kwargs,
     ) -> Cell:
-        kwargs["op_code"] = 0
-
         return super().raw_create_transfer_msg(
             private_key=private_key,
             messages=messages,
+            op_code=0,
             **kwargs,
         )
 
@@ -95,10 +94,9 @@ class WalletV4R2(Wallet):
             messages: List[WalletMessage],
             **kwargs,
     ) -> Cell:
-        kwargs["op_code"] = 0
-
         return super().raw_create_transfer_msg(
             private_key=private_key,
             messages=messages,
+            op_code=0,
             **kwargs,
         )

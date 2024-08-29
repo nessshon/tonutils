@@ -68,12 +68,12 @@ class Contract:
         raise NotImplementedError
 
     @classmethod
-    def _create_external_msg(
+    def create_external_msg(
             cls,
             src: Optional[Address] = None,
             dest: Optional[Address] = None,
             import_fee: int = 0,
-            body: Optional[Cell] = Cell.empty(),
+            body: Optional[Cell] = None,
             state_init: Optional[StateInit] = None,
     ) -> MessageAny:
         """
@@ -91,7 +91,7 @@ class Contract:
         return MessageAny(info, state_init, body)
 
     @classmethod
-    def _create_internal_msg(
+    def create_internal_msg(
             cls,
             ihr_disabled: Optional[bool] = True,
             bounce: Optional[bool] = None,

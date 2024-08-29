@@ -43,7 +43,7 @@ from ...nft import NFTStandard
 from ...utils import (
     create_encrypted_comment_cell,
     message_to_boc_hex,
-    amount_to_nano,
+    to_nano,
 )
 
 
@@ -92,11 +92,11 @@ class Wallet(Contract):
         """
         body = self.raw_create_transfer_msg(
             private_key=self.private_key,
-            seqno=0,
             messages=[],
+            seqno=0,
         )
 
-        return self._create_external_msg(
+        return self.create_external_msg(
             dest=self.address,
             state_init=self.state_init,
             body=body,
@@ -120,8 +120,10 @@ class Wallet(Contract):
             - op_code: The operation code. Defaults to None.
         :return: The serialized message cell.
         """
-        seqno = kwargs.get("seqno", 0)
-        wallet_id = kwargs.get("wallet_id", 698983191)
+        assert len(messages) <= 4, 'For common wallet, maximum messages amount is 4'
+
+        seqno = kwargs.get("seqno", None)
+        wallet_id = kwargs.get("wallet_id", self.wallet_id)
         valid_until = kwargs.get("valid_until", None)
         op_code = kwargs.get("op_code", None)
 
@@ -182,7 +184,7 @@ class Wallet(Contract):
                 .end_cell()
             )
 
-        message = cls._create_internal_msg(
+        message = cls.create_internal_msg(
             dest=destination,
             value=value,
             body=body,
@@ -297,9 +299,10 @@ class Wallet(Contract):
 
         return seqno
 
-    async def _raw_transfer(
+    async def raw_transfer(
             self,
             messages: Optional[List[WalletMessage]] = None,
+            **kwargs,
     ) -> str:
         """
         Perform a raw transfer operation.
@@ -310,16 +313,18 @@ class Wallet(Contract):
         if messages is None:
             messages = []
 
-        assert len(messages) <= 4, 'For common wallet maximum messages amount is 4'
-        seqno = await self.get_seqno(self.client, self.address)
+        seqno = kwargs.get("seqno", None)
+
+        if seqno is None:
+            kwargs["seqno"] = await self.get_seqno(self.client, self.address)
 
         body = self.raw_create_transfer_msg(
             private_key=self.private_key,
-            seqno=seqno,
             messages=messages or [],
+            **kwargs,
         )
 
-        message = self._create_external_msg(dest=self.address, body=body)
+        message = self.create_external_msg(dest=self.address, body=body)
         message_boc_hex, message_hash = message_to_boc_hex(message)
         await self.client.send_message(message_boc_hex)
 
@@ -349,7 +354,7 @@ class Wallet(Contract):
             self,
             destination: Union[Address, str],
             amount: Union[int, float] = 0,
-            body: Union[Cell, str] = Cell.empty(),
+            body: Optional[Union[Cell, str]] = None,
             state_init: Optional[StateInit] = None,
             **kwargs
     ) -> str:
@@ -367,11 +372,11 @@ class Wallet(Contract):
         if isinstance(destination, str):
             destination = Address(destination)
 
-        message_hash = await self._raw_transfer(
+        message_hash = await self.raw_transfer(
             messages=[
                 self.create_wallet_internal_message(
                     destination=destination,
-                    value=amount_to_nano(amount),
+                    value=to_nano(amount),
                     body=body,
                     state_init=state_init,
                     **kwargs
@@ -391,14 +396,14 @@ class Wallet(Contract):
         messages = [
             self.create_wallet_internal_message(
                 destination=data.destination,
-                value=amount_to_nano(data.amount),
+                value=to_nano(data.amount),
                 body=data.body,
                 state_init=data.state_init,
                 **data.other,
             ) for data in data_list
         ]
 
-        message_hash = await self._raw_transfer(messages=messages)
+        message_hash = await self.raw_transfer(messages=messages)
 
         return message_hash
 
@@ -406,9 +411,10 @@ class Wallet(Contract):
             self,
             destination: Union[Address, str],
             nft_address: Union[Address, str],
-            forward_payload: Union[Cell, str] = Cell.empty(),
+            forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
+            **kwargs,
     ) -> str:
         """
         Transfer an NFT to a destination address.
@@ -442,7 +448,8 @@ class Wallet(Contract):
             body=NFTStandard.build_transfer_body(
                 new_owner_address=destination,
                 forward_payload=forward_payload,
-                forward_amount=amount_to_nano(forward_amount),
+                forward_amount=to_nano(forward_amount),
+                **kwargs,
             ),
         )
 
@@ -458,16 +465,17 @@ class Wallet(Contract):
         messages = [
             self.create_wallet_internal_message(
                 destination=data.nft_address,
-                value=amount_to_nano(data.amount),
+                value=to_nano(data.amount),
                 body=NFTStandard.build_transfer_body(
                     new_owner_address=data.destination,
                     forward_payload=data.forward_payload,
-                    forward_amount=amount_to_nano(data.forward_amount),
+                    forward_amount=to_nano(data.forward_amount),
+                    **data.other,
                 ),
             ) for data in data_list
         ]
 
-        message_hash = await self._raw_transfer(messages=messages)
+        message_hash = await self.raw_transfer(messages=messages)
 
         return message_hash
 
@@ -477,9 +485,10 @@ class Wallet(Contract):
             jetton_master_address: Union[Address, str],
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
-            forward_payload: Union[Cell, str] = Cell.empty(),
+            forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
+            **kwargs,
     ) -> str:
         """
         Transfer a jetton to a destination address.
@@ -523,7 +532,8 @@ class Wallet(Contract):
                 response_address=self.address,
                 jetton_amount=int(jetton_amount * (10 ** jetton_decimals)),
                 forward_payload=forward_payload,
-                forward_amount=amount_to_nano(forward_amount),
+                forward_amount=to_nano(forward_amount),
+                **kwargs,
             )
         )
 
@@ -550,18 +560,19 @@ class Wallet(Contract):
             messages.append(
                 self.create_wallet_internal_message(
                     destination=jetton_wallet_address,
-                    value=amount_to_nano(data.amount),
+                    value=to_nano(data.amount),
                     body=JettonWallet.build_transfer_body(
                         recipient_address=data.destination,
                         response_address=self.address,
                         jetton_amount=int(data.jetton_amount * (10 ** data.jetton_decimals)),
                         forward_payload=data.forward_payload,
-                        forward_amount=amount_to_nano(data.forward_amount),
+                        forward_amount=to_nano(data.forward_amount),
+                        **data.other,
                     ),
                 )
             )
 
-        message_hash = await self._raw_transfer(messages=messages)
+        message_hash = await self.raw_transfer(messages=messages)
 
         return message_hash
 
@@ -570,6 +581,7 @@ class Wallet(Contract):
             jetton_master_address: Union[Address, str],
             ton_amount: Union[int, float],
             amount: Union[int, float] = 0.25,
+            **kwargs
     ) -> str:
         """
         Perform a swap ton to jetton operation.
@@ -595,10 +607,11 @@ class Wallet(Contract):
             destination=VaultNative.ADDRESS,
             amount=ton_amount + amount,
             body=VaultNative.create_swap_payload(
-                amount=amount_to_nano(ton_amount),
+                amount=to_nano(ton_amount),
                 pool_address=pool.address,
                 swap_params=swap_params,
             ),
+            **kwargs,
         )
 
         return message_hash
@@ -628,16 +641,17 @@ class Wallet(Contract):
             messages.append(
                 self.create_wallet_internal_message(
                     destination=Address(VaultNative.ADDRESS),
-                    value=int(amount_to_nano(data.ton_amount + data.amount)),
+                    value=int(to_nano(data.ton_amount + data.amount)),
                     body=VaultNative.create_swap_payload(
-                        amount=amount_to_nano(data.ton_amount),
+                        amount=to_nano(data.ton_amount),
                         pool_address=pool.address,
                         swap_params=swap_params,
                     ),
+                    **data.other,
                 )
             )
 
-        message_hash = await self._raw_transfer(messages=messages)
+        message_hash = await self.raw_transfer(messages=messages)
 
         return message_hash
 
@@ -648,6 +662,7 @@ class Wallet(Contract):
             jetton_decimals: int = 9,
             amount: Union[int, float] = 0.3,
             forward_amount: Union[int, float] = 0.25,
+            **kwargs,
     ) -> str:
         """
         Perform a swap jetton to ton operation.
@@ -682,8 +697,9 @@ class Wallet(Contract):
                 jetton_amount=int(jetton_amount * (10 ** jetton_decimals)),
                 response_address=self.address,
                 forward_payload=jetton_vault.create_swap_payload(pool.address),
-                forward_amount=amount_to_nano(forward_amount),
+                forward_amount=to_nano(forward_amount),
             ),
+            **kwargs,
         )
 
         return message_hash
@@ -716,18 +732,19 @@ class Wallet(Contract):
             messages.append(
                 self.create_wallet_internal_message(
                     destination=Address(jetton_wallet_address),
-                    value=amount_to_nano(data.amount),
+                    value=to_nano(data.amount),
                     body=JettonWallet.build_transfer_body(
                         recipient_address=jetton_vault.address,
                         jetton_amount=int(data.jetton_amount * (10 ** data.jetton_decimals)),
                         response_address=self.address,
                         forward_payload=jetton_vault.create_swap_payload(pool.address),
-                        forward_amount=amount_to_nano(data.forward_amount),
+                        forward_amount=to_nano(data.forward_amount),
                     ),
+                    **data.other,
                 )
             )
 
-        message_hash = await self._raw_transfer(messages=messages)
+        message_hash = await self.raw_transfer(messages=messages)
 
         return message_hash
 
@@ -739,6 +756,7 @@ class Wallet(Contract):
             jetton_decimals: int = 9,
             amount: Union[int, float] = 0.3,
             forward_amount: Union[int, float] = 0.25,
+            **kwargs,
     ) -> str:
         """
         Perform a swap jetton to jetton operation.
@@ -785,8 +803,9 @@ class Wallet(Contract):
                     pool_address=pool_a.address,
                     next_=SwapStep(pool_b.address),
                 ),
-                forward_amount=amount_to_nano(forward_amount),
+                forward_amount=to_nano(forward_amount),
             ),
+            **kwargs,
         )
 
         return message_hash
@@ -830,7 +849,7 @@ class Wallet(Contract):
             messages.append(
                 self.create_wallet_internal_message(
                     destination=jetton_wallet_address,
-                    value=amount_to_nano(data.amount),
+                    value=to_nano(data.amount),
                     body=JettonWallet.build_transfer_body(
                         recipient_address=jetton_vault.address,
                         jetton_amount=int(data.jetton_amount * (10 ** data.jetton_decimals)),
@@ -839,11 +858,12 @@ class Wallet(Contract):
                             pool_address=pool_a.address,
                             next_=SwapStep(pool_b.address),
                         ),
-                        forward_amount=amount_to_nano(data.forward_amount),
+                        forward_amount=to_nano(data.forward_amount),
                     ),
+                    **data.other,
                 )
             )
 
-        message_hash = await self._raw_transfer(messages=messages)
+        message_hash = await self.raw_transfer(messages=messages)
 
         return message_hash

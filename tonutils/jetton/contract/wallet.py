@@ -43,8 +43,8 @@ class JettonWallet(Contract):
             jetton_amount: int,
             recipient_address: Optional[Address],
             response_address: Optional[Address] = None,
-            custom_payload: Optional[Cell] = Cell.empty(),
-            forward_payload: Optional[Cell] = Cell.empty(),
+            custom_payload: Optional[Cell] = None,
+            forward_payload: Optional[Cell] = None,
             forward_amount: int = 0,
             query_id: int = 0,
     ) -> Cell:
@@ -78,7 +78,7 @@ class JettonWallet(Contract):
             cls,
             jetton_amount: int,
             response_address: Optional[Address] = None,
-            custom_payload: Optional[Cell] = Cell.empty(),
+            custom_payload: Optional[Cell] = None,
             query_id: int = 0,
     ) -> Cell:
         """
