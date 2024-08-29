@@ -5,6 +5,7 @@ from tonutils.wallet import (
     # WalletV3R2,
     # WalletV4R1,
     # WalletV4R2,
+    # WalletV5R1,
     # HighloadWalletV2,
 )
 
@@ -29,6 +30,7 @@ async def main() -> None:
     # wallet, public_key, private_key, mnemonic = WalletV3R2.from_mnemonic(client, MNEMONIC)
     # wallet, public_key, private_key, mnemonic = WalletV4R1.from_mnemonic(client, MNEMONIC)
     # wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
+    # wallet, public_key, private_key, mnemonic = WalletV5R1.from_mnemonic(client, MNEMONIC)
     # wallet, public_key, private_key, mnemonic = HighloadWalletV2.from_mnemonic(client, MNEMONIC)
 
     # Deploy the wallet

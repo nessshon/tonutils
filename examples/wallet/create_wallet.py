@@ -5,6 +5,7 @@ from tonutils.wallet import (
     # WalletV3R2,
     # WalletV4R1,
     # WalletV4R2,
+    # WalletV5R1,
     # HighloadWalletV2,
 )
 
@@ -26,6 +27,7 @@ def main() -> None:
     # wallet, public_key, private_key, mnemonic = WalletV3R2.create(client)
     # wallet, public_key, private_key, mnemonic = WalletV4R1.create(client)
     # wallet, public_key, private_key, mnemonic = WalletV4R2.create(client)
+    # wallet, public_key, private_key, mnemonic = WalletV5R1.create(client)
     # wallet, public_key, private_key, mnemonic = HighloadWalletV2.create(client)
 
     print("Wallet has been successfully created!")
