@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="tonutils",
-    version="0.0.3",
+    version="0.0.4",
     author="nessshon",
     description="Tonutils is a high-level object-oriented library for Python designed to facilitate interactions with the TON blockchain.",
     long_description=long_description,
