@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Union
 
-from pytoniq_core import Builder, Cell, Slice, TlbScheme, WalletMessage, HashMap, begin_cell, Address, StateInit
+from pytoniq_core import Address, Builder, Cell, Slice, StateInit, TlbScheme, begin_cell
 
 
 class TransferData:
@@ -14,14 +14,14 @@ class TransferData:
     :param body: The body of the message. Defaults to an empty cell.
         If a string is provided, it will be used as a transaction comment.
     :param state_init: The state init data. Defaults to None.
-    :param other: Additional arguments (e.g. bounce, bounced ...).
+    :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
 
     def __init__(
             self,
             destination: Union[Address, str],
             amount: Union[int, float],
-            body: Optional[Union[Cell, str]] = Cell.empty(),
+            body: Optional[Union[Cell, str]] = None,
             state_init: Optional[StateInit] = None,
             **kwargs,
     ) -> None:
@@ -47,15 +47,17 @@ class TransferNFTData:
     :param forward_amount: Forward amount in TON. Defaults to 0.001.
         A notification will be sent to the new owner if the amount is greater than 0;
     :param amount: The amount to transfer. Defaults to 0.05.
+    :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
 
     def __init__(
             self,
             destination: Union[Address, str],
             nft_address: Union[Address, str],
-            forward_payload: Union[Cell, str] = Cell.empty(),
+            forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
+            **kwargs,
     ) -> None:
         if isinstance(destination, str):
             destination = Address(destination)
@@ -76,6 +78,7 @@ class TransferNFTData:
         self.forward_payload = forward_payload
         self.forward_amount = forward_amount
         self.amount = amount
+        self.other = kwargs
 
 
 class TransferJettonData:
@@ -92,6 +95,7 @@ class TransferJettonData:
     :param forward_amount: Forward amount in TON. Defaults to 0.001.
         A notification will be sent to the new owner if the amount is greater than 0;
     :param amount: The amount to transfer. Defaults to 0.05.
+    :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
 
     def __init__(
@@ -100,9 +104,10 @@ class TransferJettonData:
             jetton_master_address: Union[Address, str],
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
-            forward_payload: Optional[Union[Cell, str]] = Cell.empty(),
+            forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
+            **kwargs,
     ) -> None:
         if isinstance(destination, str):
             destination = Address(destination)
@@ -125,6 +130,7 @@ class TransferJettonData:
         self.forward_payload = forward_payload
         self.forward_amount = forward_amount
         self.amount = amount
+        self.other = kwargs
 
 
 class SwapJettonToTONData:
@@ -136,6 +142,7 @@ class SwapJettonToTONData:
     :param jetton_decimals: The jetton decimals. Defaults to 9.
     :param amount: Gas amount. Defaults to 0.3.
     :param forward_amount: Forward amount in TON. Defaults to 0.25.
+    :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
 
     def __init__(
@@ -145,6 +152,7 @@ class SwapJettonToTONData:
             jetton_decimals: int = 9,
             amount: Union[int, float] = 0.3,
             forward_amount: Union[int, float] = 0.25,
+            **kwargs,
     ) -> None:
         if isinstance(jetton_master_address, str):
             jetton_master_address = Address(jetton_master_address)
@@ -154,6 +162,7 @@ class SwapJettonToTONData:
         self.jetton_decimals = jetton_decimals
         self.amount = amount
         self.forward_amount = forward_amount
+        self.other = kwargs
 
 
 class SwapTONToJettonData:
@@ -163,6 +172,7 @@ class SwapTONToJettonData:
     :param jetton_master_address: The address of the jetton master contract.
     :param ton_amount: The amount of TON to swap.
     :param amount: Gas amount. Defaults to 0.25.
+    :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
 
     def __init__(
@@ -170,6 +180,7 @@ class SwapTONToJettonData:
             jetton_master_address: Union[Address, str],
             ton_amount: Union[int, float],
             amount: Union[int, float] = 0.25,
+            **kwargs,
     ) -> None:
         if isinstance(jetton_master_address, str):
             jetton_master_address = Address(jetton_master_address)
@@ -177,6 +188,7 @@ class SwapTONToJettonData:
         self.jetton_master_address = jetton_master_address
         self.ton_amount = ton_amount
         self.amount = amount
+        self.other = kwargs
 
 
 class SwapJettonToJettonData:
@@ -189,6 +201,7 @@ class SwapJettonToJettonData:
     :param jetton_decimals: The number of jetton decimals. Defaults to 9.
     :param amount: Gas amount. Defaults to 0.3.
     :param forward_amount: Forward amount in TON. Defaults to 0.25.
+    :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
 
     def __init__(
@@ -199,6 +212,7 @@ class SwapJettonToJettonData:
             jetton_decimals: int = 9,
             amount: Union[int, float] = 0.3,
             forward_amount: Union[int, float] = 0.25,
+            **kwargs,
     ) -> None:
         if isinstance(from_jetton_master_address, str):
             from_jetton_master_address = Address(from_jetton_master_address)
@@ -212,6 +226,7 @@ class SwapJettonToJettonData:
         self.jetton_decimals = jetton_decimals
         self.amount = amount
         self.forward_amount = forward_amount
+        self.other = kwargs
 
 
 class WalletV2Data(TlbScheme):
@@ -262,7 +277,6 @@ class WalletV3Data(TlbScheme):
     def deserialize(cls, cell_slice: Slice) -> WalletV3Data:
         raise NotImplementedError
 
-
 class WalletV4Data(TlbScheme):
 
     def __init__(
@@ -270,12 +284,10 @@ class WalletV4Data(TlbScheme):
             public_key: bytes,
             wallet_id: int = 698983191,
             seqno: int = 0,
-            plugins: Optional[Cell] = None,
     ) -> None:
         self.public_key = public_key
         self.seqno = seqno
         self.wallet_id = wallet_id
-        self.plugins = plugins
 
     def serialize(self) -> Cell:
         return (
@@ -283,12 +295,40 @@ class WalletV4Data(TlbScheme):
             .store_uint(self.seqno, 32)
             .store_uint(self.wallet_id, 32)
             .store_bytes(self.public_key)
-            .store_dict(self.plugins)
+            .store_bool(False)
             .end_cell()
         )
 
     @classmethod
     def deserialize(cls, cell_slice: Slice) -> WalletV4Data:
+        raise NotImplementedError
+
+
+class WalletV5Data(TlbScheme):
+
+    def __init__(
+            self,
+            public_key: bytes,
+            wallet_id: int = 0,
+            seqno: int = 0,
+    ) -> None:
+        self.public_key = public_key
+        self.seqno = seqno
+        self.wallet_id = wallet_id
+
+    def serialize(self) -> Cell:
+        return (
+            Builder()
+            .store_uint(1, 1)
+            .store_uint(self.seqno, 32)
+            .store_uint(self.wallet_id, 32)
+            .store_bytes(self.public_key)
+            .store_bool(False)
+            .end_cell()
+        )
+
+    @classmethod
+    def deserialize(cls, cell_slice: Slice) -> WalletV5Data:
         raise NotImplementedError
 
 
@@ -304,22 +344,44 @@ class HighloadWalletV2Data(TlbScheme):
         self.wallet_id = wallet_id
         self.last_cleaned = last_cleaned
 
-    @classmethod
-    def old_queries_serializer(cls, src: WalletMessage, dest: Builder) -> None:
-        dest.store_cell(src.serialize())
-
     def serialize(self) -> Cell:
         return (
             begin_cell()
             .store_uint(self.wallet_id, 32)
             .store_uint(self.last_cleaned, 64)
             .store_bytes(self.public_key)
-            .store_dict(
-                HashMap(
-                    key_size=64,
-                    value_serializer=self.old_queries_serializer,
-                ).serialize(),
-            )
+            .store_uint(0, 1)
+            .end_cell()
+        )
+
+    @classmethod
+    def deserialize(cls, cell_slice: Slice) -> HighloadWalletV2Data:
+        raise NotImplementedError
+
+
+class HighloadWalletV3Data(TlbScheme):
+
+    def __init__(
+            self,
+            public_key: bytes,
+            wallet_id: int = 698983191,
+            timeout: int = 60 * 5,
+            last_cleaned: int = 0,
+    ) -> None:
+        self.public_key = public_key
+        self.wallet_id = wallet_id
+        self.timeout = timeout
+        self.last_cleaned = last_cleaned
+
+    def serialize(self) -> Cell:
+        return (
+            begin_cell()
+            .store_bytes(self.public_key)
+            .store_uint(self.wallet_id, 32)
+            .store_uint(self.last_cleaned, 64)
+            .store_uint(0, 1)
+            .store_uint(0, 1)
+            .store_uint(self.timeout, 22)
             .end_cell()
         )
 

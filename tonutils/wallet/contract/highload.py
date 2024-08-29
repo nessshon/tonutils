@@ -7,8 +7,8 @@ from pytoniq_core import (
     Address,
     Builder,
     Cell,
-    HashMap,
     MessageAny,
+    HashMap,
     StateInit,
     WalletMessage,
     begin_cell,
@@ -17,8 +17,7 @@ from pytoniq_core.crypto.signature import sign_message
 
 from ._base import Wallet
 from ...client import Client
-from ...utils import message_to_boc_hex
-from ...wallet.data import HighloadWalletV2Data
+from ...wallet.data import HighloadWalletV2Data, HighloadWalletV3Data
 
 
 class HighloadWalletV2(Wallet):
@@ -56,20 +55,6 @@ class HighloadWalletV2(Wallet):
     ) -> HighloadWalletV2Data:
         return HighloadWalletV2Data(public_key, wallet_id, last_cleaned)
 
-    async def _create_deploy_msg(self) -> MessageAny:
-        """
-        Create the deployment message for the wallet.
-        """
-        body = self.raw_create_transfer_msg(
-            private_key=self.private_key,
-            messages=[],
-        )
-
-        return self._create_external_msg(
-            dest=self.address,
-            state_init=self.state_init,
-            body=body,
-        )
 
     def raw_create_transfer_msg(
             self,
@@ -88,6 +73,7 @@ class HighloadWalletV2(Wallet):
             - offset: The offset for generating the query ID. Defaults to 7200.
         :return: A Cell containing the raw transfer message.
         """
+        assert len(messages) <= 254, 'For highload wallet, maximum messages amount is 254'
 
         wallet_id = kwargs.get("wallet_id", 698983191)
         query_id = kwargs.get("query_id", 0)
@@ -120,39 +106,13 @@ class HighloadWalletV2(Wallet):
             .end_cell()
         )
 
-    async def _raw_transfer(
-            self,
-            messages: Optional[List[WalletMessage]] = None,
-    ) -> str:
-        """
-        Perform a raw transfer operation.
-
-        :param messages: A list of wallet messages. Defaults to None.
-        :return: The hash of the raw transfer message.
-        """
-        if messages is None:
-            messages = []
-
-        assert len(messages) <= 254, 'for highload wallet maximum messages amount is 254'
-
-        body = self.raw_create_transfer_msg(
-            private_key=self.private_key,
-            messages=messages or [],
-        )
-
-        message = self._create_external_msg(dest=self.address, body=body)
-        message_boc_hex, message_hash = message_to_boc_hex(message)
-        await self.client.send_message(message_boc_hex)
-
-        return message_hash
-
     async def transfer(
             self,
             destination: Union[Address, str],
             amount: Union[int, float] = 0,
-            body: Union[Cell, str] = Cell.empty(),
+            body: Optional[Union[Cell, str]] = None,
             state_init: Optional[StateInit] = None,
-            **kwargs
+            **kwargs,
     ) -> str:
         raise NotImplementedError("Not implemented yet, use 'batch_transfer' method instead")
 
@@ -160,9 +120,10 @@ class HighloadWalletV2(Wallet):
             self,
             destination: Union[Address, str],
             nft_address: Union[Address, str],
-            forward_payload: Union[Cell, str] = Cell.empty(),
+            forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
+            **kwargs,
     ) -> str:
         raise NotImplementedError("Not implemented yet, use 'batch_transfer_nft' method instead")
 
@@ -172,9 +133,10 @@ class HighloadWalletV2(Wallet):
             jetton_master_address: Union[Address, str],
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
-            forward_payload: Union[Cell, str] = Cell.empty(),
+            forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
+            **kwargs,
     ) -> str:
         raise NotImplementedError("Not implemented yet, use 'batch_transfer_jetton' method instead")
 
@@ -185,6 +147,7 @@ class HighloadWalletV2(Wallet):
             jetton_decimals: int = 9,
             amount: Union[int, float] = 0.3,
             forward_amount: Union[int, float] = 0.25,
+            **kwargs,
     ) -> str:
         raise NotImplementedError("Not implemented yet, use 'batch_dedust_swap_jetton_to_ton' method instead")
 
@@ -193,6 +156,7 @@ class HighloadWalletV2(Wallet):
             jetton_master_address: Union[Address, str],
             ton_amount: Union[int, float],
             amount: Union[int, float] = 0.25,
+            **kwargs,
     ) -> str:
         raise NotImplementedError("Not implemented yet, use 'batch_dedust_swap_ton_to_jetton' method instead")
 
@@ -204,5 +168,90 @@ class HighloadWalletV2(Wallet):
             jetton_decimals: int = 9,
             amount: Union[int, float] = 0.3,
             forward_amount: Union[int, float] = 0.25,
+            **kwargs,
     ) -> str:
         raise NotImplementedError("Not implemented yet, use 'batch_dedust_swap_jetton_to_jetton' method instead")
+
+
+class HighloadWalletV3(Wallet):
+    """
+    A class representing a highload wallet V3 in the TON blockchain.
+    """
+
+    CODE_HEX = "b5ee9c7241021001000228000114ff00f4a413f4bcf2c80b01020120020d02014803040078d020d74bc00101c060b0915be101d0d3030171b0915be0fa4030f828c705b39130e0d31f018210ae42e5a4ba9d8040d721d74cf82a01ed55fb04e030020120050a02027306070011adce76a2686b85ffc00201200809001aabb6ed44d0810122d721d70b3f0018aa3bed44d08307d721d70b1f0201200b0c001bb9a6eed44d0810162d721d70b15800e5b8bf2eda2edfb21ab09028409b0ed44d0810120d721f404f404d33fd315d1058e1bf82325a15210b99f326df82305aa0015a112b992306dde923033e2923033e25230800df40f6fa19ed021d721d70a00955f037fdb31e09130e259800df40f6fa19cd001d721d70a00937fdb31e0915be270801f6f2d48308d718d121f900ed44d0d3ffd31ff404f404d33fd315d1f82321a15220b98e12336df82324aa00a112b9926d32de58f82301de541675f910f2a106d0d31fd4d307d30cd309d33fd315d15168baf2a2515abaf2a6f8232aa15250bcf2a304f823bbf2a35304800df40f6fa199d024d721d70a00f2649130e20e01fe5309800df40f6fa18e13d05004d718d20001f264c858cf16cf8301cf168e1030c824cf40cf8384095005a1a514cf40e2f800c94039800df41704c8cbff13cb1ff40012f40012cb3f12cb15c9ed54f80f21d0d30001f265d3020171b0925f03e0fa4001d70b01c000f2a5fa4031fa0031f401fa0031fa00318060d721d300010f0020f265d2000193d431d19130e272b1fb00b585bf03"  # noqa
+
+    def __init__(
+            self,
+            client: Client,
+            public_key: bytes,
+            private_key: bytes,
+            wallet_id: int = 698983191,
+            timeout: int = 60 * 5,
+            **kwargs,
+    ) -> None:
+        self.timeout = timeout
+        super().__init__(client, public_key, private_key, wallet_id, **kwargs)
+
+    @classmethod
+    def create_data(
+            cls,
+            public_key: bytes,
+            wallet_id: int = 698983191,
+            timeout: int = 60 * 5,
+    ) -> HighloadWalletV3Data:
+        return HighloadWalletV3Data(public_key, wallet_id, timeout)
+
+    @classmethod
+    def create(
+            cls,
+            client: Client,
+            wallet_id: int = 698983191,
+            timeout: int = 60 * 5,
+            **kwargs,
+    ) -> Tuple[HighloadWalletV3, bytes, bytes, List[str]]:
+        return super().create(client, wallet_id, **kwargs)
+
+    async def _create_deploy_msg(self) -> MessageAny:
+        """
+        Create a deployment message for the wallet.
+        """
+        body = self.raw_create_transfer_msg(
+            private_key=self.private_key,
+            messages=[],
+        )
+
+        return self.create_external_msg(
+            dest=self.address,
+            state_init=self.state_init,
+            body=body,
+        )
+
+    @classmethod
+    def from_mnemonic(
+            cls,
+            client: Client,
+            mnemonic: Union[List[str], str],
+            wallet_id: int = 698983191,
+            timeout: int = 60 * 5,
+            **kwargs,
+    ) -> Tuple[HighloadWalletV3, bytes, bytes, List[str]]:
+        return super().from_mnemonic(client, mnemonic, wallet_id, timeout=timeout, **kwargs)
+
+    async def raw_transfer(
+            self,
+            messages: Optional[List[WalletMessage]] = None,
+            **kwargs,
+    ) -> str:
+        raise NotImplementedError
+
+    def raw_create_transfer_msg(
+            self,
+            private_key: bytes,
+            messages: List[WalletMessage],
+            **kwargs,
+    ) -> Cell:
+        raise NotImplementedError
+
+    @classmethod
+    def pack_actions(cls, messages: List[WalletMessage]) -> Tuple[int, Cell]:
+        raise NotImplementedError
