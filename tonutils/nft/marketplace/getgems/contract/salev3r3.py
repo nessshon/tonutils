@@ -113,7 +113,6 @@ class SaleV3R3(Contract):
             .store_address(owner_address)
             .store_bit(0)
             .store_coins(amount)
-            .store_bit(0)
             .store_uint(DO_SALE_OPCODE, 32)
             .store_ref(state_init.serialize())
             .store_ref(cls.build_sale_body())
