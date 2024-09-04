@@ -7,6 +7,7 @@ from tonutils.wallet import (
     # WalletV4R2,
     # WalletV5R1,
     # HighloadWalletV2,
+    # HighloadWalletV3,
 )
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -32,6 +33,7 @@ async def main() -> None:
     # wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
     # wallet, public_key, private_key, mnemonic = WalletV5R1.from_mnemonic(client, MNEMONIC)
     # wallet, public_key, private_key, mnemonic = HighloadWalletV2.from_mnemonic(client, MNEMONIC)
+    # wallet, public_key, private_key, mnemonic = HighloadWalletV3.from_mnemonic(client, MNEMONIC)
 
     # Deploy the wallet
     tx_hash = await wallet.deploy()

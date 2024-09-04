@@ -7,6 +7,7 @@ from tonutils.wallet import (
     # WalletV4R2,
     # WalletV5R1,
     # HighloadWalletV2,
+    # HighloadWalletV3,
 )
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -29,6 +30,7 @@ def main() -> None:
     # wallet, public_key, private_key, mnemonic = WalletV4R2.create(client)
     # wallet, public_key, private_key, mnemonic = WalletV5R1.create(client)
     # wallet, public_key, private_key, mnemonic = HighloadWalletV2.create(client)
+    # wallet, public_key, private_key, mnemonic = HighloadWalletV3.create(client)
 
     print("Wallet has been successfully created!")
     print(f"Address: {wallet.address.to_str()}")
