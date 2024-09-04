@@ -20,7 +20,10 @@ from pytoniq_core.crypto.signature import sign_message
 from ..data import (
     TransferData,
     TransferNFTData,
-    TransferJettonData, SwapTONToJettonData, SwapJettonToTONData, SwapJettonToJettonData,
+    TransferJettonData,
+    SwapTONToJettonData,
+    SwapJettonToTONData,
+    SwapJettonToJettonData,
 )
 from ..op_codes import *
 from ...client import (
@@ -386,7 +389,7 @@ class Wallet(Contract):
 
         return message_hash
 
-    async def batch_transfer(self, data_list: List[TransferData]) -> str:
+    async def batch_transfer(self, data_list: List[TransferData], **kwargs) -> str:
         """
         Perform a batch transfer operation.
 
@@ -403,7 +406,7 @@ class Wallet(Contract):
             ) for data in data_list
         ]
 
-        message_hash = await self.raw_transfer(messages=messages)
+        message_hash = await self.raw_transfer(messages=messages, **kwargs)
 
         return message_hash
 
@@ -455,7 +458,7 @@ class Wallet(Contract):
 
         return message_hash
 
-    async def batch_nft_transfer(self, data_list: List[TransferNFTData]) -> str:
+    async def batch_nft_transfer(self, data_list: List[TransferNFTData], **kwargs) -> str:
         """
         Perform a batch NFT transfer operation.
 
@@ -475,7 +478,7 @@ class Wallet(Contract):
             ) for data in data_list
         ]
 
-        message_hash = await self.raw_transfer(messages=messages)
+        message_hash = await self.raw_transfer(messages=messages, **kwargs)
 
         return message_hash
 
@@ -539,7 +542,7 @@ class Wallet(Contract):
 
         return message_hash
 
-    async def batch_jetton_transfer(self, data_list: List[TransferJettonData]) -> str:
+    async def batch_jetton_transfer(self, data_list: List[TransferJettonData], **kwargs) -> str:
         """
         Perform a batch jetton transfer operation.
 
@@ -572,7 +575,7 @@ class Wallet(Contract):
                 )
             )
 
-        message_hash = await self.raw_transfer(messages=messages)
+        message_hash = await self.raw_transfer(messages=messages, **kwargs)
 
         return message_hash
 

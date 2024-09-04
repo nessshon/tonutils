@@ -19,6 +19,7 @@ NEW_OWNER_ADDRESS = "UQ..."
 # Address of the NFT collection whose ownership will be changed
 COLLECTION_ADDRESS = "EQ..."
 
+
 async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)

@@ -86,7 +86,7 @@ class Contract:
         :param state_init: The state init data.
         :return: The external message.
         """
-        info = ExternalMsgInfo(src, dest, import_fee)
+        info = ExternalMsgInfo(src=src, dest=dest, import_fee=import_fee)
 
         return MessageAny(info, state_init, body)
 
@@ -130,16 +130,16 @@ class Contract:
             bounce = dest.is_bounceable if dest is not None else False
 
         info = InternalMsgInfo(
-            ihr_disabled,
-            bounce,
-            bounced,
-            src,
-            dest,
-            value,
-            ihr_fee,
-            fwd_fee,
-            created_lt,
-            created_at,
+            ihr_disabled=ihr_disabled,
+            bounce=bounce,
+            bounced=bounced,
+            src=src,
+            dest=dest,
+            value=value,
+            ihr_fee=ihr_fee,
+            fwd_fee=fwd_fee,
+            created_lt=created_lt,
+            created_at=created_at,
         )
 
         if body is None:
