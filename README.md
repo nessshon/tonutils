@@ -182,7 +182,7 @@ development!
 
 **TON** - `EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess`
 
-**USDT** (TRC-20) - `TXuPpjZvqhjM3X7BFnzR6bBarB6svmCpt8`
+**USDT** (TRC-20) - `TGKmm9H3FApFw8xcgRcZDHSku68vozAjo9`
 
 ## Contribution
 
