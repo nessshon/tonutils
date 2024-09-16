@@ -16,6 +16,8 @@ class VanityData(TlbScheme):
             owner_address = Address(owner_address)
 
         self.owner_address = owner_address
+        if salt is None:
+            raise ValueError("Salt is required")
         self.salt = salt
 
     def serialize(self) -> Cell:
