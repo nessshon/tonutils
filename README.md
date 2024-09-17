@@ -89,6 +89,7 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 
 - [Create Wallet](examples/wallet/create_wallet.py)
 - [Deploy Wallet](examples/wallet/deploy_wallet.py)
+- [Get Wallet Balance](examples/wallet/get_balance.py)
 - [Encrypt Comment](examples/wallet/encrypt_comment.py)
 
 - ##### Standard Wallet
@@ -120,6 +121,7 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 - [Burn Jetton](examples/jetton/burn_jetton.py)
 - [Change Admin](examples/jetton/change_admin.py)
 - [Transfer Jetton](examples/jetton/transfer_jetton.py)
+- [Get Jetton Wallet Balance](examples/jetton/get_balance.py)
 
 - ##### DEX DeDust.io
 
