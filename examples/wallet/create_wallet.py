@@ -18,10 +18,7 @@ IS_TESTNET = True
 
 
 def main() -> None:
-    # Initialize the TonapiClient
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
-
-    # Create a WalletV3R1
     wallet, public_key, private_key, mnemonic = WalletV3R1.create(client)
 
     # Uncomment and use the following lines to create different wallet versions:

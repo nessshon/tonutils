@@ -2,7 +2,7 @@ from pytoniq_core import Address
 
 from tonutils.client import TonapiClient
 from tonutils.nft import CollectionStandard
-from tonutils.nft.content import OffchainCommonContent
+from tonutils.nft.content import NFTOffchainContent
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -14,7 +14,7 @@ IS_TESTNET = True
 # Mnemonic phrase used to connect the wallet
 MNEMONIC: list[str] = []
 
-# Address of the owner of the NFT collection
+# Address of the owner of the NFT and the NFT collection contract
 OWNER_ADDRESS = "UQ..."
 COLLECTION_ADDRESS = "EQ..."
 
@@ -32,11 +32,10 @@ async def main() -> None:
     body = CollectionStandard.build_batch_mint_body(
         data=[
             (
-                OffchainCommonContent(
-                    uri=f"{index}.json"
-                ),
+                NFTOffchainContent(uri=f"https://example.com/nft/{index}.json"),
                 Address(OWNER_ADDRESS),
-            ) for index in range(FROM_INDEX, ITEMS_COUNT)
+            )
+            for index in range(FROM_INDEX, ITEMS_COUNT)
         ],
         from_index=FROM_INDEX,
     )

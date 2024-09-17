@@ -26,7 +26,7 @@ from tonutils.wallet import WalletV4R2
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
 API_KEY = ""
 
-# Use True for the test network and False for the main network
+# Set to True for test network, False for main network
 IS_TESTNET = True
 
 # Mnemonic phrase used to connect the wallet

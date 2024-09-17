@@ -1,6 +1,6 @@
 from tonutils.client import TonapiClient
 from tonutils.nft import NFTEditable
-from tonutils.nft.content import OffchainCommonContent
+from tonutils.nft.content import NFTOffchainContent
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -15,8 +15,8 @@ MNEMONIC: list[str] = []
 # Address of the NFT to be edited
 NFT_ADDRESS = "EQ..."
 
-# URI suffix for the updated NFT content
-SUFFIX_URI = "0.json"
+# URI of the NFT metadata
+URI = f"https://example.com/nft/new-content.json"
 
 
 async def main() -> None:
@@ -24,9 +24,7 @@ async def main() -> None:
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = NFTEditable.build_edit_content_body(
-        content=OffchainCommonContent(
-            uri=SUFFIX_URI
-        ),
+        content=NFTOffchainContent(uri=URI),
     )
 
     tx_hash = await wallet.transfer(

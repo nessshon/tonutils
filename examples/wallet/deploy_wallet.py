@@ -21,10 +21,7 @@ MNEMONIC: list[str] = []
 
 
 async def main() -> None:
-    # Initialize the TonapiClient
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
-
-    # Create a WalletV3R1 from the provided mnemonic
     wallet, public_key, private_key, mnemonic = WalletV3R1.from_mnemonic(client, MNEMONIC)
 
     # Uncomment and use the following lines to create different wallet versions from mnemonic:
@@ -35,10 +32,8 @@ async def main() -> None:
     # wallet, public_key, private_key, mnemonic = HighloadWalletV2.from_mnemonic(client, MNEMONIC)
     # wallet, public_key, private_key, mnemonic = HighloadWalletV3.from_mnemonic(client, MNEMONIC)
 
-    # Deploy the wallet
     tx_hash = await wallet.deploy()
 
-    # Print wallet deployment details
     print(f"Wallet deployed successfully!")
     print(f"Wallet address: {wallet.address.to_str()}")
     print(f"Transaction hash: {tx_hash}")

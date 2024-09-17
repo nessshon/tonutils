@@ -2,7 +2,7 @@ from pytoniq_core import Address
 
 from tonutils.client import TonapiClient
 from tonutils.nft import CollectionSoulbound
-from tonutils.nft.content import OffchainCommonContent
+from tonutils.nft.content import NFTOffchainContent
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -33,13 +33,12 @@ async def main() -> None:
     body = CollectionSoulbound.build_batch_mint_body(
         data=[
             (
-                OffchainCommonContent(
-                    uri=f"{index}.json"
-                ),
+                NFTOffchainContent(uri=f"https://example.com/nft/{index}.json"),
                 Address(OWNER_ADDRESS),
                 Address(EDITOR_ADDRESS),
                 None,  # revoked at
-            ) for index in range(FROM_INDEX, ITEMS_COUNT)
+            )
+            for index in range(FROM_INDEX, ITEMS_COUNT)
         ],
         from_index=FROM_INDEX,
     )

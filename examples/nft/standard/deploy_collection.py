@@ -2,7 +2,7 @@ from pytoniq_core import Address
 
 from tonutils.client import TonapiClient
 from tonutils.nft import CollectionStandard
-from tonutils.nft.content import OffchainContent
+from tonutils.nft.content import CollectionOffchainContent
 from tonutils.nft.royalty_params import RoyaltyParams
 from tonutils.wallet import WalletV4R2
 
@@ -20,11 +20,7 @@ OWNER_ADDRESS = "UQ..."
 
 # URI of the collection's metadata
 # https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md#nft-collection-metadata-example-offchain
-URI = "https://example.com/collection.json"
-
-# Prefix URI for the NFTs data
-# https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md#nft-item-metadata-example-offchain
-PREFIX_URI = "https://example.com/nft/"
+URI = "https://example.com/nft/collection.json"
 
 # Royalty parameters: base and factor for calculating the royalty
 ROYALTY_BASE = 1000
@@ -38,10 +34,7 @@ async def main() -> None:
     collection = CollectionStandard(
         owner_address=Address(OWNER_ADDRESS),
         next_item_index=0,
-        content=OffchainContent(
-            uri=URI,
-            prefix_uri=PREFIX_URI,
-        ),
+        content=CollectionOffchainContent(uri=URI),
         royalty_params=RoyaltyParams(
             base=ROYALTY_BASE,
             factor=ROYALTY_FACTOR,

@@ -1,12 +1,12 @@
 from tonutils.client import TonapiClient
 from tonutils.jetton import JettonMaster
-from tonutils.jetton.content import OffchainContent
+from tonutils.jetton.content import JettonOffchainContent
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
 API_KEY = ""
 
-# Use True for the test network and False for the main network
+# Set to True for test network, False for main network
 IS_TESTNET = True
 
 # Mnemonic phrase used to connect the wallet
@@ -26,8 +26,8 @@ async def main() -> None:
 
     jetton_master = JettonMaster(
         client=client,
-        content=OffchainContent(URI),
-        admin_address=wallet.address,
+        content=JettonOffchainContent(URI),
+        admin_address=ADMIN_ADDRESS,
     )
 
     tx_hash = await wallet.transfer(
@@ -43,5 +43,4 @@ async def main() -> None:
 if __name__ == "__main__":
     import asyncio
 
-    # Run the asynchronous main function
     asyncio.run(main())

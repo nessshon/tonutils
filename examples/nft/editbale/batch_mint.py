@@ -2,7 +2,7 @@ from pytoniq_core import Address
 
 from tonutils.client import TonapiClient
 from tonutils.nft import CollectionEditable
-from tonutils.nft.content import OffchainCommonContent
+from tonutils.nft.content import NFTOffchainContent
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -33,19 +33,18 @@ async def main() -> None:
     body = CollectionEditable.build_batch_mint_body(
         data=[
             (
-                OffchainCommonContent(
-                    uri=f"{index}.json"
-                ),
+                NFTOffchainContent(uri=f"https://example.com/nft/{index}.json"),
                 Address(OWNER_ADDRESS),
                 Address(EDITOR_ADDRESS),
-            ) for index in range(FROM_INDEX, ITEMS_COUNT)
+            )
+            for index in range(FROM_INDEX, ITEMS_COUNT)
         ],
         from_index=FROM_INDEX,
     )
 
     tx_hash = await wallet.transfer(
         destination=COLLECTION_ADDRESS,
-        amount=ITEMS_COUNT * 0.035,
+        amount=ITEMS_COUNT * 0.05,
         body=body,
     )
 

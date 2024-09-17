@@ -1,7 +1,7 @@
 from pytoniq_core import Address
 
 from tonutils.client import TonapiClient
-from tonutils.nft.content import OffchainCommonContent
+from tonutils.nft.content import NFTOffchainContent
 from tonutils.nft.contract.standard.collection import CollectionStandard
 from tonutils.nft.contract.standard.nft import NFTStandard
 from tonutils.wallet import WalletV4R2
@@ -22,8 +22,8 @@ COLLECTION_ADDRESS = "EQ..."
 # Index of the NFT to be minted
 NFT_INDEX = 0
 
-# Suffix URI for the NFT metadata will be appended with PREFIX_URI specified in the collection deployment
-SUFFIX_URI = f"{NFT_INDEX}.json"
+# URI of the NFT metadata
+URI = f"https://example.com/nft/{NFT_INDEX}.json"
 
 
 async def main() -> None:
@@ -37,9 +37,7 @@ async def main() -> None:
     body = CollectionStandard.build_mint_body(
         index=NFT_INDEX,
         owner_address=Address(OWNER_ADDRESS),
-        content=OffchainCommonContent(
-            uri=SUFFIX_URI,
-        ),
+        content=NFTOffchainContent(uri=URI),
     )
 
     tx_hash = await wallet.transfer(
@@ -55,5 +53,4 @@ async def main() -> None:
 if __name__ == "__main__":
     import asyncio
 
-    # Run the asynchronous main function
     asyncio.run(main())

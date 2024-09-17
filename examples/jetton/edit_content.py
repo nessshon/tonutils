@@ -1,12 +1,12 @@
 from tonutils.client import TonapiClient
 from tonutils.jetton import JettonMaster
-from tonutils.jetton.content import OffchainContent
+from tonutils.jetton.content import JettonOffchainContent
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
 API_KEY = ""
 
-# Use True for the test network and False for the main network
+# Set to True for test network, False for main network
 IS_TESTNET = True
 
 # Mnemonic phrase used to connect the wallet
@@ -25,7 +25,7 @@ async def main() -> None:
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = JettonMaster.build_edit_content_body(
-        new_content=OffchainContent(NEW_URI),
+        new_content=JettonOffchainContent(NEW_URI),
     )
 
     tx_hash = await wallet.transfer(
