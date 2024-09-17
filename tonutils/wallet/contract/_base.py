@@ -300,15 +300,15 @@ class Wallet(Contract):
         )
 
         if isinstance(client, TonapiClient):
-            seqno = int(method_result["decoded"]["public_key"] or 0)
+            public_key = int(method_result["decoded"]["public_key"] or 0)
         elif isinstance(client, ToncenterClient):
-            seqno = int(method_result["stack"][0]["value"], 16)
+            public_key = int(method_result["stack"][0]["value"], 16)
         elif isinstance(client, LiteClient):
-            seqno = int(method_result[0])
+            public_key = int(method_result[0])
         else:
             raise UnknownClientError(client.__class__.__name__)
 
-        return seqno
+        return public_key
 
     async def raw_transfer(
             self,
@@ -460,8 +460,8 @@ class Wallet(Contract):
                 new_owner_address=destination,
                 forward_payload=forward_payload,
                 forward_amount=to_nano(forward_amount),
-                **kwargs,
             ),
+            **kwargs,
         )
 
         return message_hash
@@ -481,8 +481,9 @@ class Wallet(Contract):
                     new_owner_address=data.destination,
                     forward_payload=data.forward_payload,
                     forward_amount=to_nano(data.forward_amount),
-                    **data.other,
+
                 ),
+                **data.other,
             ) for data in data_list
         ]
 
@@ -544,8 +545,8 @@ class Wallet(Contract):
                 jetton_amount=int(jetton_amount * (10 ** jetton_decimals)),
                 forward_payload=forward_payload,
                 forward_amount=to_nano(forward_amount),
-                **kwargs,
-            )
+            ),
+            **kwargs,
         )
 
         return message_hash
@@ -578,8 +579,8 @@ class Wallet(Contract):
                         jetton_amount=int(data.jetton_amount * (10 ** data.jetton_decimals)),
                         forward_payload=data.forward_payload,
                         forward_amount=to_nano(data.forward_amount),
-                        **data.other,
                     ),
+                    **data.other,
                 )
             )
 
