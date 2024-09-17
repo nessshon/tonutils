@@ -14,7 +14,11 @@ class JettonMasterData(TlbScheme):
             admin_address: Optional[Union[Address, str]] = None,
             content: Optional[Union[JettonOffchainContent, JettonOnchainContent, Cell]] = None,
             jetton_wallet_code: Optional[Union[Cell, str]] = None,
+            total_supply: Optional[int] = 0,
+            mintable: Optional[bool] = True,
     ) -> None:
+        self.total_supply = total_supply
+        self.mintable = mintable
         if isinstance(admin_address, str):
             admin_address = Address(admin_address)
         self.admin_address = admin_address
@@ -30,7 +34,7 @@ class JettonMasterData(TlbScheme):
     def serialize(self) -> Cell:
         return (
             begin_cell()
-            .store_coins(0)
+            .store_coins(self.total_supply)
             .store_address(self.admin_address)
             .store_ref(self.content)
             .store_ref(self.jetton_wallet_code)

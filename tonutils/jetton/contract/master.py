@@ -34,7 +34,72 @@ class JettonMaster(Contract):
             admin_address: Union[Address, str, None],
             jetton_wallet_code: Union[str, Cell] = JettonWallet.CODE_HEX,
     ) -> JettonMasterData:
-        return JettonMasterData(admin_address, content, jetton_wallet_code)
+        return JettonMasterData(
+            admin_address=admin_address,
+            content=content,
+            jetton_wallet_code=jetton_wallet_code,
+        )
+
+    @classmethod
+    async def get_jetton_data(
+            cls,
+            client: Client,
+            jetton_master_address: Union[Address, str],
+    ) -> JettonMasterData:
+        """
+        Get the data of the jetton master.
+
+        :param client: The client to use.
+        :param jetton_master_address: The address of the jetton master.
+        :return: The data of the jetton master.
+        """
+        if isinstance(jetton_master_address, str):
+            jetton_master_address = Address(jetton_master_address)
+
+        if isinstance(client, TonapiClient):
+            method_result = await client.run_get_method(
+                address=jetton_master_address.to_str(),
+                method_name="get_jetton_data",
+            )
+            total_supply = int(method_result["stack"][0]["num"], 16)
+            mintable = bool(int(method_result["stack"][1]["num"], 16))
+            admin_address = Slice.one_from_boc(method_result["stack"][2]["cell"]).load_address()
+            content = Slice.one_from_boc(method_result["stack"][3]["cell"])
+            jetton_wallet_code = Cell.one_from_boc(method_result["stack"][4]["cell"])
+
+        elif isinstance(client, ToncenterClient):
+            method_result = await client.run_get_method(
+                address=jetton_master_address.to_str(),
+                method_name="get_jetton_data",
+            )
+            total_supply = int(method_result["stack"][0]["value"], 16)
+            mintable = bool(method_result["stack"][1]["value"])
+            admin_address = Slice.one_from_boc(method_result["stack"][2]["value"]).load_address()
+            content = Slice.one_from_boc(method_result["stack"][3]["value"])
+            jetton_wallet_code = Cell.one_from_boc(method_result["stack"][4]["value"])
+
+        elif isinstance(client, LiteClient):
+            method_result = await client.run_get_method(
+                address=jetton_master_address.to_str(),
+                method_name="get_jetton_data",
+            )
+            print(method_result)
+            total_supply = int(method_result[0])
+            mintable = bool(method_result[1])
+            admin_address = method_result[2].load_address()
+            content = method_result[3]
+            jetton_wallet_code = method_result[4]
+
+        else:
+            raise UnknownClientError(client.__class__.__name__)
+
+        return JettonMasterData(
+            total_supply=total_supply,
+            mintable=mintable,
+            admin_address=admin_address,
+            content=content,
+            jetton_wallet_code=jetton_wallet_code,
+        )
 
     @classmethod
     async def get_wallet_address(
