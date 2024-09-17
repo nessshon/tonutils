@@ -114,7 +114,8 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 
 #### Jetton Operations
 
-- [Deploy Jetton Master](examples/jetton/deploy_master.py)
+- [Deploy Jetton Master Offchain](examples/jetton/deploy_master.py)
+- [Deploy Jetton Master Onchain](examples/jetton/deploy_master_onchain.py)
 - [Mint Jetton](examples/jetton/mint_jetton.py)
 - [Burn Jetton](examples/jetton/burn_jetton.py)
 - [Change Admin](examples/jetton/change_admin.py)
@@ -128,19 +129,16 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 
 #### NFT Operations
 
-- ##### Standard NFTs
-
-  - [Deploy Collection](examples/nft/standard/deploy_collection.py)
-  - [Mint NFT](examples/nft/standard/mint_nft.py)
-  - [Batch Mint](examples/nft/standard/batch_mint.py)
-  - [Transfer NFT](examples/nft/transfer_nft.py)
+- [Deploy Onchain Collection](examples/nft/deploy_onchain_collection.py)
+- [Mint Onchain NFT](examples/nft/mint_onchain_nft.py)
+- [Transfer NFT](examples/nft/transfer_nft.py)
+- [Return Collection Balance](examples/nft/return_collection_balance.py)
 
 - ##### Editable NFTs
 
   - [Deploy Collection](examples/nft/editbale/deploy_collection.py)
   - [Mint NFT](examples/nft/editbale/mint_nft.py)
   - [Batch Mint](examples/nft/editbale/batch_mint.py)
-  - [Transfer NFT](examples/nft/transfer_nft.py)
   - [Edit NFT Content](examples/nft/editbale/edit_nft_content.py)
   - [Change NFT Editorship](examples/nft/editbale/change_nft_editorship.py)
   - [Edit Collection Content](examples/nft/editbale/edit_collection_content.py)
@@ -153,6 +151,12 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
   - [Batch Mint](examples/nft/soulbound/batch_mint.py)
   - [Revoke NFT](examples/nft/soulbound/revoke_nft.py)
   - [Destroy NFT](examples/nft/soulbound/destroy_nft.py)
+
+- ##### Standard NFTs
+
+  - [Deploy Collection](examples/nft/standard/deploy_collection.py)
+  - [Mint NFT](examples/nft/standard/mint_nft.py)
+  - [Batch Mint](examples/nft/standard/batch_mint.py)
 
 - ##### Marketplace Getgems.io
 
@@ -174,6 +178,10 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
   - [Set Wallet Record](examples/dns/simple_subdomain/set_wallet.py)
   - [Set Storage Record](examples/dns/simple_subdomain/set_storage.py)
   - [Set Next Resolver Record](examples/dns/simple_subdomain/set_next_resolver.py)
+
+#### Vanity Operations
+
+- [Deploy Contract](examples/vanity/deploy_contract.py)
 
 ## Donations
 
