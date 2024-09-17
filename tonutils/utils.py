@@ -1,13 +1,14 @@
 import base64
 import hashlib
 import hmac
+import json
 import os
-from typing import Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 from Cryptodome.Cipher import AES
 from nacl.bindings import crypto_scalarmult
 from nacl.signing import SigningKey
-from pytoniq_core import Address, Cell, MessageAny, begin_cell
+from pytoniq_core import Address, Cell, MessageAny, begin_cell, HashMap
 from pytoniq_core.boc.deserialize import Boc
 
 
@@ -139,3 +140,27 @@ def to_nano(value: Union[int, float], decimals: int = 9) -> int:
         raise ValueError("Value must be a positive integer or float.")
 
     return int(value * (10 ** decimals))
+
+
+def serialize_onchain_dict(data: Dict[str, Any]) -> Cell:
+    """
+    Serializes a dictionary into a cell.
+
+    :param data: The dictionary to serialize.
+    :return: A cell containing the serialized dictionary.
+    """
+    dict_cell = HashMap(256, value_serializer=lambda src, dest: dest.store_ref(src))
+
+    for key, val in data.items():
+        if val is None:
+            continue
+        cell = begin_cell().store_uint(0x00, 8)
+        if isinstance(val, bytes):
+            cell.store_snake_bytes(val)
+        if isinstance(val, (int, str)):
+            cell.store_snake_string(str(val))
+        elif isinstance(val, list):
+            cell.store_snake_string(json.dumps(val))
+        dict_cell.set(key, cell.end_cell(), hash_key=True)
+
+    return dict_cell.serialize()

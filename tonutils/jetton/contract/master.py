@@ -3,7 +3,7 @@ from typing import Union
 from pytoniq_core import Cell, begin_cell, Address, Slice
 
 from .wallet import JettonWallet
-from ..content import OffchainContent
+from ..content import JettonOffchainContent, JettonOnchainContent
 from ..data import JettonMasterData
 from ..op_codes import *
 from ...client import Client, TonapiClient, ToncenterClient, LiteClient
@@ -18,7 +18,7 @@ class JettonMaster(Contract):
     def __init__(
             self,
             client: Client,
-            content: OffchainContent,
+            content: Union[JettonOffchainContent, JettonOnchainContent],
             admin_address: Union[Address, str],
             jetton_wallet_code: Union[str, Cell] = JettonWallet.CODE_HEX,
     ) -> None:
@@ -30,11 +30,11 @@ class JettonMaster(Contract):
     @classmethod
     def create_data(
             cls,
-            content: OffchainContent,
+            content: Union[JettonOffchainContent, JettonOnchainContent],
             admin_address: Union[Address, str, None],
             jetton_wallet_code: Union[str, Cell] = JettonWallet.CODE_HEX,
     ) -> JettonMasterData:
-        return JettonMasterData(content, admin_address, jetton_wallet_code)
+        return JettonMasterData(admin_address, content, jetton_wallet_code)
 
     @classmethod
     async def get_wallet_address(
@@ -116,9 +116,9 @@ class JettonMaster(Contract):
                 .store_coins(jetton_amount)
                 .store_address(None)
                 .store_address(None)
+                .store_bit(0)
                 .store_coins(0)
-                .store_uint(0, 1)
-                .store_uint(0, 2)
+                .store_bit(0)
                 .end_cell()
             )
             .end_cell()
@@ -127,7 +127,7 @@ class JettonMaster(Contract):
     @classmethod
     def build_edit_content_body(
             cls,
-            new_content: OffchainContent,
+            new_content: Union[JettonOffchainContent, JettonOnchainContent],
             query_id: int = 0,
     ) -> Cell:
         """

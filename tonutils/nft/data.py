@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Union
 
 from pytoniq_core import Address, Cell, Slice, TlbScheme, begin_cell
 
-from .content import OffchainContent, OffchainCommonContent
+from .content import (
+    BaseOnchainContent,
+    BaseOffchainContent,
+    CollectionOnchainContent,
+    CollectionOffchainContent,
+)
 from .royalty_params import RoyaltyParams
 
 
@@ -12,16 +17,28 @@ class CollectionData(TlbScheme):
 
     def __init__(
             self,
-            owner_address: Address,
-            next_item_index: int,
-            content: OffchainContent,
-            royalty_params: RoyaltyParams,
-            nft_item_code: Optional[str] = None,
+            owner_address: Optional[Union[Address, str]] = None,
+            next_item_index: Optional[int] = None,
+            content: Optional[Union[CollectionOffchainContent, CollectionOnchainContent, Cell]] = None,
+            royalty_params: Optional[Union[RoyaltyParams, Cell]] = None,
+            nft_item_code: Optional[Union[Cell, str]] = None,
     ) -> None:
-        self.owner_address = owner_address
         self.next_item_index = next_item_index
+
+        if isinstance(owner_address, str):
+            owner_address = Address(owner_address)
+        self.owner_address = owner_address
+
+        if isinstance(content, (CollectionOffchainContent, CollectionOnchainContent)):
+            content = content.serialize()
         self.content = content
-        self.nft_item_code = Cell.one_from_boc(nft_item_code)
+
+        if isinstance(nft_item_code, str):
+            nft_item_code = Cell.one_from_boc(nft_item_code)
+        self.nft_item_code = nft_item_code
+
+        if isinstance(royalty_params, RoyaltyParams):
+            royalty_params = royalty_params.serialize()
         self.royalty_params = royalty_params
 
     def serialize(self) -> Cell:
@@ -29,9 +46,9 @@ class CollectionData(TlbScheme):
             begin_cell()
             .store_address(self.owner_address)
             .store_uint(self.next_item_index, 64)
-            .store_ref(self.content.serialize())
+            .store_ref(self.content)
             .store_ref(self.nft_item_code)
-            .store_ref(self.royalty_params.serialize())
+            .store_ref(self.royalty_params)
             .end_cell()
         )
 
@@ -44,14 +61,23 @@ class NFTData(TlbScheme):
 
     def __init__(
             self,
-            index: int,
-            collection_address: Optional[Address] = None,
-            owner_address: Optional[Address] = None,
-            content: Optional[OffchainCommonContent] = None,
+            index: Optional[int] = None,
+            collection_address: Optional[Union[Address, str]] = None,
+            owner_address: Optional[Union[Address, str]] = None,
+            content: Optional[Union[BaseOnchainContent, BaseOffchainContent, Cell]] = None,
     ) -> None:
         self.index = index
+
+        if isinstance(collection_address, str):
+            collection_address = Address(collection_address)
         self.collection_address = collection_address
+
+        if isinstance(owner_address, str):
+            owner_address = Address(owner_address)
         self.owner_address = owner_address
+
+        if isinstance(content, (BaseOffchainContent, BaseOnchainContent)):
+            content = content.serialize()
         self.content = content
 
     def serialize(self) -> Cell:
@@ -65,7 +91,7 @@ class NFTData(TlbScheme):
             cell = cell.store_address(self.owner_address)
 
         if self.content is not None:
-            cell = cell.store_ref(self.content.serialize())
+            cell = cell.store_ref(self.content)
 
         return cell.end_cell()
 
