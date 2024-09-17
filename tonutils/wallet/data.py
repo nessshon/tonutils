@@ -277,6 +277,7 @@ class WalletV3Data(TlbScheme):
     def deserialize(cls, cell_slice: Slice) -> WalletV3Data:
         raise NotImplementedError
 
+
 class WalletV4Data(TlbScheme):
 
     def __init__(

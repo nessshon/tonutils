@@ -39,7 +39,6 @@ class NFTEditable(NFT):
             content=content,
         )
 
-
     @classmethod
     def build_edit_content_body(
             cls,

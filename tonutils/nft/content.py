@@ -51,7 +51,6 @@ class BaseOnchainContent(TlbScheme):
             .end_cell()
         )
 
-
     @classmethod
     def deserialize(cls, cell_slice: Slice) -> BaseOnchainContent:
         raise NotImplementedError

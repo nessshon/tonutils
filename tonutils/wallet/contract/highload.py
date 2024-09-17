@@ -63,7 +63,6 @@ class HighloadWalletV2(Wallet):
     ) -> HighloadWalletV2Data:
         return HighloadWalletV2Data(public_key, wallet_id, last_cleaned)
 
-
     def raw_create_transfer_msg(
             self,
             private_key: bytes,
