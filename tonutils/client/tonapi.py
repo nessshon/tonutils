@@ -1,4 +1,4 @@
-from typing import Optional, Any, List
+from typing import Any, Dict, List, Optional
 
 from ._base import Client
 
@@ -46,3 +46,13 @@ class TonapiClient(Client):
         method = "v2/blockchain/message"
 
         await self._post(method=method, body={"boc": boc})
+
+    async def _get_account_info(self, address: str) -> Dict[str, Any]:
+        method = f"v2/accounts/{address}"
+
+        return await self._get(method=method)
+
+    async def get_account_balance(self, address: str) -> int:
+        account_info = await self._get_account_info(address)
+
+        return int(account_info["balance"])

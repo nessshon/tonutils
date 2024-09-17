@@ -140,6 +140,24 @@ class Client:
         """
         raise NotImplementedError
 
+    async def _get_account_info(self, address: str) -> Dict[str, Any]:
+        """
+        Retrieve account information from the blockchain.
+
+        :param address: The blockchain account address.
+        :return: A dictionary containing the account information.
+        """
+        raise NotImplementedError
+
+    async def get_account_balance(self, address: str) -> int:
+        """
+        Retrieve the balance of a blockchain account.
+
+        :param address: The blockchain account address.
+        :return: The balance of the account as an integer.
+        """
+        raise NotImplementedError
+
 
 class LiteBalancer:
     """

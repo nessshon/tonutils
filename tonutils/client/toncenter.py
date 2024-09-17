@@ -1,4 +1,4 @@
-from typing import Optional, Any, List
+from typing import Any, Dict, List, Optional
 
 from ._base import Client
 from ..utils import boc_to_base64_string
@@ -53,3 +53,14 @@ class ToncenterClient(Client):
         method = "v3/message"
 
         await self._post(method=method, body={"boc": boc_to_base64_string(boc)})
+
+    async def _get_account_info(self, address: str) -> Dict[str, Any]:
+        method = f"v3/account"
+        params = {"address": address}
+
+        return await self._get(method=method, params=params)
+
+    async def get_account_balance(self, address: str) -> int:
+        account_info = await self._get_account_info(address)
+
+        return int(account_info["balance"])

@@ -73,3 +73,11 @@ class LiteClient(Client):
 
         async with self.client:
             return await self.client.raw_send_message(bytes.fromhex(boc))
+
+    async def get_account_balance(self, address: str) -> int:
+        if not pytoniq_available:
+            raise PytoniqDependencyError()
+
+        async with self.client:
+            state = await self.client.get_account_state(address)
+            return int(state.balance)

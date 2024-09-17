@@ -11,6 +11,14 @@ from pytoniq_core import (
     begin_cell,
 )
 
+from .client import (
+    Client,
+    LiteClient,
+    TonapiClient,
+    ToncenterClient,
+)
+from .exceptions import UnknownClientError
+
 
 class Contract:
     """
@@ -146,3 +154,15 @@ class Contract:
             body = Cell.empty()
 
         return MessageAny(info, state_init, body)
+
+    @classmethod
+    async def get_balance(cls, client: Client, address: Union[Address, str]) -> int:
+        if isinstance(address, Address):
+            address = address.to_str()
+
+        if isinstance(client, (TonapiClient, ToncenterClient, LiteClient)):
+            balance = await client.get_account_balance(address)
+        else:
+            raise UnknownClientError(client.__class__.__name__)
+
+        return balance
