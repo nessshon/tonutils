@@ -79,6 +79,14 @@ class Wallet(Contract):
         self._data = self.create_data(public_key, wallet_id, **kwargs).serialize()
         self._code = Cell.one_from_boc(self.CODE_HEX)
 
+    async def balance(self) -> int:
+        """
+        Retrieve the current balance of the wallet.
+
+        :return: The balance of the wallet as an integer.
+        """
+        return await self.get_balance(self.client, self.address)
+
     @classmethod
     def create_data(cls, *args, **kwargs) -> Any:
         """
