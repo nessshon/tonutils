@@ -389,3 +389,26 @@ class HighloadWalletV3Data(TlbScheme):
     @classmethod
     def deserialize(cls, cell_slice: Slice) -> HighloadWalletV2Data:
         raise NotImplementedError
+
+
+class PreprocessedWalletV2Data(TlbScheme):
+
+    def __init__(
+            self,
+            public_key: bytes,
+            seqno: int = 0,
+    ) -> None:
+        self.public_key = public_key
+        self.seqno = seqno
+
+    def serialize(self) -> Cell:
+        return (
+            begin_cell()
+            .store_bytes(self.public_key)
+            .store_uint(self.seqno, 16)
+            .end_cell()
+        )
+
+    @classmethod
+    def deserialize(cls, cell_slice: Slice) -> PreprocessedWalletV2Data:
+        raise NotImplementedError

@@ -3,6 +3,8 @@ from .contract import (
 
     HighloadWalletV2,
     HighloadWalletV3,
+    PreprocessedWalletV2,
+    PreprocessedWalletV2R1,
     WalletV3R1,
     WalletV3R2,
     WalletV4R1,
@@ -15,6 +17,8 @@ __all__ = [
 
     "HighloadWalletV2",
     "HighloadWalletV3",
+    "PreprocessedWalletV2",
+    "PreprocessedWalletV2R1",
     "WalletV3R1",
     "WalletV3R2",
     "WalletV4R1",
