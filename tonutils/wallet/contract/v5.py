@@ -57,7 +57,7 @@ class WalletV5R1(Wallet):
             wallet_id: int = 0,
             **kwargs,
     ) -> Tuple[WalletV5R1, bytes, bytes, List[str]]:
-        return super().create(client, wallet_id, **kwargs)
+        return super().create(client, wallet_id=wallet_id, **kwargs)
 
     @classmethod
     def from_mnemonic(
@@ -67,7 +67,7 @@ class WalletV5R1(Wallet):
             wallet_id: int = 0,
             **kwargs,
     ) -> Tuple[WalletV5R1, bytes, bytes, List[str]]:
-        return super().from_mnemonic(client, mnemonic, wallet_id, **kwargs)
+        return super().from_mnemonic(client, mnemonic, wallet_id=wallet_id, **kwargs)
 
     @classmethod
     def create_data(cls, public_key: bytes, wallet_id: int = 0, seqno: int = 0) -> WalletV5Data:
@@ -128,35 +128,35 @@ class WalletV5R1(Wallet):
             .end_cell()
         )
 
-    @staticmethod
-    def pack_actions(messages: List[WalletMessage]) -> Cell:
+    @classmethod
+    def pack_actions(cls, messages: List[WalletMessage]) -> Cell:
         """
         Packs a list of wallet messages into a single Cell.
 
         :param messages: A list of WalletMessage instances to pack.
         :return: A Cell containing the packed messages.
         """
-        list_cell = Cell.empty()
+        actions_cell = Cell.empty()
 
         for msg in messages:
-            msg = (
+            action = (
                 begin_cell()
                 .store_uint(ACTION_SEND_MSG_OPCODE, 32)
                 .store_uint(msg.send_mode, 8)
                 .store_ref(msg.message.serialize())
                 .end_cell()
             )
-            list_cell = (
+            actions_cell = (
                 begin_cell()
-                .store_ref(list_cell)
-                .store_cell(msg)
+                .store_ref(actions_cell)
+                .store_cell(action)
                 .end_cell()
             )
 
         return (
             begin_cell()
             .store_uint(1, 1)
-            .store_ref(list_cell)
+            .store_ref(actions_cell)
             .store_uint(0, 1)
             .end_cell()
         )

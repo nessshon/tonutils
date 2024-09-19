@@ -83,7 +83,6 @@ class JettonMaster(Contract):
                 address=jetton_master_address.to_str(),
                 method_name="get_jetton_data",
             )
-            print(method_result)
             total_supply = int(method_result[0])
             mintable = bool(method_result[1])
             admin_address = method_result[2].load_address()

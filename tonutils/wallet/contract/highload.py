@@ -42,7 +42,7 @@ class HighloadWalletV2(Wallet):
             wallet_id: int = 698983191,
             **kwargs,
     ) -> Tuple[HighloadWalletV2, bytes, bytes, List[str]]:
-        return super().create(client, wallet_id, **kwargs)
+        return super().create(client, wallet_id=wallet_id, **kwargs)
 
     @classmethod
     def from_mnemonic(
@@ -52,7 +52,7 @@ class HighloadWalletV2(Wallet):
             wallet_id: int = 698983191,
             **kwargs,
     ) -> Tuple[HighloadWalletV2, bytes, bytes, List[str]]:
-        return super().from_mnemonic(client, mnemonic, wallet_id, **kwargs)
+        return super().from_mnemonic(client, mnemonic, wallet_id=wallet_id, **kwargs)
 
     @classmethod
     def create_data(
@@ -150,7 +150,7 @@ class HighloadWalletV3(Wallet):
             timeout: int = 60 * 5,
             **kwargs,
     ) -> Tuple[HighloadWalletV3, bytes, bytes, List[str]]:
-        return super().create(client, wallet_id, **kwargs)
+        return super().create(client, wallet_id=wallet_id, timeout=timeout, **kwargs)
 
     async def _create_deploy_msg(self) -> MessageAny:
         """
@@ -180,7 +180,7 @@ class HighloadWalletV3(Wallet):
             timeout: int = 60 * 5,
             **kwargs,
     ) -> Tuple[HighloadWalletV3, bytes, bytes, List[str]]:
-        return super().from_mnemonic(client, mnemonic, wallet_id, timeout=timeout, **kwargs)
+        return super().from_mnemonic(client, mnemonic, wallet_id=wallet_id, timeout=timeout, **kwargs)
 
     async def raw_transfer(
             self,

@@ -76,7 +76,7 @@ class Wallet(Contract):
         self.private_key = private_key
         self.wallet_id = wallet_id
 
-        self._data = self.create_data(public_key, wallet_id, **kwargs).serialize()
+        self._data = self.create_data(public_key, wallet_id=wallet_id, **kwargs).serialize()
         self._code = Cell.one_from_boc(self.CODE_HEX)
 
     async def balance(self) -> int:
@@ -213,7 +213,6 @@ class Wallet(Contract):
             cls,
             client: Client,
             mnemonic: Union[List[str], str],
-            wallet_id: int = 698983191,
             **kwargs,
     ) -> Tuple[Any, bytes, bytes, List[str]]:
         """
@@ -221,31 +220,28 @@ class Wallet(Contract):
 
         :param client: The client to interact with the blockchain. Defaults to None.
         :param mnemonic: The mnemonic phrase.
-        :param wallet_id: The wallet ID. Defaults to 698983191.
         :return: A tuple containing the wallet instance, public key, private key, and mnemonic phrase.
         """
         if isinstance(mnemonic, str):
             mnemonic = mnemonic.split(" ")
 
         public_key, private_key = mnemonic_to_private_key(mnemonic)
-        return cls(client, public_key, private_key, wallet_id, **kwargs), public_key, private_key, mnemonic
+        return cls(client, public_key, private_key, **kwargs), public_key, private_key, mnemonic
 
     @classmethod
     def create(
             cls,
             client: Client,
-            wallet_id: int = 698983191,
             **kwargs,
     ) -> Tuple[Any, bytes, bytes, List[str]]:
         """
         Create a new wallet.
 
         :param client: The client to interact with the blockchain. Defaults to None.
-        :param wallet_id: The wallet ID. Defaults to 698983191.
         :return: A tuple containing the wallet instance, public key, private key, and mnemonic phrase.
         """
         mnemonic = mnemonic_new(24)
-        return cls.from_mnemonic(client, mnemonic, wallet_id, **kwargs)
+        return cls.from_mnemonic(client, mnemonic, **kwargs)
 
     async def deploy(self) -> str:
         """
@@ -291,6 +287,9 @@ class Wallet(Contract):
             client: Client,
             address: Union[Address, str],
     ) -> int:
+        """
+        Get the public key of the wallet.
+        """
         if isinstance(address, Address):
             address = address.to_str()
 
@@ -327,18 +326,21 @@ class Wallet(Contract):
         seqno = kwargs.get("seqno", None)
 
         if seqno is None:
-            kwargs["seqno"] = await self.get_seqno(self.client, self.address)
+            try:
+                kwargs["seqno"] = await self.get_seqno(self.client, self.address)
+            except (Exception,):
+                kwargs["seqno"] = seqno = 0
 
         body = self.raw_create_transfer_msg(
             private_key=self.private_key,
             messages=messages or [],
             **kwargs,
         )
-
-        message = self.create_external_msg(dest=self.address, body=body)
+        state_init = self.state_init if seqno == 0 else None
+        message = self.create_external_msg(dest=self.address, body=body, state_init=state_init)
         message_boc_hex, message_hash = message_to_boc_hex(message)
-        await self.client.send_message(message_boc_hex)
 
+        await self.client.send_message(message_boc_hex)
         return message_hash
 
     async def build_encrypted_comment_body(self, text: str, destination: Union[Address, str]) -> Cell:

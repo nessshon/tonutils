@@ -23,7 +23,7 @@ class WalletV4R1(Wallet):
             wallet_id: int = 698983191,
             **kwargs,
     ) -> Tuple[WalletV4R1, bytes, bytes, List[str]]:
-        return super().create(client, wallet_id)
+        return super().create(client, wallet_id=wallet_id)
 
     @classmethod
     def from_mnemonic(
@@ -33,7 +33,7 @@ class WalletV4R1(Wallet):
             wallet_id: int = 698983191,
             **kwargs,
     ) -> Tuple[WalletV4R1, bytes, bytes, List[str]]:
-        return super().from_mnemonic(client, mnemonic, wallet_id)
+        return super().from_mnemonic(client, mnemonic, wallet_id=wallet_id)
 
     @classmethod
     def create_data(cls, public_key: bytes, wallet_id: int = 698983191, seqno: int = 0) -> WalletV4Data:
@@ -67,7 +67,7 @@ class WalletV4R2(Wallet):
             wallet_id: int = 698983191,
             **kwargs,
     ) -> Tuple[WalletV4R2, bytes, bytes, List[str]]:
-        return super().create(client, wallet_id, **kwargs)
+        return super().create(client, wallet_id=wallet_id, **kwargs)
 
     @classmethod
     def from_mnemonic(
@@ -77,7 +77,7 @@ class WalletV4R2(Wallet):
             wallet_id: int = 698983191,
             **kwargs,
     ) -> Tuple[WalletV4R2, bytes, bytes, List[str]]:
-        return super().from_mnemonic(client, mnemonic, wallet_id, **kwargs)
+        return super().from_mnemonic(client, mnemonic, wallet_id=wallet_id, **kwargs)
 
     @classmethod
     def create_data(
