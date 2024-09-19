@@ -24,7 +24,13 @@ from ..data import (
     HighloadWalletV3Data,
 )
 from ..op_codes import *
-from ...client import Client
+from ...client import (
+    Client,
+    LiteClient,
+    TonapiClient,
+    ToncenterClient,
+)
+from ...exceptions import UnknownClientError
 from ...utils import to_nano
 
 
@@ -141,6 +147,85 @@ class HighloadWalletV3(Wallet):
             timeout: int = 60 * 5,
     ) -> HighloadWalletV3Data:
         return HighloadWalletV3Data(public_key, wallet_id, timeout)
+
+    @classmethod
+    async def get_timeout(cls, client: Client, address: Union[Address, str]) -> int:
+        """
+        Get the timeout of the wallet.
+        """
+        if isinstance(address, Address):
+            address = address.to_str()
+
+        method_result = await client.run_get_method(
+            address=address,
+            method_name="get_timeout",
+        )
+
+        if isinstance(client, TonapiClient):
+            timeout = int(method_result["stack"][0]["num"], 16)
+        elif isinstance(client, ToncenterClient):
+            timeout = int(method_result["stack"][0]["value"], 16)
+        elif isinstance(client, LiteClient):
+            timeout = int(method_result[0])
+        else:
+            raise UnknownClientError(client.__class__.__name__)
+
+        return timeout
+
+    @classmethod
+    async def get_processed(
+            cls,
+            client: Client,
+            address: Union[Address, str],
+            query_id: int,
+            need_clean: bool,
+    ) -> bool:
+        """
+        Get is processed of the wallet.
+        """
+        if isinstance(address, Address):
+            address = address.to_str()
+
+        method_result = await client.run_get_method(
+            address=address,
+            method_name="processed?",
+            stack=[query_id, -1 if need_clean else 0],
+        )
+
+        if isinstance(client, TonapiClient):
+            processed = int(method_result["stack"][0]["num"], 16)
+        elif isinstance(client, ToncenterClient):
+            processed = int(method_result["stack"][0]["value"], 16)
+        elif isinstance(client, LiteClient):
+            processed = int(method_result[0])
+        else:
+            raise UnknownClientError(client.__class__.__name__)
+
+        return bool(processed)
+
+    @classmethod
+    async def get_last_cleaned(cls, client: Client, address: Union[Address, str]) -> int:
+        """
+        Get the last cleaned time of the wallet.
+        """
+        if isinstance(address, Address):
+            address = address.to_str()
+
+        method_result = await client.run_get_method(
+            address=address,
+            method_name="get_last_clean_time",
+        )
+
+        if isinstance(client, TonapiClient):
+            get_last_clean_time = int(method_result["stack"][0]["num"], 16)
+        elif isinstance(client, ToncenterClient):
+            get_last_clean_time = int(method_result["stack"][0]["value"], 16)
+        elif isinstance(client, LiteClient):
+            get_last_clean_time = int(method_result[0])
+        else:
+            raise UnknownClientError(client.__class__.__name__)
+
+        return get_last_clean_time
 
     @classmethod
     def create(
