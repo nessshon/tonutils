@@ -14,6 +14,7 @@ from pytoniq_core import (
 from pytoniq_core.crypto.keys import (
     mnemonic_new,
     mnemonic_to_private_key,
+    private_key_to_public_key,
 )
 from pytoniq_core.crypto.signature import sign_message
 
@@ -78,14 +79,6 @@ class Wallet(Contract):
 
         self._data = self.create_data(public_key, wallet_id=wallet_id, **kwargs).serialize()
         self._code = Cell.one_from_boc(self.CODE_HEX)
-
-    async def balance(self) -> int:
-        """
-        Retrieve the current balance of the wallet.
-
-        :return: The balance of the wallet as an integer.
-        """
-        return await self.get_balance(self.client, self.address)
 
     @classmethod
     def create_data(cls, *args, **kwargs) -> Any:
@@ -209,6 +202,23 @@ class Wallet(Contract):
         )
 
     @classmethod
+    def from_private_key(
+            cls,
+            client: Client,
+            private_key: bytes,
+            **kwargs,
+    ) -> Any:
+        """
+        Create a wallet from a private key.
+
+        :param client: The client to interact with the blockchain. Defaults to None.
+        :param private_key: The private key.
+        :return: A wallet instance.
+        """
+        public_key = private_key_to_public_key(private_key)
+        return cls(client, public_key, private_key, **kwargs)
+
+    @classmethod
     def from_mnemonic(
             cls,
             client: Client,
@@ -252,6 +262,14 @@ class Wallet(Contract):
         await self.client.send_message(message_boc_hex)
 
         return message_hash
+
+    async def balance(self) -> int:
+        """
+        Retrieve the current balance of the wallet.
+
+        :return: The balance of the wallet as an integer.
+        """
+        return await self.get_balance(self.client, self.address)
 
     @classmethod
     async def get_seqno(

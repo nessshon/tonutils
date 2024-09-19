@@ -51,13 +51,14 @@ class WalletV5R1(Wallet):
         super().__init__(client, public_key, private_key, wallet_id, **kwargs)
 
     @classmethod
-    def create(
+    def from_private_key(
             cls,
             client: Client,
+            private_key: bytes,
             wallet_id: int = 0,
             **kwargs,
-    ) -> Tuple[WalletV5R1, bytes, bytes, List[str]]:
-        return super().create(client, wallet_id=wallet_id, **kwargs)
+    ) -> WalletV5R1:
+        return super().from_private_key(client, private_key, wallet_id=wallet_id, **kwargs)
 
     @classmethod
     def from_mnemonic(
@@ -68,6 +69,15 @@ class WalletV5R1(Wallet):
             **kwargs,
     ) -> Tuple[WalletV5R1, bytes, bytes, List[str]]:
         return super().from_mnemonic(client, mnemonic, wallet_id=wallet_id, **kwargs)
+
+    @classmethod
+    def create(
+            cls,
+            client: Client,
+            wallet_id: int = 0,
+            **kwargs,
+    ) -> Tuple[WalletV5R1, bytes, bytes, List[str]]:
+        return super().create(client, wallet_id=wallet_id, **kwargs)
 
     @classmethod
     def create_data(cls, public_key: bytes, wallet_id: int = 0, seqno: int = 0) -> WalletV5Data:
