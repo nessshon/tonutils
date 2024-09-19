@@ -113,6 +113,12 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
   - [Swap Jetton to TON](examples/wallet/highload/dex/dedust/swap_jetton_to_ton.py)
   - [Swap Jetton to Jetton](examples/wallet/highload/dex/dedust/swap_jetton_to_jetton.py)
 
+- ##### Preprocessed Wallet
+
+  - [Transfer TON](examples/wallet/preprocessed/transfer_ton.py)
+  - [Transfer NFT](examples/wallet/preprocessed/transfer_nft.py)
+  - [Transfer Jetton](examples/wallet/preprocessed/transfer_jetton.py)
+
 #### Jetton Operations
 
 - [Deploy Jetton Master Offchain](examples/jetton/deploy_master.py)
