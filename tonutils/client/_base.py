@@ -5,6 +5,7 @@ from typing import Any, Optional, List, Dict
 
 import aiohttp
 
+from ..account import RawAccount
 from ..exceptions import PytoniqDependencyError
 
 
@@ -140,9 +141,9 @@ class Client:
         """
         raise NotImplementedError
 
-    async def _get_account_info(self, address: str) -> Dict[str, Any]:
+    async def get_raw_account(self, address: str) -> RawAccount:
         """
-        Retrieve account information from the blockchain.
+        Retrieve raw account information from the blockchain.
 
         :param address: The blockchain account address.
         :return: A dictionary containing the account information.

@@ -11,6 +11,7 @@ from pytoniq_core import (
     begin_cell,
 )
 
+from .account import RawAccount
 from .client import (
     Client,
     LiteClient,
@@ -64,6 +65,21 @@ class Contract:
             .end_cell()
             .to_slice()
         )
+
+    @classmethod
+    async def get_raw_account(
+            cls,
+            client: Client,
+            address: Union[Address, str],
+    ) -> RawAccount:
+        """
+        Fetch the raw account data from the blockchain for the given address.
+        """
+        if isinstance(address, Address):
+            address = address.to_str()
+
+        raw_account = await client.get_raw_account(address)
+        return raw_account
 
     @classmethod
     def create_data(cls, *args, **kwargs) -> Any:
@@ -157,6 +173,9 @@ class Contract:
 
     @classmethod
     async def get_balance(cls, client: Client, address: Union[Address, str]) -> int:
+        """
+        Retrieve the current balance of the contract.
+        """
         if isinstance(address, Address):
             address = address.to_str()
 

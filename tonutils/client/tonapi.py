@@ -1,6 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
+
+from pytoniq_core import Cell
 
 from ._base import Client
+from ..account import AccountStatus, RawAccount
 
 
 class TonapiClient(Client):
@@ -47,12 +50,23 @@ class TonapiClient(Client):
 
         await self._post(method=method, body={"boc": boc})
 
-    async def _get_account_info(self, address: str) -> Dict[str, Any]:
-        method = f"v2/accounts/{address}"
+    async def get_raw_account(self, address: str) -> RawAccount:
+        method = f"v2/blockchain/accounts/{address}"
+        result = await self._get(method=method)
 
-        return await self._get(method=method)
+        code = Cell.one_from_boc(result["code"])
+        data = Cell.one_from_boc(result["data"])
+
+        return RawAccount(
+            balance=int(result["balance"]),
+            code=code,
+            data=data,
+            status=AccountStatus(result["status"]),
+            last_transaction_lt=int(result["last_transaction_lt"]),
+            last_transaction_hash=result["last_transaction_hash"],
+        )
 
     async def get_account_balance(self, address: str) -> int:
-        account_info = await self._get_account_info(address)
+        raw_account = await self.get_raw_account(address)
 
-        return int(account_info["balance"])
+        return raw_account.balance

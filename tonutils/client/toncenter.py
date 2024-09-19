@@ -1,6 +1,10 @@
-from typing import Any, Dict, List, Optional
+import base64
+from typing import Any, List, Optional
+
+from pytoniq_core import Cell
 
 from ._base import Client
+from ..account import AccountStatus, RawAccount
 from ..utils import boc_to_base64_string
 
 
@@ -54,13 +58,24 @@ class ToncenterClient(Client):
 
         await self._post(method=method, body={"boc": boc_to_base64_string(boc)})
 
-    async def _get_account_info(self, address: str) -> Dict[str, Any]:
+    async def get_raw_account(self, address: str) -> RawAccount:
         method = f"v3/account"
         params = {"address": address}
+        result = await self._get(method=method, params=params)
 
-        return await self._get(method=method, params=params)
+        code = Cell.one_from_boc(result["code"])
+        data = Cell.one_from_boc(result["data"])
+
+        return RawAccount(
+            balance=int(result["balance"]),
+            code=code,
+            data=data,
+            status=AccountStatus(result["status"]),
+            last_transaction_lt=int(result["last_transaction_lt"]),
+            last_transaction_hash=base64.b64decode(result["last_transaction_hash"]).hex(),
+        )
 
     async def get_account_balance(self, address: str) -> int:
-        account_info = await self._get_account_info(address)
+        raw_account = await self.get_raw_account(address)
 
-        return int(account_info["balance"])
+        return raw_account.balance

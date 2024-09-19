@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional, Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from pytoniq_core import Address, SimpleAccount
+
+from ..account import AccountStatus, RawAccount
 from ..exceptions import PytoniqDependencyError
 
 try:
@@ -74,10 +77,33 @@ class LiteClient(Client):
         async with self.client:
             return await self.client.raw_send_message(bytes.fromhex(boc))
 
-    async def get_account_balance(self, address: str) -> int:
+    async def get_raw_account(self, address: str) -> RawAccount:
         if not pytoniq_available:
             raise PytoniqDependencyError()
 
         async with self.client:
-            state = await self.client.get_account_state(address)
-            return int(state.balance)
+            address = Address(address)
+            account, shard_account = await self.client.raw_get_account_state(address)
+            simple_account = SimpleAccount.from_raw(account, address)
+
+        status = (
+            "uninit"
+            if simple_account.state.type_ == "uninitialized" else
+            simple_account.state.type_
+        )
+
+        return RawAccount(
+            balance=int(simple_account.balance),
+            code=simple_account.state.state_init.code,
+            data=simple_account.state.state_init.data,
+            status=AccountStatus(status),
+            last_transaction_lt=shard_account.last_trans_lt,
+            last_transaction_hash=shard_account.last_trans_hash.hex(),
+        )
+
+    async def get_account_balance(self, address: str) -> int:
+        if not pytoniq_available:
+            raise PytoniqDependencyError()
+
+        raw_account = await self.get_raw_account(address)
+        return raw_account.balance
