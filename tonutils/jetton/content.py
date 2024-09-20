@@ -60,3 +60,20 @@ class JettonOnchainContent(TlbScheme):
     @classmethod
     def deserialize(cls, sell_slice: Slice) -> JettonOnchainContent:
         raise NotImplementedError
+
+
+class JettonStablecoinContent(TlbScheme):
+
+    def __init__(self, uri: str) -> None:
+        self.uri = uri
+
+    def serialize(self) -> Cell:
+        return (
+            begin_cell()
+            .store_snake_string(self.uri)
+            .end_cell()
+        )
+
+    @classmethod
+    def deserialize(cls, sell_slice: Slice) -> JettonStablecoinContent:
+        raise NotImplementedError
