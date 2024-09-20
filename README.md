@@ -91,6 +91,7 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 - [Deploy Wallet](examples/wallet/deploy_wallet.py)
 - [Get Wallet Balance](examples/wallet/get_balance.py)
 - [Encrypt Comment](examples/wallet/encrypt_comment.py)
+- [Gasless Transaction (Wallet v5 only)](examples/wallet/gasless_transaction.py)
 
 - ##### Standard Wallet
 
@@ -121,13 +122,25 @@ client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 
 #### Jetton Operations
 
-- [Deploy Jetton Master Offchain](examples/jetton/deploy_master.py)
-- [Deploy Jetton Master Onchain](examples/jetton/deploy_master_onchain.py)
-- [Mint Jetton](examples/jetton/mint_jetton.py)
-- [Burn Jetton](examples/jetton/burn_jetton.py)
-- [Change Admin](examples/jetton/change_admin.py)
 - [Transfer Jetton](examples/jetton/transfer_jetton.py)
 - [Get Jetton Wallet Balance](examples/jetton/get_balance.py)
+
+- ##### Standard Jetton
+  - [Deploy Jetton Master Offchain](examples/jetton/standard/deploy_master.py)
+  - [Deploy Jetton Master Onchain](examples/jetton/standard/deploy_master_onchain.py)
+  - [Mint Jetton](examples/jetton/standard/mint_jetton.py)
+  - [Burn Jetton](examples/jetton/standard/burn_jetton.py)
+  - [Change Admin](examples/jetton/standard/change_admin.py)
+  - [Change Content](examples/jetton/standard/change_content.py)
+
+- ##### Stablecoin Jetton (by Notcoin)
+  - [Deploy Jetton Master](examples/jetton/stablecoin/deploy_master.py)
+  - [Upgrade Contract](examples/jetton/stablecoin/upgrade_contract.py)
+  - [Mint Jetton](examples/jetton/stablecoin/mint_jetton.py)
+  - [Burn Jetton](examples/jetton/stablecoin/burn_jetton.py)
+  - [Change Admin](examples/jetton/stablecoin/change_admin.py)
+  - [Drop Admin](examples/jetton/stablecoin/drop_admin.py)
+  - [Change Content](examples/jetton/stablecoin/change_content.py)
 
 - ##### DEX DeDust.io
 
