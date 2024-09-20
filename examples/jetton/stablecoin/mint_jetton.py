@@ -29,7 +29,7 @@ async def main() -> None:
 
     tx_hash = await wallet.transfer(
         destination=JETTON_MASTER_ADDRESS,
-        amount=0.05,
+        amount=0.1,
         body=body,
     )
 
