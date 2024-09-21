@@ -139,7 +139,7 @@ def to_nano(value: Union[int, float], decimals: int = 9) -> int:
     if not isinstance(value, (int, float)):
         raise ValueError("Value must be a positive integer or float.")
 
-    return int(value * (10 ** decimals))
+    return round(value * (10 ** decimals))
 
 
 def serialize_onchain_dict(data: Dict[str, Any]) -> Cell:
@@ -157,7 +157,7 @@ def serialize_onchain_dict(data: Dict[str, Any]) -> Cell:
         cell = begin_cell().store_uint(0x00, 8)
         if isinstance(val, bytes):
             cell.store_snake_bytes(val)
-        if isinstance(val, (int, str)):
+        elif isinstance(val, (int, str)):
             cell.store_snake_string(str(val))
         elif isinstance(val, list):
             cell.store_snake_string(json.dumps(val))
