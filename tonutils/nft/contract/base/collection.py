@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import Union
 
-from pytoniq_core import Address, Slice, Cell, begin_cell
+from pytoniq_core import Address, Slice
 
-from ...op_codes import *
 from ...royalty_params import RoyaltyParams
 from ....client import Client, TonapiClient, ToncenterClient, LiteClient
 from ....contract import Contract
@@ -60,18 +59,3 @@ class Collection(Contract):
             raise UnknownClientError(client.__class__.__name__)
 
         return RoyaltyParams(base, factor, royalty_address)
-
-    @classmethod
-    def build_return_balance(cls, query_id: int = 0) -> Cell:
-        """
-        Builds the body of the return balance transaction.
-
-        :param query_id: The query ID. Defaults to 0.
-        :return: The cell representing the body of the return balance transaction.
-        """
-        return (
-            begin_cell()
-            .store_uint(RETURN_COLLECTION_BALANCE_OPCODE, 32)
-            .store_uint(query_id, 64)
-            .end_cell()
-        )

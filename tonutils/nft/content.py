@@ -27,11 +27,44 @@ class BaseOffchainContent(TlbScheme):
 
 class CollectionOffchainContent(BaseOffchainContent):
 
+    def __init__(self, uri: str, prefix_uri: str) -> None:
+        super().__init__(uri)
+        self.prefix_uri = prefix_uri
+
+    def serialize(self) -> Cell:
+        common_content_cell = (
+            begin_cell()
+            .store_snake_string(self.prefix_uri)
+            .end_cell()
+        )
+        return (
+            begin_cell()
+            .store_ref(super().serialize())
+            .store_ref(common_content_cell)
+            .end_cell()
+        )
+
+
+class NFTOffchainContent(BaseOffchainContent):
+
+    def __init__(self, suffix_uri: str) -> None:
+        super().__init__(suffix_uri)
+
+    def serialize(self) -> Cell:
+        return (
+            begin_cell()
+            .store_snake_string(self.uri)
+            .end_cell()
+        )
+
+
+class CollectionModifiedOffchainContent(BaseOffchainContent):
+
     def __init__(self, uri: str) -> None:
         super().__init__(uri)
 
 
-class NFTOffchainContent(BaseOffchainContent):
+class NFTModifiedOffchainContent(BaseOffchainContent):
 
     def __init__(self, uri: str) -> None:
         super().__init__(uri)
@@ -56,7 +89,7 @@ class BaseOnchainContent(TlbScheme):
         raise NotImplementedError
 
 
-class CollectionOnchainContent(BaseOnchainContent):
+class CollectionModifiedOnchainContent(BaseOnchainContent):
 
     def __init__(
             self,
@@ -81,7 +114,7 @@ class CollectionOnchainContent(BaseOnchainContent):
         )
 
 
-class NFTOnchainContent(BaseOnchainContent):
+class NFTModifiedOnchainContent(BaseOnchainContent):
 
     def __init__(
             self,

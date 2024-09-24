@@ -4,12 +4,7 @@ from typing import Optional, Union
 
 from pytoniq_core import Address, Cell, Slice, TlbScheme, begin_cell
 
-from .content import (
-    BaseOnchainContent,
-    BaseOffchainContent,
-    CollectionOnchainContent,
-    CollectionOffchainContent,
-)
+from .content import BaseOnchainContent, BaseOffchainContent
 from .royalty_params import RoyaltyParams
 
 
@@ -19,7 +14,7 @@ class CollectionData(TlbScheme):
             self,
             owner_address: Optional[Union[Address, str]] = None,
             next_item_index: Optional[int] = None,
-            content: Optional[Union[CollectionOffchainContent, CollectionOnchainContent, Cell]] = None,
+            content: Optional[Union[BaseOnchainContent, BaseOffchainContent, Cell]] = None,
             royalty_params: Optional[Union[RoyaltyParams, Cell]] = None,
             nft_item_code: Optional[Union[Cell, str]] = None,
     ) -> None:
@@ -29,7 +24,7 @@ class CollectionData(TlbScheme):
             owner_address = Address(owner_address)
         self.owner_address = owner_address
 
-        if isinstance(content, (CollectionOffchainContent, CollectionOnchainContent)):
+        if isinstance(content, (BaseOnchainContent, BaseOffchainContent)):
             content = content.serialize()
         self.content = content
 

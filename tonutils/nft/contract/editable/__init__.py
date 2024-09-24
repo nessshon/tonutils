@@ -1,7 +1,9 @@
-from .collection import CollectionEditable
-from .nft import NFTEditable
+from .collection import CollectionEditable, CollectionEditableModified
+from .nft import NFTEditable, NFTEditableModified
 
 __all__ = [
     "CollectionEditable",
+    "CollectionEditableModified",
     "NFTEditable",
+    "NFTEditableModified",
 ]
