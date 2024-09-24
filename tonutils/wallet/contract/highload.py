@@ -26,7 +26,7 @@ from ..data import (
 from ..op_codes import *
 from ...client import (
     Client,
-    LiteClient,
+    LiteserverClient,
     TonapiClient,
     ToncenterClient,
 )
@@ -175,7 +175,7 @@ class HighloadWalletV3(Wallet):
             timeout = int(method_result["stack"][0]["num"], 16)
         elif isinstance(client, ToncenterClient):
             timeout = int(method_result["stack"][0]["value"], 16)
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             timeout = int(method_result[0])
         else:
             raise UnknownClientError(client.__class__.__name__)
@@ -206,7 +206,7 @@ class HighloadWalletV3(Wallet):
             processed = int(method_result["stack"][0]["num"], 16)
         elif isinstance(client, ToncenterClient):
             processed = int(method_result["stack"][0]["value"], 16)
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             processed = int(method_result[0])
         else:
             raise UnknownClientError(client.__class__.__name__)
@@ -230,7 +230,7 @@ class HighloadWalletV3(Wallet):
             get_last_clean_time = int(method_result["stack"][0]["num"], 16)
         elif isinstance(client, ToncenterClient):
             get_last_clean_time = int(method_result["stack"][0]["value"], 16)
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             get_last_clean_time = int(method_result[0])
         else:
             raise UnknownClientError(client.__class__.__name__)

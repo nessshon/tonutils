@@ -29,7 +29,7 @@ from ..data import (
 from ..op_codes import *
 from ...client import (
     Client,
-    LiteClient,
+    LiteserverClient,
     TonapiClient,
     ToncenterClient,
 )
@@ -292,7 +292,7 @@ class Wallet(Contract):
             seqno = int(method_result["decoded"]["state"] or 0)
         elif isinstance(client, ToncenterClient):
             seqno = int(method_result["stack"][0]["value"], 16)
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             seqno = int(method_result[0])
         else:
             raise UnknownClientError(client.__class__.__name__)
@@ -320,7 +320,7 @@ class Wallet(Contract):
             public_key = int(method_result["decoded"]["public_key"] or 0)
         elif isinstance(client, ToncenterClient):
             public_key = int(method_result["stack"][0]["value"], 16)
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             public_key = int(method_result[0])
         else:
             raise UnknownClientError(client.__class__.__name__)

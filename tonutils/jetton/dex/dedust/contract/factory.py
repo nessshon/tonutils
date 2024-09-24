@@ -6,7 +6,12 @@ from .asset import Asset
 from .pool import PoolType, Pool
 from .vault import VaultJetton, VaultNative
 from ..op_codes import *
-from .....client import Client, TonapiClient, ToncenterClient, LiteClient
+from .....client import (
+    Client,
+    TonapiClient,
+    ToncenterClient,
+    LiteserverClient,
+)
 from .....exceptions import UnknownClientError
 from .....utils import boc_to_base64_string
 
@@ -50,7 +55,7 @@ class Factory:
                 stack=[boc_to_base64_string(asset.to_boc())],
             )
             address = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             method_result = await client.run_get_method(
                 address=cls.ADDRESS,
                 method_name="get_vault_address",
@@ -101,7 +106,7 @@ class Factory:
                 ]
             )
             address = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             method_result = await client.run_get_method(
                 address=cls.ADDRESS,
                 method_name="get_pool_address",

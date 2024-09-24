@@ -8,7 +8,7 @@ from ...content import JettonOffchainContent, JettonOnchainContent
 from ...data import JettonMasterData
 from ....client import (
     Client,
-    LiteClient,
+    LiteserverClient,
     TonapiClient,
     ToncenterClient,
 )
@@ -83,7 +83,7 @@ class JettonMaster(Contract):
             content = Slice.one_from_boc(method_result["stack"][3]["value"])
             jetton_wallet_code = Cell.one_from_boc(method_result["stack"][4]["value"])
 
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             method_result = await client.run_get_method(
                 address=jetton_master_address.to_str(),
                 method_name="get_jetton_data",
@@ -142,7 +142,7 @@ class JettonMaster(Contract):
             )
             result = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
 
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             method_result = await client.run_get_method(
                 address=jetton_master_address.to_str(),
                 method_name="get_wallet_address",

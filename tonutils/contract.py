@@ -14,7 +14,7 @@ from pytoniq_core import (
 from .account import RawAccount
 from .client import (
     Client,
-    LiteClient,
+    LiteserverClient,
     TonapiClient,
     ToncenterClient,
 )
@@ -179,7 +179,7 @@ class Contract:
         if isinstance(address, Address):
             address = address.to_str()
 
-        if isinstance(client, (TonapiClient, ToncenterClient, LiteClient)):
+        if isinstance(client, (TonapiClient, ToncenterClient, LiteserverClient)):
             balance = await client.get_account_balance(address)
         else:
             raise UnknownClientError(client.__class__.__name__)

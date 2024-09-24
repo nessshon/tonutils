@@ -6,7 +6,7 @@ from pytoniq_core import Address, Cell, Slice, begin_cell
 
 from ...data import NFTData
 from ...op_codes import *
-from ....client import Client, TonapiClient, ToncenterClient, LiteClient
+from ....client import Client, TonapiClient, ToncenterClient, LiteserverClient
 from ....contract import Contract
 from ....exceptions import UnknownClientError
 
@@ -42,7 +42,7 @@ class NFT(Contract):
             owner_address = Slice.one_from_boc(method_result["stack"][3]["value"]).load_address()
             content = Slice.one_from_boc(method_result["stack"][4]["value"]).load_snake_string()
 
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             method_result = await client.run_get_method(
                 address=nft_address.to_str(),
                 method_name="get_nft_data",

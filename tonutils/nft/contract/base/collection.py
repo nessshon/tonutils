@@ -5,7 +5,7 @@ from typing import Union
 from pytoniq_core import Address, Slice
 
 from ...royalty_params import RoyaltyParams
-from ....client import Client, TonapiClient, ToncenterClient, LiteClient
+from ....client import Client, TonapiClient, ToncenterClient, LiteserverClient
 from ....contract import Contract
 from ....exceptions import UnknownClientError
 
@@ -46,7 +46,7 @@ class Collection(Contract):
             factor = int(method_result["stack"][1]["value"], 16)
             royalty_address = Slice.one_from_boc(method_result["stack"][2]["value"]).load_address()
 
-        elif isinstance(client, LiteClient):
+        elif isinstance(client, LiteserverClient):
             method_result = await client.run_get_method(
                 address=collection_address.to_str(),
                 method_name="royalty_params",

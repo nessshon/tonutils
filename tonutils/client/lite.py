@@ -19,9 +19,9 @@ except ImportError:
 from ._base import Client
 
 
-class LiteClient(Client):
+class LiteserverClient(Client):
     """
-    LiteClient class for interacting with the TON blockchain using LiteBalancer.
+    LiteClient class for interacting with the TON blockchain using LiteserverClient.
 
     This class provides methods to run get methods and send messages to the blockchain,
     with options for configuration and network selection.
