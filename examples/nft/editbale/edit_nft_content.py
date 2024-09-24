@@ -15,8 +15,8 @@ MNEMONIC: list[str] = []
 # Address of the NFT to be edited
 NFT_ADDRESS = "EQ..."
 
-# URI of the NFT metadata
-URI = f"https://example.com/nft/new-content.json"
+# Suffix URI of the NFT metadata
+SUFFIX_URI = f"new-content.json"
 
 
 async def main() -> None:
@@ -24,7 +24,7 @@ async def main() -> None:
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = NFTEditable.build_edit_content_body(
-        content=NFTOffchainContent(uri=URI),
+        content=NFTOffchainContent(suffix_uri=SUFFIX_URI),
     )
 
     tx_hash = await wallet.transfer(

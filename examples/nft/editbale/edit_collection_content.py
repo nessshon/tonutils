@@ -21,7 +21,8 @@ COLLECTION_ADDRESS = "EQ..."
 
 # URI of the collection's metadata
 # https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md#nft-collection-metadata-example-offchain
-URI = "https://example.com/collection.json"
+URI = "https://example.com/nft/collection.json"
+PREFIX_URI = "https://example.com/nft/"
 
 # Royalty parameters: base and factor for calculating the royalty
 ROYALTY_BASE = 1000
@@ -33,7 +34,7 @@ async def main() -> None:
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = CollectionEditable.build_edit_content_body(
-        content=CollectionOffchainContent(uri=URI),
+        content=CollectionOffchainContent(uri=URI, prefix_uri=PREFIX_URI),
         royalty_params=RoyaltyParams(
             base=ROYALTY_BASE,
             factor=ROYALTY_FACTOR,

@@ -1,8 +1,8 @@
 from pytoniq_core import Address
 
 from tonutils.client import TonapiClient
-from tonutils.nft import CollectionStandard
-from tonutils.nft.content import CollectionOnchainContent
+from tonutils.nft import CollectionEditableModified
+from tonutils.nft.content import CollectionModifiedOnchainContent
 from tonutils.nft.royalty_params import RoyaltyParams
 from tonutils.wallet import WalletV4R2
 
@@ -27,10 +27,10 @@ async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    collection = CollectionStandard(
+    collection = CollectionEditableModified(
         owner_address=Address(OWNER_ADDRESS),
         next_item_index=0,
-        content=CollectionOnchainContent(
+        content=CollectionModifiedOnchainContent(
             name="Welcome to TON",
             description="Each digital artwork represents a memorable token",
             image_data=b'image data',

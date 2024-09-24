@@ -33,7 +33,7 @@ async def main() -> None:
     body = CollectionSoulbound.build_batch_mint_body(
         data=[
             (
-                NFTOffchainContent(uri=f"https://example.com/nft/{index}.json"),
+                NFTOffchainContent(suffix_uri=f"{index}.json"),
                 Address(OWNER_ADDRESS),
                 Address(EDITOR_ADDRESS),
                 None,  # revoked at
@@ -42,6 +42,26 @@ async def main() -> None:
         ],
         from_index=FROM_INDEX,
     )
+
+    """ If you deployed the collection using the Modified variant, replace the above code with:
+        Replace `CollectionSoulbound` with `CollectionSoulboundModified`, 
+        and use `NFTModifiedOffchainContent` to specify the full `URI` for each NFT metadata.
+
+    Example:
+
+    body = CollectionSoulboundModified.build_batch_mint_body(
+        data=[
+            (
+                NFTModifiedOffchainContent(uri=URI),  # URI example: `https://example.com/nft/{index}.json`.
+                Address(OWNER_ADDRESS),
+                Address(EDITOR_ADDRESS),
+                None,  # revoked at
+            )
+            for index in range(FROM_INDEX, ITEMS_COUNT)
+        ],
+        from_index=FROM_INDEX,
+    )
+    """
 
     tx_hash = await wallet.transfer(
         destination=COLLECTION_ADDRESS,

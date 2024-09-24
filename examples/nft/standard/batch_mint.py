@@ -32,13 +32,31 @@ async def main() -> None:
     body = CollectionStandard.build_batch_mint_body(
         data=[
             (
-                NFTOffchainContent(uri=f"https://example.com/nft/{index}.json"),
+                NFTOffchainContent(suffix_uri=f"{index}.json"),
                 Address(OWNER_ADDRESS),
             )
             for index in range(FROM_INDEX, ITEMS_COUNT)
         ],
         from_index=FROM_INDEX,
     )
+
+    """ If you deployed the collection using the Modified variant, replace the above code with:
+        Replace `CollectionStandard` with `CollectionStandardModified`, 
+        and use `NFTModifiedOffchainContent` to specify the full `URI` for each NFT metadata.
+
+    Example:
+
+    body = CollectionStandardModified.build_batch_mint_body(
+        data=[
+            (
+                NFTModifiedOffchainContent(uri=URI),  # URI example: `https://example.com/nft/{index}.json`.
+                Address(OWNER_ADDRESS),
+            )
+            for index in range(FROM_INDEX, ITEMS_COUNT)
+        ],
+        from_index=FROM_INDEX,
+    )
+    """
 
     tx_hash = await wallet.transfer(
         destination=COLLECTION_ADDRESS,

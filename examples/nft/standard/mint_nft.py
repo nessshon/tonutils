@@ -22,8 +22,8 @@ COLLECTION_ADDRESS = "EQ..."
 # Index of the NFT to be minted
 NFT_INDEX = 0
 
-# URI of the NFT metadata
-URI = f"https://example.com/nft/{NFT_INDEX}.json"
+# Suffix URI of the NFT metadata
+SUFFIX_URI = f"{NFT_INDEX}.json"
 
 
 async def main() -> None:
@@ -37,8 +37,25 @@ async def main() -> None:
     body = CollectionStandard.build_mint_body(
         index=NFT_INDEX,
         owner_address=Address(OWNER_ADDRESS),
-        content=NFTOffchainContent(uri=URI),
+        content=NFTOffchainContent(suffix_uri=SUFFIX_URI),
     )
+
+    """ If you deployed the collection using the Modified variant, replace the above code with:
+        Replace `CollectionStandard` and `NFTStandard` with their modified versions,
+        and use `NFTModifiedOffchainContent` to specify the full `URI` for the NFT metadata.
+
+    Example:
+
+    nft = NFTStandardModified(
+        index=NFT_INDEX,
+        collection_address=Address(COLLECTION_ADDRESS),
+    )
+    body = CollectionStandardModified.build_mint_body(
+        index=NFT_INDEX,
+        owner_address=Address(OWNER_ADDRESS),
+        content=NFTModifiedOffchainContent(uri=URI),  # URI example: `https://example.com/nft/0.json`.
+    )
+    """
 
     tx_hash = await wallet.transfer(
         destination=COLLECTION_ADDRESS,

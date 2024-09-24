@@ -1,5 +1,5 @@
 from tonutils.client import TonapiClient
-from tonutils.nft import CollectionEditable
+from tonutils.nft import CollectionEditableModified
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -19,7 +19,7 @@ async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = CollectionEditable.build_return_balance()
+    body = CollectionEditableModified.build_return_balance()
 
     tx_hash = await wallet.transfer(
         destination=COLLECTION_ADDRESS,

@@ -33,7 +33,7 @@ async def main() -> None:
     body = CollectionEditable.build_batch_mint_body(
         data=[
             (
-                NFTOffchainContent(uri=f"https://example.com/nft/{index}.json"),
+                NFTOffchainContent(suffix_uri=f"{index}.json"),
                 Address(OWNER_ADDRESS),
                 Address(EDITOR_ADDRESS),
             )
@@ -41,6 +41,25 @@ async def main() -> None:
         ],
         from_index=FROM_INDEX,
     )
+
+    """ If you deployed the collection using the Modified variant, replace the above code with:
+        Replace `CollectionEditable` with `CollectionEditableModified`, 
+        and use `NFTModifiedOffchainContent` to specify the full `URI` for each NFT metadata.
+
+    Example:
+
+    body = CollectionEditableModified.build_batch_mint_body(
+        data=[
+            (
+                NFTModifiedOffchainContent(uri=URI),  # URI example: `https://example.com/nft/{index}.json`.
+                Address(OWNER_ADDRESS),
+                Address(EDITOR_ADDRESS),
+            )
+            for index in range(FROM_INDEX, ITEMS_COUNT)
+        ],
+        from_index=FROM_INDEX,
+    )
+    """
 
     tx_hash = await wallet.transfer(
         destination=COLLECTION_ADDRESS,

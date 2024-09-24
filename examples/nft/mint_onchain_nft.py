@@ -1,8 +1,8 @@
 from pytoniq_core import Address
 
 from tonutils.client import TonapiClient
-from tonutils.nft import CollectionEditable, NFTEditable
-from tonutils.nft.content import NFTOnchainContent
+from tonutils.nft import CollectionEditableModified, NFTEditableModified
+from tonutils.nft.content import NFTModifiedOnchainContent
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -26,14 +26,14 @@ async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    nft = NFTEditable(
+    nft = NFTEditableModified(
         index=NFT_INDEX,
         collection_address=Address(COLLECTION_ADDRESS),
     )
-    body = CollectionEditable.build_mint_body(
+    body = CollectionEditableModified.build_mint_body(
         index=NFT_INDEX,
         owner_address=Address(OWNER_ADDRESS),
-        content=NFTOnchainContent(
+        content=NFTModifiedOnchainContent(
             name="TON Collectible #0",
             description="Memorable token for completing an onboarding quest about the TON ecosystem",
             image_data=b'image data',
