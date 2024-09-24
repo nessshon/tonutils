@@ -20,6 +20,7 @@ class ToncenterClient(Client):
             self,
             api_key: str,
             is_testnet: Optional[bool] = False,
+            base_url: Optional[str] = None,
     ) -> None:
         """
         Initialize the ToncenterClient.
@@ -27,8 +28,11 @@ class ToncenterClient(Client):
         :param api_key: The API key for accessing the Toncenter service.
             You can get API key here: https://t.me/tonapibot
         :param is_testnet: Flag to indicate if testnet configuration should be used. Defaults to False.
+        :param base_url: Optional base URL for the Toncenter API. If not provided,
+            the default public URL will be used. You can specify your own API URL if needed.
         """
-        base_url = "https://toncenter.com/api/" if not is_testnet else "https://testnet.toncenter.com/api/"
+        if base_url is None:
+            base_url = "https://toncenter.com" if not is_testnet else "https://testnet.toncenter.com"
         headers = {"X-Api-Key": api_key}
 
         super().__init__(base_url=base_url, headers=headers)
@@ -39,7 +43,7 @@ class ToncenterClient(Client):
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> Any:
-        method = f"v3/runGetMethod"
+        method = f"/api/v3/runGetMethod"
         body = {
             "address": address,
             "method": method_name,
@@ -54,12 +58,12 @@ class ToncenterClient(Client):
         return await self._post(method=method, body=body)
 
     async def send_message(self, boc: str) -> None:
-        method = "v3/message"
+        method = "/api/v3/message"
 
         await self._post(method=method, body={"boc": boc_to_base64_string(boc)})
 
     async def get_raw_account(self, address: str) -> RawAccount:
-        method = f"v3/account"
+        method = f"/api/v3/account"
         params = {"address": address}
         result = await self._get(method=method, params=params)
 
