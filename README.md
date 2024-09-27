@@ -123,8 +123,11 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
 #### Jetton Operations
 
 - [Transfer Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/transfer_jetton.py)
-- [Transfer Mintless Jetton (e.g. Hamster)](https://github.com/nessshon/tonutils/tree/main/examples/jetton/transfer_mintless_jetton.py)
 - [Get Jetton Wallet Balance](https://github.com/nessshon/tonutils/tree/main/examples/jetton/get_balance.py)
+
+- ##### Mintless Jetton (e.g. Hamster)
+  - [Claim Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/mintless/claim_jetton.py)
+  - [Transfer Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/mintless/transfer_jetton.py)
 
 - ##### Standard Jetton
   - [Deploy Jetton Master Offchain](https://github.com/nessshon/tonutils/tree/main/examples/jetton/standard/deploy_master.py)
@@ -142,6 +145,7 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
   - [Change Admin](https://github.com/nessshon/tonutils/tree/main/examples/jetton/stablecoin/change_admin.py)
   - [Drop Admin](https://github.com/nessshon/tonutils/tree/main/examples/jetton/stablecoin/drop_admin.py)
   - [Change Content](https://github.com/nessshon/tonutils/tree/main/examples/jetton/stablecoin/change_content.py)
+
 
 - ##### DEX DeDust.io
 
