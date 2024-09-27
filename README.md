@@ -123,6 +123,7 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
 #### Jetton Operations
 
 - [Transfer Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/transfer_jetton.py)
+- [Transfer Mintless Jetton (e.g. Hamster)](https://github.com/nessshon/tonutils/tree/main/examples/jetton/transfer_mintless_jetton.py)
 - [Get Jetton Wallet Balance](https://github.com/nessshon/tonutils/tree/main/examples/jetton/get_balance.py)
 
 - ##### Standard Jetton
