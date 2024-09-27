@@ -1,5 +1,5 @@
 from tonutils.client import TonapiClient
-from tonutils.wallet import PreprocessedWalletV2
+from tonutils.wallet import PreprocessedWalletV2R1
 from tonutils.wallet.data import TransferData
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -14,7 +14,7 @@ MNEMONIC: list[str] = []
 
 async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
-    wallet, public_key, private_key, mnemonic = PreprocessedWalletV2.from_mnemonic(client, MNEMONIC)
+    wallet, public_key, private_key, mnemonic = PreprocessedWalletV2R1.from_mnemonic(client, MNEMONIC)
 
     tx_hash = await wallet.batch_transfer(
         data_list=[
