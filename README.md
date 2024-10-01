@@ -27,12 +27,21 @@ with the TON ecosystem.
 pip install tonutils
 ```
 
-To use the `LiteClient`, which requires the [pytoniq](https://github.com/yungwine/pytoniq) library, install it with the
+To use the `LiteserverClient`, which requires the [pytoniq](https://github.com/yungwine/pytoniq) library, install it with the
 optional dependencies:
 
 ```bash
 pip install 'tonutils[pytoniq]'
 ```
+
+## Donations
+
+Your donation supports the future of this project. Every contribution helps stimulate innovation and sustain
+development!
+
+**TON** - `EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess`
+
+**USDT** (TRC-20) - `TGKmm9H3FApFw8xcgRcZDHSku68vozAjo9`
 
 ## Usage
 
@@ -209,19 +218,14 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
 
 - [Deploy Contract](https://github.com/nessshon/tonutils/tree/main/examples/vanity/deploy_contract.py)
 
-## Donations
-
-Your donation supports the future of this project. Every contribution helps stimulate innovation and sustain
-development!
-
-**TON** - `EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess`
-
-**USDT** (TRC-20) - `TGKmm9H3FApFw8xcgRcZDHSku68vozAjo9`
-
 ## Contribution
 
 We welcome your contributions! If you have ideas for improvement or have identified a bug, please create an issue or
 submit a pull request.
+
+## Support
+
+Supported by [TON Society](https://github.com/ton-society/grants-and-bounties), Grants and Bounties program.
 
 ## License
 
