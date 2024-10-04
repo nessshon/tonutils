@@ -27,9 +27,9 @@ class SubdomainManagerData(TlbScheme):
     def serialize(self) -> Cell:
         return (
             begin_cell()
-            .store_uint(self.seed, 64)
             .store_address(self.admin_address)
             .store_maybe_ref(self.domains)
+            .store_uint(self.seed, 64)
             .end_cell()
         )
 

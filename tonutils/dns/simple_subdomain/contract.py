@@ -53,15 +53,13 @@ class SubdomainManager(Contract):
                 .end_cell()
             )
             .store_uint(hash_name(name), 256)
+            .store_maybe_ref(record_value)
         )
-
-        if record_value:
-            cell.store_maybe_ref(record_value)
 
         return cell.end_cell()
 
     @staticmethod
-    def _build_address_record_cell(opcode: int, address: Address) -> Cell:
+    def _build_address_record_cell(opcode: int, address: Optional[Address] = None) -> Cell:
         """
         Builds a Cell object containing an address and a specific opcode.
 
@@ -78,7 +76,10 @@ class SubdomainManager(Contract):
         )
 
     @staticmethod
-    def _build_site_record_cell(addr: Union[bytes, bytearray, str], is_storage: bool) -> Cell:
+    def _build_site_record_cell(
+            addr: Optional[Union[bytes, bytearray, str]] = None,
+            is_storage: Optional[bool] = False,
+    ) -> Cell:
         """
         Builds a Cell object for setting a site or storage record.
 
@@ -87,13 +88,15 @@ class SubdomainManager(Contract):
         :return: A Cell object representing the site or storage record.
         """
         opcode = SET_STORAGE_CATEGORY if is_storage else SET_SITE_CATEGORY
-        return (
-            begin_cell()
-            .store_uint(opcode, 16)
-            .store_bytes(ByteHexConverter(addr).bytes)
-            .store_uint(0, 8)
-            .end_cell()
-        )
+
+        cell = begin_cell().store_uint(opcode, 16)
+        if addr is None:
+            cell.store_uint(0, 1)
+        else:
+            cell.store_bytes(ByteHexConverter(addr).bytes)
+        cell.store_uint(0, 8)
+
+        return cell.end_cell()
 
     @classmethod
     def build_set_next_resolver_record_body(cls, domain: str, address: Address) -> Cell:
@@ -115,7 +118,8 @@ class SubdomainManager(Contract):
         :param domain: The subdomain for which the next resolver record is being deleted.
         :return: A Cell object to delete the next resolver record.
         """
-        return cls._create_update_dns_cell("dns_next_resolver", domain)
+        record_cell = cls._build_address_record_cell(SET_NEXT_RESOLVER_CATEGORY, None)
+        return cls._create_update_dns_cell("dns_next_resolver", domain, record_cell)
 
     @classmethod
     def build_set_wallet_record_body(cls, domain: str, address: Address) -> Cell:
@@ -137,7 +141,8 @@ class SubdomainManager(Contract):
         :param domain: The subdomain for which the wallet record is being deleted.
         :return: A Cell object to delete the wallet record.
         """
-        return cls._create_update_dns_cell("wallet", domain)
+        record_cell = cls._build_address_record_cell(SET_WALLET_CATEGORY, None)
+        return cls._create_update_dns_cell("wallet", domain, record_cell)
 
     @classmethod
     def build_set_site_record_body(
@@ -158,14 +163,20 @@ class SubdomainManager(Contract):
         return cls._create_update_dns_cell("site", domain, record_cell)
 
     @classmethod
-    def build_delete_site_record_body(cls, domain: str) -> Cell:
+    def build_delete_site_record_body(
+            cls,
+            domain: str,
+            is_storage: bool,
+    ) -> Cell:
         """
         Builds a Cell object to delete the site record for the specified domain.
 
         :param domain: The subdomain for which the site record is being deleted.
+        :param is_storage: Boolean indicating whether the site is for storage (True) or a regular site (False).
         :return: A Cell object to delete the site record.
         """
-        return cls._create_update_dns_cell("site", domain)
+        record_cell = cls._build_site_record_cell(None, is_storage)
+        return cls._create_update_dns_cell("site", domain, record_cell)
 
     @classmethod
     def build_set_storage_record_body(cls, domain: str, bag_id: Union[bytes, bytearray, str]) -> Cell:
@@ -180,11 +191,17 @@ class SubdomainManager(Contract):
         return cls._create_update_dns_cell("storage", domain, record_cell)
 
     @classmethod
-    def build_delete_storage_record_body(cls, domain: str) -> Cell:
+    def build_delete_storage_record_body(
+            cls,
+            domain: str,
+            is_storage: bool,
+    ) -> Cell:
         """
         Builds a Cell object to delete the storage record for the specified domain.
 
         :param domain: The subdomain for which the storage record is being deleted.
+        :param is_storage: Boolean indicating whether the storage record is for storage (True) or a regular site (False).
         :return: A Cell object to delete the storage record.
         """
-        return cls._create_update_dns_cell("storage", domain)
+        record_cell = cls._build_site_record_cell(None, is_storage)
+        return cls._create_update_dns_cell("storage", domain, record_cell)
