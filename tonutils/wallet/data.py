@@ -89,6 +89,7 @@ class TransferJettonData:
     :param jetton_master_address: The jetton master address.
     :param jetton_amount: The amount of jettons to transfer.
     :param jetton_decimals: The jetton decimals. Defaults to 9.
+    :param jetton_wallet_address: Optional jetton wallet address.
     :param forward_payload: Optional forward payload.
         If a string is provided, it will be used as a transaction comment.
         If forward_amount is greater than 0, this payload will be included with the notification to the new owner.
@@ -104,6 +105,7 @@ class TransferJettonData:
             jetton_master_address: Union[Address, str],
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
+            jetton_wallet_address: Optional[Union[Address, str]] = None,
             forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
@@ -114,6 +116,9 @@ class TransferJettonData:
 
         if isinstance(jetton_master_address, str):
             jetton_master_address = Address(jetton_master_address)
+
+        if isinstance(jetton_wallet_address, str):
+            jetton_wallet_address = Address(jetton_wallet_address)
 
         if isinstance(forward_payload, str):
             forward_payload = (
@@ -127,6 +132,7 @@ class TransferJettonData:
         self.jetton_master_address = jetton_master_address
         self.jetton_amount = jetton_amount
         self.jetton_decimals = jetton_decimals
+        self.jetton_wallet_address = jetton_wallet_address
         self.forward_payload = forward_payload
         self.forward_amount = forward_amount
         self.amount = amount

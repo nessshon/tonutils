@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Optional, List, Union, Tuple, Any
+from typing import Any, Dict, Optional, List, Union, Tuple
 
 from pytoniq_core import (
     Address,
@@ -578,20 +578,26 @@ class Wallet(Contract):
         :param data_list: The list of jetton transfer data.
         :return: The hash of the batch jetton transfer message.
         """
-        messages, jetton_master_address, jetton_wallet_address = [], None, None
+        messages = []
+        wallets: Dict[str, Address] = {}
 
         for data in data_list:
-            if jetton_master_address is None or jetton_master_address != data.jetton_master_address:
-                jetton_master_address = data.jetton_master_address
-                jetton_wallet_address = await JettonMaster.get_wallet_address(
-                    client=self.client,
-                    owner_address=self.address.to_str(),
-                    jetton_master_address=jetton_master_address,
-                )
+            if data.jetton_wallet_address is None:
+                jetton_wallet_address = wallets.get(data.jetton_master_address.to_str(), None)
+
+                if jetton_wallet_address is None:
+                    jetton_wallet_address = await JettonMaster.get_wallet_address(
+                        client=self.client,
+                        owner_address=self.address.to_str(),
+                        jetton_master_address=data.jetton_master_address,
+                    )
+                    wallets[data.jetton_master_address.to_str()] = jetton_wallet_address
+
+                data.jetton_wallet_address = jetton_wallet_address
 
             messages.append(
                 self.create_wallet_internal_message(
-                    destination=jetton_wallet_address,
+                    destination=data.jetton_wallet_address,
                     value=to_nano(data.amount),
                     body=JettonWallet.build_transfer_body(
                         recipient_address=data.destination,
