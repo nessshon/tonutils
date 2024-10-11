@@ -14,7 +14,7 @@ IS_TESTNET = False
 MNEMONIC: list[str] = []
 
 # The address of the administrator for managing the Subdomain Manager
-ADMIN_ADDRESS = "EQ..."
+ADMIN_ADDRESS = "UQ..."
 
 
 async def main() -> None:

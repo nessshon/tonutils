@@ -38,7 +38,7 @@ async def main() -> None:
                 Address(EDITOR_ADDRESS),
                 None,  # revoked at
             )
-            for index in range(FROM_INDEX, ITEMS_COUNT)
+            for index in range(FROM_INDEX, FROM_INDEX + ITEMS_COUNT)
         ],
         from_index=FROM_INDEX,
     )
@@ -57,7 +57,7 @@ async def main() -> None:
                 Address(EDITOR_ADDRESS),
                 None,  # revoked at
             )
-            for index in range(FROM_INDEX, ITEMS_COUNT)
+            for index in range(FROM_INDEX, FROM_INDEX + ITEMS_COUNT)
         ],
         from_index=FROM_INDEX,
     )

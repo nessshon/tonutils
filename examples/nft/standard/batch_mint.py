@@ -35,7 +35,7 @@ async def main() -> None:
                 NFTOffchainContent(suffix_uri=f"{index}.json"),
                 Address(OWNER_ADDRESS),
             )
-            for index in range(FROM_INDEX, ITEMS_COUNT)
+            for index in range(FROM_INDEX, FROM_INDEX + ITEMS_COUNT)
         ],
         from_index=FROM_INDEX,
     )
@@ -52,7 +52,7 @@ async def main() -> None:
                 NFTModifiedOffchainContent(uri=URI),  # URI example: `https://example.com/nft/{index}.json`.
                 Address(OWNER_ADDRESS),
             )
-            for index in range(FROM_INDEX, ITEMS_COUNT)
+            for index in range(FROM_INDEX, FROM_INDEX + ITEMS_COUNT)
         ],
         from_index=FROM_INDEX,
     )
