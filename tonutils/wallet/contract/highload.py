@@ -273,13 +273,9 @@ class HighloadWalletV3(Wallet):
         """
         Create a deployment message for the wallet.
         """
-        message = WalletMessage(
-            send_mode=3,
-            message=self.create_internal_msg()
-        )
         body = self.raw_create_transfer_msg(
             private_key=self.private_key,
-            messages=[message],
+            messages=[self.create_wallet_internal_message(self.address)],
         )
 
         return self.create_external_msg(
