@@ -165,6 +165,7 @@ class LiteBalancer:
     Placeholder class for LiteBalancer when pytoniq is not available.
     Provides stubs for methods that raise errors when called.
     """
+    inited = None
 
     @staticmethod
     def from_config(config: Dict[str, Any], trust_level: int) -> LiteBalancer:
@@ -188,4 +189,13 @@ class LiteBalancer:
         raise PytoniqDependencyError()
 
     async def raw_send_message(self, message: bytes) -> None:
+        raise PytoniqDependencyError()
+
+    async def start_up(self):
+        raise PytoniqDependencyError()
+
+    async def close_all(self):
+        raise PytoniqDependencyError()
+
+    async def raw_get_account_state(self, address):
         raise PytoniqDependencyError()
