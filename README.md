@@ -98,8 +98,8 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
 
 - [Create Wallet](https://github.com/nessshon/tonutils/tree/main/examples/wallet/create_wallet.py)
 - [Deploy Wallet](https://github.com/nessshon/tonutils/tree/main/examples/wallet/deploy_wallet.py)
-- [Get Wallet Balance](https://github.com/nessshon/tonutils/tree/main/examples/wallet/get_balance.py)
 - [Encrypt Comment](https://github.com/nessshon/tonutils/tree/main/examples/wallet/encrypt_comment.py)
+- [Get Wallet Balance](https://github.com/nessshon/tonutils/tree/main/examples/wallet/get_balance.py)
 - [Gasless Transaction (Wallet v5 only)](https://github.com/nessshon/tonutils/tree/main/examples/wallet/gasless_transaction.py)
 
 - ##### Standard Wallet
@@ -107,27 +107,34 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
   - [Transfer TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/transfer_ton.py)
   - [Transfer NFT](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/transfer_nft.py)
   - [Transfer Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/transfer_jetton.py)
-  - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/dedust/swap_ton_to_jetton.py)
-  - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/dedust/swap_jetton_to_ton.py)
-  - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/dedust/swap_jetton_to_jetton.py)
-  - [Batch Transfer TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/batch_transfer_ton.py)
-  - [Batch Transfer NFT](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/batch_transfer_nft.py)
-  - [Batch Transfer Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/batch_transfer_jetton.py)
 
 - ##### Highload Wallet
 
   - [Transfer TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/highload/transfer_ton.py)
   - [Transfer NFT](https://github.com/nessshon/tonutils/tree/main/examples/wallet/highload/transfer_nft.py)
   - [Transfer Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/highload/transfer_jetton.py)
-  - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/highload/dex/dedust/swap_ton_to_jetton.py)
-  - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/highload/dex/dedust/swap_jetton_to_ton.py)
-  - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/highload/dex/dedust/swap_jetton_to_jetton.py)
 
 - ##### Preprocessed Wallet
 
   - [Transfer TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/preprocessed/transfer_ton.py)
   - [Transfer NFT](https://github.com/nessshon/tonutils/tree/main/examples/wallet/preprocessed/transfer_nft.py)
   - [Transfer Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/preprocessed/transfer_jetton.py)
+
+- ##### DEX DeDust.io
+  - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/dedust/swap_ton_to_jetton.py)
+  - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/dedust/swap_jetton_to_ton.py)
+  - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/dedust/swap_jetton_to_jetton.py)
+  - [Batch Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/dedust/batch_swap_ton_to_jetton.py)
+  - [Batch Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/dedust/batch_swap_jetton_to_ton.py)
+  - [Batch Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/dedust/batch_swap_jetton_to_jetton.py)
+
+- ##### DEX STON.fi
+  - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/stonfi/swap_ton_to_jetton.py)
+  - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/stonfi/swap_jetton_to_ton.py)
+  - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/stonfi/swap_jetton_to_jetton.py)
+  - [Batch Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/stonfi/batch_swap_ton_to_jetton.py)
+  - [Batch Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/stonfi/batch_swap_jetton_to_ton.py)
+  - [Batch Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/wallet/common/dex/stonfi/batch_swap_jetton_to_jetton.py)
 
 #### Jetton Operations
 
@@ -161,6 +168,12 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
   - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/dedust/swap_ton_to_jetton.py)
   - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/dedust/swap_jetton_to_ton.py)
   - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/dedust/swap_jetton_to_jetton.py)
+
+- ##### DEX STON.fi
+
+  - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/swap_ton_to_jetton.py)
+  - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/swap_jetton_to_ton.py)
+  - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/swap_jetton_to_jetton.py)
 
 #### NFT Operations
 
