@@ -33,7 +33,7 @@ class TonapiClient(Client):
             base_url = "https://tonapi.io" if not is_testnet else "https://testnet.tonapi.io"
         headers = {"Authorization": f"Bearer {api_key}"}
 
-        super().__init__(base_url=base_url, headers=headers)
+        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet)
 
     async def run_get_method(
             self,

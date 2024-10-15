@@ -18,6 +18,7 @@ class Client:
         self.base_url = kwargs.get("base_url", "")
         self.headers = kwargs.get("headers", {})
         self.timeout = kwargs.get("timeout", 10)
+        self.is_testnet = kwargs.get("is_testnet", False)
 
     @staticmethod
     async def __read_content(response: aiohttp.ClientResponse) -> Any:

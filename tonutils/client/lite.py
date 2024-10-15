@@ -63,7 +63,7 @@ class LiteserverClient(Client):
             in the LiteClient constructor defines how much you trust the Liteserver you communicate with.
             Refer to the documentation for more details: https://yungwine.gitbook.io/pytoniq-doc/liteclient/trust-levels
         """
-        super().__init__()
+        super().__init__(is_testnet=is_testnet)
 
         if not pytoniq_available:
             raise PytoniqDependencyError()
