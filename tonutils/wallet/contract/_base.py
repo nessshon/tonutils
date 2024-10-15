@@ -36,13 +36,10 @@ from ...client import (
 from ...contract import Contract
 from ...exceptions import UnknownClientError
 from ...jetton import JettonMaster, JettonWallet
-from ...jetton.dex.dedust import (
-    Asset,
-    Factory,
-    PoolType,
-    SwapParams,
-    VaultNative, SwapStep
-)
+from ...jetton.dex.dedust import Asset, AssetType, Factory, PoolType
+from ...jetton.dex.dedust.addresses import *
+from ...jetton.dex.stonfi import StonfiRouterV1
+from ...jetton.dex.stonfi.addresses import *
 from ...nft import NFTStandard
 from ...utils import (
     create_encrypted_comment_cell,
@@ -614,41 +611,106 @@ class Wallet(Contract):
 
         return message_hash
 
+    async def _dedust_build_swap_payload(
+            self,
+            from_jetton_master_address: Optional[Union[Address, str]],
+            to_jetton_master_address: Optional[Union[Address, str]],
+            jetton_amount: Union[int, float],
+            jetton_decimals: int = 9,
+            min_amount: Union[int, float] = 0,
+            forward_amount: Union[int, float] = 0,
+            fee_amount: Union[int, float] = 0,
+            recipient_is_vault: bool = True,
+    ) -> Tuple[Address, float, Cell]:
+        """
+        Build a swap payload for the Dedust.
+
+        :param from_jetton_master_address: The jetton master address to swap from.
+        :param to_jetton_master_address: The jetton master address to swap to.
+        :param jetton_amount: The amount of jettons to swap.
+        :param jetton_decimals: The jetton decimals. Defaults to 9.
+        :param min_amount: The minimum amount of jettons to receive. Defaults to 0.
+        :param forward_amount: The forward fee amount. Defaults to 0.
+        :param fee_amount: The fee amount. Defaults to 0.
+        :param recipient_is_vault: Whether the recipient is a vault. Defaults to True.
+        """
+        if self.client.is_testnet:
+            factory_address = Address(TESTNET_FACTORY_ADDRESS)
+            vault_address = Address(TESTNET_NATIVE_VAULT_ADDRESS)
+        else:
+            factory_address = Address(FACTORY_ADDRESS)
+            vault_address = Address(NATIVE_VAULT_ADDRESS)
+
+        pool_address = await Factory.get_pool_address(
+            client=self.client,
+            address=factory_address,
+            pool_type=PoolType.VOLATILE,
+            assets=[
+                Asset.native() if not from_jetton_master_address else Asset.jetton(from_jetton_master_address),
+                Asset.jetton(to_jetton_master_address) if to_jetton_master_address else Asset.native(),
+            ]
+        )
+        destination = vault_address if recipient_is_vault else await JettonMaster.get_wallet_address(
+            client=self.client,
+            owner_address=self.address,
+            jetton_master_address=from_jetton_master_address,
+        )
+
+        body = Factory.create_swap_body(
+            asset_type=AssetType.JETTON if from_jetton_master_address else AssetType.NATIVE,
+            pool_address=pool_address,
+            amount=to_nano(jetton_amount, jetton_decimals),
+            limit=to_nano(min_amount, jetton_decimals),
+            deadline=int(time.time() + 60 * 5),
+            recipient_address=self.address,
+        )
+        if from_jetton_master_address:
+            jetton_vault_address = await Factory.get_vault_address(
+                client=self.client,
+                address=factory_address,
+                asset=Asset.jetton(from_jetton_master_address),
+            )
+            body = JettonWallet.build_transfer_body(
+                recipient_address=jetton_vault_address,
+                jetton_amount=to_nano(jetton_amount, jetton_decimals),
+                response_address=self.address,
+                forward_payload=body,
+                forward_amount=to_nano(forward_amount),
+            )
+
+        return destination, fee_amount, body
+
     async def dedust_swap_ton_to_jetton(
             self,
             jetton_master_address: Union[Address, str],
             ton_amount: Union[int, float],
-            amount: Union[int, float] = 0.25,
-            **kwargs
+            min_amount: Union[int, float] = 0,
+            forward_amount: Union[int, float] = 0.25,
+            **kwargs,
     ) -> str:
         """
-        Perform a swap ton to jetton operation.
+        Perform a swap operation.
 
-        :param jetton_master_address: The address of the jetton master contract.
+        :param jetton_master_address: The jetton master address to swap to.
         :param ton_amount: The amount of TON to swap.
-        :param amount: Gas amount. Defaults to 0.25.
+        :param min_amount: The minimum amount of TON to receive. Defaults to 0.
+        :param forward_amount: The forward fee amount. Defaults to 0.25.
         :return: The hash of the swap message.
         """
-        pool = await Factory(self.client).get_pool(
-            pool_type=PoolType.VOLATILE,
-            assets=[
-                Asset.native(),
-                Asset.jetton(jetton_master_address)
-            ],
+        destination, _, body = await self._dedust_build_swap_payload(
+            from_jetton_master_address=None,
+            to_jetton_master_address=jetton_master_address,
+            jetton_amount=ton_amount,
+            min_amount=min_amount,
+            forward_amount=forward_amount,
+            fee_amount=ton_amount,
+            recipient_is_vault=True,
         )
-        swap_params = SwapParams(
-            deadline=int(time.time() + 60 * 5),
-            recipient_address=self.address,
-        )
-
         message_hash = await self.transfer(
-            destination=VaultNative.ADDRESS,
-            amount=ton_amount + amount,
-            body=VaultNative.create_swap_payload(
-                amount=to_nano(ton_amount),
-                pool_address=pool.address,
-                swap_params=swap_params,
-            ),
+            destination=destination,
+            amount=ton_amount + forward_amount,
+            body=body,
+            bounce=True,
             **kwargs,
         )
 
@@ -664,27 +726,21 @@ class Wallet(Contract):
         messages = []
 
         for data in data_list:
-            pool = await Factory(self.client).get_pool(
-                pool_type=PoolType.VOLATILE,
-                assets=[
-                    Asset.native(),
-                    Asset.jetton(data.jetton_master_address)
-                ],
+            destination, amount, body = await self._dedust_build_swap_payload(
+                from_jetton_master_address=None,
+                to_jetton_master_address=data.jetton_master_address,
+                jetton_amount=data.ton_amount,
+                min_amount=data.min_amount,
+                forward_amount=data.forward_amount or 0.25,
+                fee_amount=data.ton_amount,
+                recipient_is_vault=True,
             )
-            swap_params = SwapParams(
-                deadline=int(time.time() + 60 * 5),
-                recipient_address=self.address,
-            )
-
             messages.append(
                 self.create_wallet_internal_message(
-                    destination=Address(VaultNative.ADDRESS),
-                    value=int(to_nano(data.ton_amount + data.amount)),
-                    body=VaultNative.create_swap_payload(
-                        amount=to_nano(data.ton_amount),
-                        pool_address=pool.address,
-                        swap_params=swap_params,
-                    ),
+                    destination=destination,
+                    value=to_nano(amount + (data.forward_amount or 0.25)),
+                    body=body,
+                    bounce=True,
                     **data.other,
                 )
             )
@@ -698,45 +754,38 @@ class Wallet(Contract):
             jetton_master_address: Union[Address, str],
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
-            amount: Union[int, float] = 0.3,
+            min_amount: Union[int, float] = 0,
             forward_amount: Union[int, float] = 0.25,
+            fee_amount: Union[int, float] = 0.3,
             **kwargs,
     ) -> str:
         """
-        Perform a swap jetton to ton operation.
+        Perform a swap operation.
 
-        :param jetton_master_address: The address of the jetton master contract.
-        :param jetton_amount: The amount of jettons to swap.
-        :param jetton_decimals: The number of jetton decimals. Defaults to 9.
-        :param amount: Gas amount. Defaults to 0.3.
-        :param forward_amount: Forward amount in TON. Defaults to 0.25.
-        :return: The hash of the swap jetton to ton message.
+        :param jetton_master_address: The jetton master address to swap to.
+        :param jetton_amount: The amount of jetton to swap.
+        :param jetton_decimals: The jetton decimals.
+        :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
+        :param forward_amount: The forward fee amount. Defaults to 0.25.
+        :param fee_amount: The fee amount. Defaults to 0.3.
+        :return: The hash of the swap message.
         """
-        factory = Factory(self.client)
-        pool = await factory.get_pool(
-            pool_type=PoolType.VOLATILE,
-            assets=[
-                Asset.native(),
-                Asset.jetton(jetton_master_address),
-            ],
-        )
-        jetton_vault = await factory.get_jetton_vault(jetton_master_address)
-        jetton_wallet_address = await JettonMaster.get_wallet_address(
-            client=self.client,
-            owner_address=self.address.to_str(),
-            jetton_master_address=jetton_master_address,
+        destination, amount, body = await self._dedust_build_swap_payload(
+            from_jetton_master_address=jetton_master_address,
+            to_jetton_master_address=None,
+            jetton_amount=jetton_amount,
+            jetton_decimals=jetton_decimals,
+            min_amount=min_amount,
+            forward_amount=forward_amount,
+            fee_amount=fee_amount,
+            recipient_is_vault=False,
         )
 
         message_hash = await self.transfer(
-            destination=jetton_wallet_address,
+            destination=destination,
             amount=amount,
-            body=JettonWallet.build_transfer_body(
-                recipient_address=jetton_vault.address,
-                jetton_amount=int(jetton_amount * (10 ** jetton_decimals)),
-                response_address=self.address,
-                forward_payload=jetton_vault.create_swap_payload(pool.address),
-                forward_amount=to_nano(forward_amount),
-            ),
+            body=body,
+            bounce=True,
             **kwargs,
         )
 
@@ -752,32 +801,22 @@ class Wallet(Contract):
         messages = []
 
         for data in data_list:
-            factory = Factory(self.client)
-            pool = await factory.get_pool(
-                pool_type=PoolType.VOLATILE,
-                assets=[
-                    Asset.native(),
-                    Asset.jetton(data.jetton_master_address),
-                ],
+            destination, amount, body = await self._dedust_build_swap_payload(
+                from_jetton_master_address=data.jetton_master_address,
+                to_jetton_master_address=None,
+                jetton_amount=data.jetton_amount,
+                jetton_decimals=data.jetton_decimals,
+                min_amount=data.min_amount,
+                forward_amount=data.forward_amount or 0.25,
+                fee_amount=data.fee_amount or 0.3,
+                recipient_is_vault=False,
             )
-            jetton_vault = await factory.get_jetton_vault(data.jetton_master_address)
-            jetton_wallet_address = await JettonMaster.get_wallet_address(
-                client=self.client,
-                owner_address=self.address.to_str(),
-                jetton_master_address=data.jetton_master_address,
-            )
-
             messages.append(
                 self.create_wallet_internal_message(
-                    destination=Address(jetton_wallet_address),
-                    value=to_nano(data.amount),
-                    body=JettonWallet.build_transfer_body(
-                        recipient_address=jetton_vault.address,
-                        jetton_amount=int(data.jetton_amount * (10 ** data.jetton_decimals)),
-                        response_address=self.address,
-                        forward_payload=jetton_vault.create_swap_payload(pool.address),
-                        forward_amount=to_nano(data.forward_amount),
-                    ),
+                    destination=destination,
+                    value=to_nano(amount),
+                    body=body,
+                    bounce=True,
                     **data.other,
                 )
             )
@@ -792,57 +831,39 @@ class Wallet(Contract):
             to_jetton_master_address: Union[Address, str],
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
-            amount: Union[int, float] = 0.3,
+            min_amount: Union[int, float] = 0,
             forward_amount: Union[int, float] = 0.25,
+            fee_amount: Union[int, float] = 0.3,
             **kwargs,
     ) -> str:
         """
-        Perform a swap jetton to jetton operation.
+        Perform a swap operation.
 
-        :param from_jetton_master_address: The address of the jetton master contract from which to swap.
-        :param to_jetton_master_address: The address of the jetton master contract to which to swap.
-        :param jetton_amount: The amount of jettons to swap.
-        :param jetton_decimals: The number of jetton decimals. Defaults to 9.
-        :param amount: Gas amount. Defaults to 0.3.
-        :param forward_amount: Forward amount in TON. Defaults to 0.25.
-        :return: The hash of the swap jetton to jetton message.
+        :param from_jetton_master_address: The jetton master address to swap from.
+        :param to_jetton_master_address: The jetton master address to swap to.
+        :param jetton_amount: The amount of jetton to swap.
+        :param jetton_decimals: The jetton decimals.
+        :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
+        :param forward_amount: The forward fee amount. Defaults to 0.25.
+        :param fee_amount: The fee amount. Defaults to 0.3.
+        :return: The hash of the swap message.
         """
-        factory = Factory(self.client)
-        pool_a = await factory.get_pool(
-            pool_type=PoolType.VOLATILE,
-            assets=[
-                Asset.jetton(from_jetton_master_address),
-                Asset.native(),
-            ],
-        )
-        pool_b = await factory.get_pool(
-            pool_type=PoolType.VOLATILE,
-            assets=[
-                Asset.native(),
-                Asset.jetton(to_jetton_master_address),
-            ],
-        )
-
-        jetton_vault = await factory.get_jetton_vault(from_jetton_master_address)
-        jetton_wallet_address = await JettonMaster.get_wallet_address(
-            client=self.client,
-            owner_address=self.address.to_str(),
-            jetton_master_address=from_jetton_master_address,
+        destination, amount, body = await self._dedust_build_swap_payload(
+            from_jetton_master_address=from_jetton_master_address,
+            to_jetton_master_address=to_jetton_master_address,
+            jetton_amount=jetton_amount,
+            jetton_decimals=jetton_decimals,
+            min_amount=min_amount,
+            forward_amount=forward_amount,
+            fee_amount=fee_amount,
+            recipient_is_vault=False,
         )
 
         message_hash = await self.transfer(
-            destination=jetton_wallet_address,
+            destination=destination,
             amount=amount,
-            body=JettonWallet.build_transfer_body(
-                recipient_address=jetton_vault.address,
-                jetton_amount=int(jetton_amount * (10 ** jetton_decimals)),
-                response_address=self.address,
-                forward_payload=jetton_vault.create_swap_payload(
-                    pool_address=pool_a.address,
-                    next_=SwapStep(pool_b.address),
-                ),
-                forward_amount=to_nano(forward_amount),
-            ),
+            body=body,
+            bounce=True,
             **kwargs,
         )
 
@@ -861,43 +882,309 @@ class Wallet(Contract):
         messages = []
 
         for data in data_list:
-            factory = Factory(self.client)
-            pool_a = await factory.get_pool(
-                pool_type=PoolType.VOLATILE,
-                assets=[
-                    Asset.jetton(data.from_jetton_master_address),
-                    Asset.native(),
-                ],
-            )
-            pool_b = await factory.get_pool(
-                pool_type=PoolType.VOLATILE,
-                assets=[
-                    Asset.native(),
-                    Asset.jetton(data.to_jetton_master_address),
-                ],
-            )
-
-            jetton_vault = await factory.get_jetton_vault(data.from_jetton_master_address)
-            jetton_wallet_address = await JettonMaster.get_wallet_address(
-                client=self.client,
-                owner_address=self.address.to_str(),
-                jetton_master_address=data.from_jetton_master_address,
+            destination, amount, body = await self._dedust_build_swap_payload(
+                from_jetton_master_address=data.from_jetton_master_address,
+                to_jetton_master_address=data.to_jetton_master_address,
+                jetton_amount=data.jetton_amount,
+                jetton_decimals=data.jetton_decimals,
+                min_amount=data.min_amount,
+                forward_amount=data.forward_amount or 0.25,
+                fee_amount=data.fee_amount or 0.3,
+                recipient_is_vault=False,
             )
 
             messages.append(
                 self.create_wallet_internal_message(
-                    destination=jetton_wallet_address,
-                    value=to_nano(data.amount),
-                    body=JettonWallet.build_transfer_body(
-                        recipient_address=jetton_vault.address,
-                        jetton_amount=int(data.jetton_amount * (10 ** data.jetton_decimals)),
-                        response_address=self.address,
-                        forward_payload=jetton_vault.create_swap_payload(
-                            pool_address=pool_a.address,
-                            next_=SwapStep(pool_b.address),
-                        ),
-                        forward_amount=to_nano(data.forward_amount),
-                    ),
+                    destination=destination,
+                    value=to_nano(amount),
+                    body=body,
+                    bounce=True,
+                    **data.other,
+                )
+            )
+
+        message_hash = await self.raw_transfer(messages=messages)
+
+        return message_hash
+
+    async def _stonfi_build_swap_payload(
+            self,
+            from_jetton_master_address: Optional[Union[Address, str]],
+            to_jetton_master_address: Optional[Union[Address, str]],
+            jetton_amount: Union[int, float],
+            jetton_decimals: int = 9,
+            min_amount: Union[int, float] = 0,
+            forward_amount: Union[int, float] = 0,
+            fee_amount: Union[int, float] = 0,
+            recipient_is_router: bool = False,
+    ) -> Tuple[Address, float, Cell]:
+        """
+        Build swap payload for the StonFi.
+
+        :param from_jetton_master_address: The jetton master address to swap from.
+        :param to_jetton_master_address: The jetton master address to swap to.
+        :param jetton_amount: The amount of jetton to swap.
+        :param jetton_decimals: The jetton decimals.
+        :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
+        :param forward_amount: The forward fee amount. Defaults to 0.
+        :param fee_amount: The fee amount. Defaults to 0.
+        :param recipient_is_router: Whether the recipient is the router. Defaults to False.
+        :return: The destination address, the amount to send, and the swap body.
+        """
+        if self.client.is_testnet:
+            router_address = TESTNET_V1_ROUTER_ADDRESS
+            proxy_address = TESTNET_PTON_V1_ADDRESS
+        else:
+            router_address = V1_ROUTER_ADDRESS
+            proxy_address = PTON_V1_ADDRESS
+
+        destination = await JettonMaster.get_wallet_address(
+            client=self.client,
+            owner_address=self.address if not recipient_is_router else router_address,
+            jetton_master_address=from_jetton_master_address or proxy_address,
+        )
+        ask_jetton_wallet_address = await JettonMaster.get_wallet_address(
+            client=self.client,
+            owner_address=router_address,
+            jetton_master_address=to_jetton_master_address or proxy_address,
+        )
+
+        body = StonfiRouterV1.build_swap_body(
+            jetton_amount=to_nano(jetton_amount, jetton_decimals),
+            recipient_address=router_address,
+            forward_amount=to_nano(forward_amount),
+            user_wallet_address=self.address,
+            min_amount=to_nano(min_amount, jetton_decimals),
+            ask_jetton_wallet_address=ask_jetton_wallet_address,
+        )
+
+        return destination, forward_amount + fee_amount, body
+
+    async def stonfi_swap_ton_to_jetton(
+            self,
+            jetton_master_address: Union[Address, str],
+            ton_amount: Union[int, float],
+            min_amount: Union[int, float] = 0,
+            forward_amount: Union[int, float] = 0.215,
+            **kwargs,
+    ) -> str:
+        """
+        Perform a swap TON to jetton operation.
+
+        :param jetton_master_address: The jetton master address to swap to.
+        :param ton_amount: The amount of TON to swap.
+        :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
+        :param forward_amount: The forward fee amount. Defaults to 0.215.
+        :return: The hash of the swap message.
+        """
+        destination, amount, body = await self._stonfi_build_swap_payload(
+            from_jetton_master_address=None,
+            to_jetton_master_address=jetton_master_address,
+            jetton_amount=ton_amount,
+            min_amount=min_amount,
+            forward_amount=forward_amount,
+            fee_amount=ton_amount,
+            recipient_is_router=True,
+        )
+
+        message_hash = await self.transfer(
+            destination=destination,
+            amount=amount,
+            body=body,
+            bounce=True,
+            **kwargs,
+        )
+
+        return message_hash
+
+    async def batch_stonfi_swap_ton_to_jetton(
+            self,
+            data_list: List[SwapTONToJettonData],
+    ) -> str:
+        """
+        Perform a batch swap operation.
+
+        :param data_list: The list of swap data.
+        :return: The hash of the batch swap message.
+        """
+        messages = []
+
+        for data in data_list:
+            destination, amount, body = await self._stonfi_build_swap_payload(
+                from_jetton_master_address=None,
+                to_jetton_master_address=data.jetton_master_address,
+                jetton_amount=data.ton_amount,
+                min_amount=data.min_amount,
+                forward_amount=data.forward_amount or 0.215,
+                fee_amount=data.ton_amount,
+                recipient_is_router=True,
+            )
+            messages.append(
+                self.create_wallet_internal_message(
+                    destination=destination,
+                    value=to_nano(amount),
+                    body=body,
+                    bounce=True,
+                    **data.other,
+                )
+            )
+
+        message_hash = await self.raw_transfer(messages=messages)
+
+        return message_hash
+
+    async def stonfi_swap_jetton_to_ton(
+            self,
+            jetton_master_address: Union[Address, str],
+            jetton_amount: Union[int, float],
+            jetton_decimals: int = 9,
+            min_amount: Union[int, float] = 0,
+            forward_amount: Union[int, float] = 0.125,
+            fee_amount: Union[int, float] = 0.185,
+            **kwargs,
+    ) -> str:
+        """
+        Perform a swap jetton to TON operation.
+
+        :param jetton_master_address: The jetton master address to swap from.
+        :param jetton_amount: The amount of jetton to swap.
+        :param jetton_decimals: The jetton decimals. Defaults to 9.
+        :param min_amount: The minimum amount of TON to receive. Defaults to 0.
+        :param forward_amount: The forward fee amount. Defaults to 0.125.
+        :param fee_amount: The fee amount. Defaults to 0.185.
+        :return: The hash of the swap message.
+        """
+        destination, amount, body = await self._stonfi_build_swap_payload(
+            from_jetton_master_address=jetton_master_address,
+            to_jetton_master_address=None,
+            jetton_amount=jetton_amount,
+            jetton_decimals=jetton_decimals,
+            min_amount=min_amount,
+            forward_amount=forward_amount,
+            fee_amount=fee_amount,
+            recipient_is_router=False,
+        )
+
+        message_hash = await self.transfer(
+            destination=destination,
+            amount=amount,
+            body=body,
+            bounce=True,
+            **kwargs,
+        )
+
+        return message_hash
+
+    async def batch_stonfi_swap_jetton_to_ton(
+            self,
+            data_list: List[SwapJettonToTONData],
+    ) -> str:
+        """
+        Perform a batch swap operation.
+
+        :param data_list: The list of swap data.
+        :return: The hash of the batch swap message.
+        """
+        messages = []
+
+        for data in data_list:
+            destination, amount, body = await self._stonfi_build_swap_payload(
+                from_jetton_master_address=data.jetton_master_address,
+                to_jetton_master_address=None,
+                jetton_amount=data.jetton_amount,
+                jetton_decimals=data.jetton_decimals,
+                min_amount=data.min_amount,
+                forward_amount=data.forward_amount or 0.125,
+                fee_amount=data.fee_amount or 0.185,
+                recipient_is_router=False,
+            )
+            messages.append(
+                self.create_wallet_internal_message(
+                    destination=destination,
+                    value=to_nano(amount),
+                    body=body,
+                    bounce=True,
+                    **data.other,
+                )
+            )
+
+        message_hash = await self.raw_transfer(messages=messages)
+
+        return message_hash
+
+    async def stonfi_swap_jetton_to_jetton(
+            self,
+            from_jetton_master_address: Union[Address, str],
+            to_jetton_master_address: Union[Address, str],
+            jetton_amount: Union[int, float],
+            jetton_decimals: int = 9,
+            min_amount: Union[int, float] = 0,
+            forward_amount: Union[int, float] = 0.205,
+            fee_amount: Union[int, float] = 0.265,
+            **kwargs,
+    ) -> str:
+        """
+        Perform a swap jetton to jetton operation.
+
+        :param from_jetton_master_address: The jetton master address to swap from.
+        :param to_jetton_master_address: The jetton master address to swap to.
+        :param jetton_amount: The amount of jetton to swap.
+        :param jetton_decimals: The jetton decimals. Defaults to 9.
+        :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
+        :param forward_amount: The forward fee amount. Defaults to 0.205.
+        :param fee_amount: The fee amount. Defaults to 0.265.
+        :return: The hash of the swap message.
+        """
+        destination, amount, body = await self._stonfi_build_swap_payload(
+            from_jetton_master_address=from_jetton_master_address,
+            to_jetton_master_address=to_jetton_master_address,
+            jetton_amount=jetton_amount,
+            jetton_decimals=jetton_decimals,
+            min_amount=min_amount,
+            forward_amount=forward_amount,
+            fee_amount=fee_amount,
+            recipient_is_router=False,
+        )
+
+        message_hash = await self.transfer(
+            destination=destination,
+            amount=amount,
+            body=body,
+            bounce=True,
+            **kwargs,
+        )
+
+        return message_hash
+
+    async def batch_stonfi_swap_jetton_to_jetton(
+            self,
+            data_list: List[SwapJettonToJettonData],
+    ) -> str:
+        """
+        Perform a batch swap operation.
+
+        :param data_list: The list of swap data.
+        :return: The hash of the batch swap message.
+        """
+        messages = []
+
+        for data in data_list:
+            destination, amount, body = await self._stonfi_build_swap_payload(
+                from_jetton_master_address=data.from_jetton_master_address,
+                to_jetton_master_address=data.to_jetton_master_address,
+                jetton_amount=data.jetton_amount,
+                jetton_decimals=data.jetton_decimals,
+                min_amount=data.min_amount,
+                forward_amount=data.forward_amount or 0.205,
+                fee_amount=data.fee_amount or 0.265,
+                recipient_is_router=False,
+            )
+            messages.append(
+                self.create_wallet_internal_message(
+                    destination=destination,
+                    value=to_nano(amount),
+                    body=body,
+                    bounce=True,
                     **data.other,
                 )
             )

@@ -1,10 +1,10 @@
-from typing import List
+from __future__ import annotations
+
+from enum import Enum
+from typing import List, Optional, Union
 
 from pytoniq_core import Cell, begin_cell, Address, Slice
 
-from .asset import Asset
-from .pool import PoolType, Pool
-from .vault import VaultJetton, VaultNative
 from ..op_codes import *
 from .....client import (
     Client,
@@ -16,50 +16,98 @@ from .....exceptions import UnknownClientError
 from .....utils import boc_to_base64_string
 
 
-class Factory:
-    ADDRESS = "EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67"  # noqa
+class PoolType(Enum):
+    VOLATILE = 0
+    STABLE = 1
 
-    def __init__(self, client: Client) -> None:
-        self.client = client
+
+class AssetType(Enum):
+    NATIVE = 0
+    JETTON = 1
+
+
+class SwapStep:
+
+    def __init__(
+            self,
+            pool_address: Address,
+            limit: int = 0,
+            next_step: Optional[SwapStep] = None
+    ):
+        self.pool_address = pool_address
+        self.limit = limit
+        self.next_step = next_step
+
+
+class Asset:
+
+    def __init__(
+            self,
+            asset_type: AssetType,
+            address: Optional[Union[Address, str]] = None,
+    ) -> None:
+        if isinstance(address, str):
+            address = Address(address)
+
+        self.asset_type = asset_type
+        self.address = address
 
     @staticmethod
-    def create_vault_payload(
-            asset: Asset,
-            query_id: int = 0
-    ) -> Cell:
+    def native() -> Asset:
+        return Asset(AssetType.NATIVE)
+
+    @staticmethod
+    def jetton(minter: Union[Address, str]) -> Asset:
+        return Asset(AssetType.JETTON, minter)
+
+    def to_cell(self) -> Cell:
+        if self.asset_type == AssetType.NATIVE:
+            return (
+                begin_cell()
+                .store_uint(0, 4)
+                .end_cell()
+            )
+
         return (
             begin_cell()
-            .store_uint(CREATE_VAULT_OPCODE, 32)
-            .store_uint(query_id, 64)
-            .store_slice(asset.to_slice())
+            .store_uint(AssetType.JETTON.value, 4)
+            .store_int(self.address.wc, 8)
+            .store_bytes(self.address.hash_part)
             .end_cell()
         )
+
+
+class Factory:
 
     @classmethod
     async def get_vault_address(
             cls,
             client: Client,
+            address: Union[Address, str],
             asset: Asset,
     ) -> Address:
+        if isinstance(address, str):
+            address = Address(address)
+
         if isinstance(client, TonapiClient):
             method_result = await client.run_get_method(
-                address=cls.ADDRESS,
+                address=address.to_str(),
                 method_name="get_vault_address",
-                stack=[asset.to_boc().hex()],
+                stack=[asset.to_cell().to_boc().hex()],
             )
             address = Slice.one_from_boc(method_result["stack"][0]["cell"]).load_address()
         elif isinstance(client, ToncenterClient):
             method_result = await client.run_get_method(
-                address=cls.ADDRESS,
+                address=address.to_str(),
                 method_name="get_vault_address",
-                stack=[boc_to_base64_string(asset.to_boc())],
+                stack=[boc_to_base64_string(asset.to_cell().to_boc())],
             )
             address = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
         elif isinstance(client, LiteserverClient):
             method_result = await client.run_get_method(
-                address=cls.ADDRESS,
+                address=address.to_str(),
                 method_name="get_vault_address",
-                stack=[asset.to_slice()],
+                stack=[asset.to_cell().begin_parse()],
             )
             address = method_result[0].load_address()
         else:
@@ -67,53 +115,47 @@ class Factory:
 
         return address
 
-    async def get_native_vault(self) -> VaultNative:
-        native_vault_address = await self.get_vault_address(self.client, Asset.native())
-
-        return VaultNative(native_vault_address)
-
-    async def get_jetton_vault(self, jetton_address: str) -> VaultJetton:
-        jetton_vault_address = await self.get_vault_address(self.client, Asset.jetton(jetton_address))
-
-        return VaultJetton(jetton_vault_address)
-
     @classmethod
     async def get_pool_address(
             cls,
             client: Client,
+            address: Union[Address, str],
             pool_type: PoolType,
             assets: List[Asset],
     ) -> Address:
+        if isinstance(address, str):
+            address = Address(address)
+
         if isinstance(client, TonapiClient):
             method_result = await client.run_get_method(
-                address=cls.ADDRESS,
+                address=address.to_str(),
                 method_name="get_pool_address",
                 stack=[
-                    assets[0].to_boc().hex(),
-                    assets[1].to_boc().hex(),
+                    assets[0].to_cell().to_boc().hex(),
+                    assets[1].to_cell().to_boc().hex(),
                     pool_type.value,
                 ]
             )
             address = Address(method_result["decoded"].get("pool_address"))
         elif isinstance(client, ToncenterClient):
             method_result = await client.run_get_method(
-                address=cls.ADDRESS,
+                address=address.to_str(),
                 method_name="get_pool_address",
                 stack=[
                     pool_type.value,
-                    boc_to_base64_string(assets[0].to_boc()),
-                    boc_to_base64_string(assets[1].to_boc()),
+                    boc_to_base64_string(assets[0].to_cell().to_boc()),
+                    boc_to_base64_string(assets[1].to_cell().to_boc()),
                 ]
             )
             address = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
         elif isinstance(client, LiteserverClient):
             method_result = await client.run_get_method(
-                address=cls.ADDRESS,
+                address=address.to_str(),
                 method_name="get_pool_address",
                 stack=[
                     pool_type.value,
-                    assets[0].to_slice(),
-                    assets[1].to_slice(),
+                    assets[0].to_cell().begin_parse(),
+                    assets[1].to_cell().begin_parse(),
                 ]
             )
             address = method_result[0].load_address()
@@ -122,7 +164,69 @@ class Factory:
 
         return address
 
-    async def get_pool(self, pool_type: PoolType, assets: List[Asset]) -> Pool:
-        pool_address = await self.get_pool_address(self.client, pool_type, assets)
+    @classmethod
+    def pack_swap_step(cls, swap_step: Union[SwapStep, None] = None) -> Union[Cell, None]:
+        if swap_step is None:
+            return None
 
-        return Pool(pool_address)
+        return (
+            begin_cell()
+            .store_address(swap_step.pool_address)
+            .store_uint(0, 1)
+            .store_coins(swap_step.limit)
+            .store_maybe_ref(
+                cls.pack_swap_step(swap_step.next_step)
+                if swap_step.next_step else
+                None
+            )
+            .end_cell()
+        )
+
+    @classmethod
+    def create_swap_body(
+            cls,
+            asset_type: AssetType,
+            pool_address: Address,
+            amount: int = 0,
+            limit: int = 0,
+            swap_step: Optional[SwapStep] = None,
+            deadline: int = 0,
+            recipient_address: Optional[Union[Address, str]] = None,
+            referral_address: Optional[Union[Address, str]] = None,
+            fulfill_payload: Optional[Cell] = None,
+            reject_payload: Optional[Cell] = None,
+    ) -> Cell:
+        swap_params = (
+            begin_cell()
+            .store_uint(deadline, 32)
+            .store_address(recipient_address)
+            .store_address(referral_address)
+            .store_maybe_ref(fulfill_payload)
+            .store_maybe_ref(reject_payload)
+            .end_cell()
+        )
+
+        if asset_type == AssetType.NATIVE:
+            return (
+                begin_cell()
+                .store_uint(SWAP_NATIVE_OPCODE, 32)
+                .store_uint(0, 64)
+                .store_coins(amount)
+                .store_address(pool_address)
+                .store_uint(0, 1)
+                .store_coins(limit)
+                .store_maybe_ref(cls.pack_swap_step(swap_step))
+                .store_ref(swap_params)
+                .end_cell()
+            )
+
+        return (
+            begin_cell()
+            .store_uint(SWAP_JETTON_OPCODE, 32)
+            .store_address(pool_address)
+            .store_uint(0, 1)
+            .store_coins(limit)
+            .store_maybe_ref(cls.pack_swap_step(swap_step))
+            .store_ref(swap_params)
+            .end_cell()
+        )
