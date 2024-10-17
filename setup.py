@@ -20,6 +20,7 @@ setuptools.setup(
         "TON Blockchain": "https://ton.org",
     },
     packages=setuptools.find_packages(exclude=["examples", "tests*"]),
+    package_data={"tonutils": ["py.typed"]},
     python_requires=">=3.10",
     install_requires=[
         "aiohttp~=3.9.5",
