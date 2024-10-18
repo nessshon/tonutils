@@ -99,15 +99,15 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
 
 - **TON**:  
   Obtain free testnet TON by interacting with the official bot:  
-  [Open Bot](https://t.me/testgiver_ton_bot)  
+  [Open Bot](https://t.me/testgiver_ton_bot)
 
 - **NOT Jettons** (9 decimals):  
-  Receive testnet NOT by sending a transaction via this link:  
-  [Claim Testnet NOT](ton://transfer/kQBMfIaxfLQMP4h1Pg2V_AuyToC3jdB8MmA6u3bx8i1__NOT?amount=100000000&bin=te6ccgEBAgEAKgABIWQrfQcAAAAAAAAAABAX14QCAQAnF41FGQAAAAAAAAAAXo1KUQAAEBQ=)  
+  Claim testnet NOT by scanning the QR code at the following link:  
+  [Scan to Claim Testnet NOT](https://qrcode.ness.su/create?data=ton%3A%2F%2Ftransfer%2FkQBMfIaxfLQMP4h1Pg2V_AuyToC3jdB8MmA6u3bx8i1__NOT%3Famount%3D100000000%26bin%3Dte6ccgEBAgEAKgABIWQrfQcAAAAAAAAAABAX14QCAQAnF41FGQAAAAAAAAAAXo1KUQAAEBQ%3D&border=3&box_size=30&image_url=https%3A%2F%2Fcdn.joincommunity.xyz%2Fclicker%2Fnot_logo.png&image_round=50&image_padding=60)
 
 - **USD₮ Jettons** (6 decimals):  
-  Receive testnet USD₮ by sending a transaction via this link:  
-  [Claim Testnet USD₮](ton://transfer/kQB0ZYUL5M3KfrW0tSnwdFO1nC-BQHC2gcZl-WaF2on_USDT?amount=100000000&bin=te6ccgEBAgEAKQABIWQrfQcAAAAAAAAAABAX14QCAQAlF41FGQAAAAAAAAAAQ7msoAAQFA==)  
+  Claim testnet USD₮ by scanning the QR code at the following link:  
+  [Scan to Claim Testnet USD₮](https://qrcode.ness.su/create?data=ton%3A%2F%2Ftransfer%2FkQB0ZYUL5M3KfrW0tSnwdFO1nC-BQHC2gcZl-WaF2on_USDT%3Famount%3D100000000%26bin%3Dte6ccgEBAgEAKQABIWQrfQcAAAAAAAAAABAX14QCAQAlF41FGQAAAAAAAAAAQ7msoAAQFA%3D%3D&border=3&box_size=30&image_url=https%3A%2F%2Ftether.to%2Fimages%2FlogoCircle.png&image_round=50&image_padding=99)
 
 #### Wallet Operations
 
