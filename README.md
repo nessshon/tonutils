@@ -190,10 +190,9 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
     - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/dedust/swap_jetton_to_jetton.py)
 
 - ##### DEX STON.fi
-
-    - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/swap_ton_to_jetton.py)
-    - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/swap_jetton_to_ton.py)
-    - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/swap_jetton_to_jetton.py)
+    - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/v1/swap_ton_to_jetton.py)
+    - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/v1/swap_jetton_to_ton.py)
+    - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/v1/swap_jetton_to_jetton.py)
 
 #### NFT Operations
 
