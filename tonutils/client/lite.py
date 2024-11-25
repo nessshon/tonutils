@@ -110,11 +110,13 @@ class LiteserverClient(Client):
             if simple_account.state.type_ == "uninitialized" else
             simple_account.state.type_
         )
+        code = simple_account.state.state_init.code if simple_account.state.state_init else None
+        data = simple_account.state.state_init.data if simple_account.state.state_init else None
 
         return RawAccount(
             balance=int(simple_account.balance),
-            code=simple_account.state.state_init.code,
-            data=simple_account.state.state_init.data,
+            code=code,
+            data=data,
             status=AccountStatus(status),
             last_transaction_lt=shard_account.last_trans_lt,
             last_transaction_hash=shard_account.last_trans_hash.hex(),

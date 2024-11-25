@@ -28,4 +28,4 @@ class RawAccount:
         self.last_transaction_lt = last_transaction_lt
         self.last_transaction_hash = last_transaction_hash
 
-        self.state_init = StateInit(code=code, data=data)
+        self.state_init = StateInit(code=code, data=data) if code and data else None

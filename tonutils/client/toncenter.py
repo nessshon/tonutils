@@ -67,13 +67,15 @@ class ToncenterClient(Client):
         params = {"address": address}
         result = await self._get(method=method, params=params)
 
-        code = Cell.one_from_boc(result["code"])
-        data = Cell.one_from_boc(result["data"])
+        code = result.get("code")
+        code_cell = Cell.one_from_boc(code) if code else None
+        data = result.get("data")
+        data_cell = Cell.one_from_boc(data) if data else None
 
         return RawAccount(
             balance=int(result["balance"]),
-            code=code,
-            data=data,
+            code=code_cell,
+            data=data_cell,
             status=AccountStatus(result["status"]),
             last_transaction_lt=int(result["last_transaction_lt"]),
             last_transaction_hash=base64.b64decode(result["last_transaction_hash"]).hex(),
