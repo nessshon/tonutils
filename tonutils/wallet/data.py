@@ -41,6 +41,7 @@ class TransferNFTData:
 
     :param destination: The destination address.
     :param nft_address: The NFT item address.
+    :param response_address: The address to receive the notification. Defaults to the destination address.
     :param forward_payload: Optional forward payload.
         If a string is provided, it will be used as a transaction comment.
         If forward_amount is greater than 0, this payload will be included with the notification to the new owner.
@@ -54,6 +55,7 @@ class TransferNFTData:
             self,
             destination: Union[Address, str],
             nft_address: Union[Address, str],
+            response_address: Optional[Union[Address, str]] = None,
             forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
@@ -75,6 +77,7 @@ class TransferNFTData:
 
         self.destination = destination
         self.nft_address = nft_address
+        self.response_address = response_address
         self.forward_payload = forward_payload
         self.forward_amount = forward_amount
         self.amount = amount

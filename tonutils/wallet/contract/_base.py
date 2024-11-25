@@ -439,6 +439,7 @@ class Wallet(Contract):
             self,
             destination: Union[Address, str],
             nft_address: Union[Address, str],
+            response_address: Optional[Union[Address, str]] = None,
             forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
@@ -449,6 +450,7 @@ class Wallet(Contract):
 
         :param destination: The destination address.
         :param nft_address: The NFT item address.
+        :param response_address: The address to receive the notification. Defaults to the destination address.
         :param forward_payload: Optional forward payload.
             If a string is provided, it will be used as a transaction comment.
             If forward_amount is greater than 0, this payload will be included with the notification to the new owner.
@@ -475,6 +477,7 @@ class Wallet(Contract):
             amount=amount,
             body=NFTStandard.build_transfer_body(
                 new_owner_address=destination,
+                response_address=response_address or destination,
                 forward_payload=forward_payload,
                 forward_amount=to_nano(forward_amount),
             ),
@@ -496,6 +499,7 @@ class Wallet(Contract):
                 value=to_nano(data.amount),
                 body=NFTStandard.build_transfer_body(
                     new_owner_address=data.destination,
+                    response_address=data.response_address,
                     forward_payload=data.forward_payload,
                     forward_amount=to_nano(data.forward_amount),
 
