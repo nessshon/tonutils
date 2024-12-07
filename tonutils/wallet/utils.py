@@ -1,8 +1,16 @@
+from enum import Enum
+
+
+class NetworkGlobalID(int, Enum):
+    MAINNET = -239
+    TESTNET = -3
+
+
 def generate_wallet_id(
         subwallet_id: int,
         workchain: int = 0,
         wallet_version: int = 0,
-        network_global_id: int = -239,
+        network_global_id: int = NetworkGlobalID.MAINNET,
 ) -> int:
     """
     Generates a wallet ID based on global ID, workchain, wallet version, and wallet id.

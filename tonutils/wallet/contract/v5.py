@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 from pytoniq_core import Cell, WalletMessage, begin_cell
 from pytoniq_core.crypto.signature import sign_message
@@ -9,7 +9,7 @@ from pytoniq_core.crypto.signature import sign_message
 from . import Wallet
 from ..data import WalletV5Data
 from ..op_codes import *
-from ..utils import generate_wallet_id
+from ..utils import generate_wallet_id, NetworkGlobalID
 from ...client import Client
 
 
@@ -25,10 +25,10 @@ class WalletV5R1(Wallet):
             client: Client,
             public_key: bytes,
             private_key: bytes,
-            wallet_id: int = 0,
-            workchain: int = 0,
-            wallet_version: int = 0,
-            network_global_id: int = -239,
+            wallet_id: Optional[int] = None,
+            workchain: Optional[int] = None,
+            wallet_version: Optional[int] = None,
+            network_global_id: Optional[int] = None,
             **kwargs,
     ) -> None:
         """
@@ -42,10 +42,15 @@ class WalletV5R1(Wallet):
         :param wallet_version: The wallet version (8-bit unsigned integer).
         :param network_global_id: The network global ID (32-bit signed integer).
         """
+        network_global_id = network_global_id or (
+            NetworkGlobalID.TESTNET
+            if client.is_testnet else
+            NetworkGlobalID.MAINNET
+        )
         wallet_id = generate_wallet_id(
-            subwallet_id=wallet_id,
-            workchain=workchain,
-            wallet_version=wallet_version,
+            subwallet_id=wallet_id or 0,
+            workchain=workchain or 0,
+            wallet_version=wallet_version or 0,
             network_global_id=network_global_id,
         )
         super().__init__(client, public_key, private_key, wallet_id, **kwargs)
