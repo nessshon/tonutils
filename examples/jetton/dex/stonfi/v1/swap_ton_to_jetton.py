@@ -1,8 +1,8 @@
+from pytoniq_core import Address
+
 from tonutils.client import TonapiClient
-from tonutils.jetton import JettonMaster
 from tonutils.jetton.dex.stonfi import StonfiRouterV1
-from tonutils.jetton.dex.stonfi.addresses import *
-from tonutils.utils import to_nano
+from tonutils.utils import to_nano, to_amount
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -12,45 +12,32 @@ API_KEY = ""
 IS_TESTNET = True
 
 # Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []
+MNEMONIC: list[str] = []  # noqa
 
-# Address of the Jetton Master contract
-JETTON_MASTER_ADDRESS = "EQ..."
+# Address of the Jetton Master for swapping
+TO_JETTON_MASTER_ADDRESS = "kQBi0fzBTtCfwF1xM6tXMydpJlzfVgtgRmCFx3G--9hx97tM"  # noqa
 
-# Amount of TON to swap
-SWAP_TON_AMOUNT = 1
+# Number of decimal places for the Jetton
+JETTON_DECIMALS = 9
+
+# Amount of TON to swap (in base units, considering decimals)
+TON_AMOUNT = 1
 
 
 async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    router_address = TESTNET_V1_ROUTER_ADDRESS if IS_TESTNET else V1_ROUTER_ADDRESS
-    proxy_address = TESTNET_PTON_V1_ADDRESS if IS_TESTNET else PTON_V1_ADDRESS
-
-    offer_address = await JettonMaster.get_wallet_address(
-        client=client,
-        owner_address=router_address,
-        jetton_master_address=proxy_address,
-    )
-    ask_jetton_wallet_address = await JettonMaster.get_wallet_address(
-        client=wallet.client,
-        owner_address=router_address,
-        jetton_master_address=JETTON_MASTER_ADDRESS,
-    )
-
-    body = StonfiRouterV1.build_swap_body(
-        jetton_amount=to_nano(SWAP_TON_AMOUNT),
-        recipient_address=router_address,
-        forward_amount=to_nano(0.215),
+    to, value, body = await StonfiRouterV1(client).get_swap_ton_to_jetton_tx_params(
         user_wallet_address=wallet.address,
-        min_amount=1,
-        ask_jetton_wallet_address=ask_jetton_wallet_address,
+        ask_jetton_address=Address(TO_JETTON_MASTER_ADDRESS),
+        offer_amount=to_nano(TON_AMOUNT),
+        min_ask_amount=0,
     )
 
     tx_hash = await wallet.transfer(
-        destination=offer_address,
-        amount=SWAP_TON_AMOUNT + 0.215,
+        destination=to,
+        amount=to_amount(value),
         body=body,
     )
 

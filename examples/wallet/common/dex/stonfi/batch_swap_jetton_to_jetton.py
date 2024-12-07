@@ -5,7 +5,10 @@ from tonutils.wallet.data import SwapJettonToJettonData
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
 API_KEY = ""
 
-# Mnemonic phrase for creating the wallet
+# Set to True for the test network, False for the main network
+IS_TESTNET = True
+
+# Mnemonic phrase used to connect the wallet
 MNEMONIC: list[str] = []
 
 
@@ -39,7 +42,8 @@ async def main() -> None:
                 jetton_amount=0.01,
                 jetton_decimals=9,
             ),
-        ]
+        ],
+        version=2,  # STONfi Router version
     )
 
     print("Successfully swapped TON to Jetton!")

@@ -4,27 +4,30 @@ from tonutils.wallet import WalletV4R2
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
 API_KEY = ""
 
-# Mnemonic phrase for creating the wallet
+# Set to True for the test network, False for the main network
+IS_TESTNET = True
+
+# Mnemonic phrase used to connect the wallet
 MNEMONIC: list[str] = []
 
 # Addresses of the Jetton Masters for swapping
-FROM_JETTON_MASTER_ADDRESS = "EQ..."
-TO_JETTON_MASTER_B_ADDRESS = "EQ..."
+FROM_JETTON_MASTER_ADDRESS = "kQDLvsZol3juZyOAVG8tWsJntOxeEZWEaWCbbSjYakQpuYN5"  # noqa
+TO_JETTON_MASTER_ADDRESS = "kQB_TOJSB7q3-Jm1O8s0jKFtqLElZDPjATs5uJGsujcjznq3"  # noqa
 
 # Number of decimal places for the Jetton
 JETTON_DECIMALS = 9
 
 # Amount of Jettons to swap (in base units, considering decimals)
-JETTON_AMOUNT = 1
+JETTON_AMOUNT = 0.01
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY)
+    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     tx_hash = await wallet.stonfi_swap_jetton_to_jetton(
         from_jetton_master_address=FROM_JETTON_MASTER_ADDRESS,
-        to_jetton_master_address=TO_JETTON_MASTER_B_ADDRESS,
+        to_jetton_master_address=TO_JETTON_MASTER_ADDRESS,
         jetton_amount=JETTON_AMOUNT,
         jetton_decimals=JETTON_DECIMALS,
     )
