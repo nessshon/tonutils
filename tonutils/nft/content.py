@@ -99,7 +99,6 @@ class CollectionModifiedOnchainContent(BaseOnchainContent):
             image_data: Optional[bytes] = None,
             cover_image: Optional[str] = None,
             cover_image_data: Optional[bytes] = None,
-            social_links: Optional[List[str]] = None,
             **kwargs,
     ) -> None:
         super().__init__(
@@ -109,7 +108,6 @@ class CollectionModifiedOnchainContent(BaseOnchainContent):
             image_data=image_data,
             cover_image=cover_image,
             cover_image_data=cover_image_data,
-            social_links=social_links,
             **kwargs,
         )
 
