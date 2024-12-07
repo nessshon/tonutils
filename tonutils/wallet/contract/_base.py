@@ -38,13 +38,12 @@ from ...exceptions import UnknownClientError
 from ...jetton import JettonMaster, JettonWallet
 from ...jetton.dex.dedust import Asset, AssetType, Factory, PoolType
 from ...jetton.dex.dedust.addresses import *
-from ...jetton.dex.stonfi import StonfiRouterV1
-from ...jetton.dex.stonfi.addresses import *
+from ...jetton.dex.stonfi import StonfiRouterV2, StonfiRouterV1
 from ...nft import NFTStandard
 from ...utils import (
     create_encrypted_comment_cell,
     message_to_boc_hex,
-    to_nano,
+    to_nano, to_amount,
 )
 
 
@@ -911,65 +910,12 @@ class Wallet(Contract):
 
         return message_hash
 
-    async def _stonfi_build_swap_payload(
-            self,
-            from_jetton_master_address: Optional[Union[Address, str]],
-            to_jetton_master_address: Optional[Union[Address, str]],
-            jetton_amount: Union[int, float],
-            jetton_decimals: int = 9,
-            min_amount: Union[int, float] = 0,
-            forward_amount: Union[int, float] = 0,
-            fee_amount: Union[int, float] = 0,
-            recipient_is_router: bool = False,
-    ) -> Tuple[Address, float, Cell]:
-        """
-        Build swap payload for the StonFi.
-
-        :param from_jetton_master_address: The jetton master address to swap from.
-        :param to_jetton_master_address: The jetton master address to swap to.
-        :param jetton_amount: The amount of jetton to swap.
-        :param jetton_decimals: The jetton decimals.
-        :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
-        :param forward_amount: The forward fee amount. Defaults to 0.
-        :param fee_amount: The fee amount. Defaults to 0.
-        :param recipient_is_router: Whether the recipient is the router. Defaults to False.
-        :return: The destination address, the amount to send, and the swap body.
-        """
-        if self.client.is_testnet:
-            router_address = TESTNET_V1_ROUTER_ADDRESS
-            proxy_address = TESTNET_PTON_V1_ADDRESS
-        else:
-            router_address = V1_ROUTER_ADDRESS
-            proxy_address = PTON_V1_ADDRESS
-
-        destination = await JettonMaster.get_wallet_address(
-            client=self.client,
-            owner_address=self.address if not recipient_is_router else router_address,
-            jetton_master_address=from_jetton_master_address or proxy_address,
-        )
-        ask_jetton_wallet_address = await JettonMaster.get_wallet_address(
-            client=self.client,
-            owner_address=router_address,
-            jetton_master_address=to_jetton_master_address or proxy_address,
-        )
-
-        body = StonfiRouterV1.build_swap_body(
-            jetton_amount=to_nano(jetton_amount, jetton_decimals),
-            recipient_address=router_address,
-            forward_amount=to_nano(forward_amount),
-            user_wallet_address=self.address,
-            min_amount=to_nano(min_amount, jetton_decimals),
-            ask_jetton_wallet_address=ask_jetton_wallet_address,
-        )
-
-        return destination, forward_amount + fee_amount, body
-
     async def stonfi_swap_ton_to_jetton(
             self,
             jetton_master_address: Union[Address, str],
             ton_amount: Union[int, float],
             min_amount: Union[int, float] = 0,
-            forward_amount: Union[int, float] = 0.215,
+            version: int = 2,
             **kwargs,
     ) -> str:
         """
@@ -978,22 +924,31 @@ class Wallet(Contract):
         :param jetton_master_address: The jetton master address to swap to.
         :param ton_amount: The amount of TON to swap.
         :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
-        :param forward_amount: The forward fee amount. Defaults to 0.215.
+        :param version: The version of the STONfi Router. Defaults to 2.
         :return: The hash of the swap message.
         """
-        destination, amount, body = await self._stonfi_build_swap_payload(
-            from_jetton_master_address=None,
-            to_jetton_master_address=jetton_master_address,
-            jetton_amount=ton_amount,
-            min_amount=min_amount,
-            forward_amount=forward_amount,
-            fee_amount=ton_amount,
-            recipient_is_router=True,
-        )
+        if version == 1:
+            to, value, body = await StonfiRouterV1(self.client).get_swap_ton_to_jetton_tx_params(
+                user_wallet_address=self.address,
+                ask_jetton_address=Address(jetton_master_address),
+                offer_amount=to_nano(ton_amount),
+                min_ask_amount=to_nano(min_amount),
+            )
+        elif version == 2:
+            to, value, body = await StonfiRouterV2(self.client).get_swap_ton_to_jetton_tx_params(
+                user_wallet_address=self.address,
+                receiver_address=self.address,
+                offer_jetton_address=Address(jetton_master_address),
+                offer_amount=to_nano(ton_amount),
+                min_ask_amount=to_nano(min_amount),
+                refund_address=self.address,
+            )
+        else:
+            raise ValueError(f"Unsupported STONfi Router version: {version}")
 
         message_hash = await self.transfer(
-            destination=destination,
-            amount=amount,
+            destination=to,
+            amount=to_amount(value),
             body=body,
             bounce=True,
             **kwargs,
@@ -1004,29 +959,41 @@ class Wallet(Contract):
     async def batch_stonfi_swap_ton_to_jetton(
             self,
             data_list: List[SwapTONToJettonData],
+            version: int = 2,
     ) -> str:
         """
         Perform a batch swap operation.
 
         :param data_list: The list of swap data.
+        :param version: The version of the STONfi Router. Defaults to 2.
         :return: The hash of the batch swap message.
         """
         messages = []
 
         for data in data_list:
-            destination, amount, body = await self._stonfi_build_swap_payload(
-                from_jetton_master_address=None,
-                to_jetton_master_address=data.jetton_master_address,
-                jetton_amount=data.ton_amount,
-                min_amount=data.min_amount,
-                forward_amount=data.forward_amount or 0.215,
-                fee_amount=data.ton_amount,
-                recipient_is_router=True,
-            )
+            if version == 1:
+                to, value, body = await StonfiRouterV1(self.client).get_swap_ton_to_jetton_tx_params(
+                    user_wallet_address=self.address,
+                    ask_jetton_address=Address(data.jetton_master_address),
+                    offer_amount=to_nano(data.ton_amount),
+                    min_ask_amount=to_nano(data.min_amount),
+                )
+            elif version == 2:
+                to, value, body = await StonfiRouterV2(self.client).get_swap_ton_to_jetton_tx_params(
+                    user_wallet_address=self.address,
+                    receiver_address=self.address,
+                    offer_jetton_address=Address(data.jetton_master_address),
+                    offer_amount=to_nano(data.ton_amount),
+                    min_ask_amount=to_nano(data.min_amount),
+                    refund_address=self.address,
+                )
+            else:
+                raise ValueError(f"Unsupported STONfi Router version: {version}")
+
             messages.append(
                 self.create_wallet_internal_message(
-                    destination=destination,
-                    value=to_nano(amount),
+                    destination=to,
+                    value=value,
                     body=body,
                     bounce=True,
                     **data.other,
@@ -1043,8 +1010,7 @@ class Wallet(Contract):
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
             min_amount: Union[int, float] = 0,
-            forward_amount: Union[int, float] = 0.125,
-            fee_amount: Union[int, float] = 0.185,
+            version: int = 2,
             **kwargs,
     ) -> str:
         """
@@ -1054,24 +1020,31 @@ class Wallet(Contract):
         :param jetton_amount: The amount of jetton to swap.
         :param jetton_decimals: The jetton decimals. Defaults to 9.
         :param min_amount: The minimum amount of TON to receive. Defaults to 0.
-        :param forward_amount: The forward fee amount. Defaults to 0.125.
-        :param fee_amount: The fee amount. Defaults to 0.185.
+        :param version: The version of the STONfi Router. Defaults to 2.
         :return: The hash of the swap message.
         """
-        destination, amount, body = await self._stonfi_build_swap_payload(
-            from_jetton_master_address=jetton_master_address,
-            to_jetton_master_address=None,
-            jetton_amount=jetton_amount,
-            jetton_decimals=jetton_decimals,
-            min_amount=min_amount,
-            forward_amount=forward_amount,
-            fee_amount=fee_amount,
-            recipient_is_router=False,
-        )
+        if version == 1:
+            to, value, body = await StonfiRouterV1(self.client).get_swap_jetton_to_ton_tx_params(
+                offer_jetton_address=Address(jetton_master_address),
+                user_wallet_address=self.address,
+                offer_amount=to_nano(jetton_amount, jetton_decimals),
+                min_ask_amount=to_nano(min_amount, jetton_decimals),
+            )
+        elif version == 2:
+            to, value, body = await StonfiRouterV2(self.client).get_swap_jetton_to_ton_tx_params(
+                offer_jetton_address=Address(jetton_master_address),
+                receiver_address=self.address,
+                user_wallet_address=self.address,
+                offer_amount=to_nano(jetton_amount, jetton_decimals),
+                min_ask_amount=to_nano(min_amount, jetton_decimals),
+                refund_address=self.address,
+            )
+        else:
+            raise ValueError(f"Unsupported STONfi Router version: {version}")
 
         message_hash = await self.transfer(
-            destination=destination,
-            amount=amount,
+            destination=to,
+            amount=to_amount(value),
             body=body,
             bounce=True,
             **kwargs,
@@ -1082,30 +1055,41 @@ class Wallet(Contract):
     async def batch_stonfi_swap_jetton_to_ton(
             self,
             data_list: List[SwapJettonToTONData],
+            version: int = 2,
     ) -> str:
         """
         Perform a batch swap operation.
 
         :param data_list: The list of swap data.
+        :param version: The version of the STONfi Router. Defaults to 2.
         :return: The hash of the batch swap message.
         """
         messages = []
 
         for data in data_list:
-            destination, amount, body = await self._stonfi_build_swap_payload(
-                from_jetton_master_address=data.jetton_master_address,
-                to_jetton_master_address=None,
-                jetton_amount=data.jetton_amount,
-                jetton_decimals=data.jetton_decimals,
-                min_amount=data.min_amount,
-                forward_amount=data.forward_amount or 0.125,
-                fee_amount=data.fee_amount or 0.185,
-                recipient_is_router=False,
-            )
+            if version == 1:
+                to, value, body = await StonfiRouterV1(self.client).get_swap_jetton_to_ton_tx_params(
+                    offer_jetton_address=Address(data.jetton_master_address),
+                    user_wallet_address=self.address,
+                    offer_amount=to_nano(data.jetton_amount, data.jetton_decimals),
+                    min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
+                )
+            elif version == 2:
+                to, value, body = await StonfiRouterV2(self.client).get_swap_jetton_to_ton_tx_params(
+                    offer_jetton_address=Address(data.jetton_master_address),
+                    receiver_address=self.address,
+                    user_wallet_address=self.address,
+                    offer_amount=to_nano(data.jetton_amount, data.jetton_decimals),
+                    min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
+                    refund_address=self.address,
+                )
+            else:
+                raise ValueError(f"Unsupported STONfi Router version: {version}")
+
             messages.append(
                 self.create_wallet_internal_message(
-                    destination=destination,
-                    value=to_nano(amount),
+                    destination=to,
+                    value=value,
                     body=body,
                     bounce=True,
                     **data.other,
@@ -1123,8 +1107,7 @@ class Wallet(Contract):
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
             min_amount: Union[int, float] = 0,
-            forward_amount: Union[int, float] = 0.205,
-            fee_amount: Union[int, float] = 0.265,
+            version: int = 2,
             **kwargs,
     ) -> str:
         """
@@ -1135,24 +1118,33 @@ class Wallet(Contract):
         :param jetton_amount: The amount of jetton to swap.
         :param jetton_decimals: The jetton decimals. Defaults to 9.
         :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
-        :param forward_amount: The forward fee amount. Defaults to 0.205.
-        :param fee_amount: The fee amount. Defaults to 0.265.
+        :param version: The version of the STONfi Router. Defaults to 2.
         :return: The hash of the swap message.
         """
-        destination, amount, body = await self._stonfi_build_swap_payload(
-            from_jetton_master_address=from_jetton_master_address,
-            to_jetton_master_address=to_jetton_master_address,
-            jetton_amount=jetton_amount,
-            jetton_decimals=jetton_decimals,
-            min_amount=min_amount,
-            forward_amount=forward_amount,
-            fee_amount=fee_amount,
-            recipient_is_router=False,
-        )
+        if version == 1:
+            to, value, body = await StonfiRouterV1(self.client).get_swap_jetton_to_jetton_tx_params(
+                user_wallet_address=self.address,
+                offer_jetton_address=Address(from_jetton_master_address),
+                ask_jetton_address=Address(to_jetton_master_address),
+                offer_amount=to_nano(jetton_amount, jetton_decimals),
+                min_ask_amount=to_nano(min_amount, jetton_decimals),
+            )
+        elif version == 2:
+            to, value, body = await StonfiRouterV2(self.client).get_swap_jetton_to_jetton_tx_params(
+                user_wallet_address=self.address,
+                receiver_address=self.address,
+                refund_address=self.address,
+                offer_jetton_address=Address(from_jetton_master_address),
+                ask_jetton_address=Address(to_jetton_master_address),
+                offer_amount=to_nano(jetton_amount, jetton_decimals),
+                min_ask_amount=to_nano(min_amount, jetton_decimals),
+            )
+        else:
+            raise ValueError(f"Unsupported STONfi Router version: {version}")
 
         message_hash = await self.transfer(
-            destination=destination,
-            amount=amount,
+            destination=to,
+            amount=to_amount(value),
             body=body,
             bounce=True,
             **kwargs,
@@ -1163,30 +1155,43 @@ class Wallet(Contract):
     async def batch_stonfi_swap_jetton_to_jetton(
             self,
             data_list: List[SwapJettonToJettonData],
+            version: int = 2,
     ) -> str:
         """
         Perform a batch swap operation.
 
         :param data_list: The list of swap data.
+        :param version: The version of the STONfi Router. Defaults to 2.
         :return: The hash of the batch swap message.
         """
         messages = []
 
         for data in data_list:
-            destination, amount, body = await self._stonfi_build_swap_payload(
-                from_jetton_master_address=data.from_jetton_master_address,
-                to_jetton_master_address=data.to_jetton_master_address,
-                jetton_amount=data.jetton_amount,
-                jetton_decimals=data.jetton_decimals,
-                min_amount=data.min_amount,
-                forward_amount=data.forward_amount or 0.205,
-                fee_amount=data.fee_amount or 0.265,
-                recipient_is_router=False,
-            )
+            if version == 1:
+                to, value, body = await StonfiRouterV1(self.client).get_swap_jetton_to_jetton_tx_params(
+                    user_wallet_address=self.address,
+                    offer_jetton_address=Address(data.from_jetton_master_address),
+                    ask_jetton_address=Address(data.to_jetton_master_address),
+                    offer_amount=to_nano(data.jetton_amount, data.jetton_decimals),
+                    min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
+                )
+            elif version == 2:
+                to, value, body = await StonfiRouterV2(self.client).get_swap_jetton_to_jetton_tx_params(
+                    user_wallet_address=self.address,
+                    receiver_address=self.address,
+                    refund_address=self.address,
+                    offer_jetton_address=Address(data.from_jetton_master_address),
+                    ask_jetton_address=Address(data.to_jetton_master_address),
+                    offer_amount=to_nano(data.jetton_amount, data.jetton_decimals),
+                    min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
+                )
+            else:
+                raise ValueError(f"Unsupported STONfi Router version: {version}")
+
             messages.append(
                 self.create_wallet_internal_message(
-                    destination=destination,
-                    value=to_nano(amount),
+                    destination=to,
+                    value=value,
                     body=body,
                     bounce=True,
                     **data.other,

@@ -1,4 +1,4 @@
-from .v1 import StonfiRouterV1
+from .router import StonfiRouterV1
 
 __all__ = [
     "StonfiRouterV1",
