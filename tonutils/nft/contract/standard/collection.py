@@ -240,3 +240,18 @@ class CollectionStandardModified(CollectionStandardBase):
             amount_per_one=amount_per_one,
             query_id=query_id,
         )
+
+    @classmethod
+    def build_return_balance(cls, query_id: int = 0) -> Cell:
+        """
+        Builds the body of the return balance transaction.
+
+        :param query_id: The query ID. Defaults to 0.
+        :return: The cell representing the body of the return balance transaction.
+        """
+        return (
+            begin_cell()
+            .store_uint(RETURN_COLLECTION_BALANCE_OPCODE, 32)
+            .store_uint(query_id, 64)
+            .end_cell()
+        )
