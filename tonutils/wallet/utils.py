@@ -1,4 +1,7 @@
 from enum import Enum
+from typing import Callable
+
+from pytoniq_core.crypto.keys import words
 
 
 class NetworkGlobalID(int, Enum):
@@ -27,3 +30,24 @@ def generate_wallet_id(
     ctx |= (subwallet_id & 0xFFFF)
 
     return ctx ^ (network_global_id & 0xFFFFFFFF)
+
+
+def validate_mnemonic(func: Callable) -> Callable:
+    def wrapper(cls, client, mnemonic, *args, **kwargs):
+        if isinstance(mnemonic, str):
+            mnemonic = mnemonic.split()
+
+        valid_lengths, mnemonic_length = (12, 18, 24), len(mnemonic)
+
+        assert mnemonic_length in valid_lengths, \
+            f'Invalid mnemonic length: {mnemonic_length}. Valid lengths: {valid_lengths}'
+
+        invalid_words = [(i, w) for i, w in enumerate(mnemonic, start=1) if w not in words]
+
+        if invalid_words:
+            invalid_words_str = ", ".join(f'{index}. {word}' for index, word in invalid_words)
+            raise ValueError(f"Invalid mnemonic words: {invalid_words_str}")
+
+        return func(cls, client, mnemonic, *args, **kwargs)
+
+    return wrapper

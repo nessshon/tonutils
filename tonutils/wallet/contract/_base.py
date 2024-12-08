@@ -27,6 +27,7 @@ from ..data import (
     SwapJettonToJettonData,
 )
 from ..op_codes import *
+from ..utils import validate_mnemonic
 from ...client import (
     Client,
     LiteserverClient,
@@ -214,6 +215,7 @@ class Wallet(Contract):
         return cls(client, public_key, private_key, **kwargs)
 
     @classmethod
+    @validate_mnemonic
     def from_mnemonic(
             cls,
             client: Client,
