@@ -81,14 +81,19 @@ class SwapStep:
 
 class Factory:
 
-    def __init__(self, client: Client) -> None:
+    def __init__(
+            self,
+            client: Client,
+            factory_address: Optional[Address] = None,
+            native_vault_address: Optional[Address] = None,
+    ) -> None:
         self.client = client
-        self.address = Address(
+        self.factory_address = factory_address or Address(
             FactoryAddresses.TESTNET
             if client.is_testnet else
             FactoryAddresses.MAINNET
         )
-        self.native_vault_address = Address(
+        self.native_vault_address = native_vault_address or Address(
             NativeVaultAddresses.TESTNET
             if client.is_testnet else
             NativeVaultAddresses.MAINNET
@@ -102,21 +107,21 @@ class Factory:
     async def get_vault_address(self, asset: Asset) -> Address:
         if isinstance(self.client, TonapiClient):
             method_result = await self.client.run_get_method(
-                address=self.address.to_str(),
+                address=self.factory_address.to_str(),
                 method_name="get_vault_address",
                 stack=[asset.to_cell().to_boc().hex()],
             )
             address = Slice.one_from_boc(method_result["stack"][0]["cell"]).load_address()
         elif isinstance(self.client, ToncenterClient):
             method_result = await self.client.run_get_method(
-                address=self.address.to_str(),
+                address=self.factory_address.to_str(),
                 method_name="get_vault_address",
                 stack=[boc_to_base64_string(asset.to_cell().to_boc())],
             )
             address = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
         elif isinstance(self.client, LiteserverClient):
             method_result = await self.client.run_get_method(
-                address=self.address.to_str(),
+                address=self.factory_address.to_str(),
                 method_name="get_vault_address",
                 stack=[asset.to_cell().begin_parse()],
             )
@@ -129,7 +134,7 @@ class Factory:
     async def get_pool_address(self, pool_type: PoolType, assets: List[Asset]) -> Address:
         if isinstance(self.client, TonapiClient):
             method_result = await self.client.run_get_method(
-                address=self.address.to_str(),
+                address=self.factory_address.to_str(),
                 method_name="get_pool_address",
                 stack=[
                     assets[0].to_cell().to_boc().hex(),
@@ -140,7 +145,7 @@ class Factory:
             address = Address(method_result["decoded"].get("pool_address"))
         elif isinstance(self.client, ToncenterClient):
             method_result = await self.client.run_get_method(
-                address=self.address.to_str(),
+                address=self.factory_address.to_str(),
                 method_name="get_pool_address",
                 stack=[
                     pool_type.value,
@@ -151,7 +156,7 @@ class Factory:
             address = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
         elif isinstance(self.client, LiteserverClient):
             method_result = await self.client.run_get_method(
-                address=self.address.to_str(),
+                address=self.factory_address.to_str(),
                 method_name="get_pool_address",
                 stack=[
                     pool_type.value,
@@ -184,7 +189,7 @@ class Factory:
         )
 
     @classmethod
-    def create_swap_body(
+    def build_swap_body(
             cls,
             asset_type: AssetType,
             pool_address: Address,
@@ -270,7 +275,7 @@ class Factory:
             jetton_master_address=offer_jetton_address,
         )
 
-        forward_payload = self.create_swap_body(
+        forward_payload = self.build_swap_body(
             asset_type=AssetType.JETTON,
             pool_address=offer_pool_address,
             amount=offer_amount,
@@ -328,7 +333,7 @@ class Factory:
             jetton_master_address=offer_jetton_address,
         )
 
-        forward_payload = Factory.create_swap_body(
+        forward_payload = Factory.build_swap_body(
             asset_type=AssetType.JETTON,
             pool_address=pool_address,
             amount=offer_amount,
@@ -377,7 +382,7 @@ class Factory:
             ]
         )
 
-        body = self.create_swap_body(
+        body = self.build_swap_body(
             asset_type=AssetType.NATIVE,
             pool_address=pool_address,
             amount=offer_amount,

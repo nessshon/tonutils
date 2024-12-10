@@ -7,7 +7,7 @@ TX_DEADLINE = 15 * 60
 
 @dataclass
 class RouterAddresses:
-    MAINNET = "EQDAPye7HAPAAl4WXpz5jOCdhf2H9h9QkkzRQ-6K5usiuQeC"  # noqa
+    MAINNET = "EQDQ6j53q21HuZtw6oclm7z4LU2cG6S2OKvpSSMH548d7kJT"  # noqa
     TESTNET = "kQALh-JBBIKK7gr0o4AVf9JZnEsFndqO0qTCyT-D-yBsWk0v"  # noqa
 
 

@@ -11,13 +11,19 @@ from ..pton.pton import StonfiPTONV2
 
 class StonfiRouterV2:
 
-    def __init__(self, client: Client) -> None:
+    def __init__(
+            self,
+            client: Client,
+            router_address: Optional[Address] = None,
+            pton_address: Optional[Address] = None,
+    ) -> None:
         self.client = client
-        self.address = Address(
+        self.router_address = router_address or Address(
             RouterAddresses.TESTNET
             if client.is_testnet else
             RouterAddresses.MAINNET
         )
+        self.pton = StonfiPTONV2(client, pton_address)
         self.is_testnet = client.is_testnet
 
     @classmethod
@@ -25,7 +31,7 @@ class StonfiRouterV2:
         return int(time.time()) + TX_DEADLINE
 
     @classmethod
-    def create_swap_body(
+    def build_swap_body(
             cls,
             ask_jetton_wallet_address: Address,
             receiver_address: Address,
@@ -66,7 +72,7 @@ class StonfiRouterV2:
         )
 
     @classmethod
-    def create_cross_swap_body(
+    def build_cross_swap_body(
             cls,
             ask_jetton_wallet_address: Address,
             receiver_address: Address,
@@ -128,7 +134,7 @@ class StonfiRouterV2:
             query_id: Optional[int] = 0,
             jetton_custom_payload: Optional[Cell] = None,
     ) -> Tuple[Address, int, Cell]:
-        contract_address = self.address
+        contract_address = self.router_address
 
         offer_jetton_wallet_address = await JettonMaster.get_wallet_address(
             client=self.client,
@@ -143,7 +149,7 @@ class StonfiRouterV2:
 
         forward_ton_amount = forward_gas_amount or GasConstants.swap_jetton_to_jetton.FORWARD_GAS_AMOUNT
 
-        forward_payload = self.create_swap_body(
+        forward_payload = self.build_swap_body(
             ask_jetton_wallet_address=ask_jetton_wallet_address,
             receiver_address=receiver_address or user_wallet_address,
             min_ask_amount=min_ask_amount,
@@ -193,13 +199,11 @@ class StonfiRouterV2:
             query_id: Optional[int] = 0,
             jetton_custom_payload: Optional[Cell] = None,
     ) -> tuple[Address, int, Cell]:
-        pton = StonfiPTONV2(client=self.client)
-
         return await self.get_swap_jetton_to_jetton_tx_params(
             user_wallet_address=user_wallet_address,
             receiver_address=receiver_address,
             offer_jetton_address=offer_jetton_address,
-            ask_jetton_address=pton.address,
+            ask_jetton_address=self.pton.address,
             offer_amount=offer_amount,
             min_ask_amount=min_ask_amount,
             refund_address=refund_address,
@@ -236,7 +240,7 @@ class StonfiRouterV2:
             forward_gas_amount: Optional[int] = None,
             query_id: Optional[int] = 0,
     ) -> tuple[Address, int, Cell]:
-        contract_address = self.address
+        contract_address = self.router_address
 
         ask_jetton_wallet_address = await JettonMaster.get_wallet_address(
             client=self.client,
@@ -244,7 +248,7 @@ class StonfiRouterV2:
             jetton_master_address=offer_jetton_address,
         )
 
-        forward_payload = self.create_swap_body(
+        forward_payload = self.build_swap_body(
             ask_jetton_wallet_address=ask_jetton_wallet_address,
             receiver_address=receiver_address or user_wallet_address,
             min_ask_amount=min_ask_amount,
@@ -261,9 +265,7 @@ class StonfiRouterV2:
 
         forward_ton_amount = forward_gas_amount or GasConstants.swap_ton_to_jetton.FORWARD_GAS_AMOUNT
 
-        pton = StonfiPTONV2(client=self.client)
-
-        return await pton.get_ton_transfer_tx_params(
+        return await self.pton.get_ton_transfer_tx_params(
             ton_amount=offer_amount,
             destination_address=contract_address,
             refund_address=user_wallet_address,

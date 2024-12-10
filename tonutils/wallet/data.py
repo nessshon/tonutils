@@ -179,8 +179,6 @@ class SwapJettonToTONData:
     :param jetton_amount: The amount of jettons to swap.
     :param jetton_decimals: The jetton decimals. Defaults to 9.
     :param min_amount: Minimum amount of amount to receive. Defaults to 0.
-    :param forward_amount: Forward fee amount. Defaults to 0.
-    :param fee_amount: Fee amount. 0.
     :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
 
@@ -190,8 +188,6 @@ class SwapJettonToTONData:
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
             min_amount: Union[int, float] = 0,
-            forward_amount: Union[int, float] = 0,
-            fee_amount: Union[int, float] = 0,
             **kwargs,
     ) -> None:
         if isinstance(jetton_master_address, str):
@@ -201,8 +197,6 @@ class SwapJettonToTONData:
         self.jetton_amount = jetton_amount
         self.jetton_decimals = jetton_decimals
         self.min_amount = min_amount
-        self.forward_amount = forward_amount
-        self.fee_amount = fee_amount
         self.other = kwargs
 
 
@@ -213,10 +207,9 @@ class SwapJettonToJettonData:
     :param from_jetton_master_address: The address of the jetton master contract from which to swap.
     :param to_jetton_master_address: The address of the jetton master contract to which to swap.
     :param jetton_amount: The amount of jettons to swap.
-    :param jetton_decimals: The number of jetton decimals. Defaults to 9.
     :param min_amount: Minimum amount of amount to receive. Defaults to 0.
-    :param forward_amount: Forward fee amount. Defaults to 0.
-    :param fee_amount: Fee amount. Defaults to 0.
+    :param from_jetton_decimals: The jetton decimals of the from_jetton_master_address (used for calculating jetton_amount).
+    :param to_jetton_decimals: The jetton decimals of the to_jetton_master_address (used for calculating min_amount).
     :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
 
@@ -225,10 +218,9 @@ class SwapJettonToJettonData:
             from_jetton_master_address: Union[Address, str],
             to_jetton_master_address: Union[Address, str],
             jetton_amount: Union[int, float],
-            jetton_decimals: int = 9,
             min_amount: Union[int, float] = 0,
-            forward_amount: Union[int, float] = 0.25,
-            fee_amount: Union[int, float] = 0.3,
+            from_jetton_decimals: int = 9,
+            to_jetton_decimals: int = 9,
             **kwargs,
     ) -> None:
         if isinstance(from_jetton_master_address, str):
@@ -240,10 +232,9 @@ class SwapJettonToJettonData:
         self.from_jetton_master_address = from_jetton_master_address
         self.to_jetton_master_address = to_jetton_master_address
         self.jetton_amount = jetton_amount
-        self.jetton_decimals = jetton_decimals
         self.min_amount = min_amount
-        self.forward_amount = forward_amount
-        self.fee_amount = fee_amount
+        self.from_jetton_decimals = from_jetton_decimals
+        self.to_jetton_decimals = to_jetton_decimals
         self.other = kwargs
 
 

@@ -10,9 +10,9 @@ from .constants import *
 
 class StonfiPTONV2:
 
-    def __init__(self, client: Client) -> None:
+    def __init__(self, client: Client, pton_address: Optional[Address] = None) -> None:
         self.client = client
-        self.address = Address(
+        self.address = pton_address or Address(
             PTONAddresses.TESTNET
             if client.is_testnet else
             PTONAddresses.MAINNET
@@ -20,7 +20,7 @@ class StonfiPTONV2:
         self.is_testnet = client.is_testnet
 
     @classmethod
-    def create_ton_transfer_body(
+    def build_ton_transfer_body(
             cls,
             ton_amount: int,
             refund_address: Address,
@@ -42,7 +42,7 @@ class StonfiPTONV2:
         return cell.end_cell()
 
     @classmethod
-    def create_deploy_wallet_body(
+    def build_deploy_wallet_body(
             cls,
             owner_address: Address,
             excess_address: Address,
@@ -72,7 +72,7 @@ class StonfiPTONV2:
             jetton_master_address=self.address,
         )
 
-        body = self.create_ton_transfer_body(
+        body = self.build_ton_transfer_body(
             ton_amount=ton_amount,
             refund_address=refund_address,
             forward_payload=forward_payload,
@@ -92,7 +92,7 @@ class StonfiPTONV2:
     ) -> Tuple[Address, Cell, Cell]:
         to = self.address
 
-        body = self.create_deploy_wallet_body(
+        body = self.build_deploy_wallet_body(
             owner_address=owner_address,
             excess_address=excess_address,
             query_id=query_id,
