@@ -40,7 +40,7 @@ pip install 'tonutils[pytoniq]'
 Your donation supports the future of this project. Every contribution helps stimulate innovation and sustain
 development!
 
-**TON** - `EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess`
+**TON** - `UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0`
 
 **USDT** (TRC-20) - `TGKmm9H3FApFw8xcgRcZDHSku68vozAjo9`
 
@@ -189,10 +189,15 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
     - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/dedust/swap_jetton_to_ton.py)
     - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/dedust/swap_jetton_to_jetton.py)
 
-- ##### DEX STON.fi
+- ##### DEX STON.fi (v1)
     - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/v1/swap_ton_to_jetton.py)
     - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/v1/swap_jetton_to_ton.py)
     - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/v1/swap_jetton_to_jetton.py)
+
+- ##### DEX STON.fi (v2)
+    - [Swap TON to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/v2/swap_ton_to_jetton.py)
+    - [Swap Jetton to TON](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/v2/swap_jetton_to_ton.py)
+    - [Swap Jetton to Jetton](https://github.com/nessshon/tonutils/tree/main/examples/jetton/dex/stonfi/v2/swap_jetton_to_jetton.py)
 
 #### NFT Operations
 
