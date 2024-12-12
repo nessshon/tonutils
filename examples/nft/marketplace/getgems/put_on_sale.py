@@ -4,6 +4,7 @@ from tonutils.client import TonapiClient
 from tonutils.nft import Collection, NFT
 from tonutils.nft.marketplace.getgems.addresses import *
 from tonutils.nft.marketplace.getgems.contract.salev3r3 import SaleV3R3
+from tonutils.utils import to_nano
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -29,22 +30,22 @@ async def main() -> None:
     nft_data = await NFT.get_nft_data(client, NFT_ADDRESS)
     royalty_params = await Collection.get_royalty_params(client, nft_data.collection_address)
 
-    price = int(PRICE * 1e9)
+    price = to_nano(PRICE)
     royalty_fee = int(price * (royalty_params.base / royalty_params.factor))
     marketplace_fee = int(price * 0.05)
 
     sale = SaleV3R3(
         nft_address=NFT_ADDRESS,
         owner_address=wallet.address,
-        marketplace_address=GETGEMS_ADDRESS if not IS_TESTNET else TESTNET_GETGEMS_ADDRESS,
-        marketplace_fee_address=GETGEMS_FEE_ADDRESS if not IS_TESTNET else TESTNET_GETGEMS_FEE_ADDRESS,
+        marketplace_address=TESTNET_GETGEMS_ADDRESS if IS_TESTNET else GETGEMS_ADDRESS,
+        marketplace_fee_address=TESTNET_GETGEMS_FEE_ADDRESS if IS_TESTNET else GETGEMS_FEE_ADDRESS,
         royalty_address=royalty_params.address,
         marketplace_fee=marketplace_fee,
         royalty_fee=royalty_fee,
         price=price,
     )
     body = sale.build_transfer_nft_body(
-        destination=Address(GETGEMS_DEPLOYER_ADDRESS if not IS_TESTNET else TESTNET_GETGEMS_DEPLOYER_ADDRESS),
+        destination=Address(TESTNET_GETGEMS_DEPLOYER_ADDRESS if IS_TESTNET else GETGEMS_DEPLOYER_ADDRESS),
         owner_address=wallet.address,
         state_init=sale.state_init,
     )

@@ -34,7 +34,6 @@ async def main() -> None:
             name="Welcome to TON",
             description="Each digital artwork represents a memorable token",
             image_data=b'image data',
-            social_links=["https://ton.org/", "https://t.me/toncoin", "https://twitter.com/ton_blockchain"],
         ),
         royalty_params=RoyaltyParams(
             base=ROYALTY_BASE,

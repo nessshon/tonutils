@@ -29,6 +29,8 @@ async def main() -> None:
     wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     # Uncomment and use the following lines to create different wallet versions from mnemonic:
+    # wallet, public_key, private_key, mnemonic = WalletV2R1.from_mnemonic(client, MNEMONIC)
+    # wallet, public_key, private_key, mnemonic = WalletV2R2.from_mnemonic(client, MNEMONIC)
     # wallet, public_key, private_key, mnemonic = WalletV3R2.from_mnemonic(client, MNEMONIC)
     # wallet, public_key, private_key, mnemonic = WalletV4R1.from_mnemonic(client, MNEMONIC)
     # wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)

@@ -30,6 +30,7 @@ async def main() -> None:
         to_jetton_master_address=TO_JETTON_MASTER_ADDRESS,
         jetton_amount=JETTON_AMOUNT,
         jetton_decimals=JETTON_DECIMALS,
+        version=2,  # STONfi Router version
     )
 
     print("Successfully swapped Jetton to Jetton!")

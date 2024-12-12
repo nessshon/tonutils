@@ -26,7 +26,7 @@ async def main() -> None:
         from_jetton_master_address=FROM_JETTON_MASTER_ADDRESS,
         to_jetton_master_address=TO_JETTON_MASTER_B_ADDRESS,
         jetton_amount=JETTON_AMOUNT,
-        jetton_decimals=JETTON_DECIMALS,
+        from_jetton_decimals=JETTON_DECIMALS,
     )
 
     print("Successfully swapped Jetton to Jetton!")
