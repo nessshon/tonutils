@@ -25,7 +25,6 @@ async def main() -> None:
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     jetton_master = JettonMasterStablecoin(
-        client=client,
         content=JettonStablecoinContent(URI),
         admin_address=ADMIN_ADDRESS,
     )

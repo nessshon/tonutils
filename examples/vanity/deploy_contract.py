@@ -9,7 +9,7 @@ Step 3: Run the Vanity Address Generator Script
 python src/generator/run.py --end {suffix} -w -0 --case-sensitive {owner_address}
 - Replace {suffix} with the desired ending for the generated address.
 - Replace {owner_address} with the wallet address from which the deployment will be made.
-Example: python src/generator/run.py --end NESS -w -0 --case-sensitive EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess
+Example: python src/generator/run.py --end NESS -w -0 --case-sensitive UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0
 
 If the script successfully finds a match, you will see a message in the console like:
 Found: EQC7PA9iWnUVWv001Drj3vTu-pmAkTc30OarHy5iDJ1uNESS salt: 7c9398f0999a96fe5480b5d573817255d53377a000be18d0fb47d090a5606dfe
@@ -41,7 +41,6 @@ async def main() -> None:
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     jetton_master = JettonMaster(
-        client=client,
         content=JettonOnchainContent(
             name="Ness Jetton",
             symbol="NESS",

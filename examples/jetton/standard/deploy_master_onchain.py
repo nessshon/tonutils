@@ -21,7 +21,6 @@ async def main() -> None:
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     jetton_master = JettonMaster(
-        client=client,
         content=JettonOnchainContent(
             name="Ness Jetton",
             symbol="NESS",
