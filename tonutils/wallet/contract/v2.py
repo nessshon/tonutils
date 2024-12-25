@@ -12,7 +12,6 @@ from ...client import Client
 
 
 class WalletV2Base(Wallet):
-    CODE_HEX = None
 
     def __init__(
             self,

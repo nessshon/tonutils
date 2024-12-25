@@ -25,7 +25,7 @@ class Contract:
     """
     Base class representing a smart contract in the TON blockchain.
     """
-    CODE_HEX: str
+    CODE_HEX: Optional[str] = None
 
     _code: Cell
     _data: Cell

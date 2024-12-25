@@ -499,6 +499,7 @@ class HighloadWalletV3(Wallet):
             self,
             destination: Union[Address, str],
             nft_address: Union[Address, str],
+            response_address: Optional[Union[Address, str]] = None,
             forward_payload: Optional[Union[Cell, str]] = None,
             forward_amount: Union[int, float] = 0.001,
             amount: Union[int, float] = 0.05,
@@ -513,6 +514,7 @@ class HighloadWalletV3(Wallet):
 
         :param destination: The destination address.
         :param nft_address: The NFT item address.
+        :param response_address: The address to receive the notification. Defaults to the destination address.
         :param forward_payload: Optional forward payload.
             If a string is provided, it will be used as a transaction comment.
             If forward_amount is greater than 0, this payload will be included with the notification to the new owner.
@@ -529,6 +531,7 @@ class HighloadWalletV3(Wallet):
         return await super().transfer_nft(
             destination=destination,
             nft_address=nft_address,
+            response_address=response_address,
             forward_payload=forward_payload,
             forward_amount=forward_amount,
             amount=amount,

@@ -22,13 +22,10 @@ class JettonMaster(Contract):
 
     def __init__(
             self,
-            client: Client,
             content: Union[JettonOffchainContent, JettonOnchainContent],
             admin_address: Union[Address, str],
             jetton_wallet_code: Union[str, Cell] = JettonWallet.CODE_HEX,
     ) -> None:
-        self.client = client
-
         self._data = self.create_data(content, admin_address, jetton_wallet_code).serialize()
         self._code = Cell.one_from_boc(self.CODE_HEX)
 

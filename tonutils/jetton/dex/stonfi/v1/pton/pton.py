@@ -23,7 +23,7 @@ class StonfiPTONV1:
     def build_deploy_wallet_body(
             cls,
             owner_address: Address,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
     ) -> Cell:
         return (
             begin_cell()
@@ -39,8 +39,8 @@ class StonfiPTONV1:
             destination_address: Address,
             refund_address: Address,
             forward_payload: Optional[Cell] = None,
-            forward_ton_amount: Optional[int] = 0,
-            query_id: Optional[int] = 0,
+            forward_ton_amount: int = 0,
+            query_id: int = 0,
     ) -> Tuple[Address, int, Cell]:
         to = await JettonMaster.get_wallet_address(
             client=self.client,
@@ -65,7 +65,7 @@ class StonfiPTONV1:
             self,
             owner_address: Address,
             gas_amount: Optional[int] = None,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
     ) -> Tuple[Address, Cell, Cell]:
         to = self.address
 

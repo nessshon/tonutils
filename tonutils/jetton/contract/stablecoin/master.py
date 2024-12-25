@@ -23,14 +23,11 @@ class JettonMasterStablecoin(Contract):
 
     def __init__(
             self,
-            client: Client,
             content: JettonStablecoinContent,
             admin_address: Union[Address, str],
             transfer_admin_address: Optional[Union[Address, str]] = None,
             jetton_wallet_code: Union[str, Cell] = JettonWalletStablecoin.CODE_HEX,
     ) -> None:
-        self.client = client
-
         self._data = self.create_data(content, admin_address, transfer_admin_address, jetton_wallet_code).serialize()
         self._code = Cell.one_from_boc(self.CODE_HEX)
 

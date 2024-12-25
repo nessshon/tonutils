@@ -20,13 +20,10 @@ class JettonWalletStablecoin(Contract):
 
     def __init__(
             self,
-            client: Client,
             owner_address: Union[Address, str],
             jetton_master_address: Union[Address, str],
             balance: int = 0,
     ) -> None:
-        self.client = client
-
         self._data = self.create_data(owner_address, jetton_master_address, balance).serialize()
         self._code = Cell.one_from_boc(self.CODE_HEX)
 

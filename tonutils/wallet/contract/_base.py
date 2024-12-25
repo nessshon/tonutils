@@ -620,8 +620,9 @@ class Wallet(Contract):
             jetton_master_address: Union[Address, str],
             ton_amount: Union[int, float],
             min_amount: Union[int, float] = 0,
-            factory_address: Optional[Address, str] = None,
-            native_vault_address: Optional[Address, str] = None,
+            jetton_decimals: int = 9,
+            factory_address: Optional[Union[Address, str]] = None,
+            native_vault_address: Optional[Union[Address, str]] = None,
             **kwargs,
     ) -> str:
         """
@@ -629,7 +630,8 @@ class Wallet(Contract):
 
         :param jetton_master_address: The jetton master address to swap to.
         :param ton_amount: The amount of TON to swap.
-        :param min_amount: The minimum amount of TON to receive. Defaults to 0.
+        :param min_amount: The minimum amount of Jetton to receive. Defaults to 0.
+        :param jetton_decimals: Jetton decimal precision used to convert min_amount to nano units.
         :param factory_address: The factory address.
         :param native_vault_address: The native vault address.
         :return: The hash of the swap message.
@@ -651,7 +653,7 @@ class Wallet(Contract):
             recipient_address=self.address,
             offer_jetton_address=jetton_master_address,
             offer_amount=to_nano(ton_amount),
-            min_ask_amount=to_nano(min_amount),
+            min_ask_amount=to_nano(min_amount, jetton_decimals),
         )
         message_hash = await self.transfer(
             destination=to,
@@ -666,8 +668,8 @@ class Wallet(Contract):
     async def batch_dedust_swap_ton_to_jetton(
             self,
             data_list: List[SwapTONToJettonData],
-            factory_address: Optional[Address, str] = None,
-            native_vault_address: Optional[Address, str] = None,
+            factory_address: Optional[Union[Address, str]] = None,
+            native_vault_address: Optional[Union[Address, str]] = None,
     ) -> str:
         """
         Perform a batch swap operation.
@@ -694,7 +696,7 @@ class Wallet(Contract):
                 recipient_address=self.address,
                 offer_jetton_address=data.jetton_master_address,
                 offer_amount=to_nano(data.ton_amount),
-                min_ask_amount=to_nano(data.min_amount),
+                min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
             )
             messages.append(
                 self.create_wallet_internal_message(
@@ -716,17 +718,17 @@ class Wallet(Contract):
             jetton_amount: Union[int, float],
             jetton_decimals: int = 9,
             min_amount: Union[int, float] = 0,
-            factory_address: Optional[Address, str] = None,
-            native_vault_address: Optional[Address, str] = None,
+            factory_address: Optional[Union[Address, str]] = None,
+            native_vault_address: Optional[Union[Address, str]] = None,
             **kwargs,
     ) -> str:
         """
         Perform a swap operation.
 
-        :param jetton_master_address: The jetton master address to swap to.
+        :param jetton_master_address: The jetton master address to swap from.
         :param jetton_amount: The amount of jetton to swap.
         :param jetton_decimals: The jetton decimals.
-        :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
+        :param min_amount: The minimum amount of TON to receive. Defaults to 0.
         :param factory_address: The factory address.
         :param native_vault_address: The native vault address.
         :return: The hash of the swap message.
@@ -748,7 +750,7 @@ class Wallet(Contract):
             recipient_address=self.address,
             offer_jetton_address=jetton_master_address,
             offer_amount=to_nano(jetton_amount, jetton_decimals),
-            min_ask_amount=to_nano(min_amount, jetton_decimals),
+            min_ask_amount=to_nano(min_amount),
         )
 
         message_hash = await self.transfer(
@@ -764,8 +766,8 @@ class Wallet(Contract):
     async def batch_dedust_swap_jetton_to_ton(
             self,
             data_list: List[SwapJettonToTONData],
-            factory_address: Optional[Address, str] = None,
-            native_vault_address: Optional[Address, str] = None,
+            factory_address: Optional[Union[Address, str]] = None,
+            native_vault_address: Optional[Union[Address, str]] = None,
     ) -> str:
         """
         Perform a batch swap jetton to ton operation.
@@ -792,7 +794,7 @@ class Wallet(Contract):
                 recipient_address=self.address,
                 offer_jetton_address=data.jetton_master_address,
                 offer_amount=to_nano(data.jetton_amount, data.jetton_decimals),
-                min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
+                min_ask_amount=to_nano(data.min_amount),
             )
             messages.append(
                 self.create_wallet_internal_message(
@@ -816,8 +818,8 @@ class Wallet(Contract):
             min_amount: Union[int, float] = 0,
             from_jetton_decimals: int = 9,
             to_jetton_decimals: int = 9,
-            factory_address: Optional[Address, str] = None,
-            native_vault_address: Optional[Address, str] = None,
+            factory_address: Optional[Union[Address, str]] = None,
+            native_vault_address: Optional[Union[Address, str]] = None,
             **kwargs,
     ) -> str:
         """
@@ -870,8 +872,8 @@ class Wallet(Contract):
     async def batch_dedust_swap_jetton_to_jetton(
             self,
             data_list: List[SwapJettonToJettonData],
-            factory_address: Optional[Address, str] = None,
-            native_vault_address: Optional[Address, str] = None,
+            factory_address: Optional[Union[Address, str]] = None,
+            native_vault_address: Optional[Union[Address, str]] = None,
     ) -> str:
         """
         Perform a batch swap jetton to jetton operation.
@@ -921,9 +923,10 @@ class Wallet(Contract):
             jetton_master_address: Union[Address, str],
             ton_amount: Union[int, float],
             min_amount: Union[int, float] = 0,
+            jetton_decimals: int = 9,
             version: int = 2,
-            router_address: Optional[Address, str] = None,
-            pton_address: Optional[Address, str] = None,
+            router_address: Optional[Union[Address, str]] = None,
+            pton_address: Optional[Union[Address, str]] = None,
             **kwargs,
     ) -> str:
         """
@@ -932,6 +935,7 @@ class Wallet(Contract):
         :param jetton_master_address: The jetton master address to swap to.
         :param ton_amount: The amount of TON to swap.
         :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
+        :param jetton_decimals: Jetton decimal precision used to convert min_amount to nano units.
         :param version: The version of the STONfi Router. Defaults to 2.
         :param router_address: The STONfi Router address.
         :param pton_address: The pTON address.
@@ -949,23 +953,23 @@ class Wallet(Contract):
             pton_address = Address(pton_address)
 
         if version == 1:
-            router = StonfiRouterV1(self.client, router_address, pton_address)
+            router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
-            to, value, body = await router.get_swap_ton_to_jetton_tx_params(
+            to, value, body = await router_v1.get_swap_ton_to_jetton_tx_params(
                 user_wallet_address=self.address,
                 ask_jetton_address=jetton_master_address,
                 offer_amount=to_nano(ton_amount),
-                min_ask_amount=to_nano(min_amount),
+                min_ask_amount=to_nano(min_amount, jetton_decimals),
             )
         elif version == 2:
-            router = StonfiRouterV2(self.client, router_address, pton_address)
+            router_v2 = StonfiRouterV2(self.client, router_address, pton_address)
 
-            to, value, body = await router.get_swap_ton_to_jetton_tx_params(
+            to, value, body = await router_v2.get_swap_ton_to_jetton_tx_params(
                 user_wallet_address=self.address,
                 receiver_address=self.address,
                 offer_jetton_address=jetton_master_address,
                 offer_amount=to_nano(ton_amount),
-                min_ask_amount=to_nano(min_amount),
+                min_ask_amount=to_nano(min_amount, jetton_decimals),
                 refund_address=self.address,
             )
         else:
@@ -985,8 +989,8 @@ class Wallet(Contract):
             self,
             data_list: List[SwapTONToJettonData],
             version: int = 2,
-            router_address: Optional[Address, str] = None,
-            pton_address: Optional[Address, str] = None,
+            router_address: Optional[Union[Address, str]] = None,
+            pton_address: Optional[Union[Address, str]] = None,
     ) -> str:
         """
         Perform a batch swap operation.
@@ -1009,23 +1013,23 @@ class Wallet(Contract):
 
         for data in data_list:
             if version == 1:
-                router = StonfiRouterV1(self.client, router_address, pton_address)
+                router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
-                to, value, body = await router.get_swap_ton_to_jetton_tx_params(
+                to, value, body = await router_v1.get_swap_ton_to_jetton_tx_params(
                     user_wallet_address=self.address,
                     ask_jetton_address=data.jetton_master_address,
                     offer_amount=to_nano(data.ton_amount),
-                    min_ask_amount=to_nano(data.min_amount),
+                    min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
                 )
             elif version == 2:
-                router = StonfiRouterV2(self.client, router_address, pton_address)
+                router_v2 = StonfiRouterV2(self.client, router_address, pton_address)
 
-                to, value, body = await router.get_swap_ton_to_jetton_tx_params(
+                to, value, body = await router_v2.get_swap_ton_to_jetton_tx_params(
                     user_wallet_address=self.address,
                     receiver_address=self.address,
                     offer_jetton_address=data.jetton_master_address,
                     offer_amount=to_nano(data.ton_amount),
-                    min_ask_amount=to_nano(data.min_amount),
+                    min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
                     refund_address=self.address,
                 )
             else:
@@ -1052,8 +1056,8 @@ class Wallet(Contract):
             jetton_decimals: int = 9,
             min_amount: Union[int, float] = 0,
             version: int = 2,
-            router_address: Optional[Address, str] = None,
-            pton_address: Optional[Address, str] = None,
+            router_address: Optional[Union[Address, str]] = None,
+            pton_address: Optional[Union[Address, str]] = None,
             **kwargs,
     ) -> str:
         """
@@ -1080,23 +1084,23 @@ class Wallet(Contract):
             pton_address = Address(pton_address)
 
         if version == 1:
-            router = StonfiRouterV1(self.client, router_address, pton_address)
+            router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
-            to, value, body = await router.get_swap_jetton_to_ton_tx_params(
+            to, value, body = await router_v1.get_swap_jetton_to_ton_tx_params(
                 offer_jetton_address=jetton_master_address,
                 user_wallet_address=self.address,
                 offer_amount=to_nano(jetton_amount, jetton_decimals),
-                min_ask_amount=to_nano(min_amount, jetton_decimals),
+                min_ask_amount=to_nano(min_amount),
             )
         elif version == 2:
-            router = StonfiRouterV2(self.client, router_address, pton_address)
+            router_v2 = StonfiRouterV2(self.client, router_address, pton_address)
 
-            to, value, body = await router.get_swap_jetton_to_ton_tx_params(
+            to, value, body = await router_v2.get_swap_jetton_to_ton_tx_params(
                 offer_jetton_address=jetton_master_address,
                 receiver_address=self.address,
                 user_wallet_address=self.address,
                 offer_amount=to_nano(jetton_amount, jetton_decimals),
-                min_ask_amount=to_nano(min_amount, jetton_decimals),
+                min_ask_amount=to_nano(min_amount),
                 refund_address=self.address,
             )
         else:
@@ -1116,8 +1120,8 @@ class Wallet(Contract):
             self,
             data_list: List[SwapJettonToTONData],
             version: int = 2,
-            router_address: Optional[Address, str] = None,
-            pton_address: Optional[Address, str] = None,
+            router_address: Optional[Union[Address, str]] = None,
+            pton_address: Optional[Union[Address, str]] = None,
     ) -> str:
         """
         Perform a batch swap operation.
@@ -1140,23 +1144,23 @@ class Wallet(Contract):
 
         for data in data_list:
             if version == 1:
-                router = StonfiRouterV1(self.client, router_address, pton_address)
+                router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
-                to, value, body = await router.get_swap_jetton_to_ton_tx_params(
+                to, value, body = await router_v1.get_swap_jetton_to_ton_tx_params(
                     offer_jetton_address=data.jetton_master_address,
                     user_wallet_address=self.address,
                     offer_amount=to_nano(data.jetton_amount, data.jetton_decimals),
-                    min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
+                    min_ask_amount=to_nano(data.min_amount),
                 )
             elif version == 2:
-                router = StonfiRouterV2(self.client, router_address, pton_address)
+                router_v2 = StonfiRouterV2(self.client, router_address, pton_address)
 
-                to, value, body = await router.get_swap_jetton_to_ton_tx_params(
+                to, value, body = await router_v2.get_swap_jetton_to_ton_tx_params(
                     offer_jetton_address=data.jetton_master_address,
                     receiver_address=self.address,
                     user_wallet_address=self.address,
                     offer_amount=to_nano(data.jetton_amount, data.jetton_decimals),
-                    min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
+                    min_ask_amount=to_nano(data.min_amount),
                     refund_address=self.address,
                 )
             else:
@@ -1184,8 +1188,8 @@ class Wallet(Contract):
             jetton_decimals: int = 9,
             min_amount: Union[int, float] = 0,
             version: int = 2,
-            router_address: Optional[Address, str] = None,
-            pton_address: Optional[Address, str] = None,
+            router_address: Optional[Union[Address, str]] = None,
+            pton_address: Optional[Union[Address, str]] = None,
             **kwargs,
     ) -> str:
         """
@@ -1216,9 +1220,9 @@ class Wallet(Contract):
             pton_address = Address(pton_address)
 
         if version == 1:
-            router = StonfiRouterV1(self.client, router_address, pton_address)
+            router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
-            to, value, body = await router.get_swap_jetton_to_jetton_tx_params(
+            to, value, body = await router_v1.get_swap_jetton_to_jetton_tx_params(
                 user_wallet_address=self.address,
                 offer_jetton_address=from_jetton_master_address,
                 ask_jetton_address=to_jetton_master_address,
@@ -1226,9 +1230,9 @@ class Wallet(Contract):
                 min_ask_amount=to_nano(min_amount, jetton_decimals),
             )
         elif version == 2:
-            router = StonfiRouterV2(self.client, router_address, pton_address)
+            router_v2 = StonfiRouterV2(self.client, router_address, pton_address)
 
-            to, value, body = await router.get_swap_jetton_to_jetton_tx_params(
+            to, value, body = await router_v2.get_swap_jetton_to_jetton_tx_params(
                 user_wallet_address=self.address,
                 receiver_address=self.address,
                 refund_address=self.address,
@@ -1254,8 +1258,8 @@ class Wallet(Contract):
             self,
             data_list: List[SwapJettonToJettonData],
             version: int = 2,
-            router_address: Optional[Address, str] = None,
-            pton_address: Optional[Address, str] = None,
+            router_address: Optional[Union[Address, str]] = None,
+            pton_address: Optional[Union[Address, str]] = None,
     ) -> str:
         """
         Perform a batch swap operation.
@@ -1278,9 +1282,9 @@ class Wallet(Contract):
 
         for data in data_list:
             if version == 1:
-                router = StonfiRouterV1(self.client, router_address, pton_address)
+                router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
-                to, value, body = await router.get_swap_jetton_to_jetton_tx_params(
+                to, value, body = await router_v1.get_swap_jetton_to_jetton_tx_params(
                     user_wallet_address=self.address,
                     offer_jetton_address=data.from_jetton_master_address,
                     ask_jetton_address=data.to_jetton_master_address,
@@ -1288,9 +1292,9 @@ class Wallet(Contract):
                     min_ask_amount=to_nano(data.min_amount, data.to_jetton_decimals),
                 )
             elif version == 2:
-                router = StonfiRouterV2(self.client, router_address, pton_address)
+                router_v2 = StonfiRouterV2(self.client, router_address, pton_address)
 
-                to, value, body = await router.get_swap_jetton_to_jetton_tx_params(
+                to, value, body = await router_v2.get_swap_jetton_to_jetton_tx_params(
                     user_wallet_address=self.address,
                     receiver_address=self.address,
                     refund_address=self.address,

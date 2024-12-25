@@ -250,7 +250,7 @@ class Factory:
             deadline: Optional[int] = None,
             gas_amount: Optional[int] = None,
             forward_gas_amount: Optional[int] = None,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
             jetton_custom_payload: Optional[Cell] = None,
     ) -> tuple[Address, int, Cell]:
         offer_pool_address = await self.get_pool_address(
@@ -316,7 +316,7 @@ class Factory:
             deadline: Optional[int] = None,
             gas_amount: Optional[int] = None,
             forward_gas_amount: Optional[int] = None,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
             jetton_custom_payload: Optional[Cell] = None,
     ) -> tuple[Address, int, Cell]:
         pool_address = await self.get_pool_address(

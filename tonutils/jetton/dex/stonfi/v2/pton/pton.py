@@ -25,7 +25,7 @@ class StonfiPTONV2:
             ton_amount: int,
             refund_address: Address,
             forward_payload: Optional[Cell] = None,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
     ) -> Cell:
         cell = (
             begin_cell()
@@ -46,7 +46,7 @@ class StonfiPTONV2:
             cls,
             owner_address: Address,
             excess_address: Address,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
     ) -> Cell:
         return (
             begin_cell()
@@ -63,8 +63,8 @@ class StonfiPTONV2:
             destination_address: Address,
             refund_address: Address,
             forward_payload: Optional[Cell] = None,
-            forward_ton_amount: Optional[int] = 0,
-            query_id: Optional[int] = 0,
+            forward_ton_amount: int = 0,
+            query_id: int = 0,
     ) -> Tuple[Address, int, Cell]:
         to = await JettonMaster.get_wallet_address(
             client=self.client,
@@ -88,7 +88,7 @@ class StonfiPTONV2:
             owner_address: Address,
             excess_address: Address,
             gas_amount: Optional[int] = None,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
     ) -> Tuple[Address, Cell, Cell]:
         to = self.address
 

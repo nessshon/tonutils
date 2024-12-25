@@ -148,7 +148,8 @@ class SwapTONToJettonData:
 
     :param jetton_master_address: The address of the jetton master contract.
     :param ton_amount: The amount of TON to swap.
-    :param min_amount: Minimum amount of amount to receive. Defaults to 0.
+    :param min_amount: The minimum amount of Jetton to receive. Defaults to 0.
+    :param jetton_decimals: Jetton decimal precision used to convert min_amount to nano units.
     :param forward_amount: Forward fee amount. Defaults to 0.
     :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
@@ -158,6 +159,7 @@ class SwapTONToJettonData:
             jetton_master_address: Union[Address, str],
             ton_amount: Union[int, float],
             min_amount: Union[int, float] = 0,
+            jetton_decimals: int = 9,
             forward_amount: Union[int, float] = 0,
             **kwargs,
     ) -> None:
@@ -167,6 +169,7 @@ class SwapTONToJettonData:
         self.jetton_master_address = jetton_master_address
         self.ton_amount = ton_amount
         self.min_amount = min_amount
+        self.jetton_decimals = jetton_decimals
         self.forward_amount = forward_amount
         self.other = kwargs
 
@@ -178,7 +181,7 @@ class SwapJettonToTONData:
     :param jetton_master_address: The address of the jetton master contract.
     :param jetton_amount: The amount of jettons to swap.
     :param jetton_decimals: The jetton decimals. Defaults to 9.
-    :param min_amount: Minimum amount of amount to receive. Defaults to 0.
+    :param min_amount: The minimum amount of TON to receive. Defaults to 0.
     :param kwargs: Additional arguments (e.g. bounce, bounced ...).
     """
 

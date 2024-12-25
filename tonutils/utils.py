@@ -38,7 +38,7 @@ def boc_to_base64_string(boc: Union[str, bytes]) -> str:
     if not isinstance(boc, bytes):
         raise TypeError("Expected boc to be bytes, but got something else.")
 
-    return base64.b64encode(boc).decode()
+    return base64.urlsafe_b64encode(boc).decode()
 
 
 def create_encrypted_comment_cell(

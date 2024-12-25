@@ -59,7 +59,7 @@ class StonfiRouterV1:
             referral_address: Optional[Address] = None,
             gas_amount: Optional[int] = None,
             forward_gas_amount: Optional[int] = None,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
             jetton_custom_payload: Optional[Cell] = None,
     ) -> Tuple[Address, int, Cell]:
         contract_address = self.router_address
@@ -107,7 +107,7 @@ class StonfiRouterV1:
             referral_address: Optional[Address] = None,
             gas_amount: Optional[int] = None,
             forward_gas_amount: Optional[int] = None,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
             jetton_custom_payload: Optional[Cell] = None,
     ) -> tuple[Address, int, Cell]:
         return await self.get_swap_jetton_to_jetton_tx_params(
@@ -131,7 +131,7 @@ class StonfiRouterV1:
             min_ask_amount: int,
             referral_address: Optional[Address] = None,
             forward_gas_amount: Optional[int] = None,
-            query_id: Optional[int] = 0,
+            query_id: int = 0,
     ) -> tuple[Address, int, Cell]:
         contract_address = self.router_address
 
