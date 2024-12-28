@@ -5,7 +5,7 @@ from tonutils.tonconnect.models import Event, EventError, WalletInfo
 
 # URL of the publicly hosted JSON manifest of the application
 # For detailed information: https://github.com/ton-blockchain/ton-connect/blob/main/requests-responses.md#app-manifest
-TC_MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/tonutils/refs/heads/main/examples/tonconnect/tonconnect-manifest.json"
+TC_MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/tonutils/main/examples/tonconnect/tonconnect-manifest.json"
 
 # Initialize storage to save connected wallet data
 # In this example, FileStorage from storage.py is used
