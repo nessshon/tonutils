@@ -60,7 +60,7 @@ class ToncenterClient(Client):
     async def send_message(self, boc: str) -> None:
         method = "/api/v3/message"
 
-        await self._post(method=method, body={"boc": boc_to_base64_string(boc)})
+        await self._post(method=method, body={"boc": base64.b64encode(bytes.fromhex(boc)).decode()})
 
     async def get_raw_account(self, address: str) -> RawAccount:
         method = f"/api/v3/account"
