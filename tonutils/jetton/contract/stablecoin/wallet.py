@@ -9,6 +9,7 @@ from ....client import (
     LiteserverClient,
     TonapiClient,
     ToncenterClient,
+    GetblockClient
 )
 from ....contract import Contract
 from ....exceptions import UnknownClientError
