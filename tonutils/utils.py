@@ -9,7 +9,6 @@ from Cryptodome.Cipher import AES
 from nacl.bindings import crypto_scalarmult
 from nacl.signing import SigningKey
 from pytoniq_core import Address, Cell, MessageAny, begin_cell, HashMap
-from pytoniq_core.boc.deserialize import Boc
 
 
 def message_to_boc_hex(message: MessageAny) -> Tuple[str, str]:
@@ -33,12 +32,11 @@ def boc_to_base64_string(boc: Union[str, bytes]) -> str:
     :return: The base64-encoded string.
     """
     if isinstance(boc, str):
-        boc = Boc(boc).data
-
+        boc = bytes.fromhex(boc)
     if not isinstance(boc, bytes):
         raise TypeError("Expected boc to be bytes, but got something else.")
 
-    return base64.urlsafe_b64encode(boc).decode()
+    return base64.b64encode(boc).decode()
 
 
 def create_encrypted_comment_cell(

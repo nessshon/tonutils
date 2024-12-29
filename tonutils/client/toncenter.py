@@ -18,7 +18,7 @@ class ToncenterClient(Client):
 
     def __init__(
             self,
-            api_key: str,
+            api_key: Optional[str] = None,
             is_testnet: Optional[bool] = False,
             base_url: Optional[str] = None,
     ) -> None:
@@ -33,8 +33,7 @@ class ToncenterClient(Client):
         """
         if base_url is None:
             base_url = "https://toncenter.com" if not is_testnet else "https://testnet.toncenter.com"
-        headers = {"X-Api-Key": api_key}
-
+        headers = {"X-Api-Key": api_key} if api_key else {}
         super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet)
 
     async def run_get_method(
