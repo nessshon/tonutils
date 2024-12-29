@@ -6,7 +6,7 @@ from .toncenter import ToncenterClient
 
 __all__ = [
     "Client",
-
+    "GetblockClient"
     "LiteserverClient",
     "TonapiClient",
     "ToncenterClient",
