@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 from pytoniq_core import (
     Cell,
@@ -79,17 +79,23 @@ class PreprocessedWalletV2(Wallet):
             address: Union[Address, str],
     ) -> int:
         raw_account = await cls.get_raw_account(client, address)
-        return raw_account.data.begin_parse().skip_bits(256).load_uint(16)
+        seqno = 0
+        if raw_account.data is not None:
+            seqno = raw_account.data.begin_parse().skip_bits(256).load_uint(16)
+        return seqno
 
     @classmethod
-    async def get_public_key(
+    async def get_public_key(  # type: ignore
             cls,
             client: Client,
             address: Union[Address, str],
-    ) -> int:
+    ) -> Optional[int]:
         raw_account = await cls.get_raw_account(client, address)
-        public_key = raw_account.data.begin_parse().load_bytes(32)
-        return int.from_bytes(public_key, byteorder='big')
+        public_key = None
+        if raw_account.data is not None:
+            _public_key = raw_account.data.begin_parse().load_bytes(32)
+            public_key = int.from_bytes(_public_key, byteorder="big")
+        return public_key
 
     @classmethod
     def pack_actions(cls, messages: List[WalletMessage]) -> Cell:
@@ -207,17 +213,23 @@ class PreprocessedWalletV2R1(Wallet):
             address: Union[Address, str],
     ) -> int:
         raw_account = await cls.get_raw_account(client, address)
-        return raw_account.data.begin_parse().skip_bits(256).load_uint(16)
+        seqno = 0
+        if raw_account.data is not None:
+            seqno = raw_account.data.begin_parse().skip_bits(256).load_uint(16)
+        return seqno
 
     @classmethod
-    async def get_public_key(
+    async def get_public_key(  # type: ignore
             cls,
             client: Client,
             address: Union[Address, str],
-    ) -> int:
+    ) -> Optional[int]:
         raw_account = await cls.get_raw_account(client, address)
-        public_key = raw_account.data.begin_parse().load_bytes(32)
-        return int.from_bytes(public_key, byteorder='big')
+        public_key = None
+        if raw_account.data is not None:
+            _public_key = raw_account.data.begin_parse().load_bytes(32)
+            public_key = int.from_bytes(_public_key, byteorder="big")
+        return public_key
 
     @classmethod
     def pack_actions(cls, messages: List[WalletMessage]) -> Cell:

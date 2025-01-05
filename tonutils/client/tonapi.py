@@ -62,14 +62,16 @@ class TonapiClient(Client):
         code_cell = Cell.one_from_boc(code) if code else None
         data = result.get("data")
         data_cell = Cell.one_from_boc(data) if data else None
+        _lt, _lt_hash = result.get("last_transaction_lt"), result.get("last_transaction_hash")
+        lt, lt_hash = int(_lt) if _lt else None, _lt_hash if _lt_hash else None
 
         return RawAccount(
-            balance=int(result["balance"]),
+            balance=int(result.get("balance", 0)),
             code=code_cell,
             data=data_cell,
-            status=AccountStatus(result["status"]),
-            last_transaction_lt=int(result["last_transaction_lt"]),
-            last_transaction_hash=result["last_transaction_hash"],
+            status=AccountStatus(result.get("status", "uninit")),  # noqa
+            last_transaction_lt=lt,
+            last_transaction_hash=lt_hash,
         )
 
     async def get_account_balance(self, address: str) -> int:

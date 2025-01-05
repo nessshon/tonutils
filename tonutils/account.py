@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 from pytoniq_core import Cell, StateInit
 
@@ -15,11 +16,11 @@ class RawAccount:
     def __init__(
             self,
             balance: int,
-            code: Cell,
-            data: Cell,
             status: AccountStatus,
-            last_transaction_lt: int,
-            last_transaction_hash: str,
+            code: Optional[Cell] = None,
+            data: Optional[Cell] = None,
+            last_transaction_lt: Optional[int] = None,
+            last_transaction_hash: Optional[str] = None,
     ) -> None:
         self.balance = balance
         self.code = code
