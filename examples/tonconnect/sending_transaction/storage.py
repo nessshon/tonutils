@@ -32,18 +32,15 @@ class FileStorage(IStorage):
                 await f.write(json.dumps(data, indent=4))
 
     async def set_item(self, key: str, value: str) -> None:
-        key = self._get_key(key)
         data = await self._read_data()
         data[key] = value
         await self._write_data(data)
 
     async def get_item(self, key: str, default_value: Optional[str] = None) -> Optional[str]:
-        key = self._get_key(key)
         data = await self._read_data()
         return data.get(key, default_value)
 
     async def remove_item(self, key: str) -> None:
-        key = self._get_key(key)
         data = await self._read_data()
         if key in data:
             del data[key]

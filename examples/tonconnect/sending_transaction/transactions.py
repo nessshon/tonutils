@@ -1,14 +1,13 @@
 from storage import FileStorage
 from tonutils.tonconnect import TonConnect
-from tonutils.tonconnect.exceptions import TonConnectError
 from tonutils.tonconnect.models import Event, EventError, SendTransactionResponse
+from tonutils.tonconnect.utils.exceptions import TonConnectError, UserRejectsError, RequestTimeoutError
 from tonutils.wallet.data import TransferData
 
 # URL of the publicly hosted JSON manifest of the application
 # For detailed information: https://github.com/ton-blockchain/ton-connect/blob/main/requests-responses.md#app-manifest
-TC_MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/tonutils/main/examples/tonconnect/tonconnect-manifest.json"
+TC_MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/tonutils/main/examples/tonconnect/tonconnect-manifest.json"  # noqa
 
-# Initialize storage to save connected wallet data
 # In this example, FileStorage from storage.py is used
 TC_STORAGE = FileStorage("connection.json")
 
@@ -26,20 +25,19 @@ async def on_transaction(transaction: SendTransactionResponse) -> None:
     - user_id (int): User identifier
     - transaction (SendTransactionResponse): Transaction information
     - rpc_request_id (int): Transaction request identifier
-
-    Additional parameters can be passed using `connector.add_event_kwargs()`
-    Example: `connector.add_event_kwargs(event=Event.TRANSACTION, comment="Hello from tonutils!")`
-    In this example, `comment` is an additional parameter that will be passed to the handler.
+    - Additional parameters can be passed using `connector.add_event_kwargs(...)`
+      Example: `connector.add_event_kwargs(event=Event.TRANSACTION, comment="Hello from tonutils!")`
+      In this example, `comment` is an additional parameter that will be passed to the handler.
 
     Transaction details can be obtained from the following attributes:
-    # transaction.boc    # BoC (string)
-    # transaction.hash   # Message hash (different from the actual transaction hash)
-    # transaction.cell   # Transaction Cell (Cell)
+    - transaction.boc (str): BoC
+    - transaction.hash (str): Message hash (different from the actual transaction hash)
+    - transaction.cell (Cell): Transaction Cell
     """
     print(f"[Transaction SENT] Transaction successfully sent. Message hash: {transaction.hash}")
 
 
-@tc.on_event_error(EventError.TRANSACTION)
+@tc.on_event(EventError.TRANSACTION)
 async def on_transaction_error(error: TonConnectError) -> None:
     """
     Handler for transaction error events.
@@ -49,17 +47,20 @@ async def on_transaction_error(error: TonConnectError) -> None:
     - user_id (int): User identifier
     - error (TonConnectError): Error information
     - rpc_request_id (int): Transaction request identifier
-
-    Additional parameters can be passed using `connector.add_event_kwargs()`
-    Example: `connector.add_event_kwargs(event=Event.TRANSACTION, comment="Hello from tonutils!")`
-    In this example, `comment` is an additional parameter that will be passed to the handler.
+    - Additional parameters can be passed using `connector.add_event_kwargs(...)`
+      Example: `connector.add_event_kwargs(event=Event.TRANSACTION, comment="Hello from tonutils!")`
+      In this example, `comment` is an additional parameter that will be passed to the handler.
 
     The type of error can be determined using isinstance:
-    if isinstance(error, UserRejectsError):        # User declined the transaction
-    if isinstance(error, RequestTimeoutError):     # Send request timed out for the transaction
-    ...
+    - UserRejectsError: User declined the transaction.
+    - RequestTimeoutError: Send request timed out for the transaction.
     """
-    print(f"[Transaction ERROR] Failed to send transaction. Error: {error.message}")
+    if isinstance(error, UserRejectsError):
+        print(f"[Transaction ERROR] User rejected the transaction.")
+    elif isinstance(error, RequestTimeoutError):
+        print(f"[Transaction ERROR] Transaction request timed out.")
+    else:
+        print(f"[Transaction ERROR] Failed to send transaction: {error.message}")
 
 
 async def main() -> None:
@@ -71,7 +72,7 @@ async def main() -> None:
     # Start the event processing loop
     while True:
         # Check wallet connection
-        if not connector.is_connected:
+        if not connector.connected:
             print("Wallet not connected! Please connect the wallet to continue.")
             break
 
@@ -88,47 +89,40 @@ async def main() -> None:
         if call in ["1", "2"]:
             if call == "1":
                 print("Preparing to send one transaction...")
-                try:
-                    rpc_request_id = await connector.send_transfer(
-                        destination=connector.account.address,
-                        amount=0.000000001,
-                        body="Hello from tonutils!",
-                    )
-                    print("Request to send one transaction has been sent.")
-                except TonConnectError as e:
-                    print(f"Failed to send transaction: {e.message}")
-                    continue
+                rpc_request_id = await connector.send_transfer(
+                    destination=connector.account.address,
+                    amount=0.000000001,
+                    body="Hello from tonutils!",
+                )
+                print("Request to send one transaction has been sent.")
             else:
                 print("Preparing to send a batch of transactions...")
-                try:
-                    # Get the maximum number of messages supported in a transaction
-                    max_messages = connector.get_max_supported_messages()
-                    print(f"Maximum number of messages: {max_messages}. Sending {max_messages} transactions...")
+                # Get the maximum number of messages supported in a transaction
+                max_messages = connector.get_max_supported_messages()
+                print(f"Maximum number of messages: {max_messages}. Sending {max_messages} transactions...")
 
-                    # Add additional parameters to be passed to event handlers
-                    connector.add_event_kwargs(event=Event.TRANSACTION, comment="Hello from tonutils!")
-                    # After this, you can use:
-                    """
-                    @tc.on_event(Event.TRANSACTION)
-                    async def on_transaction(transaction: SendTransactionResponse, comment: str) -> None:...
-                    """
-                    rpc_request_id = await connector.send_batch_transfer(
-                        data_list=[
-                            TransferData(
-                                destination=connector.account.address,
-                                amount=0.000000001,
-                                body="Hello from tonutils!",
-                            ) for _ in range(max_messages)  # Create the maximum number of messages
-                        ]
-                    )
-                    print("Request to send a batch of transactions has been sent.")
-                except TonConnectError as e:
-                    print(f"Failed to send a batch of transactions: {e.message}")
-                    continue
+                rpc_request_id = await connector.send_batch_transfer(
+                    data_list=[
+                        TransferData(
+                            destination=connector.account.address,
+                            amount=0.000000001,
+                            body="Hello from tonutils!",
+                        ) for _ in range(max_messages)  # Create the maximum number of messages
+                    ]
+                )
+                print("Request to send a batch of transactions has been sent.")
+
+            # Add additional parameters to be passed to event handlers
+            connector.add_event_kwargs(event=Event.TRANSACTION, comment="Hello from tonutils!")
+            # After this, you can use:
+            """
+            @tc.on_event(Event.TRANSACTION)
+            async def on_transaction(transaction: SendTransactionResponse, comment: str) -> None:...
+            """
 
             # Get the transaction status (whether it has been confirmed by the user in the wallet)
             # Note: This is different from blockchain confirmation
-            is_pending = await connector.is_transaction_pending(rpc_request_id)
+            is_pending = connector.is_transaction_pending(rpc_request_id)
             print(f"Transaction is pending confirmation: {is_pending}")
 
             # In addition to the handler, you can use a context manager to get the transaction result by rpc_request_id
