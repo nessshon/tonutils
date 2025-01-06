@@ -56,7 +56,7 @@ Client Initialization
 ```python
 from tonutils.client import TonapiClient
 
-API_KEY = ""
+API_KEY = "your api key"
 IS_TESTNET = True
 client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 ```
@@ -71,7 +71,7 @@ Client Initialization
 ```python
 from tonutils.client import ToncenterClient
 
-API_KEY = ""
+API_KEY = "your api key"  # optional 
 IS_TESTNET = True
 client = ToncenterClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 ```
@@ -86,7 +86,7 @@ Client Initialization:
 ```python
 from tonutils.client import LiteserverClient
 
-config = None
+config = {}  # your own config
 IS_TESTNET = True
 client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
 ```
@@ -108,6 +108,13 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
 - **USD₮ Jettons** (6 decimals):  
   Claim testnet USD₮ by scanning the QR code at the following link:  
   [Scan to Claim Testnet USD₮](https://qrcode.ness.su/create?data=ton%3A%2F%2Ftransfer%2FkQB0ZYUL5M3KfrW0tSnwdFO1nC-BQHC2gcZl-WaF2on_USDT%3Famount%3D100000000%26bin%3Dte6ccgEBAgEAKQABIWQrfQcAAAAAAAAAABAX14QCAQAlF41FGQAAAAAAAAAAQ7msoAAQFA%3D%3D&border=3&box_size=30&image_url=https%3A%2F%2Ftether.to%2Fimages%2FlogoCircle.png&image_round=50&image_padding=99)
+
+
+#### Ton Connect Integration
+
+- [Wallet Connection](https://github.com/nessshon/tonutils/tree/main/examples/tonconnect/wallet_connection/)
+- [Sending Transaction](https://github.com/nessshon/tonutils/tree/main/examples/tonconnect/sending_transaction/)
+- [Telegram Bot Integration](https://github.com/nessshon/tonutils/tree/main/examples/tonconnect/telegram_bot/)
 
 #### Wallet Operations
 
