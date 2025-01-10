@@ -105,6 +105,7 @@ class Connector:
             api_tokens: Dict[str, str],
             on_events: EventHandlers,
             on_events_data: EventHandlersData,
+            extra: Dict[str, Any],
     ) -> None:
         """
         Initializes the Connector.
@@ -115,6 +116,7 @@ class Connector:
         :param api_tokens: A dictionary of API tokens {api_name: token}.
         :param on_events: Handlers for specific events (connect, disconnect, transaction).
         :param on_events_data: Additional data passed to event handlers.
+        :param extra: Other arguments that will be passed as keyword arguments to event handlers.
         """
         self.user_id = user_id
 
@@ -128,6 +130,8 @@ class Connector:
         self._wallet: Optional[WalletInfo] = None
         self._wallet_app: Optional[WalletApp] = None
         self._connect_timeout_task: Optional[asyncio.Task] = None
+
+        self.extra = extra
 
     @property
     def connected(self) -> bool:
@@ -206,8 +210,7 @@ class Connector:
                     logger.warning(f"Attempted to cancel already cancelled request with ID: {rpc_request_id}")
             del self.bridge.pending_requests[rpc_request_id]
 
-    @staticmethod
-    async def _execute_event_handlers(handlers: List[Any], kwargs: Dict[str, Any]) -> None:
+    async def _execute_event_handlers(self, handlers: List[Any], kwargs: Dict[str, Any]) -> None:
         """
         Executes the given list of event handlers, passing only the kwargs they accept.
 
@@ -216,7 +219,7 @@ class Connector:
         """
         for handler in handlers:
             params = inspect.signature(handler).parameters
-            filtered_kwargs = {k: v for k, v in kwargs.items() if k in params}
+            filtered_kwargs = {k: v for k, v in {**self.extra, **kwargs}.items() if k in params}
             try:
                 await handler(**filtered_kwargs)
                 logger.debug(f"Executed handler: {handler.__name__} with args: {filtered_kwargs}")

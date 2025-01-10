@@ -1,6 +1,6 @@
 import asyncio
 from copy import copy
-from typing import Optional, List, Dict, Callable, Union
+from typing import Optional, List, Dict, Callable, Union, Any
 
 from tonutils.tonconnect.utils.exceptions import TonConnectError
 from tonutils.tonconnect.utils.logger import logger
@@ -32,6 +32,7 @@ class TonConnect:
             include_wallets: Optional[List[str]] = None,
             wallets_list_cache_ttl: Optional[int] = None,
             wallets_list_source_url: Optional[str] = None,
+            **extra: Any,
     ) -> None:
         """
         Initializes the TonConnect class with storage, manifest URL, and wallet list options.
@@ -43,7 +44,9 @@ class TonConnect:
         :param include_wallets: Optional list of wallet IDs or names to include.
         :param wallets_list_cache_ttl: Optional cache TTL for the wallet list.
         :param wallets_list_source_url: Optional source URL for the wallet list.
+        :param extra: Other arguments that will be passed as keyword arguments to event handlers.
         """
+
         self.storage = storage
         self.manifest_url = manifest_url
         self.api_tokens = api_tokens
@@ -60,7 +63,56 @@ class TonConnect:
 
         self._connectors: Dict[int, Connector] = {}
         self._connectors_lock = asyncio.Lock()
+
+        self.extra = extra
+
         logger.debug(f"TonConnect initialized with manifest URL: {self.manifest_url}")
+
+    def __setattr__(self, name: str, value: Any):
+        """Set attributes, with `extra` handling for non-core attributes."""
+        if name in {
+            "storage",
+            "manifest_url",
+            "api_tokens",
+            "_wallets_list_manager",
+            "_event_handlers",
+            "_events_data",
+            "_connectors",
+            "_connectors_lock",
+            "extra",
+        }:
+            super().__setattr__(name, value)
+        else:
+            self.extra[name] = value
+
+    def __getattr__(self, name: str) -> Any:
+        """Retrieve attributes, including from `extra`."""
+        if name in self.extra:
+            return self.extra[name]
+        raise AttributeError(f"'TonConnect' object has no attribute '{name}'")
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Set an item in the `extra`.
+        """
+        self.extra[key] = value
+
+    def __getitem__(self, key: str) -> Any:
+        """
+        Retrieve an item from the `extra`.
+        """
+        if key in self.extra:
+            return self.extra[key]
+        raise KeyError(f"Key '{key}' not found in 'extra'")
+
+    def __delitem__(self, key: str) -> None:
+        """
+        Delete an item from the `extra`.
+        """
+        if key in self.extra:
+            del self.extra[key]
+        else:
+            raise KeyError(f"Key '{key}' not found in 'extra'")
 
     @staticmethod
     def _initialize_event_handlers() -> EventHandlers:
@@ -149,6 +201,7 @@ class TonConnect:
             on_events=self._event_handlers,
             on_events_data=self._events_data,
             api_tokens=self.api_tokens or {},
+            extra=self.extra,
         )
         self._connectors[user_id] = connector
 
