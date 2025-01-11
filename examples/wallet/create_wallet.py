@@ -40,6 +40,7 @@ def main() -> None:
     # Print user friendly address https://docs.ton.org/v3/guidelines/dapps/cookbook
     print(f"Testnet address: {wallet.address.to_str(is_test_only=IS_TESTNET)}")
     # Expected testnet bounceable address example: kQCbWHf3WxKD5FtPXYnFAZcPT3aAC8TqdXhHPxNXcHYW_a0Y
+    # Note: For you first transaction you need to use non-bounceable address
     print(f"Mnemonic: {mnemonic}")
 
 
