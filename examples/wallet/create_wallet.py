@@ -37,6 +37,9 @@ def main() -> None:
 
     print("Wallet has been successfully created!")
     print(f"Address: {wallet.address.to_str()}")
+    # Print user friendly address https://docs.ton.org/v3/guidelines/dapps/cookbook
+    print(f"Testnet address: {wallet.address.to_str(is_test_only=IS_TESTNET)}")
+    # Expected testnet bounceable address example: kQCbWHf3WxKD5FtPXYnFAZcPT3aAC8TqdXhHPxNXcHYW_a0Y
     print(f"Mnemonic: {mnemonic}")
 
 
