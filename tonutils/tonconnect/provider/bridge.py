@@ -148,8 +148,8 @@ class HTTPBridge:
         :return: The constructed SSE subscription URL.
         """
         params = {"client_id": self.session.session_crypto.session_id}
-        if last_event_id and last_event_id.isdigit():
-            params["last_wallet_event_id"] = last_event_id
+        if last_event_id is not None:
+            params["last_event_id"] = last_event_id
         return self._build_url(self.SSE_PATH, params)
 
     @staticmethod
@@ -190,14 +190,14 @@ class HTTPBridge:
             incoming_data = json.loads(raw_event)
             logger.debug(f"Parsed SSE event data: {incoming_data}")
         except json.JSONDecodeError:
-            logger.warning("Failed to decode SSE data. Skipping.")
+            logger.debug("Failed to decode SSE data. Skipping.")
             return
 
         message = incoming_data.get("message")
         sender_pub_key = incoming_data.get("from")
 
         if not message or not sender_pub_key:
-            logger.warning("Incomplete SSE data received. Missing 'message' or 'from'.")
+            logger.debug("Incomplete SSE data received. Missing 'message' or 'from'.")
             return
 
         decrypted_message = self.session.session_crypto.decrypt(
@@ -230,7 +230,7 @@ class HTTPBridge:
             try:
                 async with self._client_session.get(url) as response:
                     if response.status != 200:
-                        logger.error(f"Failed to connect to bridge with status code: {response.status}")
+                        logger.debug(f"Failed to connect to bridge with status code: {response.status}")
                         raise TonConnectError(f"Failed to connect to bridge: {response.status}")
 
                     logger.debug("Connected to SSE stream successfully.")
@@ -240,6 +240,9 @@ class HTTPBridge:
                             break
 
                         decoded_line = line.decode().strip()
+                        if decoded_line.startswith("id:"):
+                            event_id = decoded_line[3:].strip()
+                            await self.storage.set_item(self.storage.KEY_LAST_EVENT_ID, event_id)
                         if decoded_line.startswith("data:"):
                             raw_event = decoded_line[5:].strip()
                             if raw_event:
@@ -254,11 +257,11 @@ class HTTPBridge:
                     break
 
                 retry_count += 1
-                logger.warning(f"Connection issue: {e}. Retrying in 5 seconds ({retry_count}/{max_retries})...")
+                logger.debug(f"Connection issue: {e}. Retrying in 5 seconds ({retry_count}/{max_retries})...")
                 await asyncio.sleep(retry_delay)
 
                 if retry_count >= max_retries:
-                    logger.error("Max retries reached. Sending disconnect event.")
+                    logger.debug("Max retries reached. Sending disconnect event.")
                     await self._on_wallet_status_changed(SendDisconnectRequest().to_dict())
                     await self.remove_session()
                     break
@@ -293,14 +296,10 @@ class HTTPBridge:
                 event_id = int(event_id)
             except ValueError:
                 event_id = None
-                logger.warning(f"Invalid event ID format: {incoming_message.get('id')}")
+                logger.debug(f"Invalid event ID format: {incoming_message.get('id')}")
 
         connection = await self.get_stored_connection_data()
-        last_event_id = int(connection.get("last_wallet_event_id", 0))
-
-        if event_id is not None:
-            await self.storage.set_item(IStorage.KEY_LAST_EVENT_ID, str(event_id))
-            logger.debug(f"Updated last_event_id to {event_id} in storage.")
+        last_wallet_event_id = connection.get("last_wallet_event_id")
 
         # If this is an RPC response (no 'event' field set)
         if event_name is None:
@@ -313,11 +312,12 @@ class HTTPBridge:
         # It's a CONNECT or DISCONNECT event
         if event_id is not None:
             # Prevent reprocessing older events (except for CONNECT)
-            if event_id <= last_event_id and event_name != Event.CONNECT:
-                logger.debug(f"Ignoring older event ID {event_id} <= {last_event_id}")
+            if last_wallet_event_id is not None and event_id <= last_wallet_event_id:
+                logger.debug(f"Ignoring older event ID {event_id} <= {last_wallet_event_id}")
                 return
-            connection["last_wallet_event_id"] = event_id
-            await self.storage.set_item(IStorage.KEY_CONNECTION, json.dumps(connection))
+            if event_name != Event.CONNECT:
+                connection["last_wallet_event_id"] = event_id
+                await self.storage.set_item(self.storage.KEY_CONNECTION, json.dumps(connection))
 
         if event_name == Event.CONNECT:
             if sender_pub_key:
@@ -351,7 +351,7 @@ class HTTPBridge:
                 headers = {"Content-type": "text/plain;charset=UTF-8"}
                 async with session.post(url, data=request, headers=headers) as response:
                     if response.status != 200:
-                        logger.error(f"Failed to send message with status code: {response.status}")
+                        logger.debug(f"Failed to send message with status code: {response.status}")
                         raise TonConnectError(f"Failed to send message: {response.status}")
             except aiohttp.ClientError as e:
                 logger.exception(f"HTTP Client Error while sending message: {e}")
@@ -362,10 +362,10 @@ class HTTPBridge:
         Starts the SSE subscription. Cancels any existing subscription task if present.
         """
         if self._is_closed:
-            logger.warning("Attempted to start SSE while bridge is closed")
+            logger.debug("Attempted to start SSE while bridge is closed")
             return
 
-        last_event_id = await self.storage.get_item(IStorage.KEY_LAST_EVENT_ID)
+        last_event_id = await self.storage.get_item(self.storage.KEY_LAST_EVENT_ID)
         url = self._build_sse_url(last_event_id)
 
         if self._event_task:
@@ -409,7 +409,7 @@ class HTTPBridge:
         :return: The response result if available, or None.
         """
         if not self.session or not self.session.wallet_public_key:
-            logger.error("Trying to send a request without an active session.")
+            logger.debug("Trying to send a request without an active session.")
             raise TonConnectError("Trying to send a request without an active session.")
 
         request.id = rpc_request_id
@@ -439,7 +439,7 @@ class HTTPBridge:
 
         :return: A dictionary containing the connection data.
         """
-        connection = await self.storage.get_item(IStorage.KEY_CONNECTION, "{}")
+        connection = await self.storage.get_item(self.storage.KEY_CONNECTION, "{}")
         return json.loads(connection)  # type: ignore
 
     def generate_universal_url(
@@ -508,7 +508,7 @@ class HTTPBridge:
         :return: A WalletInfo object with the restored wallet data.
         :raises TonConnectError: If restoration fails due to missing or invalid data.
         """
-        stored_connection = await self.storage.get_item(IStorage.KEY_CONNECTION)
+        stored_connection = await self.storage.get_item(self.storage.KEY_CONNECTION)
         if not stored_connection:
             raise TonConnectError("Restore failed: no connection data found in storage.")
 
@@ -557,21 +557,21 @@ class HTTPBridge:
         connection = {
             "type": "http",
             "session": self.session.get_dict(),
-            "last_wallet_event_id": int(event.get("id", 0)),
+            "last_wallet_event_id": event.get("id"),
             "connect_event": event,
             "next_rpc_request_id": 0,
             "wallet_app": self.wallet_app.to_dict() if self.wallet_app else {},
         }
 
-        await self.storage.set_item(IStorage.KEY_CONNECTION, json.dumps(connection))
+        await self.storage.set_item(self.storage.KEY_CONNECTION, json.dumps(connection))
 
     async def remove_session(self) -> None:
         """
         Removes session data from storage and closes the current connection.
         """
         await self.close()
-        await self.storage.remove_item(IStorage.KEY_CONNECTION)
-        await self.storage.remove_item(IStorage.KEY_LAST_EVENT_ID)
+        await self.storage.remove_item(self.storage.KEY_CONNECTION)
+        await self.storage.remove_item(self.storage.KEY_LAST_EVENT_ID)
 
     async def close(self) -> None:
         """

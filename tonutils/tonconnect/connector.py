@@ -61,7 +61,7 @@ class Connector:
             """
             future = self.connector.bridge.pending_requests.get(self.rpc_request_id)
             if future is None or future.done():
-                logger.error(f"No pending request with ID {self.rpc_request_id} found during transaction context entry")
+                logger.debug(f"No pending request with ID {self.rpc_request_id} found during transaction context entry")
                 raise TonConnectError(f"No pending request with ID {self.rpc_request_id}")
             return await future
 
@@ -88,7 +88,7 @@ class Connector:
             """
             future = self.connector.bridge.pending_requests.get(self.connector.bridge.RESERVED_ID)
             if future is None or future.done():
-                logger.error("No pending wallet connection request found during connection context entry")
+                logger.debug("No pending wallet connection request found during connection context entry")
                 raise TonConnectError("No pending wallet connection request found.")
             return await future
 
@@ -132,6 +132,13 @@ class Connector:
         self._connect_timeout_task: Optional[asyncio.Task] = None
 
         self.extra = extra
+
+    @property
+    def storage(self) -> IStorage:
+        """
+        :return: The IStorage instance used by the Connector.
+        """
+        return self._storage
 
     @property
     def connected(self) -> bool:
@@ -207,7 +214,7 @@ class Connector:
                     logger.debug(f"Cancelled pending request with ID: {rpc_request_id}")
             except asyncio.CancelledError:
                 if rpc_request_id != -1:
-                    logger.warning(f"Attempted to cancel already cancelled request with ID: {rpc_request_id}")
+                    logger.debug(f"Attempted to cancel already cancelled request with ID: {rpc_request_id}")
             del self.bridge.pending_requests[rpc_request_id]
 
     async def _execute_event_handlers(self, handlers: List[Any], kwargs: Dict[str, Any]) -> None:
@@ -224,7 +231,7 @@ class Connector:
                 await handler(**filtered_kwargs)
                 logger.debug(f"Executed handler: {handler.__name__} with args: {filtered_kwargs}")
             except Exception as e:
-                logger.error(f"Error executing handler {handler.__name__}: {e}")
+                logger.debug(f"Error executing handler {handler.__name__}: {e}")
 
     def _get_handlers_and_kwargs(
             self,
@@ -262,7 +269,7 @@ class Connector:
             error = ConnectEventError.from_response(response)
             kwargs["error"] = error
             result = error  # type: ignore
-            logger.error(f"Failed to connect to wallet for user_id={self.user_id}: {error}")
+            logger.debug(f"Failed to connect to wallet for user_id={self.user_id}: {error}")
 
         await self._execute_event_handlers(handlers, kwargs)
         future = self.bridge.pending_requests.get(self.bridge.RESERVED_ID)
@@ -281,7 +288,7 @@ class Connector:
         logger.debug(f"Received RPC response for user_id={self.user_id}: {response} (request ID: {rpc_request_id})")
         future = self.bridge.pending_requests.get(rpc_request_id)
         if future is None or future.done():
-            logger.warning(f"Received RPC response for non-existent or completed request ID: {rpc_request_id}")
+            logger.debug(f"Received RPC response for non-existent or completed request ID: {rpc_request_id}")
             return
 
         error = SendTransactionEventError.from_response(response)
@@ -331,24 +338,24 @@ class Connector:
         :raises TonConnectError: If the wallet/device info is missing or does not support the feature.
         """
         if self.wallet is None or self.wallet.device is None:
-            logger.error(f"Wallet or wallet device information is missing for user_id={self.user_id}")
+            logger.debug(f"Wallet or wallet device information is missing for user_id={self.user_id}")
             raise TonConnectError("Wallet or wallet device information is missing.")
 
         features = self.wallet.device.features
         if not isinstance(features, list):
-            logger.error(f"Invalid features format for user_id={self.user_id}")
+            logger.debug(f"Invalid features format for user_id={self.user_id}")
             raise TonConnectError("Features must be a list.")
 
         is_deprecated, feature = self._find_send_transaction_feature(features)
 
         if not is_deprecated and not feature:
-            logger.error(f"SendTransaction feature not supported for user_id={self.user_id}")
+            logger.debug(f"SendTransaction feature not supported for user_id={self.user_id}")
             raise WalletNotSupportFeatureError("Wallet does not support the 'SendTransaction' feature.")
 
         max_messages = feature.get("maxMessages") if feature else None
         if max_messages is not None:
             if max_messages < required_messages:
-                logger.error(
+                logger.debug(
                     f"Wallet cannot handle SendTransaction request for user_id=%d: max %d, required %d",
                     self.user_id, max_messages, required_messages
                 )
@@ -357,7 +364,7 @@ class Connector:
                     f"max supported messages {max_messages}, required {required_messages}."
                 )
         else:
-            logger.warning(
+            logger.debug(
                 f"Connected wallet did not provide 'maxMessages' info "
                 f"for SendTransaction for user_id={self.user_id}."
                 "The request may be rejected by the wallet.",
@@ -410,7 +417,7 @@ class Connector:
             timeout = int(transaction.valid_until - int(time.time()))  # type: ignore
 
             connection["next_rpc_request_id"] = str(rpc_request_id + 1)
-            await self.bridge.storage.set_item(IStorage.KEY_CONNECTION, json.dumps(connection))
+            await self.bridge.storage.set_item(self.storage.KEY_CONNECTION, json.dumps(connection))
 
             logger.debug(
                 "Sending SendTransactionRequest for user_id=%d with request ID=%d",
@@ -423,7 +430,7 @@ class Connector:
             )
         except asyncio.TimeoutError:
             response = {"error": {"code": 500, "message": "Failed to send transaction: timeout."}}
-            logger.error(f"Transaction timeout for user_id={self.user_id} with request ID={rpc_request_id}")
+            logger.debug(f"Transaction timeout for user_id={self.user_id} with request ID={rpc_request_id}")
             await handler_failure()
         except Exception as e:
             response = {"error": {"code": 0, "message": f"Failed to send transaction: {e}"}}
@@ -470,7 +477,7 @@ class Connector:
         """
         logger.debug(f"Initiating wallet connection for user_id={self.user_id} with app={wallet_app.name}")
         if self.connected:
-            logger.error(f"Wallet is already connected for user_id={self.user_id}")
+            logger.debug(f"Wallet is already connected for user_id={self.user_id}")
             raise TonConnectError("A wallet is already connected.")
 
         if self._connect_timeout_task is not None:
@@ -483,7 +490,7 @@ class Connector:
             logger.debug(f"Closed existing bridge connection for user_id={self.user_id} before connecting new wallet")
 
         self._bridge = HTTPBridge(
-            storage=self._storage,
+            storage=self.storage,
             wallet_app=wallet_app,
             on_wallet_status_changed=self._on_wallet_status_changed,
             on_rpc_response_received=self._on_rpc_response_received,
@@ -508,7 +515,7 @@ class Connector:
                 return
             payload = {"code": 500, "message": "Failed to connect: timeout."}
             response = {"event": EventError.CONNECT, "payload": payload}
-            logger.warning(f"Wallet connection timed out for user_id={self.user_id}")
+            logger.debug(f"Wallet connection timed out for user_id={self.user_id}")
             await self._on_wallet_status_changed(response)
 
         self.bridge.pending_requests[self.bridge.RESERVED_ID] = self._create_future()
@@ -526,7 +533,7 @@ class Connector:
             await self.bridge.close_connection()
         else:
             self._bridge = HTTPBridge(
-                storage=self._storage,
+                storage=self.storage,
                 wallet_app=None,
                 on_wallet_status_changed=self._on_wallet_status_changed,
                 on_rpc_response_received=self._on_rpc_response_received,
@@ -543,7 +550,7 @@ class Connector:
         """
         logger.debug(f"Attempting to disconnect wallet for user_id={self.user_id}")
         if not self.connected:
-            logger.error(f"Attempted to disconnect a wallet while none is connected for user_id={self.user_id}")
+            logger.debug(f"Attempted to disconnect a wallet while none is connected for user_id={self.user_id}")
             raise WalletNotConnectedError
 
         self.bridge.pending_requests[self.bridge.RESERVED_ID] = self._create_future()
@@ -563,7 +570,7 @@ class Connector:
                 "event": EventError.DISCONNECT,
                 "payload": {"code": 500, "message": "Failed to disconnect: timeout."},
             }
-            logger.error(f"Timeout occurred while disconnecting the wallet for user_id={self.user_id}")
+            logger.debug(f"Timeout occurred while disconnecting the wallet for user_id={self.user_id}")
         finally:
             await self._on_wallet_status_changed(response)
 

@@ -1,9 +1,9 @@
-import logging
 import time
 from secrets import token_bytes
 from typing import Optional
 
 from tonutils.tonconnect.models import WalletInfo
+from tonutils.tonconnect.utils.logger import logger
 
 
 def generate_proof_payload(ttl: Optional[int] = None) -> str:
@@ -48,12 +48,12 @@ def verify_proof_payload(proof_hex: str, wallet_info: WalletInfo) -> bool:
     try:
         expire_time = int(proof_hex[16:32], 16)
     except ValueError:
-        logging.warning("Invalid proof format: unable to parse timestamp.")
+        logger.debug("Invalid proof format: unable to parse timestamp.")
         return False
 
     # Check whether the current time has exceeded the expiration time.
     if time.time() > expire_time:
-        logging.warning("Proof has expired.")
+        logger.debug("Proof has expired.")
         return False
 
     return True
