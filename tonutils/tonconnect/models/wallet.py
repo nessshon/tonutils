@@ -140,7 +140,7 @@ class WalletInfo:
         # Construct the message for verification
         message = bytearray()
         message.extend("ton-proof-item-v2/".encode())
-        message.extend(int(wc, 10).to_bytes(4, "little"))
+        message.extend(wc.to_bytes(4, "little"))
         message.extend(whash)
         message.extend(self.ton_proof.domain_len.to_bytes(4, "little"))
         message.extend(self.ton_proof.domain_val.encode())
