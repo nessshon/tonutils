@@ -13,7 +13,7 @@ class UnknownClientError(TonutilsException):
     def __init__(self, input_client: str) -> None:
         super().__init__(
             f"Unknown client: {input_client}! "
-            f"Please, specify one of: TonapiClient, ToncenterClient, LiteClient."
+            f"Please, specify one of: TonapiClient, ToncenterClient, LiteserverClient."
         )
 
 
@@ -27,6 +27,6 @@ class PytoniqDependencyError(TonutilsException):
 
     def __init__(self) -> None:
         super().__init__(
-            "The 'pytoniq' library is required to use LiteClient functionality. "
+            "The 'pytoniq' library is required to use LiteserverClient functionality. "
             "Please install it with 'pip install tonutils[pytoniq]'."
         )

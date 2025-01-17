@@ -38,7 +38,7 @@ def require_pytoniq(func) -> Callable:
 
 class LiteserverClient(Client):
     """
-    LiteClient class for interacting with the TON blockchain using LiteserverClient.
+    LiteserverClient class for interacting with the TON blockchain using lite server.
 
     This class provides methods to run get methods and send messages to the blockchain,
     with options for configuration and network selection.
@@ -51,7 +51,7 @@ class LiteserverClient(Client):
             trust_level: int = 2,
     ) -> None:
         """
-        Initialize the LiteClient.
+        Initialize the LiteserverClient.
 
         :param config: The configuration dictionary for LiteBalancer. Defaults to None.
             You can pass your own config from a private lite server,
@@ -60,7 +60,7 @@ class LiteserverClient(Client):
         :param trust_level: The trust level for the LiteBalancer.
             Defines the level of trust for Liteserver communication. Defaults to 2.
             For trustless communication with Lite servers, there are "Proofs" in TON. The trust_level argument
-            in the LiteClient constructor defines how much you trust the Liteserver you communicate with.
+            in the LiteserverClient constructor defines how much you trust the Liteserver you communicate with.
             Refer to the documentation for more details: https://yungwine.gitbook.io/pytoniq-doc/liteclient/trust-levels
         """
         super().__init__(is_testnet=is_testnet)
