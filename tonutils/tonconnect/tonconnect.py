@@ -30,6 +30,7 @@ class TonConnect:
             api_tokens: Optional[Dict[str, str]] = None,
             exclude_wallets: Optional[List[str]] = None,
             include_wallets: Optional[List[str]] = None,
+            wallets_order: Optional[List[str]] = None,
             wallets_list_cache_ttl: Optional[int] = None,
             wallets_list_source_url: Optional[str] = None,
             **extra: Any,
@@ -40,8 +41,9 @@ class TonConnect:
         :param storage: The main storage interface shared by all users.
         :param manifest_url: The DApp's manifest URL to be used by each Connector.
         :param api_tokens: Optional dictionary mapping API names to tokens for authorization.
-        :param exclude_wallets: Optional list of wallet IDs or names to exclude from the wallet list.
-        :param include_wallets: Optional list of wallet IDs or names to include.
+        :param exclude_wallets: Optional list of wallet `app_name` to exclude from the wallet list.
+        :param include_wallets: Optional list of wallet `app_name` to include in the wallet list.
+        :param wallets_order: Optional list of wallet `app_name` to order in the wallet list.
         :param wallets_list_cache_ttl: Optional cache TTL for the wallet list.
         :param wallets_list_source_url: Optional source URL for the wallet list.
         :param extra: Other arguments that will be passed as keyword arguments to event handlers.
@@ -55,6 +57,7 @@ class TonConnect:
             source_url=wallets_list_source_url,
             include_wallets=include_wallets,
             exclude_wallets=exclude_wallets,
+            wallets_order=wallets_order,
             cache_ttl=wallets_list_cache_ttl,
         )
 

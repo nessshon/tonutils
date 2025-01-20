@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -17,30 +18,33 @@ class FallbackWalletManager:
 
     FILE_PATH = Path(__file__).parent / "_data/fallback_wallets.json"
 
-    @staticmethod
-    def load_wallets() -> List[Dict[str, Any]]:
+    def __init__(self) -> None:
+        self.lock = asyncio.Lock()
+
+    async def load_wallets(self) -> List[Dict[str, Any]]:
         """
         Loads the fallback wallet data from a local JSON file.
 
         :return: A list of wallet dictionaries.
         """
-        if not FallbackWalletManager.FILE_PATH.exists():
-            FallbackWalletManager.save_wallets([])
-            return []
+        async with self.lock:
+            if not self.FILE_PATH.exists():
+                await self.save_wallets([])
+                return []
 
-        with open(FallbackWalletManager.FILE_PATH, "r", encoding="utf-8") as file:
-            return json.load(file)
+            with open(self.FILE_PATH, "r", encoding="utf-8") as file:
+                return json.load(file)
 
-    @staticmethod
-    def save_wallets(wallets: List[Dict[str, Any]]) -> None:
+    async def save_wallets(self, wallets: List[Dict[str, Any]]) -> None:
         """
         Saves the provided wallets list to a local JSON file.
 
         :param wallets: A list of wallet dictionaries.
         """
-        FallbackWalletManager.FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(FallbackWalletManager.FILE_PATH, "w", encoding="utf-8") as file:
-            file.write(json.dumps(wallets, indent=4))
+        async with self.lock:
+            self.FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.FILE_PATH, "w", encoding="utf-8") as file:
+                file.write(json.dumps(wallets, indent=4))
 
 
 class CachedWalletManager:
@@ -58,22 +62,25 @@ class CachedWalletManager:
         if cache_ttl is None:
             cache_ttl = 86400
         self.cache: TTLCache = TTLCache(maxsize=1, ttl=cache_ttl)
+        self.lock = asyncio.Lock()
 
-    def get_wallets(self) -> Optional[List[Dict[str, Any]]]:
+    async def get_wallets(self) -> Optional[List[Dict[str, Any]]]:
         """
         Retrieves wallets from the cache if available.
 
         :return: A list of wallet dictionaries, or None if not cached.
         """
-        return self.cache.get("wallets")
+        async with self.lock:
+            return self.cache.get("wallets")
 
-    def save_wallets(self, wallets: List[Dict[str, Any]]) -> None:
+    async def save_wallets(self, wallets: List[Dict[str, Any]]) -> None:
         """
         Saves wallets to the cache.
 
         :param wallets: A list of wallet dictionaries.
         """
-        self.cache["wallets"] = wallets
+        async with self.lock:
+            self.cache["wallets"] = wallets
 
 
 class WalletsListManager:
@@ -93,15 +100,17 @@ class WalletsListManager:
             source_url: Optional[str] = None,
             include_wallets: Optional[List[str]] = None,
             exclude_wallets: Optional[List[str]] = None,
+            wallets_order: Optional[List[str]] = None,
             cache_ttl: Optional[int] = None,
     ) -> None:
         """
-        Initializes the WalletsListManager with optional inclusion/exclusion lists,
+        Initializes the WalletsListManager with optional inclusion/exclusion/order lists,
         source URL, and cache TTL.
 
         :param source_url: A custom URL to fetch the wallet list from.
-        :param include_wallets: A list of wallet names/IDs to explicitly include.
-        :param exclude_wallets: A list of wallet names/IDs to exclude.
+        :param include_wallets: A list of wallet `app_name` to explicitly include.
+        :param exclude_wallets: A list of wallet `app_name` to exclude.
+        :param wallets_order: A list of wallet `app_name` to order.
         :param cache_ttl: The time-to-live (TTL) for caching wallet data (in seconds).
         """
         self._cache_manager = CachedWalletManager(cache_ttl)
@@ -111,6 +120,8 @@ class WalletsListManager:
 
         self.include_wallets = set(include_wallets or [])
         self.exclude_wallets = set(exclude_wallets or [])
+        self.wallets_order = wallets_order
+
         self.exclude_wallets.update(WalletsListManager.PROBLEMATIC_WALLETS)
 
     async def _fetch_wallets(self) -> List[Dict[str, Any]]:
@@ -141,12 +152,22 @@ class WalletsListManager:
         :param wallets: A list of wallet dictionaries.
         :return: A filtered list of wallet dictionaries.
         """
-        filtered_wallets = [w for w in wallets if w["app_name"] not in self.exclude_wallets]
+        filtered_wallets = [
+            w for w in wallets if w.get("app_name") and w["app_name"] not in self.exclude_wallets
+        ]
         if self.include_wallets:
             filtered_wallets = [
                 w for w in filtered_wallets if w["app_name"] in self.include_wallets
             ]
         return filtered_wallets
+
+    def _order_wallets(self, wallets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        if self.wallets_order:
+            default = len(self.wallets_order)
+            order_map = {n: i for i, n in enumerate(self.wallets_order)}
+            wallets = sorted(wallets, key=lambda w: order_map.get(w.get("app_name", ""), default))
+
+        return wallets
 
     @staticmethod
     def _get_supported_wallets(wallets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -158,22 +179,27 @@ class WalletsListManager:
         """
         supported_wallets = []
         for wallet in wallets:
+            app_name = wallet.get("app_name")
+            if app_name is None:
+                continue
+
             for bridge in wallet.get("bridge", []):
                 if bridge.get("type") == "sse" and "url" in bridge:
                     wallet_copy = wallet.copy()
                     wallet_copy["bridge_url"] = bridge["url"]
                     supported_wallets.append(wallet_copy)
                     break
+
         return supported_wallets
 
-    def _save_wallets(self, wallets: List[Dict[str, Any]]) -> None:
+    async def _save_wallets(self, wallets: List[Dict[str, Any]]) -> None:
         """
         Saves wallet data to both the in-memory cache and the fallback local JSON file.
 
         :param wallets: A list of wallet dictionaries.
         """
-        self._cache_manager.save_wallets(wallets)
-        self._fallback_manager.save_wallets(wallets)
+        await self._cache_manager.save_wallets(wallets)
+        await self._fallback_manager.save_wallets(wallets)
 
     async def get_wallets(self) -> List[WalletApp]:
         """
@@ -182,18 +208,21 @@ class WalletsListManager:
 
         :return: A list of WalletApp objects filtered by inclusion/exclusion, and supporting SSE.
         """
-        cached_wallets = self._cache_manager.get_wallets()
+        cached_wallets = await self._cache_manager.get_wallets()
+
         if cached_wallets is None:
             try:
                 remote_wallets = await self._fetch_wallets()
             except FetchWalletsError:
-                remote_wallets = self._fallback_manager.load_wallets()
+                remote_wallets = await self._fallback_manager.load_wallets()
 
-            self._save_wallets(remote_wallets)
+            await self._save_wallets(remote_wallets)
             wallets_to_return = remote_wallets
         else:
             wallets_to_return = cached_wallets
 
         filtered_wallets = self._filter_wallets(wallets_to_return)
         supported_wallets = self._get_supported_wallets(filtered_wallets)
-        return [WalletApp.from_dict(w) for w in supported_wallets]
+        ordered_wallets = self._order_wallets(supported_wallets)
+
+        return [WalletApp.from_dict(w) for w in ordered_wallets]
