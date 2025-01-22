@@ -171,7 +171,7 @@ class Transaction:
         return Transaction(
             from_=data.get("from"),
             network=CHAIN(data.get("network")),
-            valid_until=data.get("validUntil"),
+            valid_until=data.get("valid_until"),
             messages=[Message.from_dict(message) for message in data.get("messages", [])],
         )
 
@@ -182,7 +182,7 @@ class Transaction:
         :return: A dictionary representation of the Transaction.
         """
         return {
-            "validUntil": self.valid_until,
+            "valid_until": self.valid_until,
             "from": self.from_,
             "network": self.network.value if self.network else None,
             "messages": [message.to_dict() for message in self.messages],
