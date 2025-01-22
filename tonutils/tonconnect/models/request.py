@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pytoniq_core import Cell
+from pytoniq_core import Cell, Address, begin_cell, StateInit
 
 from .chain import CHAIN
-from ..utils.exceptions import TonConnectError
+from ...utils import boc_to_base64_string, to_nano
 
 
 class ItemName(str, Enum):
@@ -26,6 +26,16 @@ class ConnectItem:
     """
     name: str
     payload: Optional[Any] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> ConnectItem:
+        """
+        Creates a ConnectItem instance from a dictionary.
+
+        :param data: A dictionary containing the item data.
+        :return: An instance of ConnectItem.
+        """
+        return ConnectItem(name=data["name"], payload=data.get("payload"))
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -55,6 +65,21 @@ class Message:
             f"amount={self.amount}, "
             f"payload={self.payload}, "
             f"state_init={self.state_init})"
+        )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> Message:
+        """
+        Creates a Message instance from a dictionary.
+
+        :param data: A dictionary containing message data.
+        :return: An instance of Message.
+        """
+        return Message(
+            address=data["address"],
+            amount=data["amount"],
+            payload=data.get("payload"),
+            state_init=data.get("stateInit"),
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -92,6 +117,64 @@ class Transaction:
             f"messages={self.messages})"
         )
 
+    @classmethod
+    def create_message(
+            cls,
+            destination: Union[Address, str],
+            amount: Union[float, int],
+            body: Optional[Union[Cell, str]] = None,
+            state_init: Optional[StateInit] = None,
+            **_: Any,
+    ) -> Message:
+        """
+        Creates a basic transfer message compatible with the SendTransactionRequest.
+
+        :param destination: The Address object or string representing the recipient.
+        :param amount: The amount in TONs to be transferred.
+        :param body: Optional message payload (Cell or string).
+        :param state_init: Optional StateInit for deploying contracts.
+        :param _: Any additional keyword arguments are ignored.
+        :return: A Message object ready to be sent.
+        """
+        destination_str = destination.to_str() if isinstance(destination, Address) else destination
+        state_init_b64 = boc_to_base64_string(state_init.serialize().to_boc()) if state_init else None
+
+        if body is not None:
+            if isinstance(body, str):
+                # Convert string payload to a Cell.
+                body_cell = (
+                    begin_cell()
+                    .store_uint(0, 32)
+                    .store_snake_string(body)
+                    .end_cell()
+                )
+                body = boc_to_base64_string(body_cell.to_boc())
+            else:
+                # Body is already a Cell; convert to base64.
+                body = boc_to_base64_string(body.to_boc())
+
+        return Message(
+            address=destination_str,
+            amount=str(to_nano(amount)),
+            payload=body,
+            state_init=state_init_b64,
+        )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> Transaction:
+        """
+        Creates a Transaction instance from a dictionary.
+
+        :param data: A dictionary containing transaction data.
+        :return: An instance of Transaction.
+        """
+        return Transaction(
+            from_=data.get("from"),
+            network=CHAIN(data.get("network")),
+            valid_until=data.get("validUntil"),
+            messages=[Message.from_dict(message) for message in data.get("messages", [])],
+        )
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Converts the Transaction instance into a dictionary format.
@@ -99,7 +182,7 @@ class Transaction:
         :return: A dictionary representation of the Transaction.
         """
         return {
-            "valid_until": self.valid_until,
+            "validUntil": self.valid_until,
             "from": self.from_,
             "network": self.network.value if self.network else None,
             "messages": [message.to_dict() for message in self.messages],
@@ -177,6 +260,7 @@ class SendTransactionResponse:
         :return: A Cell object created from the BOC string.
         """
         if not self.boc:
+            from ..utils.exceptions import TonConnectError
             raise TonConnectError("BOC data is missing in the transaction response.")
         return Cell.one_from_boc(self.boc)
 

@@ -49,7 +49,9 @@ class WalletApp:
         """
         if self.universal_url is None:
             return None
-        return self.universal_url_to_direct_url(self.universal_url)
+
+        url = self.universal_url_to_direct_url(self.universal_url)
+        return url + "?startapp=tonconnect" if "t.me/wallet" in url else url
 
     @staticmethod
     def universal_url_to_direct_url(universal_url: str) -> str:

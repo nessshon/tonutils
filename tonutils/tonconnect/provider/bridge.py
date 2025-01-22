@@ -5,8 +5,6 @@ from urllib.parse import urlencode, quote_plus
 
 import aiohttp
 
-from tonutils.tonconnect.utils.exceptions import TonConnectError
-from tonutils.tonconnect.utils.logger import logger
 from ..models import (
     Request,
     SendConnectRequest,
@@ -17,6 +15,8 @@ from ..models import (
 )
 from ..provider.session import BridgeSession, SessionCrypto
 from ..storage import IStorage
+from ..utils.exceptions import TonConnectError
+from ..utils.logger import logger
 
 
 class HTTPBridge:

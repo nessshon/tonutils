@@ -4,7 +4,7 @@ import base64
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from tonutils.tonconnect.utils.exceptions import TonConnectError
+from ..utils.exceptions import TonConnectError
 
 
 @dataclass

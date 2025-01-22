@@ -6,14 +6,13 @@ import json
 import time
 from typing import List, Tuple, Union, cast, Callable, Awaitable
 
-from pytoniq_core import Address, Cell, StateInit, begin_cell
+from pytoniq_core import Address, Cell, StateInit
 
 from .models import (
     Account,
     DeviceInfo,
     Event,
     EventError,
-    Message,
     SendConnectRequest,
     SendDisconnectRequest,
     SendTransactionRequest,
@@ -28,7 +27,6 @@ from .provider.bridge import HTTPBridge
 from .storage import IStorage
 from .utils.exceptions import *
 from .utils.logger import logger
-from ..utils import boc_to_base64_string, to_nano
 from ..wallet.data import TransferData
 
 
@@ -405,12 +403,6 @@ class Connector:
         :param connection: Stored connection data from IStorage.
         :param rpc_request_id: The unique RPC request ID for this transaction.
         """
-
-        async def handler_failure() -> None:
-            self._clean_pending_request(rpc_request_id)
-            self.bridge.pending_requests[rpc_request_id] = self._create_future()
-            await self._on_rpc_response_received(response, rpc_request_id)
-
         try:
             self._prepare_transaction(transaction)
             request = SendTransactionRequest(params=[transaction])
@@ -425,31 +417,32 @@ class Connector:
             )
             # Wait for the response or a timeout.
             await asyncio.wait_for(
-                self.bridge.send_request(request, rpc_request_id),  # type: ignore
+                asyncio.shield(self.bridge.send_request(request, rpc_request_id)),  # Защищаем future
                 timeout=timeout,
             )
+
         except asyncio.TimeoutError:
             response = {"error": {"code": 500, "message": "Failed to send transaction: timeout."}}
             logger.debug(f"Transaction timeout for user_id={self.user_id} with request ID={rpc_request_id}")
-            await handler_failure()
+            await self._on_rpc_response_received(response, rpc_request_id)
+
         except Exception as e:
             response = {"error": {"code": 0, "message": f"Failed to send transaction: {e}"}}
             logger.exception(
                 "Unexpected error during transaction for user_id=%d with request ID=%d: %s",
                 self.user_id, rpc_request_id, e
             )
-            await handler_failure()
+            await self._on_rpc_response_received(response, rpc_request_id)
 
-    async def _send_transaction(self, messages: List[Message]) -> int:
+    async def send_transaction(self, transaction: Transaction) -> int:
         """
         Public-facing method to send a transaction (or batch of messages).
 
-        :param messages: A list of Message objects representing the transaction(s).
+        :param transaction: A Transaction object representing the transaction(s).
         :return: The RPC request ID associated with this transaction.
         :raises TonConnectError: If there's no active bridge session.
         """
-        logger.debug(f"Sending transaction with {len(messages)} messages: {messages}")
-        transaction = Transaction(messages=messages)
+        logger.debug(f"Sending transaction with {len(transaction.messages)} messages: {transaction.messages}")
 
         # Retrieve connection data to increment and store the next RPC request ID.
         connection = await self.bridge.get_stored_connection_data()  # type: ignore
@@ -480,7 +473,7 @@ class Connector:
             logger.debug(f"Wallet is already connected for user_id={self.user_id}")
             raise TonConnectError("A wallet is already connected.")
 
-        if self._connect_timeout_task is not None:
+        if self._connect_timeout_task is not None and not self._connect_timeout_task.done():
             self._connect_timeout_task.cancel()
             logger.debug(f"Cancelled existing connect timeout task for user_id={self.user_id}")
 
@@ -582,6 +575,21 @@ class Connector:
         """
         return Connector.ConnectWalletContext(self)
 
+    def cancel_connection_request(self) -> None:
+        """
+        Cancels a pending wallet connection request, removing it from the pending list.
+        """
+        future = self.bridge.pending_requests.get(self.bridge.RESERVED_ID)
+        if future is not None and not future.done():
+            future.cancel()
+            logger.debug("Cancelled pending wallet connection request for user_id=%d", self.user_id)
+
+        if self.bridge.RESERVED_ID in self.bridge.pending_requests:
+            del self.bridge.pending_requests[self.bridge.RESERVED_ID]
+
+        if self._connect_timeout_task is not None and not self._connect_timeout_task.done():
+            self._connect_timeout_task.cancel()
+
     def is_transaction_pending(self, rpc_request_id: int) -> bool:
         """
         Checks if a particular transaction (by RPC request ID) is still pending.
@@ -632,49 +640,6 @@ class Connector:
         logger.debug(f"Max supported messages for user_id={self.user_id}: {max_messages}")
         return max_messages
 
-    @staticmethod
-    def create_transfer_message(
-            destination: Union[Address, str],
-            amount: Union[float, int],
-            body: Optional[Union[Cell, str]] = None,
-            state_init: Optional[StateInit] = None,
-            **_: Any,
-    ) -> Message:
-        """
-        Creates a basic transfer message compatible with the SendTransactionRequest.
-
-        :param destination: The Address object or string representing the recipient.
-        :param amount: The amount in TONs to be transferred.
-        :param body: Optional message payload (Cell or string).
-        :param state_init: Optional StateInit for deploying contracts.
-        :param _: Any additional keyword arguments are ignored.
-        :return: A Message object ready to be sent.
-        """
-        destination_str = destination.to_str() if isinstance(destination, Address) else destination
-        state_init_b64 = boc_to_base64_string(state_init.serialize().to_boc()) if state_init else None
-
-        if body is not None:
-            if isinstance(body, str):
-                # Convert string payload to a Cell.
-                body_cell = (
-                    begin_cell()
-                    .store_uint(0, 32)
-                    .store_snake_string(body)
-                    .end_cell()
-                )
-                body = boc_to_base64_string(body_cell.to_boc())
-            else:
-                # Body is already a Cell; convert to base64.
-                body = boc_to_base64_string(body.to_boc())
-
-        message = Message(
-            address=destination_str,
-            amount=str(to_nano(amount)),
-            payload=body,
-            state_init=state_init_b64,
-        )
-        return message
-
     async def send_transfer(
             self,
             destination: Union[Address, str],
@@ -691,8 +656,9 @@ class Connector:
         :param state_init: An optional StateInit.
         :return: The RPC request ID for the transaction.
         """
-        message = self.create_transfer_message(destination, amount, body, state_init)
-        request_id = await self._send_transaction([message])
+        message = Transaction.create_message(destination, amount, body, state_init)
+        transaction = Transaction(messages=[message])
+        request_id = await self.send_transaction(transaction)
 
         logger.debug(f"Transfer sent for user_id={self.user_id} with request ID={request_id}")
         return request_id
@@ -704,8 +670,9 @@ class Connector:
         :param data_list: A list of TransferData objects, each describing a transfer.
         :return: The RPC request ID for the batched transaction.
         """
-        messages = [self.create_transfer_message(**data.__dict__) for data in data_list]
-        request_id = await self._send_transaction(messages)
+        messages = [Transaction.create_message(**data.__dict__) for data in data_list]
+        transaction = Transaction(messages=messages)
+        request_id = await self.send_transaction(transaction)
 
         logger.debug(f"Batch transfer sent for user_id={self.user_id} with request ID={request_id}")
         return request_id

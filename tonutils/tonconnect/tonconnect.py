@@ -2,9 +2,6 @@ import asyncio
 from copy import copy
 from typing import Optional, List, Dict, Callable, Union, Any
 
-from tonutils.tonconnect.utils.exceptions import TonConnectError
-from tonutils.tonconnect.utils.logger import logger
-from tonutils.tonconnect.utils.wallet_manager import WalletsListManager
 from .connector import Connector
 from .models import WalletApp
 from .models.event import (
@@ -15,6 +12,9 @@ from .models.event import (
     EventHandlersData,
 )
 from .storage import IStorage
+from .utils.exceptions import TonConnectError
+from .utils.logger import logger
+from .utils.wallet_manager import WalletsListManager
 
 
 class TonConnect:

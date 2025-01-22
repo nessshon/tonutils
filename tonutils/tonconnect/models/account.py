@@ -5,8 +5,8 @@ from typing import Any, Dict, Optional
 
 from pytoniq_core import Address
 
-from tonutils.tonconnect.utils.exceptions import TonConnectError
 from .chain import CHAIN
+from ..utils.exceptions import TonConnectError
 
 
 @dataclass

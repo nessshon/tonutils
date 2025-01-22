@@ -2,8 +2,8 @@ import time
 from secrets import token_bytes
 from typing import Optional
 
-from tonutils.tonconnect.models import WalletInfo
-from tonutils.tonconnect.utils.logger import logger
+from .logger import logger
+from ..models import WalletInfo
 
 
 def generate_proof_payload(ttl: Optional[int] = None) -> str:

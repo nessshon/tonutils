@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 from cachetools import TTLCache
 
-from tonutils.tonconnect.models.wallet import WalletApp
+from tonutils.tonconnect.utils.logger import logger
 from .exceptions import FetchWalletsError
+from ..models.wallet import WalletApp
 
 
 class FallbackWalletManager:
@@ -28,12 +29,13 @@ class FallbackWalletManager:
         :return: A list of wallet dictionaries.
         """
         async with self.lock:
-            if not self.FILE_PATH.exists():
-                await self.save_wallets([])
+            try:
+                with open(self.FILE_PATH, mode="r", encoding="utf-8") as file:
+                    content = file.read()
+                    return json.loads(content)
+            except (json.JSONDecodeError, FileNotFoundError) as e:
+                logger.error(f"Error loading wallets: {e}")
                 return []
-
-            with open(self.FILE_PATH, "r", encoding="utf-8") as file:
-                return json.load(file)
 
     async def save_wallets(self, wallets: List[Dict[str, Any]]) -> None:
         """
@@ -42,9 +44,13 @@ class FallbackWalletManager:
         :param wallets: A list of wallet dictionaries.
         """
         async with self.lock:
-            self.FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.FILE_PATH, "w", encoding="utf-8") as file:
-                file.write(json.dumps(wallets, indent=4))
+            try:
+                self.FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+                with open(self.FILE_PATH, mode="w", encoding="utf-8") as file:
+                    file.write(json.dumps(wallets, indent=4))
+            except Exception as e:
+                logger.error(f"Error saving wallets: {e}")
 
 
 class CachedWalletManager:
@@ -198,8 +204,9 @@ class WalletsListManager:
 
         :param wallets: A list of wallet dictionaries.
         """
-        await self._cache_manager.save_wallets(wallets)
-        await self._fallback_manager.save_wallets(wallets)
+        if len(wallets) > 0:
+            await self._cache_manager.save_wallets(wallets)
+            await self._fallback_manager.save_wallets(wallets)
 
     async def get_wallets(self) -> List[WalletApp]:
         """
