@@ -64,7 +64,7 @@ class TonConnect:
         self._event_handlers = self._initialize_event_handlers()
         self._events_data = self._initialize_events_data()
 
-        self._connectors: Dict[int, Connector] = {}
+        self._connectors: Dict[Union[int, str], Connector] = {}
         self._connectors_lock = asyncio.Lock()
 
         self.extra = extra
@@ -149,7 +149,7 @@ class TonConnect:
             EventError.TRANSACTION: {},
         }
 
-    def _init_user_storage(self, user_id: int) -> IStorage:
+    def _init_user_storage(self, user_id: Union[int, str]) -> IStorage:
         """
         Creates a user-specific storage instance by copying the main storage
         and altering key prefixes to isolate data for each user.
@@ -189,7 +189,7 @@ class TonConnect:
 
         return decorator
 
-    async def create_connector(self, user_id: int) -> Connector:
+    async def create_connector(self, user_id: Union[int, str]) -> Connector:
         """
         Creates a new Connector for the given user, along with a user-specific storage object.
 
@@ -211,7 +211,7 @@ class TonConnect:
         logger.debug(f"Connector created for user_id={user_id}")
         return connector
 
-    async def get_connector(self, user_id: int) -> Optional[Connector]:
+    async def get_connector(self, user_id: Union[int, str]) -> Optional[Connector]:
         """
         Retrieves the Connector instance for the specified user.
 
@@ -221,7 +221,7 @@ class TonConnect:
         async with self._connectors_lock:
             return self._connectors.get(user_id)
 
-    async def init_connector(self, user_id: int) -> Connector:
+    async def init_connector(self, user_id: Union[int, str]) -> Connector:
         """
         Retrieves or creates a Connector for the specified user, then attempts to restore any existing connection.
 
@@ -253,7 +253,7 @@ class TonConnect:
         """
         return await self._wallets_list_manager.get_wallets()
 
-    async def run_all(self, user_ids: List[int]) -> None:
+    async def run_all(self, user_ids: List[Union[int, str]]) -> None:
         """
         Initializes connectors for all specified user IDs.
 

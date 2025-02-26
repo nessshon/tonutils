@@ -97,7 +97,7 @@ class Connector:
 
     def __init__(
             self,
-            user_id: int,
+            user_id: Union[int, str],
             manifest_url: str,
             storage: IStorage,
             api_tokens: Dict[str, str],
