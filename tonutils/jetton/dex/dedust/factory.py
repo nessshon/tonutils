@@ -137,9 +137,9 @@ class Factory:
                 address=self.factory_address.to_str(),
                 method_name="get_pool_address",
                 stack=[
+                    pool_type.value,
                     assets[0].to_cell().to_boc().hex(),
                     assets[1].to_cell().to_boc().hex(),
-                    pool_type.value,
                 ]
             )
             address = Address(method_result["decoded"].get("pool_address"))
