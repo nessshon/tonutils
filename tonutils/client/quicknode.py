@@ -44,7 +44,10 @@ class QuickNodeClient(Client):
 
     async def get_raw_account(self, address: str) -> RawAccount:
         method = f"/getAddressInformation?address={address}"
-        result = await self._get(method=method)
+        resp = await self._get(method=method)
+        if not resp.get("ok"):
+            raise Exception("Failed to get account information for address %s", address)
+        result = resp.get("result")
         code = result.get("code")
         code_cell = Cell.one_from_boc(code) if code else None
         data = result.get("data")
