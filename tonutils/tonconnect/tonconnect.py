@@ -33,6 +33,7 @@ class TonConnect:
             wallets_order: Optional[List[str]] = None,
             wallets_list_cache_ttl: Optional[int] = None,
             wallets_list_source_url: Optional[str] = None,
+            wallets_fallback_file_path: Optional[str] = None,
             **extra: Any,
     ) -> None:
         """
@@ -46,6 +47,7 @@ class TonConnect:
         :param wallets_order: Optional list of wallet `app_name` to order in the wallet list.
         :param wallets_list_cache_ttl: Optional cache TTL for the wallet list.
         :param wallets_list_source_url: Optional source URL for the wallet list.
+        :param wallets_fallback_file_path: Optional file path for fallback wallets storage.
         :param extra: Other arguments that will be passed as keyword arguments to event handlers.
         """
 
@@ -58,6 +60,7 @@ class TonConnect:
             include_wallets=include_wallets,
             exclude_wallets=exclude_wallets,
             wallets_order=wallets_order,
+            fallback_file_path=wallets_fallback_file_path,
             cache_ttl=wallets_list_cache_ttl,
         )
 

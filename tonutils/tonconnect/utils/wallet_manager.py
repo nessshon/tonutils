@@ -19,7 +19,9 @@ class FallbackWalletManager:
 
     FILE_PATH = Path(__file__).parent / "_data/fallback_wallets.json"
 
-    def __init__(self) -> None:
+    def __init__(self, file_path: Optional[str] = None) -> None:
+        if file_path:
+            self.FILE_PATH = Path(file_path)
         self.lock = asyncio.Lock()
 
     async def load_wallets(self) -> List[Dict[str, Any]]:
@@ -107,6 +109,7 @@ class WalletsListManager:
             include_wallets: Optional[List[str]] = None,
             exclude_wallets: Optional[List[str]] = None,
             wallets_order: Optional[List[str]] = None,
+            fallback_file_path: Optional[str] = None,
             cache_ttl: Optional[int] = None,
     ) -> None:
         """
@@ -117,10 +120,11 @@ class WalletsListManager:
         :param include_wallets: A list of wallet `app_name` to explicitly include.
         :param exclude_wallets: A list of wallet `app_name` to exclude.
         :param wallets_order: A list of wallet `app_name` to order.
+        :param fallback_file_path: A custom file path to use for fallback storage.
         :param cache_ttl: The time-to-live (TTL) for caching wallet data (in seconds).
         """
         self._cache_manager = CachedWalletManager(cache_ttl)
-        self._fallback_manager = FallbackWalletManager()
+        self._fallback_manager = FallbackWalletManager(fallback_file_path)
 
         self.source_url = source_url or WalletsListManager.DEFAULT_URL
 
