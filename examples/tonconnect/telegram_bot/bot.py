@@ -25,7 +25,7 @@ TC_MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/tonutils/main/exam
 redis = Redis.from_url(url=REDIS_DSN)
 dp = Dispatcher(storage=RedisStorage(redis))
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
-tc = TonConnect(storage=TCRedisStorage(redis), manifest_url=TC_MANIFEST_URL)
+tc = TonConnect(storage=TCRedisStorage(redis), manifest_url=TC_MANIFEST_URL, wallets_fallback_file_path="./wallets.json")
 
 
 async def delete_last_message(user_id: int, message_id: int) -> None:

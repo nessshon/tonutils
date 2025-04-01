@@ -12,7 +12,7 @@ TC_MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/tonutils/main/exam
 TC_STORAGE = FileStorage("connection.json")
 
 # Create an instance of TonConnect with the specified storage and manifest
-tc = TonConnect(storage=TC_STORAGE, manifest_url=TC_MANIFEST_URL)
+tc = TonConnect(storage=TC_STORAGE, manifest_url=TC_MANIFEST_URL, wallets_fallback_file_path="./wallets.json")
 
 
 @tc.on_event(Event.CONNECT)
