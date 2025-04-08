@@ -109,7 +109,6 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
   Claim testnet USD₮ by scanning the QR code at the following link:  
   [Scan to Claim Testnet USD₮](https://qrcode.ness.su/create?data=ton%3A%2F%2Ftransfer%2FkQB0ZYUL5M3KfrW0tSnwdFO1nC-BQHC2gcZl-WaF2on_USDT%3Famount%3D100000000%26bin%3Dte6ccgEBAgEAKQABIWQrfQcAAAAAAAAAABAX14QCAQAlF41FGQAAAAAAAAAAQ7msoAAQFA%3D%3D&border=3&box_size=30&image_url=https%3A%2F%2Ftether.to%2Fimages%2FlogoCircle.png&image_round=50&image_padding=99)
 
-
 #### Ton Connect Integration
 
 - [Wallet Connection](https://github.com/nessshon/tonutils/tree/main/examples/tonconnect/wallet_connection/)
@@ -249,6 +248,11 @@ client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
 - [Set Wallet Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/set_wallet.py)
 - [Set Storage Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/set_storage.py)
 - [Set Next Resolver Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/set_next_resolver.py)
+
+- ##### DNS Subdomain Collection
+
+    - [Deploy Collection](https://github.com/nessshon/tonutils/tree/main/examples/dns/collection/deploy_collection.py)
+    - [Mint Subdomain](https://github.com/nessshon/tonutils/tree/main/examples/dns/collection/mint_subdomain.py)
 
 - ##### Simple Subdomain Manager
 
