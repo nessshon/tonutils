@@ -298,6 +298,18 @@ class FileStorage(IStorage):
             await self._write_data(data)
 ```
 
+## Ton Proof Verification
+
+To confirm that a user truly owns the connected wallet, you can use the Ton Proof mechanism. It verifies both the user's
+address and the validity of their signed payload.
+This is especially useful for authenticating users before giving access to personalized backend data.
+
+* A full example is available in
+  the [check_proof](https://github.com/nessshon/tonutils/tree/main/examples/tonconnect/wallet_connection/check_proof.py)
+  file.
+* Learn more: Verifying signed-in users on
+  backend [TON Docs](https://docs.ton.org/v3/guidelines/ton-connect/guidelines/verifying-signed-in-users)
+
 ## Conclusion
 
 By following this cookbook, you can successfully integrate TonConnect into your script enabling seamless wallet
