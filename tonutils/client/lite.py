@@ -112,8 +112,12 @@ class LiteserverClient(Client):
         )
         code = simple_account.state.state_init.code if simple_account.state.state_init else None
         data = simple_account.state.state_init.data if simple_account.state.state_init else None
-        _lt, _lt_hash = shard_account.last_trans_lt, shard_account.last_trans_hash
-        lt, lt_hash = int(_lt) if _lt else None, _lt_hash.hex() if _lt_hash else None
+
+        if shard_account is None:
+            lt = lt_hash = None
+        else:
+            _lt, _lt_hash = shard_account.last_trans_lt, shard_account.last_trans_hash
+            lt, lt_hash = int(_lt) if _lt else None, _lt_hash.hex() if _lt_hash else None
 
         return RawAccount(
             balance=int(simple_account.balance or 0),
