@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, Optional, List, Union, Tuple
 
+from nacl.signing import SigningKey
 from pytoniq_core import (
     Address,
     Cell,
@@ -70,6 +71,10 @@ class Wallet(Contract):
         """
         self.client = client
         self.public_key = public_key
+
+        if len(private_key) == 32:
+            private_key += public_key
+
         self.private_key = private_key
         self.wallet_id = wallet_id
 
@@ -211,6 +216,10 @@ class Wallet(Contract):
         :param private_key: The private key.
         :return: A wallet instance.
         """
+        if len(private_key) == 32:
+            signing_key = SigningKey(private_key)
+            private_key += signing_key.verify_key.encode()
+
         public_key = private_key_to_public_key(private_key)
         return cls(client, public_key, private_key, **kwargs)
 
