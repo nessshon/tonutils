@@ -17,6 +17,7 @@ blockchain. It seamlessly integrates three prominent services for working with T
 - [tonapi.io](https://tonapi.io) - REST api to TON blockchain explorer.
 - [toncenter.com](https://toncenter.com) - Fast and reliable HTTP API for The Open Network.
 - [pytoniq](https://github.com/yungwine/pytoniq) - Library for direct interaction with Lite servers.
+- [quicknode.com](https://www.quicknode.com/) - Low-latency HTTP API access to TON via global infrastructure.
 
 By combining these services, Tonutils provides a powerful and flexible toolset for developers, making it easier to work
 with the TON ecosystem.
@@ -89,6 +90,22 @@ from tonutils.client import LiteserverClient
 config = {}  # your own config
 IS_TESTNET = True
 client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
+```
+
+</details>
+
+<details>
+<summary><b>• QuicknodeClient</b> To use, obtain an API URL from <a href="https://quicknode.com" target="_blank">quicknode.com</a>.</summary>
+
+**Note**: QuickNode does not support testnet.
+
+Client Initialization:
+
+```python
+from tonutils.client import QuicknodeClient
+
+HTTP_PROVIDER_URL = "https://blissful-withered-surf.ton-mainnet.quiknode.pro/d6e8...1964"
+client = QuicknodeClient(HTTP_PROVIDER_URL)
 ```
 
 </details>
@@ -273,7 +290,8 @@ submit a pull request.
 
 ## Support
 
-Supported by [TON Society](https://github.com/ton-society/grants-and-bounties), Grants and Bounties program.
+Supported by [TON Society](https://github.com/ton-society/grants-and-bounties), Grants and Bounties program.\
+With special thanks to [Igroman787](https://github.com/Igroman787) for the support.
 
 ## License
 
