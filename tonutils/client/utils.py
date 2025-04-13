@@ -43,7 +43,7 @@ class RunGetMethodResult:
         return value
 
     @classmethod
-    def _parse_item(cls, item: dict, source: str) -> Any:
+    def _parse_item(cls, item: Union[dict, list], source: str) -> Any:
         """
         Parses a single item from the stack based on its type and the source format (toncenter/tonapi).
 
@@ -51,6 +51,9 @@ class RunGetMethodResult:
         :param source: The source format ('toncenter', 'tonapi', etc.).
         :return: The parsed value, which could be a processed Cell, Slice, or other data type.
         """
+        if isinstance(item, list):
+            item = {"type": item[0], "value": item[1]}
+
         source_key_map = {
             "toncenter": {"num": "value", "cell": "value", "slice": "value"},
             "tonapi": {"num": "num", "cell": "cell", "slice": "slice"}
