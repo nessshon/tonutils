@@ -31,12 +31,8 @@ from ..op_codes import *
 from ..utils import validate_mnemonic
 from ...client import (
     Client,
-    LiteserverClient,
-    TonapiClient,
-    ToncenterClient,
 )
 from ...contract import Contract
-from ...exceptions import UnknownClientError
 from ...jetton import JettonMaster, JettonWallet
 from ...jetton.dex.dedust import Factory
 from ...jetton.dex.stonfi import StonfiRouterV1, StonfiRouterV2
@@ -269,11 +265,11 @@ class Wallet(Contract):
 
         return message_hash
 
-    async def balance(self) -> int:
+    async def balance(self) -> float:
         """
         Retrieve the current balance of the wallet.
 
-        :return: The balance of the wallet as an integer.
+        :return: Wallet balance in TON.
         """
         return await self.get_balance(self.client, self.address)
 
@@ -286,24 +282,14 @@ class Wallet(Contract):
         """
         Get the sequence number (seqno) of the wallet.
         """
-        if isinstance(address, Address):
-            address = address.to_str()
+        if isinstance(address, str):
+            address = Address(address)
 
         method_result = await client.run_get_method(
-            address=address,
+            address=address.to_str(),
             method_name="seqno",
         )
-
-        if isinstance(client, TonapiClient):
-            seqno = int(method_result["decoded"]["state"] or 0)
-        elif isinstance(client, ToncenterClient):
-            seqno = int(method_result["stack"][0]["value"], 16)
-        elif isinstance(client, LiteserverClient):
-            seqno = int(method_result[0])
-        else:
-            raise UnknownClientError(client.__class__.__name__)
-
-        return seqno
+        return method_result[0]
 
     @classmethod
     async def get_public_key(
@@ -314,24 +300,14 @@ class Wallet(Contract):
         """
         Get the public key of the wallet.
         """
-        if isinstance(address, Address):
-            address = address.to_str()
+        if isinstance(address, str):
+            address = Address(address)
 
         method_result = await client.run_get_method(
-            address=address,
+            address=address.to_str(),
             method_name="get_public_key",
         )
-
-        if isinstance(client, TonapiClient):
-            public_key = int(method_result["decoded"]["public_key"] or 0)
-        elif isinstance(client, ToncenterClient):
-            public_key = int(method_result["stack"][0]["value"], 16)
-        elif isinstance(client, LiteserverClient):
-            public_key = int(method_result[0])
-        else:
-            raise UnknownClientError(client.__class__.__name__)
-
-        return public_key
+        return method_result[0]
 
     async def raw_transfer(
             self,

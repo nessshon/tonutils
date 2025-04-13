@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from pytoniq_core import Address, SimpleAccount
 
+from .utils import RunGetMethodStack, RunGetMethodResult
 from ..account import AccountStatus, RawAccount
 from ..exceptions import PytoniqDependencyError
 
@@ -93,7 +94,9 @@ class LiteserverClient(Client):
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> Any:
-        return await self.client.run_get_method(address, method_name, stack or [])
+        stack = RunGetMethodStack(self, stack).pack_to_lite()
+        result = await self.client.run_get_method(address, method_name, stack or [])
+        return RunGetMethodResult(self, result).parse_from_lite()
 
     @require_pytoniq
     async def send_message(self, boc: str) -> None:

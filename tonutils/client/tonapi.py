@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 from pytoniq_core import Cell
 
 from ._base import Client
+from .utils import RunGetMethodStack, RunGetMethodResult
 from ..account import AccountStatus, RawAccount
 
 
@@ -40,14 +41,16 @@ class TonapiClient(Client):
             address: str,
             method_name: str,
             stack: Optional[List[Any]] = None,
-    ) -> Any:
+    ) -> List[Any]:
+        stack = RunGetMethodStack(self, stack or []).pack_to_tonapi()
         method = f"/v2/blockchain/accounts/{address}/methods/{method_name}"
 
         if stack:
             query_params = '&'.join(f"args={arg}" for arg in stack)
             method = f"{method}?{query_params}"
 
-        return await self._get(method=method)
+        result = await self._get(method=method)
+        return RunGetMethodResult(self, result["stack"]).parse_from_tonapi()
 
     async def send_message(self, boc: str) -> None:
         method = "/v2/blockchain/message"

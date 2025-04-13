@@ -1,17 +1,13 @@
 from typing import Union, Optional
 
-from pytoniq_core import Address, Cell, begin_cell, Slice
+from pytoniq_core import Address, Cell, begin_cell
 
 from .op_codes import *
 from ...data import JettonWalletData
 from ....client import (
     Client,
-    LiteserverClient,
-    TonapiClient,
-    ToncenterClient,
 )
 from ....contract import Contract
-from ....exceptions import UnknownClientError
 
 
 class JettonWallet(Contract):
@@ -56,38 +52,14 @@ class JettonWallet(Contract):
         if isinstance(jetton_wallet_address, str):
             jetton_wallet_address = Address(jetton_wallet_address)
 
-        if isinstance(client, TonapiClient):
-            method_result = await client.run_get_method(
-                address=jetton_wallet_address.to_str(),
-                method_name="get_wallet_data",
-            )
-            balance = int(method_result["stack"][0]["num"], 16)
-            owner_address = Slice.one_from_boc(method_result["stack"][1]["cell"]).load_address()
-            jetton_master_address = Slice.one_from_boc(method_result["stack"][2]["cell"]).load_address()
-            jetton_wallet_code = Cell.one_from_boc(method_result["stack"][3]["cell"])
-
-        elif isinstance(client, ToncenterClient):
-            method_result = await client.run_get_method(
-                address=jetton_wallet_address.to_str(),
-                method_name="get_wallet_data",
-            )
-            balance = int(method_result["stack"][0]["value"], 16)
-            owner_address = Slice.one_from_boc(method_result["stack"][1]["value"]).load_address()
-            jetton_master_address = Slice.one_from_boc(method_result["stack"][2]["value"]).load_address()
-            jetton_wallet_code = Cell.one_from_boc(method_result["stack"][3]["value"])
-
-        elif isinstance(client, LiteserverClient):
-            method_result = await client.run_get_method(
-                address=jetton_wallet_address.to_str(),
-                method_name="get_wallet_data",
-            )
-            balance = int(method_result[0])
-            owner_address = method_result[1].load_address()
-            jetton_master_address = method_result[2].load_address()
-            jetton_wallet_code = method_result[3]
-
-        else:
-            raise UnknownClientError(client.__class__.__name__)
+        method_result = await client.run_get_method(
+            address=jetton_wallet_address.to_str(),
+            method_name="get_wallet_data",
+        )
+        balance = method_result[0]
+        owner_address = method_result[1]
+        jetton_master_address = method_result[2]
+        jetton_wallet_code = method_result[3]
 
         return JettonWalletData(
             balance=balance,

@@ -4,16 +4,11 @@ import time
 from enum import Enum
 from typing import List, Optional, Union
 
-from pytoniq_core import Address, Cell, begin_cell, Slice
+from pytoniq_core import Address, Cell, begin_cell
 
 from tonutils.client import (
     Client,
-    TonapiClient,
-    ToncenterClient,
-    LiteserverClient,
 )
-from tonutils.exceptions import UnknownClientError
-from tonutils.utils import boc_to_base64_string
 from .constants import *
 from ... import JettonMaster, JettonWallet
 
@@ -105,70 +100,24 @@ class Factory:
         return int(time.time()) + TX_DEADLINE
 
     async def get_vault_address(self, asset: Asset) -> Address:
-        if isinstance(self.client, TonapiClient):
-            method_result = await self.client.run_get_method(
-                address=self.factory_address.to_str(),
-                method_name="get_vault_address",
-                stack=[asset.to_cell().to_boc().hex()],
-            )
-            address = Slice.one_from_boc(method_result["stack"][0]["cell"]).load_address()
-        elif isinstance(self.client, ToncenterClient):
-            method_result = await self.client.run_get_method(
-                address=self.factory_address.to_str(),
-                method_name="get_vault_address",
-                stack=[boc_to_base64_string(asset.to_cell().to_boc())],
-            )
-            address = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
-        elif isinstance(self.client, LiteserverClient):
-            method_result = await self.client.run_get_method(
-                address=self.factory_address.to_str(),
-                method_name="get_vault_address",
-                stack=[asset.to_cell().begin_parse()],
-            )
-            address = method_result[0].load_address()
-        else:
-            raise UnknownClientError(self.client.__class__.__name__)
-
-        return address
+        method_result = await self.client.run_get_method(
+            address=self.factory_address.to_str(),
+            method_name="get_vault_address",
+            stack=[asset.to_cell()],
+        )
+        return method_result[0]
 
     async def get_pool_address(self, pool_type: PoolType, assets: List[Asset]) -> Address:
-        if isinstance(self.client, TonapiClient):
-            method_result = await self.client.run_get_method(
-                address=self.factory_address.to_str(),
-                method_name="get_pool_address",
-                stack=[
-                    pool_type.value,
-                    assets[0].to_cell().to_boc().hex(),
-                    assets[1].to_cell().to_boc().hex(),
-                ]
-            )
-            address = Address(method_result["decoded"].get("pool_address"))
-        elif isinstance(self.client, ToncenterClient):
-            method_result = await self.client.run_get_method(
-                address=self.factory_address.to_str(),
-                method_name="get_pool_address",
-                stack=[
-                    pool_type.value,
-                    boc_to_base64_string(assets[0].to_cell().to_boc()),
-                    boc_to_base64_string(assets[1].to_cell().to_boc()),
-                ]
-            )
-            address = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
-        elif isinstance(self.client, LiteserverClient):
-            method_result = await self.client.run_get_method(
-                address=self.factory_address.to_str(),
-                method_name="get_pool_address",
-                stack=[
-                    pool_type.value,
-                    assets[0].to_cell().begin_parse(),
-                    assets[1].to_cell().begin_parse(),
-                ]
-            )
-            address = method_result[0].load_address()
-        else:
-            raise UnknownClientError(self.client.__class__.__name__)
-
-        return address
+        method_result = await self.client.run_get_method(
+            address=self.factory_address.to_str(),
+            method_name="get_pool_address",
+            stack=[
+                pool_type.value,
+                assets[0].to_cell(),
+                assets[1].to_cell(),
+            ]
+        )
+        return method_result[0]
 
     @classmethod
     def pack_swap_step(cls, swap_step: Union[SwapStep, None] = None) -> Union[Cell, None]:

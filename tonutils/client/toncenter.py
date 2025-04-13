@@ -4,6 +4,7 @@ from typing import Any, List, Optional
 from pytoniq_core import Cell
 
 from ._base import Client
+from .utils import RunGetMethodStack, RunGetMethodResult
 from ..account import AccountStatus, RawAccount
 from ..utils import boc_to_base64_string
 
@@ -42,7 +43,9 @@ class ToncenterClient(Client):
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> Any:
+        stack = RunGetMethodStack(self, stack).pack_to_toncenter()
         method = f"/api/v3/runGetMethod"
+
         body = {
             "address": address,
             "method": method_name,
@@ -54,7 +57,8 @@ class ToncenterClient(Client):
             ],
         }
 
-        return await self._post(method=method, body=body)
+        result = await self._post(method=method, body=body)
+        return RunGetMethodResult(self, result["stack"]).parse_from_toncenter()
 
     async def send_message(self, boc: str) -> None:
         method = "/api/v3/message"

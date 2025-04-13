@@ -1,6 +1,6 @@
 from typing import Union
 
-from pytoniq_core import Cell, begin_cell, Address, Slice
+from pytoniq_core import Cell, begin_cell, Address
 
 from .op_codes import *
 from .wallet import JettonWallet
@@ -8,13 +8,8 @@ from ...content import JettonOffchainContent, JettonOnchainContent
 from ...data import JettonMasterData
 from ....client import (
     Client,
-    LiteserverClient,
-    TonapiClient,
-    ToncenterClient,
 )
 from ....contract import Contract
-from ....exceptions import UnknownClientError
-from ....utils import boc_to_base64_string
 
 
 class JettonMaster(Contract):
@@ -58,41 +53,15 @@ class JettonMaster(Contract):
         if isinstance(jetton_master_address, str):
             jetton_master_address = Address(jetton_master_address)
 
-        if isinstance(client, TonapiClient):
-            method_result = await client.run_get_method(
-                address=jetton_master_address.to_str(),
-                method_name="get_jetton_data",
-            )
-            total_supply = int(method_result["stack"][0]["num"], 16)
-            mintable = bool(int(method_result["stack"][1]["num"], 16))
-            admin_address = Slice.one_from_boc(method_result["stack"][2]["cell"]).load_address()
-            content = Slice.one_from_boc(method_result["stack"][3]["cell"])
-            jetton_wallet_code = Cell.one_from_boc(method_result["stack"][4]["cell"])
-
-        elif isinstance(client, ToncenterClient):
-            method_result = await client.run_get_method(
-                address=jetton_master_address.to_str(),
-                method_name="get_jetton_data",
-            )
-            total_supply = int(method_result["stack"][0]["value"], 16)
-            mintable = bool(method_result["stack"][1]["value"])
-            admin_address = Slice.one_from_boc(method_result["stack"][2]["value"]).load_address()
-            content = Slice.one_from_boc(method_result["stack"][3]["value"])
-            jetton_wallet_code = Cell.one_from_boc(method_result["stack"][4]["value"])
-
-        elif isinstance(client, LiteserverClient):
-            method_result = await client.run_get_method(
-                address=jetton_master_address.to_str(),
-                method_name="get_jetton_data",
-            )
-            total_supply = int(method_result[0])
-            mintable = bool(method_result[1])
-            admin_address = method_result[2].load_address()
-            content = method_result[3]
-            jetton_wallet_code = method_result[4]
-
-        else:
-            raise UnknownClientError(client.__class__.__name__)
+        method_result = await client.run_get_method(
+            address=jetton_master_address.to_str(),
+            method_name="get_jetton_data",
+        )
+        total_supply = method_result[0]
+        mintable = bool(method_result[1])
+        admin_address = method_result[2]
+        content = method_result[3]
+        jetton_wallet_code = method_result[4]
 
         return JettonMasterData(
             total_supply=total_supply,
@@ -123,34 +92,12 @@ class JettonMaster(Contract):
         if isinstance(jetton_master_address, str):
             jetton_master_address = Address(jetton_master_address)
 
-        if isinstance(client, TonapiClient):
-            method_result = await client.run_get_method(
-                address=jetton_master_address.to_str(),
-                method_name="get_wallet_address",
-                stack=[owner_address.to_str()],
-            )
-            result = Address(method_result["decoded"]["jetton_wallet_address"])
-
-        elif isinstance(client, ToncenterClient):
-            method_result = await client.run_get_method(
-                address=jetton_master_address.to_str(),
-                method_name="get_wallet_address",
-                stack=[boc_to_base64_string(begin_cell().store_address(owner_address).end_cell().to_boc())],
-            )
-            result = Slice.one_from_boc(method_result["stack"][0]["value"]).load_address()
-
-        elif isinstance(client, LiteserverClient):
-            method_result = await client.run_get_method(
-                address=jetton_master_address.to_str(),
-                method_name="get_wallet_address",
-                stack=[Address(owner_address).to_cell().to_slice()],
-            )
-            result = method_result[0].load_address()
-
-        else:
-            raise UnknownClientError(client.__class__.__name__)
-
-        return result
+        method_result = await client.run_get_method(
+            address=jetton_master_address.to_str(),
+            method_name="get_wallet_address",
+            stack=[owner_address],
+        )
+        return method_result[0]
 
     @classmethod
     def build_mint_body(

@@ -14,11 +14,8 @@ from pytoniq_core import (
 from .account import RawAccount
 from .client import (
     Client,
-    LiteserverClient,
-    TonapiClient,
-    ToncenterClient,
 )
-from .exceptions import UnknownClientError
+from .utils import to_amount
 
 
 class Contract:
@@ -172,16 +169,12 @@ class Contract:
         return MessageAny(info, state_init, body)
 
     @classmethod
-    async def get_balance(cls, client: Client, address: Union[Address, str]) -> int:
+    async def get_balance(cls, client: Client, address: Union[Address, str]) -> float:
         """
-        Retrieve the current balance of the contract.
+        Retrieve the current balance of the contract in TON.
         """
-        if isinstance(address, Address):
-            address = address.to_str()
+        if isinstance(address, str):
+            address = Address(address)
 
-        if isinstance(client, (TonapiClient, ToncenterClient, LiteserverClient)):
-            balance = await client.get_account_balance(address)
-        else:
-            raise UnknownClientError(client.__class__.__name__)
-
-        return balance
+        balance = await client.get_account_balance(address.to_str())
+        return to_amount(balance, precision=9)

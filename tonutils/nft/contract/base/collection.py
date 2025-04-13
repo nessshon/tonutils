@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import Union
 
-from pytoniq_core import Address, Slice
+from pytoniq_core import Address
 
 from ...royalty_params import RoyaltyParams
-from ....client import Client, TonapiClient, ToncenterClient, LiteserverClient
+from ....client import Client
 from ....contract import Contract
-from ....exceptions import UnknownClientError
 
 
 class Collection(Contract):
@@ -28,34 +27,12 @@ class Collection(Contract):
         if isinstance(collection_address, str):
             collection_address = Address(collection_address)
 
-        if isinstance(client, TonapiClient):
-            method_result = await client.run_get_method(
-                address=collection_address.to_str(),
-                method_name="royalty_params",
-            )
-            base = int(method_result["decoded"]["numerator"])
-            factor = int(method_result["decoded"]["denominator"])
-            royalty_address = Address(method_result["decoded"]["destination"])
-
-        elif isinstance(client, ToncenterClient):
-            method_result = await client.run_get_method(
-                address=collection_address.to_str(),
-                method_name="royalty_params",
-            )
-            base = int(method_result["stack"][0]["value"], 16)
-            factor = int(method_result["stack"][1]["value"], 16)
-            royalty_address = Slice.one_from_boc(method_result["stack"][2]["value"]).load_address()
-
-        elif isinstance(client, LiteserverClient):
-            method_result = await client.run_get_method(
-                address=collection_address.to_str(),
-                method_name="royalty_params",
-            )
-            base = int(method_result[0])
-            factor = int(method_result[1])
-            royalty_address = method_result[2].load_address()
-
-        else:
-            raise UnknownClientError(client.__class__.__name__)
+        method_result = await client.run_get_method(
+            address=collection_address.to_str(),
+            method_name="royalty_params",
+        )
+        base = method_result[0]
+        factor = method_result[1]
+        royalty_address = method_result[2]
 
         return RoyaltyParams(base, factor, royalty_address)

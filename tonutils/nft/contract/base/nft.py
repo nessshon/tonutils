@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from typing import Optional, Union
 
-from pytoniq_core import Address, Cell, Slice, begin_cell
+from pytoniq_core import Address, Cell, begin_cell
 
 from ...data import NFTData
 from ...op_codes import *
-from ....client import Client, TonapiClient, ToncenterClient, LiteserverClient
+from ....client import Client
 from ....contract import Contract
-from ....exceptions import UnknownClientError
 
 
 class NFT(Contract):
@@ -22,38 +21,15 @@ class NFT(Contract):
         if isinstance(nft_address, str):
             nft_address = Address(nft_address)
 
-        if isinstance(client, TonapiClient):
-            method_result = await client.run_get_method(
-                address=nft_address.to_str(),
-                method_name="get_nft_data",
-            )
-            index = method_result["decoded"]["index"]
-            owner_address = Address(method_result["decoded"]["owner_address"])
-            collection_address = Address(method_result["decoded"]["collection_address"])
-            content = Slice.one_from_boc(method_result["decoded"]["individual_content"]).load_snake_string()
+        method_result = await client.run_get_method(
+            address=nft_address.to_str(),
+            method_name="get_nft_data",
+        )
 
-        elif isinstance(client, ToncenterClient):
-            method_result = await client.run_get_method(
-                address=nft_address.to_str(),
-                method_name="get_nft_data",
-            )
-            index = int(method_result["stack"][1]["value"], 16)
-            collection_address = Slice.one_from_boc(method_result["stack"][2]["value"]).load_address()
-            owner_address = Slice.one_from_boc(method_result["stack"][3]["value"]).load_address()
-            content = Slice.one_from_boc(method_result["stack"][4]["value"]).load_snake_string()
-
-        elif isinstance(client, LiteserverClient):
-            method_result = await client.run_get_method(
-                address=nft_address.to_str(),
-                method_name="get_nft_data",
-            )
-            index = int(method_result[1])
-            collection_address = method_result[2].load_address()
-            owner_address = method_result[3].load_address()
-            content = method_result[4].begin_parse().load_snake_string()
-
-        else:
-            raise UnknownClientError(client.__class__.__name__)
+        index = method_result[1]
+        collection_address = method_result[2]
+        owner_address = method_result[3]
+        content = method_result[4].begin_parse().load_snake_string()
 
         return NFTData(index, collection_address, owner_address, content)
 
