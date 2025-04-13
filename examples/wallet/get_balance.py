@@ -1,5 +1,5 @@
 from tonutils.client import TonapiClient
-from tonutils.utils import to_amount
+from tonutils.utils import to_nano
 from tonutils.wallet import (
     WalletV3R1,
     # Uncomment the following lines to use different wallet versions:
@@ -35,8 +35,8 @@ async def main() -> None:
 
     balance = await wallet.balance()
 
-    print(f"Wallet balance (nano): {balance}")
-    print(f"Wallet balance (TON): {to_amount(balance)}")
+    print(f"Wallet balance (nano): {to_nano(balance)}")
+    print(f"Wallet balance (TON): {balance}")
 
 
 if __name__ == "__main__":

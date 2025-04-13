@@ -83,7 +83,7 @@ async def get_payload(api_uri: str, wallet_address: str) -> Dict[str, Any]:
 async def is_claimed(client: TonapiClient, jetton_addr: str) -> bool:
     try:
         result = await client.run_get_method(jetton_addr, "is_claimed")
-        return result["decoded"]["claimed"]
+        return bool(result[0])
     except ClientResponseError as e:
         if e.status == 404:
             return False
