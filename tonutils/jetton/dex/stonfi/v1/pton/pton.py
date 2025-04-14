@@ -1,7 +1,6 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 from pytoniq_core import Address, Cell, begin_cell
-from typing_extensions import Optional
 
 from tonutils.client import Client
 from tonutils.jetton import JettonMaster, JettonWallet
