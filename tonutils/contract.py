@@ -126,7 +126,7 @@ class Contract:
             created_at: int = 0,
             body: Optional[Cell] = None,
             state_init: Optional[StateInit] = None,
-            **kwargs: Any,
+            **_,
     ) -> MessageAny:
         """
         Create an internal message for the contract.
