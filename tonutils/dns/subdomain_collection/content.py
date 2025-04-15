@@ -1,7 +1,7 @@
 from tonutils.nft.content import BaseOnchainContent
 
 
-class DNSCollectionContent(BaseOnchainContent):
+class SubdomainCollectionContent(BaseOnchainContent):
 
     def __init__(
             self,
