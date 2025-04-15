@@ -266,18 +266,18 @@ client = QuicknodeClient(HTTP_PROVIDER_URL)
 - [Set Storage Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/set_storage.py)
 - [Set Next Resolver Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/set_next_resolver.py)
 
-- ##### DNS Subdomain Collection
+- ##### Subdomain Collection
 
-    - [Deploy Collection](https://github.com/nessshon/tonutils/tree/main/examples/dns/collection/deploy_collection.py)
-    - [Mint Subdomain](https://github.com/nessshon/tonutils/tree/main/examples/dns/collection/mint_subdomain.py)
+    - [Deploy Collection](https://github.com/nessshon/tonutils/tree/main/examples/dns/subdomain_collection/deploy_collection.py)
+    - [Mint Subdomain](https://github.com/nessshon/tonutils/tree/main/examples/dns/subdomain_collection/mint_subdomain.py)
 
 - ##### Simple Subdomain Manager
 
-    - [Deploy Manager](https://github.com/nessshon/tonutils/tree/main/examples/dns/simple_subdomain/deploy_manager.py)
-    - [Set Site Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/simple_subdomain/set_site.py)
-    - [Set Wallet Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/simple_subdomain/set_wallet.py)
-    - [Set Storage Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/simple_subdomain/set_storage.py)
-    - [Set Next Resolver Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/simple_subdomain/set_next_resolver.py)
+    - [Deploy Manager](https://github.com/nessshon/tonutils/tree/main/examples/dns/subdomain_manager/deploy_manager.py)
+    - [Set Site Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/subdomain_manager/set_site.py)
+    - [Set Wallet Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/subdomain_manager/set_wallet.py)
+    - [Set Storage Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/subdomain_manager/set_storage.py)
+    - [Set Next Resolver Record](https://github.com/nessshon/tonutils/tree/main/examples/dns/subdomain_manager/set_next_resolver.py)
 
 #### Vanity Operations
 
