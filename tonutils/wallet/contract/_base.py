@@ -395,6 +395,7 @@ class Wallet(Contract):
                     **kwargs
                 ),
             ],
+            **kwargs
         )
 
         return message_hash
