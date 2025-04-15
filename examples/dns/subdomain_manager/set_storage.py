@@ -1,5 +1,5 @@
 from tonutils.client import TonapiClient
-from tonutils.dns.simple_subdomain import SubdomainManager
+from tonutils.dns.subdomain_manager import SubdomainManager
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)

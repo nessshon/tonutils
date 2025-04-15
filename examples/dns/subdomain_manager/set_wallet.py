@@ -1,4 +1,7 @@
+from pytoniq_core import Address
+
 from tonutils.client import TonapiClient
+from tonutils.dns.subdomain_manager import SubdomainManager
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -10,24 +13,29 @@ IS_TESTNET = True
 # Mnemonic phrase used to connect the wallet
 MNEMONIC: list[str] = []
 
-# Address of the DNS collection contract
-DNS_COLLECTION_ADDRESS = "EQ..."
+# The address of the subdomain manager contract
+SUBDOMAIN_MANAGER_ADDRESS = "EQ..."
 
-# The name of the subdomain to be minted
-SUBDOMAIN_NAME = "alice"  # alice → alice.ghost.ton
+# The address of the wallet to be set for the subdomain
+WALLET_ADDRESS = "UQ..."
+
+# The subdomain to be registered
+SUBDOMAIN = "example"
 
 
 async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
+    body = SubdomainManager.build_set_wallet_record_body(SUBDOMAIN, Address(WALLET_ADDRESS))
+
     tx_hash = await wallet.transfer(
-        destination=DNS_COLLECTION_ADDRESS,
-        amount=0.2,
-        body=SUBDOMAIN_NAME,
+        destination=SUBDOMAIN_MANAGER_ADDRESS,
+        amount=0.02,
+        body=body,
     )
 
-    print(f"Successfully minted subdomain {SUBDOMAIN_NAME}!")
+    print("Subdomain successfully registered and wallet set!")
     print(f"Transaction hash: {tx_hash}")
 
 
