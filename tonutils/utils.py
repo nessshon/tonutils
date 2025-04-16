@@ -11,15 +11,35 @@ from nacl.signing import SigningKey
 from pytoniq_core import Address, Cell, MessageAny, begin_cell, HashMap
 
 
-def message_to_boc_hex(message: MessageAny) -> Tuple[str, str]:
+def message_to_boc_hex(message: MessageAny, normalize_hash: bool = True) -> Tuple[str, str]:
     """
-    Serialize a message to its Bag of Cells (BoC) representation and return its hexadecimal strings.
+    Converts a message into its BoC (Bag of Cells) hex representation and computes a hash.
 
-    :param message: The message to be serialized.
-    :return: A tuple containing the BoC hexadecimal string and the hash hexadecimal string of the message.
+    If `normalize_hash` is True, the hash is computed on a normalized version of the message:
+    - Only the destination address and body are retained.
+    - The body is stored as a reference in a new cell for consistent structure and hash.
+
+    :param message: The original message object to serialize.
+    :param normalize_hash: Whether to normalize the message before hashing.
+    :return: A tuple containing (BoC hex string, message hash hex string).
     """
+    # Serialize the full message into a cell and convert to BoC hex
     message_cell = message.serialize()
     message_boc = message_cell.to_boc()
+
+    # Compute the hash from either the original or normalized message
+    if normalize_hash and message.is_external:
+        message_cell = (
+            begin_cell()
+            .store_uint(2, 2)
+            .store_address(None)
+            .store_address(message.info.dest)
+            .store_coins(0)
+            .store_bool(False)
+            .store_bool(True)
+            .store_ref(message.body)
+            .end_cell()
+        )
 
     return message_boc.hex(), message_cell.hash.hex()
 
