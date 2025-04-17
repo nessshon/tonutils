@@ -11,17 +11,19 @@
 ![Downloads](https://pepy.tech/badge/tonutils/month)
 ![Downloads](https://pepy.tech/badge/tonutils/week)
 
-**Tonutils** is a high-level object-oriented library for Python designed to facilitate interactions with the TON
-blockchain. It seamlessly integrates three prominent services for working with TON:
+**Tonutils** is a high-level, object-oriented Python library designed to simplify interactions with the TON blockchain. It seamlessly integrates several prominent services for working with TON:
 
-- [tonapi.io](https://tonapi.io) - REST api to TON blockchain explorer.
-- [toncenter.com](https://toncenter.com) - Fast and reliable HTTP API for The Open Network.
-- [pytoniq](https://github.com/yungwine/pytoniq) - Library for direct interaction with Lite servers.
-- [quicknode.com](https://www.quicknode.com/) - Low-latency HTTP API access to TON via global infrastructure.
-- [tatum.io](https://tatum.io) – RPCs and APIs Powering Web3. Fast, Reliable, Affordable.
 
-By combining these services, Tonutils provides a powerful and flexible toolset for developers, making it easier to work
-with the TON ecosystem.
+* **RPC API**
+  * [tonapi.io](https://tonapi.io) – REST API to the TON blockchain explorer.
+  * [toncenter.com](https://toncenter.com) – fast and reliable HTTP API for The Open Network.
+  * [quicknode.com](https://www.quicknode.com/) – low-latency HTTP API access to TON via global infrastructure.
+  * [tatum.io](https://tatum.io) – RPCs and APIs powering Web3. Fast, reliable, affordable.
+
+* **Native ADNL**
+  * [pytoniq](https://github.com/yungwine/pytoniq) – library for direct interaction with Lite servers.
+
+By combining these services, Tonutils provides a powerful and flexible toolset for developers, making it easier to build on top of the TON ecosystem.
 
 ## Installation
 
@@ -50,87 +52,91 @@ development!
 
 ### Providers
 
-<details>
-<summary><b>• TonapiClient</b> To use you need to obtain an API key on the <a href="https://tonconsole.com" target="_blank">tonconsole.com</a>.</summary>
+* **RPC API**
 
-Client Initialization
+  <details>
+  <summary><b>tonapi</b> To use you need to obtain an API key on the <a href="https://tonconsole.com" target="_blank">tonconsole.com</a>.</summary>
+  
+  Client Initialization
+  
+  ```python
+  from tonutils.client import TonapiClient
+  
+  API_KEY = "your api key"
+  IS_TESTNET = True
+  client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+  ```
+  
+  </details>
+  
+  <details>
+  <summary><b>toncenter</b> To use you need to obtain an API key from the <a href="https://t.me/tonapibot" target="_blank">bot</a>.</summary>
+  
+  Client Initialization
+  
+  ```python
+  from tonutils.client import ToncenterV2Client
+  from tonutils.client import ToncenterV3Client
+  
+  API_KEY = "your api key"  # optional 
+  IS_TESTNET = True
+  
+  # Using Toncenter V3 client
+  client_v3 = ToncenterV3Client(api_key=API_KEY, is_testnet=IS_TESTNET)
+  
+  # If you want to use Toncenter V2 instead:
+  # client_v2 = ToncenterV2Client(api_key=API_KEY, is_testnet=IS_TESTNET)
+  ```
+  
+  </details>
 
-```python
-from tonutils.client import TonapiClient
+  <details>
+  <summary><b>quicknode</b> To use, obtain an API URL from <a href="https://quicknode.com" target="_blank">quicknode.com</a>.</summary>
+  
+  **Note**: QuickNode does not support testnet.
+  
+  Client Initialization:
+  
+  ```python
+  from tonutils.client import QuicknodeClient
+  
+  HTTP_PROVIDER_URL = "https://blissful-withered-surf.ton-mainnet.quiknode.pro/d6e8...1964"
+  client = QuicknodeClient(HTTP_PROVIDER_URL)
+  ```
+  
+  </details>
+  
+  <details>
+  <summary><b>tatum</b> To use it, you need to obtain an API key on <a href="https://tatum.io" target="_blank">tatum.io</a>.</summary>
+  
+  Client Initialization
+  
+  ```python
+  from tonutils.client import TatumClient
+  
+  API_KEY = "your api key"
+  IS_TESTNET = True
+  client = TatumClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+  ```
+  
+  </details>
 
-API_KEY = "your api key"
-IS_TESTNET = True
-client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
-```
+* **Native ADNL**
 
-</details>
-
-<details>
-<summary><b>• ToncenterClient</b> To use you need to obtain an API key from the <a href="https://t.me/tonapibot" target="_blank">bot</a>.</summary>
-
-Client Initialization
-
-```python
-from tonutils.client import ToncenterV2Client
-from tonutils.client import ToncenterV3Client
-
-API_KEY = "your api key"  # optional 
-IS_TESTNET = True
-
-# Using Toncenter V3 client
-client_v3 = ToncenterV3Client(api_key=API_KEY, is_testnet=IS_TESTNET)
-
-# If you want to use Toncenter V2 instead:
-# client_v2 = ToncenterV2Client(api_key=API_KEY, is_testnet=IS_TESTNET)
-```
-
-</details>
-
-<details>
-<summary><b>• LiteserverClient</b> For better performance, pass your own config, available from the <a href="https://t.me/liteserver_bot" target="_blank">bot</a>.</summary>
-
-Client Initialization:
-
-```python
-from tonutils.client import LiteserverClient
-
-config = {}  # your own config
-IS_TESTNET = True
-client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
-```
-
-</details>
-
-<details>
-<summary><b>• QuicknodeClient</b> To use, obtain an API URL from <a href="https://quicknode.com" target="_blank">quicknode.com</a>.</summary>
-
-**Note**: QuickNode does not support testnet.
-
-Client Initialization:
-
-```python
-from tonutils.client import QuicknodeClient
-
-HTTP_PROVIDER_URL = "https://blissful-withered-surf.ton-mainnet.quiknode.pro/d6e8...1964"
-client = QuicknodeClient(HTTP_PROVIDER_URL)
-```
-
-</details>
-
-<details>
-<summary><b>• TatumClient</b> To use it, you need to obtain an API key on <a href="https://tatum.io" target="_blank">tatum.io</a>.</summary>
-
-Client Initialization
-
-```python
-from tonutils.client import TatumClient
-
-API_KEY = "your api key"
-IS_TESTNET = True
-client = TatumClient(api_key=API_KEY, is_testnet=IS_TESTNET)
-```
-
-</details>
+  <details>
+  <summary><b>pytoniq</b> For better performance, pass your own config, available from the <a href="https://t.me/liteserver_bot" target="_blank">bot</a>.</summary>
+  
+  Client Initialization:
+  
+  ```python
+  from tonutils.client import LiteserverClient
+  
+  config = {}  # your own config
+  IS_TESTNET = True
+  client = LiteserverClient(config=config, is_testnet=IS_TESTNET)
+  ```
+  
+  </details>
 
 ### Guide
 
