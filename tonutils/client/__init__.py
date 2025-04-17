@@ -2,14 +2,20 @@ from ._base import Client
 
 from .lite import LiteserverClient
 from .quicknode import QuicknodeClient
+from .tatum import TatumClient
 from .tonapi import TonapiClient
-from .toncenter import ToncenterClient
+from .toncenter import (
+    ToncenterV2Client,
+    ToncenterV3Client,
+)
 
 __all__ = [
     "Client",
 
     "LiteserverClient",
     "QuicknodeClient",
+    "TatumClient",
     "TonapiClient",
-    "ToncenterClient",
+    "ToncenterV2Client",
+    "ToncenterV3Client",
 ]

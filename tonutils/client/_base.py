@@ -61,6 +61,7 @@ class Client:
         """
         url = self.base_url + path
         self.headers.update(headers or {})
+        print(url)
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:
                 async with session.request(

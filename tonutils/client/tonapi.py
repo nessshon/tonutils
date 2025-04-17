@@ -9,29 +9,33 @@ from ..account import AccountStatus, RawAccount
 
 class TonapiClient(Client):
     """
-    TonapiClient class for interacting with the TON blockchain.
+    TonapiClient for interacting with the TON blockchain via TonAPI.
 
-    This class provides methods to run get methods and send messages to the blockchain,
-    with options for network selection.
+    Provides methods for querying data and sending transactions with support
+    for both mainnet and testnet environments.
     """
+
+    API_VERSION_PATH = "/v2"
 
     def __init__(
             self,
             api_key: str,
-            is_testnet: Optional[bool] = False,
+            is_testnet: bool = False,
             base_url: Optional[str] = None,
     ) -> None:
         """
         Initialize the TonapiClient.
 
-        :param api_key: The API key for accessing the Tonapi service.
-            You can get API key here: https://tonconsole.com.
-        :param is_testnet: Flag to indicate if testnet configuration should be used. Defaults to False.
-        :param base_url: Optional base URL for the Tonapi service. If not provided,
-            the default public URL will be used. You can specify your own API URL if needed.
+        :param api_key: API key for accessing TonAPI services.
+            You can obtain one at: https://tonconsole.com
+        :param is_testnet: If True, uses the testnet endpoint. Defaults to False (mainnet).
+        :param base_url: Optional custom base URL. If not provided, uses the official endpoint.
         """
-        if base_url is None:
-            base_url = "https://tonapi.io" if not is_testnet else "https://testnet.tonapi.io"
+        if not api_key:
+            raise ValueError("`api_key` is required to initialize TonapiClient.")
+
+        default_url = "https://testnet.tonapi.io" if is_testnet else "https://tonapi.io"
+        base_url = (base_url or default_url).rstrip("/") + self.API_VERSION_PATH
         headers = {"Authorization": f"Bearer {api_key}"}
 
         super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet)
@@ -43,7 +47,7 @@ class TonapiClient(Client):
             stack: Optional[List[Any]] = None,
     ) -> List[Any]:
         stack = RunGetMethodStack(self, stack or []).pack_to_tonapi()
-        method = f"/v2/blockchain/accounts/{address}/methods/{method_name}"
+        method = f"/blockchain/accounts/{address}/methods/{method_name}"
 
         if stack:
             query_params = '&'.join(f"args={arg}" for arg in stack)
@@ -53,12 +57,12 @@ class TonapiClient(Client):
         return RunGetMethodResult(self, result["stack"]).parse_from_tonapi()
 
     async def send_message(self, boc: str) -> None:
-        method = "/v2/blockchain/message"
+        method = "/blockchain/message"
 
         await self._post(method=method, body={"boc": boc})
 
     async def get_raw_account(self, address: str) -> RawAccount:
-        method = f"/v2/blockchain/accounts/{address}"
+        method = f"/blockchain/accounts/{address}"
         result = await self._get(method=method)
 
         code = result.get("code")
