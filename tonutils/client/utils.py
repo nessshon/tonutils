@@ -63,7 +63,7 @@ class RunGetMethodResult:
             "num": lambda v: int(v, 16),
             "cell": Cell.one_from_boc,
             "slice": Slice.one_from_boc,
-            "list": lambda v: [cls._process_item(item) for item in v],
+            "list": lambda v: [cls._process_item(i) for i in v],
             "null": lambda _: None,
         }
 
