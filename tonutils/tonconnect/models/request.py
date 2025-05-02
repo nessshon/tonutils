@@ -5,10 +5,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pytoniq_core import Cell, Address, begin_cell, StateInit
+from pytoniq_core import Address, Cell, StateInit, begin_cell, MessageAny
 
 from .chain import CHAIN
-from ...utils import boc_to_base64_string, to_nano
+from ...utils import boc_to_base64_string, to_nano, message_to_boc_hex
 
 
 class ItemName(str, Enum):
@@ -273,6 +273,17 @@ class SendTransactionResponse:
         """
         cell = self.cell
         return cell.hash.hex()
+
+    @property
+    def normalized_hash(self) -> str:
+        """
+        Computes the normalized hash of the Cell object derived from the BOC.
+
+        :return: The hexadecimal representation of the Cell's normalized hash.
+        """
+        message = MessageAny.deserialize(self.cell.begin_parse())
+        _, message_hash = message_to_boc_hex(message)
+        return message_hash
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> SendTransactionResponse:
