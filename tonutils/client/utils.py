@@ -55,14 +55,16 @@ class RunGetMethodResult:
             item = {"type": item[0], "value": item[1]}
 
         source_key_map = {
-            "toncenter": {"num": "value", "cell": "value", "slice": "value"},
-            "tonapi": {"num": "num", "cell": "cell", "slice": "slice"}
+            "toncenter": {"num": "value", "cell": "value", "slice": "value", "list": "value", "null": None},
+            "tonapi": {"num": "num", "cell": "cell", "slice": "slice", "list": "value", "null": None},
         }
 
         parsers = {
             "num": lambda v: int(v, 16),
             "cell": Cell.one_from_boc,
-            "slice": Slice.one_from_boc
+            "slice": Slice.one_from_boc,
+            "list": lambda v: [cls._process_item(item) for item in v],
+            "null": lambda _: None,
         }
 
         type_ = item.get("type")
