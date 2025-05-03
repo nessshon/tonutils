@@ -174,6 +174,72 @@ class SwapTONToJettonData:
         self.other = kwargs
 
 
+class DedustSwapTONToJettonData(SwapTONToJettonData):
+
+    def __init__(
+            self,
+            jetton_master_address: Union[Address, str],
+            ton_amount: Union[int, float],
+            min_amount: Union[int, float] = 0,
+            jetton_decimals: int = 9,
+            forward_amount: Union[int, float] = 0,
+            factory_address: Optional[Union[Address, str]] = None,
+            native_vault_address: Optional[Union[Address, str]] = None,
+            **kwargs,
+    ) -> None:
+        super().__init__(
+            jetton_master_address,
+            ton_amount,
+            min_amount,
+            jetton_decimals,
+            forward_amount,
+            **kwargs
+        )
+
+        if isinstance(factory_address, str):
+            factory_address = Address(factory_address)
+
+        if isinstance(native_vault_address, str):
+            native_vault_address = Address(native_vault_address)
+
+        self.factory_address = factory_address
+        self.native_vault_address = native_vault_address
+
+
+class StonfiSwapTONToJettonData(SwapTONToJettonData):
+
+    def __init__(
+            self,
+            jetton_master_address: Union[Address, str],
+            ton_amount: Union[int, float],
+            min_amount: Union[int, float] = 0,
+            jetton_decimals: int = 9,
+            forward_amount: Union[int, float] = 0,
+            router_address: Optional[Union[Address, str]] = None,
+            pton_address: Optional[Union[Address, str]] = None,
+            dex_version: Optional[int] = None,
+            **kwargs,
+    ) -> None:
+        super().__init__(
+            jetton_master_address,
+            ton_amount,
+            min_amount,
+            jetton_decimals,
+            forward_amount,
+            **kwargs
+        )
+
+        if isinstance(router_address, str):
+            router_address = Address(router_address)
+
+        if isinstance(pton_address, str):
+            pton_address = Address(pton_address)
+
+        self.router_address = router_address
+        self.pton_address = pton_address
+        self.dex_version = dex_version
+
+
 class SwapJettonToTONData:
     """
     Data class for swapping jettons.
@@ -201,6 +267,68 @@ class SwapJettonToTONData:
         self.jetton_decimals = jetton_decimals
         self.min_amount = min_amount
         self.other = kwargs
+
+
+class DedustSwapJettonToTONData(SwapJettonToTONData):
+
+    def __init__(
+            self,
+            jetton_master_address: Union[Address, str],
+            jetton_amount: Union[int, float],
+            jetton_decimals: int = 9,
+            min_amount: Union[int, float] = 0,
+            factory_address: Optional[Union[Address, str]] = None,
+            native_vault_address: Optional[Union[Address, str]] = None,
+            **kwargs,
+    ) -> None:
+        super().__init__(
+            jetton_master_address,
+            jetton_amount,
+            jetton_decimals,
+            min_amount,
+            **kwargs
+        )
+
+        if isinstance(factory_address, str):
+            factory_address = Address(factory_address)
+
+        if isinstance(native_vault_address, str):
+            native_vault_address = Address(native_vault_address)
+
+        self.factory_address = factory_address
+        self.native_vault_address = native_vault_address
+
+
+class StonfiSwapJettonToTONData(SwapJettonToTONData):
+
+    def __init__(
+            self,
+            jetton_master_address: Union[Address, str],
+            jetton_amount: Union[int, float],
+            jetton_decimals: int = 9,
+            min_amount: Union[int, float] = 0,
+            router_address: Optional[Union[Address, str]] = None,
+            pton_address: Optional[Union[Address, str]] = None,
+            dex_version: Optional[int] = None,
+            **kwargs,
+    ) -> None:
+        super().__init__(
+            jetton_master_address,
+            jetton_amount,
+            jetton_decimals,
+            min_amount,
+            **kwargs
+        )
+
+        if isinstance(router_address, str):
+            router_address = Address(router_address)
+
+        if isinstance(pton_address, str):
+            pton_address = Address(pton_address)
+
+        self.router_address = router_address
+        self.pton_address = pton_address
+        self.dex_version = dex_version
 
 
 class SwapJettonToJettonData:
@@ -239,6 +367,74 @@ class SwapJettonToJettonData:
         self.from_jetton_decimals = from_jetton_decimals
         self.to_jetton_decimals = to_jetton_decimals
         self.other = kwargs
+
+
+class DedustSwapJettonToJettonData(SwapJettonToJettonData):
+
+    def __init__(
+            self,
+            from_jetton_master_address: Union[Address, str],
+            to_jetton_master_address: Union[Address, str],
+            jetton_amount: Union[int, float],
+            min_amount: Union[int, float] = 0,
+            from_jetton_decimals: int = 9,
+            to_jetton_decimals: int = 9,
+            factory_address: Optional[Union[Address, str]] = None,
+            native_vault_address: Optional[Union[Address, str]] = None,
+            **kwargs,
+    ) -> None:
+        super().__init__(
+            from_jetton_master_address,
+            to_jetton_master_address,
+            jetton_amount,
+            min_amount,
+            from_jetton_decimals,
+            to_jetton_decimals,
+            **kwargs
+        )
+        if isinstance(factory_address, str):
+            factory_address = Address(factory_address)
+
+        if isinstance(native_vault_address, str):
+            native_vault_address = Address(native_vault_address)
+
+        self.factory_address = factory_address
+        self.native_vault_address = native_vault_address
+
+
+class StonfiSwapJettonToJettonData(SwapJettonToJettonData):
+
+    def __init__(
+            self,
+            from_jetton_master_address: Union[Address, str],
+            to_jetton_master_address: Union[Address, str],
+            jetton_amount: Union[int, float],
+            min_amount: Union[int, float] = 0,
+            from_jetton_decimals: int = 9,
+            to_jetton_decimals: int = 9,
+            router_address: Optional[Union[Address, str]] = None,
+            pton_address: Optional[Union[Address, str]] = None,
+            dex_version: Optional[int] = None,
+            **kwargs,
+    ) -> None:
+        super().__init__(
+            from_jetton_master_address,
+            to_jetton_master_address,
+            jetton_amount,
+            min_amount,
+            from_jetton_decimals,
+            to_jetton_decimals,
+            **kwargs
+        )
+        if isinstance(router_address, str):
+            router_address = Address(router_address)
+
+        if isinstance(pton_address, str):
+            pton_address = Address(pton_address)
+
+        self.router_address = router_address
+        self.pton_address = pton_address
+        self.dex_version = dex_version
 
 
 class WalletV2Data(TlbScheme):

@@ -23,9 +23,12 @@ from ..data import (
     TransferData,
     TransferNFTData,
     TransferJettonData,
-    SwapTONToJettonData,
-    SwapJettonToTONData,
-    SwapJettonToJettonData,
+    DedustSwapTONToJettonData,
+    DedustSwapJettonToTONData,
+    DedustSwapJettonToJettonData,
+    StonfiSwapTONToJettonData,
+    StonfiSwapJettonToTONData,
+    StonfiSwapJettonToJettonData,
 )
 from ..op_codes import *
 from ..utils import validate_mnemonic
@@ -36,6 +39,7 @@ from ...contract import Contract
 from ...jetton import JettonMaster, JettonWallet
 from ...jetton.dex.dedust import Factory
 from ...jetton.dex.stonfi import StonfiRouterV1, StonfiRouterV2
+from ...jetton.dex.stonfi.utils import get_stonfi_router_details
 from ...nft import NFTStandard
 from ...utils import (
     create_encrypted_comment_cell,
@@ -653,30 +657,20 @@ class Wallet(Contract):
 
     async def batch_dedust_swap_ton_to_jetton(
             self,
-            data_list: List[SwapTONToJettonData],
-            factory_address: Optional[Union[Address, str]] = None,
-            native_vault_address: Optional[Union[Address, str]] = None,
+            data_list: List[DedustSwapTONToJettonData],
     ) -> str:
         """
         Perform a batch swap operation.
 
         :param data_list: The list of swap data.
-        :param factory_address: The factory address.
-        :param native_vault_address: The native vault address.
         :return: The hash of the batch swap message.
 
         https://docs.dedust.io/docs/introduction
         """
-        if isinstance(factory_address, str):
-            factory_address = Address(factory_address)
-
-        if isinstance(native_vault_address, str):
-            native_vault_address = Address(native_vault_address)
-
         messages = []
 
         for data in data_list:
-            factory = Factory(self.client, factory_address, native_vault_address)
+            factory = Factory(self.client, data.factory_address, data.native_vault_address)
 
             to, value, body = await factory.get_swap_ton_to_jetton_tx_params(
                 recipient_address=self.address,
@@ -751,30 +745,20 @@ class Wallet(Contract):
 
     async def batch_dedust_swap_jetton_to_ton(
             self,
-            data_list: List[SwapJettonToTONData],
-            factory_address: Optional[Union[Address, str]] = None,
-            native_vault_address: Optional[Union[Address, str]] = None,
+            data_list: List[DedustSwapJettonToTONData],
     ) -> str:
         """
         Perform a batch swap jetton to ton operation.
 
         :param data_list: The list of swap jetton to ton data.
-        :param factory_address: The factory address.
-        :param native_vault_address: The native vault address.
         :return: The hash of the batch swap jetton to ton message.
 
         https://docs.dedust.io/docs/introduction
         """
-        if isinstance(factory_address, str):
-            factory_address = Address(factory_address)
-
-        if isinstance(native_vault_address, str):
-            native_vault_address = Address(native_vault_address)
-
         messages = []
 
         for data in data_list:
-            factory = Factory(self.client, factory_address, native_vault_address)
+            factory = Factory(self.client, data.factory_address, data.native_vault_address)
 
             to, value, body = await factory.get_swap_jetton_to_ton_tx_params(
                 recipient_address=self.address,
@@ -857,30 +841,20 @@ class Wallet(Contract):
 
     async def batch_dedust_swap_jetton_to_jetton(
             self,
-            data_list: List[SwapJettonToJettonData],
-            factory_address: Optional[Union[Address, str]] = None,
-            native_vault_address: Optional[Union[Address, str]] = None,
+            data_list: List[DedustSwapJettonToJettonData],
     ) -> str:
         """
         Perform a batch swap jetton to jetton operation.
 
         :param data_list: The list of swap jetton to jetton data.
-        :param factory_address: The factory address.
-        :param native_vault_address: The native vault address.
         :return: The hash of the batch swap jetton to jetton message.
 
         https://docs.dedust.io/docs/introduction
         """
-        if isinstance(factory_address, str):
-            factory_address = Address(factory_address)
-
-        if isinstance(native_vault_address, str):
-            native_vault_address = Address(native_vault_address)
-
         messages = []
 
         for data in data_list:
-            factory = Factory(self.client, factory_address, native_vault_address)
+            factory = Factory(self.client, data.factory_address, data.native_vault_address)
 
             to, value, body = await factory.get_swap_jetton_to_jetton_tx_params(
                 recipient_address=self.address,
@@ -938,6 +912,15 @@ class Wallet(Contract):
         if isinstance(pton_address, str):
             pton_address = Address(pton_address)
 
+        if None in [router_address, pton_address]:
+            version, router_address, pton_address = await get_stonfi_router_details(
+                offer_address="ton",
+                ask_address=jetton_master_address.to_str(),
+                amount=ton_amount,
+                decimals=9,
+                is_testnet=self.client.is_testnet,
+            )
+
         if version == 1:
             router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
@@ -953,7 +936,7 @@ class Wallet(Contract):
             to, value, body = await router_v2.get_swap_ton_to_jetton_tx_params(
                 user_wallet_address=self.address,
                 receiver_address=self.address,
-                offer_jetton_address=jetton_master_address,
+                ask_jetton_address=jetton_master_address,
                 offer_amount=to_nano(ton_amount),
                 min_ask_amount=to_nano(min_amount, jetton_decimals),
                 refund_address=self.address,
@@ -973,31 +956,32 @@ class Wallet(Contract):
 
     async def batch_stonfi_swap_ton_to_jetton(
             self,
-            data_list: List[SwapTONToJettonData],
-            version: int = 2,
-            router_address: Optional[Union[Address, str]] = None,
-            pton_address: Optional[Union[Address, str]] = None,
+            data_list: List[StonfiSwapTONToJettonData],
     ) -> str:
         """
         Perform a batch swap operation.
 
         :param data_list: The list of swap data.
-        :param version: The version of the STONfi Router. Defaults to 2.
-        :param router_address: The STONfi Router address.
-        :param pton_address: The pTON address.
         :return: The hash of the batch swap message.
 
         https://docs.ston.fi/docs/developer-section/architecture
         """
-        if isinstance(router_address, str):
-            router_address = Address(router_address)
-
-        if isinstance(pton_address, str):
-            pton_address = Address(pton_address)
-
         messages = []
 
         for data in data_list:
+            version = data.dex_version
+            pton_address = data.pton_address
+            router_address = data.router_address
+
+            if None in (version, router_address, pton_address):
+                version, router_address, pton_address = await get_stonfi_router_details(
+                    offer_address="ton",
+                    ask_address=data.jetton_master_address.to_str(),
+                    amount=data.ton_amount,
+                    decimals=9,
+                    is_testnet=self.client.is_testnet,
+                )
+
             if version == 1:
                 router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
@@ -1013,7 +997,7 @@ class Wallet(Contract):
                 to, value, body = await router_v2.get_swap_ton_to_jetton_tx_params(
                     user_wallet_address=self.address,
                     receiver_address=self.address,
-                    offer_jetton_address=data.jetton_master_address,
+                    ask_jetton_address=data.jetton_master_address,
                     offer_amount=to_nano(data.ton_amount),
                     min_ask_amount=to_nano(data.min_amount, data.jetton_decimals),
                     refund_address=self.address,
@@ -1069,6 +1053,15 @@ class Wallet(Contract):
         if isinstance(pton_address, str):
             pton_address = Address(pton_address)
 
+        if None in [router_address, pton_address]:
+            version, router_address, pton_address = await get_stonfi_router_details(
+                offer_address=jetton_master_address.to_str(),
+                ask_address="ton",
+                amount=jetton_amount,
+                decimals=jetton_decimals,
+                is_testnet=self.client.is_testnet,
+            )
+
         if version == 1:
             router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
@@ -1104,31 +1097,32 @@ class Wallet(Contract):
 
     async def batch_stonfi_swap_jetton_to_ton(
             self,
-            data_list: List[SwapJettonToTONData],
-            version: int = 2,
-            router_address: Optional[Union[Address, str]] = None,
-            pton_address: Optional[Union[Address, str]] = None,
+            data_list: List[StonfiSwapJettonToTONData],
     ) -> str:
         """
         Perform a batch swap operation.
 
         :param data_list: The list of swap data.
-        :param version: The version of the STONfi Router. Defaults to 2.
-        :param router_address: The STONfi Router address.
-        :param pton_address: The pTON address.
         :return: The hash of the batch swap message.
 
         https://docs.ston.fi/docs/developer-section/architecture
         """
-        if isinstance(router_address, str):
-            router_address = Address(router_address)
-
-        if isinstance(pton_address, str):
-            pton_address = Address(pton_address)
-
         messages = []
 
         for data in data_list:
+            version = data.dex_version
+            pton_address = data.pton_address
+            router_address = data.router_address
+
+            if None in (version, router_address, pton_address):
+                version, router_address, pton_address = await get_stonfi_router_details(
+                    offer_address=data.jetton_master_address.to_str(),
+                    ask_address="ton",
+                    amount=data.jetton_amount,
+                    decimals=data.jetton_decimals,
+                    is_testnet=self.client.is_testnet,
+                )
+
             if version == 1:
                 router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
@@ -1171,7 +1165,8 @@ class Wallet(Contract):
             from_jetton_master_address: Union[Address, str],
             to_jetton_master_address: Union[Address, str],
             jetton_amount: Union[int, float],
-            jetton_decimals: int = 9,
+            from_jetton_decimals: int = 9,
+            to_jetton_decimals: int = 9,
             min_amount: Union[int, float] = 0,
             version: int = 2,
             router_address: Optional[Union[Address, str]] = None,
@@ -1184,7 +1179,8 @@ class Wallet(Contract):
         :param from_jetton_master_address: The jetton master address to swap from.
         :param to_jetton_master_address: The jetton master address to swap to.
         :param jetton_amount: The amount of jetton to swap.
-        :param jetton_decimals: The jetton decimals. Defaults to 9.
+        :param from_jetton_decimals: The jetton decimals of the from_jetton_master_address (used for calculating jetton_amount).
+        :param to_jetton_decimals: The jetton decimals of the to_jetton_master_address (used for calculating min_amount).
         :param min_amount: The minimum amount of jetton to receive. Defaults to 0.
         :param version: The version of the STONfi Router. Defaults to 2.
         :param router_address: The STONfi Router address.
@@ -1205,6 +1201,15 @@ class Wallet(Contract):
         if isinstance(pton_address, str):
             pton_address = Address(pton_address)
 
+        if None in [router_address, pton_address]:
+            version, router_address, pton_address = await get_stonfi_router_details(
+                offer_address=from_jetton_master_address.to_str(),
+                ask_address=to_jetton_master_address.to_str(),
+                amount=jetton_amount,
+                decimals=from_jetton_decimals,
+                is_testnet=self.client.is_testnet,
+            )
+
         if version == 1:
             router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 
@@ -1212,8 +1217,8 @@ class Wallet(Contract):
                 user_wallet_address=self.address,
                 offer_jetton_address=from_jetton_master_address,
                 ask_jetton_address=to_jetton_master_address,
-                offer_amount=to_nano(jetton_amount, jetton_decimals),
-                min_ask_amount=to_nano(min_amount, jetton_decimals),
+                offer_amount=to_nano(jetton_amount, from_jetton_decimals),
+                min_ask_amount=to_nano(min_amount, to_jetton_decimals),
             )
         elif version == 2:
             router_v2 = StonfiRouterV2(self.client, router_address, pton_address)
@@ -1224,8 +1229,8 @@ class Wallet(Contract):
                 refund_address=self.address,
                 offer_jetton_address=from_jetton_master_address,
                 ask_jetton_address=to_jetton_master_address,
-                offer_amount=to_nano(jetton_amount, jetton_decimals),
-                min_ask_amount=to_nano(min_amount, jetton_decimals),
+                offer_amount=to_nano(jetton_amount, from_jetton_decimals),
+                min_ask_amount=to_nano(min_amount, to_jetton_decimals),
             )
         else:
             raise ValueError(f"Unsupported STONfi Router version: {version}")
@@ -1242,31 +1247,32 @@ class Wallet(Contract):
 
     async def batch_stonfi_swap_jetton_to_jetton(
             self,
-            data_list: List[SwapJettonToJettonData],
-            version: int = 2,
-            router_address: Optional[Union[Address, str]] = None,
-            pton_address: Optional[Union[Address, str]] = None,
+            data_list: List[StonfiSwapJettonToJettonData],
     ) -> str:
         """
         Perform a batch swap operation.
 
         :param data_list: The list of swap data.
-        :param version: The version of the STONfi Router. Defaults to 2.
-        :param router_address: The STONfi Router address.
-        :param pton_address: The pTON address.
         :return: The hash of the batch swap message.
 
         https://docs.ston.fi/docs/developer-section/architecture
         """
-        if isinstance(router_address, str):
-            router_address = Address(router_address)
-
-        if isinstance(pton_address, str):
-            pton_address = Address(pton_address)
-
         messages = []
 
         for data in data_list:
+            version = data.dex_version
+            pton_address = data.pton_address
+            router_address = data.router_address
+
+            if None in (version, router_address, pton_address):
+                version, router_address, _ = await get_stonfi_router_details(
+                    offer_address=data.from_jetton_master_address.to_str(),
+                    ask_address=data.to_jetton_master_address.to_str(),
+                    amount=data.jetton_amount,
+                    decimals=data.from_jetton_decimals,
+                    is_testnet=self.client.is_testnet,
+                )
+
             if version == 1:
                 router_v1 = StonfiRouterV1(self.client, router_address, pton_address)
 

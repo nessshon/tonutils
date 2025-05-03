@@ -1,5 +1,6 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
+import aiohttp
 from pytoniq_core import Address, Cell, begin_cell
 
 from tonutils.client import Client
@@ -24,6 +25,38 @@ class StonfiRouterV1:
         )
         self.pton = StonfiPTONV1(self.client, pton_address)
         self.is_testnet = client.is_testnet
+
+    @classmethod
+    async def get_router_address(
+            cls,
+            offer_address: str,
+            ask_address: str,
+            amount: Union[int, float],
+            decimals: int = 9,
+    ) -> str:
+        """ Simulate the swap using the STON.fi API to get the correct router address. """
+        url = "https://api.ston.fi/v1/swap/simulate"
+        headers = {"Accept": "application/json"}
+
+        params = {
+            "offer_address": offer_address,
+            "ask_address": ask_address,
+            "units": to_nano(amount, decimals),
+            "slippage_tolerance": 1,
+            "dex_v2": "false",
+            "dex_version": "1",
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, params=params, headers=headers) as response:
+                if response.status == 200:
+                    content = await response.json()
+                    return content.get("router_address")
+                else:
+                    error_text = await response.text()
+                    if response.status == 404:
+                        raise ValueError(error_text)
+                    raise Exception(f"Failed to get router address: {response.status}: {error_text}")
 
     @classmethod
     def build_swap_body(
