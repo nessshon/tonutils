@@ -14,13 +14,13 @@ API_KEY = ""
 IS_TESTNET = False
 
 # Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []  # noqa
+MNEMONIC: list[str] = []
 
 # Addresses of the Jetton Masters for swapping (USD₮ > TON)
 FROM_JETTON_MASTER_ADDRESS = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"  # noqa
 
 # Number of decimal places for the Jetton
-JETTON_DECIMALS = 9
+JETTON_DECIMALS = 6
 
 # Amount of Jettons to swap (in base units, considering decimals)
 JETTON_AMOUNT = 1

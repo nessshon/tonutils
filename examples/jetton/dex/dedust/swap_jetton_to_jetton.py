@@ -12,7 +12,7 @@ API_KEY = ""
 IS_TESTNET = True
 
 # Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []  # noqa
+MNEMONIC: list[str] = []
 
 # Addresses of the Jetton Masters for swapping
 FROM_JETTON_MASTER_ADDRESS = "kQC-lmDXBZ5xENZ9zKukBOpCmz81_m8aoPOcrQgVAGDown7O"  # noqa

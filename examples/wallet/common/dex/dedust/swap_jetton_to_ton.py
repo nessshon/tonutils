@@ -14,7 +14,7 @@ JETTON_MASTER_ADDRESS = "EQ..."
 JETTON_DECIMALS = 9
 
 # Amount of Jettons to swap (in base units, considering decimals)
-JETTON_AMOUNT = 0.01
+JETTON_AMOUNT = 1
 
 
 async def main() -> None:

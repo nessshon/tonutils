@@ -5,20 +5,21 @@ from tonutils.wallet import WalletV4R2
 API_KEY = ""
 
 # Set to True for the test network, False for the main network
-IS_TESTNET = True
+IS_TESTNET = False
 
 # Mnemonic phrase used to connect the wallet
 MNEMONIC: list[str] = []
 
 # Addresses of the Jetton Masters for swapping
-FROM_JETTON_MASTER_ADDRESS = "kQDLvsZol3juZyOAVG8tWsJntOxeEZWEaWCbbSjYakQpuYN5"  # noqa
-TO_JETTON_MASTER_ADDRESS = "kQB_TOJSB7q3-Jm1O8s0jKFtqLElZDPjATs5uJGsujcjznq3"  # noqa
+FROM_JETTON_MASTER_ADDRESS = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"  # noqa
+TO_JETTON_MASTER_ADDRESS = "EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT"  # noqa
 
 # Number of decimal places for the Jetton
-JETTON_DECIMALS = 9
+FROM_JETTON_DECIMALS = 6
+TO_JETTON_DECIMALS = 9
 
 # Amount of Jettons to swap (in base units, considering decimals)
-JETTON_AMOUNT = 0.01
+JETTON_AMOUNT = 1
 
 
 async def main() -> None:
@@ -29,8 +30,8 @@ async def main() -> None:
         from_jetton_master_address=FROM_JETTON_MASTER_ADDRESS,
         to_jetton_master_address=TO_JETTON_MASTER_ADDRESS,
         jetton_amount=JETTON_AMOUNT,
-        jetton_decimals=JETTON_DECIMALS,
-        version=2,  # STONfi Router version
+        from_jetton_decimals=FROM_JETTON_DECIMALS,
+        to_jetton_decimals=TO_JETTON_DECIMALS,
     )
 
     print("Successfully swapped Jetton to Jetton!")

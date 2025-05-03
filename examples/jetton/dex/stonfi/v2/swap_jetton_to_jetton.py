@@ -13,14 +13,15 @@ API_KEY = ""
 IS_TESTNET = False
 
 # Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []  # noqa
+MNEMONIC: list[str] = []
 
-# Addresses of the Jetton Masters for swapping (USD₮ > STON)
+# Addresses of the Jetton Masters for swapping
 FROM_JETTON_MASTER_ADDRESS = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"  # noqa
-TO_JETTON_MASTER_ADDRESS = "EQA2kCVNwVsil2EM2mB0SkXytxCqQjS4mttjDpnXmwG9T6bO"  # noqa
+TO_JETTON_MASTER_ADDRESS = "EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT"  # noqa
 
 # Number of decimal places for the Jetton
-JETTON_DECIMALS = 9
+FROM_JETTON_DECIMALS = 6
+TO_JETTON_DECIMALS = 9
 
 # Amount of Jettons to swap (in base units, considering decimals)
 JETTON_AMOUNT = 1
@@ -42,8 +43,8 @@ async def main() -> None:
         refund_address=wallet.address,
         offer_jetton_address=Address(FROM_JETTON_MASTER_ADDRESS),
         ask_jetton_address=Address(TO_JETTON_MASTER_ADDRESS),
-        offer_amount=to_nano(JETTON_AMOUNT, JETTON_DECIMALS),
-        min_ask_amount=0,
+        offer_amount=to_nano(JETTON_AMOUNT, FROM_JETTON_DECIMALS),
+        min_ask_amount=to_nano(0, TO_JETTON_DECIMALS),
     )
 
     tx_hash = await wallet.transfer(
@@ -64,7 +65,7 @@ async def get_router_address() -> str:
     params = {
         "offer_address": FROM_JETTON_MASTER_ADDRESS,
         "ask_address": TO_JETTON_MASTER_ADDRESS,
-        "units": to_nano(JETTON_AMOUNT, JETTON_DECIMALS),
+        "units": to_nano(JETTON_AMOUNT, FROM_JETTON_DECIMALS),
         "slippage_tolerance": 1,
         "dex_v2": "true",
     }

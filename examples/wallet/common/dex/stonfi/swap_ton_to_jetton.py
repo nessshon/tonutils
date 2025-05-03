@@ -5,16 +5,19 @@ from tonutils.wallet import WalletV4R2
 API_KEY = ""
 
 # Set to True for the test network, False for the main network
-IS_TESTNET = True
+IS_TESTNET = False
 
 # Mnemonic phrase used to connect the wallet
 MNEMONIC: list[str] = []
 
-# Address of the Jetton Master contract
-JETTON_MASTER_ADDRESS = "kQDLvsZol3juZyOAVG8tWsJntOxeEZWEaWCbbSjYakQpuYN5"  # noqa
+# Address of the Jetton Master for swapping (TON > USD₮)
+TO_JETTON_MASTER_ADDRESS = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"  # noqa
+
+# Number of decimal places for the Jetton
+JETTON_DECIMALS = 9
 
 # Amount of TON to swap (in TON)
-SWAP_TON_AMOUNT = 0.5
+SWAP_TON_AMOUNT = 1
 
 
 async def main() -> None:
@@ -22,9 +25,9 @@ async def main() -> None:
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     tx_hash = await wallet.stonfi_swap_ton_to_jetton(
-        jetton_master_address=JETTON_MASTER_ADDRESS,
+        jetton_master_address=TO_JETTON_MASTER_ADDRESS,
         ton_amount=SWAP_TON_AMOUNT,
-        version=2,  # STONfi Router version
+        jetton_decimals=JETTON_DECIMALS,
     )
 
     print("Successfully swapped TON to Jetton!")

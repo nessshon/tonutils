@@ -48,6 +48,7 @@ async def main() -> None:
         jetton_amount=to_nano(JETTON_AMOUNT, JETTON_DECIMALS),
         recipient_address=Address(DESTINATION_ADDRESS),
         response_address=relayer_address,
+        forward_amount=1,
     )
     message_to_estimate = wallet.create_internal_msg(
         dest=jetton_wallet_address,

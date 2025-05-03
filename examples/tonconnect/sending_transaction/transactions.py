@@ -34,7 +34,7 @@ async def on_transaction(transaction: SendTransactionResponse) -> None:
     - transaction.hash (str): Message hash (different from the actual transaction hash)
     - transaction.cell (Cell): Transaction Cell
     """
-    print(f"[Transaction SENT] Transaction successfully sent. Message hash: {transaction.hash}")
+    print(f"[Transaction SENT] Transaction successfully sent. Message hash: {transaction.normalized_hash}")
 
 
 @tc.on_event(EventError.TRANSACTION)
@@ -74,7 +74,21 @@ async def main() -> None:
         # Check wallet connection
         if not connector.connected:
             print("Wallet not connected! Please connect the wallet to continue.")
-            break
+
+            # Get all available wallets
+            wallets = await tc.get_wallets()
+
+            # As an example, we will select the wallet with index 1 (Tonkeeper)
+            selected_wallet = wallets[1]
+            connect_url = await connector.connect_wallet(selected_wallet)
+            print(f"Please connect your wallet by visiting the following URL:\n{connect_url}")
+            print("Waiting for wallet connection...")
+
+            async with connector.connect_wallet_context() as response:
+                if isinstance(response, TonConnectError):
+                    print(f"Connection error: {response.message}")
+                else:
+                    print(f"Connected wallet: {response.account.address.to_str(is_bounceable=False)}")
 
         # If the wallet is connected, prompt the user to choose an action
         call = input(
@@ -130,7 +144,7 @@ async def main() -> None:
                 if isinstance(response, TonConnectError):
                     print(f"Error sending transaction: {response.message}")
                 else:
-                    print(f"Transaction successful! Hash: {response.hash}")
+                    print(f"Transaction successful! Hash: {response.normalized_hash}")
 
         elif call == "3":
             # Disconnect the wallet

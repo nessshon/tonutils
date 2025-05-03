@@ -25,7 +25,8 @@ TC_MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/tonutils/main/exam
 redis = Redis.from_url(url=REDIS_DSN)
 dp = Dispatcher(storage=RedisStorage(redis))
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
-tc = TonConnect(storage=TCRedisStorage(redis), manifest_url=TC_MANIFEST_URL, wallets_fallback_file_path="./wallets.json")
+tc = TonConnect(storage=TCRedisStorage(redis), manifest_url=TC_MANIFEST_URL,
+                wallets_fallback_file_path="./wallets.json")
 
 
 async def delete_last_message(user_id: int, message_id: int) -> None:
@@ -138,7 +139,7 @@ async def send_transaction_window(user_id: int) -> None:
 async def transaction_sent_window(user_id: int, transaction: SendTransactionResponse) -> None:
     text = (
         "Transaction sent!\n\n"
-        f"Transaction msg hash:\n{hcode(transaction.hash)}\n"
+        f"Transaction msg hash:\n{hcode(transaction.normalized_hash)}\n"
         f"Transaction BoC:\n{hcode(transaction.boc)}\n"
     )
     reply_markup = _go_to_main_menu_markup()

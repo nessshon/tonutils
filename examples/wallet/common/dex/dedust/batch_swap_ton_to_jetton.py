@@ -1,6 +1,6 @@
 from tonutils.client import TonapiClient
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import SwapTONToJettonData
+from tonutils.wallet.data import DedustSwapTONToJettonData
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
 API_KEY = ""
@@ -15,21 +15,25 @@ async def main() -> None:
 
     tx_hash = await wallet.batch_dedust_swap_ton_to_jetton(
         data_list=[
-            SwapTONToJettonData(
+            DedustSwapTONToJettonData(
                 jetton_master_address="EQ...",
                 ton_amount=0.01,
+                jetton_decimals=9,
             ),
-            SwapTONToJettonData(
+            DedustSwapTONToJettonData(
                 jetton_master_address="EQ...",
                 ton_amount=0.01,
+                jetton_decimals=9,
             ),
-            SwapTONToJettonData(
+            DedustSwapTONToJettonData(
                 jetton_master_address="EQ...",
                 ton_amount=0.01,
+                jetton_decimals=9,
             ),
-            SwapTONToJettonData(
+            DedustSwapTONToJettonData(
                 jetton_master_address="EQ...",
                 ton_amount=0.01,
+                jetton_decimals=9,
             ),
         ]
     )

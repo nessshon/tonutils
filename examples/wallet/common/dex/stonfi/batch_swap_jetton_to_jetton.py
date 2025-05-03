@@ -1,12 +1,12 @@
 from tonutils.client import TonapiClient
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import SwapJettonToJettonData
+from tonutils.wallet.data import StonfiSwapJettonToJettonData
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
 API_KEY = ""
 
 # Set to True for the test network, False for the main network
-IS_TESTNET = True
+IS_TESTNET = False
 
 # Mnemonic phrase used to connect the wallet
 MNEMONIC: list[str] = []
@@ -18,32 +18,35 @@ async def main() -> None:
 
     tx_hash = await wallet.batch_stonfi_swap_jetton_to_jetton(
         data_list=[
-            SwapJettonToJettonData(
+            StonfiSwapJettonToJettonData(
                 from_jetton_master_address="EQ...",
                 to_jetton_master_address="EQ...",
                 jetton_amount=0.01,
-                jetton_decimals=9,
+                from_jetton_decimals=9,
+                to_jetton_decimals=9,
             ),
-            SwapJettonToJettonData(
+            StonfiSwapJettonToJettonData(
                 from_jetton_master_address="EQ...",
                 to_jetton_master_address="EQ...",
                 jetton_amount=0.01,
-                jetton_decimals=9,
+                from_jetton_decimals=9,
+                to_jetton_decimals=9,
             ),
-            SwapJettonToJettonData(
+            StonfiSwapJettonToJettonData(
                 from_jetton_master_address="EQ...",
                 to_jetton_master_address="EQ...",
                 jetton_amount=0.01,
-                jetton_decimals=9,
+                from_jetton_decimals=9,
+                to_jetton_decimals=9,
             ),
-            SwapJettonToJettonData(
+            StonfiSwapJettonToJettonData(
                 from_jetton_master_address="EQ...",
                 to_jetton_master_address="EQ...",
                 jetton_amount=0.01,
-                jetton_decimals=9,
+                from_jetton_decimals=9,
+                to_jetton_decimals=9,
             ),
         ],
-        version=2,  # STONfi Router version
     )
 
     print("Successfully swapped TON to Jetton!")

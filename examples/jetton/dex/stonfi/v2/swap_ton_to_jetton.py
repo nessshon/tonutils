@@ -14,7 +14,7 @@ API_KEY = ""
 IS_TESTNET = False
 
 # Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []  # noqa
+MNEMONIC: list[str] = []
 
 # Address of the Jetton Master for swapping (TON > USD₮)
 TO_JETTON_MASTER_ADDRESS = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"  # noqa
@@ -39,7 +39,7 @@ async def main() -> None:
     to, value, body = await stonfi_router.get_swap_ton_to_jetton_tx_params(
         user_wallet_address=wallet.address,
         receiver_address=wallet.address,
-        offer_jetton_address=Address(TO_JETTON_MASTER_ADDRESS),
+        ask_jetton_address=Address(TO_JETTON_MASTER_ADDRESS),
         offer_amount=to_nano(TON_AMOUNT),
         min_ask_amount=0,
         refund_address=wallet.address,
