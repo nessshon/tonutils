@@ -8,7 +8,7 @@ from typing import Any, Dict, Tuple, Union
 from Cryptodome.Cipher import AES
 from nacl.bindings import crypto_scalarmult
 from nacl.signing import SigningKey
-from pytoniq_core import Address, Cell, MessageAny, begin_cell, HashMap
+from pytoniq_core import Address, Cell, MessageAny, begin_cell, HashMap, Slice
 
 
 def message_to_boc_hex(message: MessageAny, normalize_hash: bool = True) -> Tuple[str, str]:
@@ -182,3 +182,13 @@ def serialize_onchain_dict(data: Dict[str, Any]) -> Cell:
         dict_cell.set(key, cell.end_cell(), hash_key=True)
 
     return dict_cell.serialize()
+
+
+def slice_hash(s: Slice) -> Tuple[bytes, int]:
+    s_hash = s.to_cell().hash
+    s_int = int.from_bytes(s_hash, "big")
+    return s_hash, s_int
+
+
+def string_hash(s: str) -> Tuple[bytes, int]:
+    return slice_hash(begin_cell().store_snake_string(s))
