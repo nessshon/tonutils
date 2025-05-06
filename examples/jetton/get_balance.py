@@ -1,5 +1,5 @@
 from tonutils.client import TonapiClient
-from tonutils.jetton import JettonMaster, JettonWallet
+from tonutils.jetton import JettonMasterStandard, JettonWalletStandard
 from tonutils.utils import to_amount
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -21,13 +21,13 @@ JETTON_DECIMALS = 9
 async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 
-    jetton_wallet_address = await JettonMaster.get_wallet_address(
+    jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
         client=client,
         owner_address=OWNER_ADDRESS,
         jetton_master_address=JETTON_MASTER_ADDRESS,
     )
 
-    jetton_wallet_data = await JettonWallet.get_wallet_data(
+    jetton_wallet_data = await JettonWalletStandard.get_wallet_data(
         client=client,
         jetton_wallet_address=jetton_wallet_address,
     )

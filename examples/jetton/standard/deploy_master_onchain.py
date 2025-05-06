@@ -1,5 +1,5 @@
 from tonutils.client import TonapiClient
-from tonutils.jetton import JettonMaster
+from tonutils.jetton import JettonMasterStandard
 from tonutils.jetton.content import JettonOnchainContent
 from tonutils.wallet import WalletV4R2
 
@@ -20,7 +20,7 @@ async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    jetton_master = JettonMaster(
+    jetton_master = JettonMasterStandard(
         content=JettonOnchainContent(
             name="Ness Jetton",
             symbol="NESS",

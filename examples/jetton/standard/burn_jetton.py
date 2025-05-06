@@ -1,5 +1,5 @@
 from tonutils.client import TonapiClient
-from tonutils.jetton import JettonMaster, JettonWallet
+from tonutils.jetton import JettonMasterStandard, JettonWalletStandard
 from tonutils.wallet import WalletV4R2
 
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
@@ -25,12 +25,12 @@ async def main() -> None:
     client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    jetton_wallet_address = await JettonMaster.get_wallet_address(
+    jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
         client=client,
         owner_address=wallet.address.to_str(),
         jetton_master_address=JETTON_MASTER_ADDRESS,
     )
-    body = JettonWallet.build_burn_body(
+    body = JettonWalletStandard.build_burn_body(
         jetton_amount=int(JETTON_AMOUNT * (10 ** JETTON_DECIMALS)),
         response_address=wallet.address,
     )

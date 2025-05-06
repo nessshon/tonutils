@@ -5,7 +5,7 @@ from aiohttp import ClientResponseError
 from pytoniq_core import Address, Cell, Slice, StateInit
 
 from tonutils.client import TonapiClient
-from tonutils.jetton import JettonWallet
+from tonutils.jetton import JettonWalletStandard
 from tonutils.utils import to_amount
 from tonutils.wallet import WalletV4R2
 
@@ -39,7 +39,7 @@ async def main() -> None:
         print("Jetton already claimed!")
         return
 
-    body = JettonWallet.build_transfer_body(
+    body = JettonWalletStandard.build_transfer_body(
         recipient_address=wallet.address,
         response_address=wallet.address,
         jetton_amount=jetton_balance,

@@ -6,7 +6,7 @@ from pytonapi import AsyncTonapi
 from pytoniq_core import Address, Cell
 
 from tonutils.client import TonapiClient
-from tonutils.jetton import JettonMaster, JettonWallet
+from tonutils.jetton import JettonMasterStandard, JettonWalletStandard
 from tonutils.utils import to_nano
 from tonutils.wallet import WalletV5R1
 
@@ -39,12 +39,12 @@ async def main() -> None:
     gasless_config = await tonapi.gasless.get_config()
     relayer_address = Address(gasless_config.relay_address)
 
-    jetton_wallet_address = await JettonMaster.get_wallet_address(
+    jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
         client=client,
         owner_address=wallet.address,
         jetton_master_address=JETTON_MASTER_ADDRESS,
     )
-    tether_transfer_body = JettonWallet.build_transfer_body(
+    tether_transfer_body = JettonWalletStandard.build_transfer_body(
         jetton_amount=to_nano(JETTON_AMOUNT, JETTON_DECIMALS),
         recipient_address=Address(DESTINATION_ADDRESS),
         response_address=relayer_address,
