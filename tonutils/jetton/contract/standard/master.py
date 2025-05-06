@@ -1,25 +1,22 @@
 from typing import Union
 
-from pytoniq_core import Cell, begin_cell, Address
+from pytoniq_core import Address, Cell, StateInit, begin_cell
 
 from .op_codes import *
-from .wallet import JettonWallet
+from .wallet import JettonWalletStandard
+from ..base import JettonMaster
 from ...content import JettonOffchainContent, JettonOnchainContent
 from ...data import JettonMasterData
-from ....client import (
-    Client,
-)
-from ....contract import Contract
 
 
-class JettonMaster(Contract):
+class JettonMasterStandard(JettonMaster):
     CODE_HEX = "b5ee9c7241020b010001ed000114ff00f4a413f4bcf2c80b0102016202030202cc040502037a60090a03efd9910e38048adf068698180b8d848adf07d201800e98fe99ff6a2687d007d206a6a18400aa9385d47181a9aa8aae382f9702480fd207d006a18106840306b90fd001812881a28217804502a906428027d012c678b666664f6aa7041083deecbef29385d71811a92e001f1811802600271812f82c207f97840607080093dfc142201b82a1009aa0a01e428027d012c678b00e78b666491646580897a007a00658064907c80383a6465816503e5ffe4e83bc00c646582ac678b28027d0109e5b589666664b8fd80400fe3603fa00fa40f82854120870542013541403c85004fa0258cf1601cf16ccc922c8cb0112f400f400cb00c9f9007074c8cb02ca07cbffc9d05008c705f2e04a12a1035024c85004fa0258cf16ccccc9ed5401fa403020d70b01c3008e1f8210d53276db708010c8cb055003cf1622fa0212cb6acb1fcb3fc98042fb00915be200303515c705f2e049fa403059c85004fa0258cf16ccccc9ed54002e5143c705f2e049d43001c85004fa0258cf16ccccc9ed54007dadbcf6a2687d007d206a6a183618fc1400b82a1009aa0a01e428027d012c678b00e78b666491646580897a007a00658064fc80383a6465816503e5ffe4e840001faf16f6a2687d007d206a6a183faa904051007f09"  # noqa
 
     def __init__(
             self,
             content: Union[JettonOffchainContent, JettonOnchainContent],
             admin_address: Union[Address, str],
-            jetton_wallet_code: Union[str, Cell] = JettonWallet.CODE_HEX,
+            jetton_wallet_code: Union[str, Cell] = JettonWalletStandard.CODE_HEX,
     ) -> None:
         self._data = self.create_data(content, admin_address, jetton_wallet_code).serialize()
         self._code = Cell.one_from_boc(self.CODE_HEX)
@@ -29,75 +26,13 @@ class JettonMaster(Contract):
             cls,
             content: Union[JettonOffchainContent, JettonOnchainContent],
             admin_address: Union[Address, str, None],
-            jetton_wallet_code: Union[str, Cell] = JettonWallet.CODE_HEX,
+            jetton_wallet_code: Union[str, Cell] = JettonWalletStandard.CODE_HEX,
     ) -> JettonMasterData:
         return JettonMasterData(
             admin_address=admin_address,
             content=content,
             jetton_wallet_code=jetton_wallet_code,
         )
-
-    @classmethod
-    async def get_jetton_data(
-            cls,
-            client: Client,
-            jetton_master_address: Union[Address, str],
-    ) -> JettonMasterData:
-        """
-        Get the data of the jetton master.
-
-        :param client: The client to use.
-        :param jetton_master_address: The address of the jetton master.
-        :return: The data of the jetton master.
-        """
-        if isinstance(jetton_master_address, str):
-            jetton_master_address = Address(jetton_master_address)
-
-        method_result = await client.run_get_method(
-            address=jetton_master_address.to_str(),
-            method_name="get_jetton_data",
-        )
-        total_supply = method_result[0]
-        mintable = bool(method_result[1])
-        admin_address = method_result[2]
-        content = method_result[3]
-        jetton_wallet_code = method_result[4]
-
-        return JettonMasterData(
-            total_supply=total_supply,
-            mintable=mintable,
-            admin_address=admin_address,
-            content=content,
-            jetton_wallet_code=jetton_wallet_code,
-        )
-
-    @classmethod
-    async def get_wallet_address(
-            cls,
-            client: Client,
-            owner_address: Union[Address, str],
-            jetton_master_address: Union[Address, str],
-    ) -> Address:
-        """
-        Get the address of the jetton wallet.
-
-        :param client: The client to use.
-        :param owner_address: The address of the owner.
-        :param jetton_master_address: The address of the jetton master.
-        :return: The address of the jetton wallet.
-        """
-        if isinstance(owner_address, str):
-            owner_address = Address(owner_address)
-
-        if isinstance(jetton_master_address, str):
-            jetton_master_address = Address(jetton_master_address)
-
-        method_result = await client.run_get_method(
-            address=jetton_master_address.to_str(),
-            method_name="get_wallet_address",
-            stack=[owner_address],
-        )
-        return method_result[0]
 
     @classmethod
     def build_mint_body(
@@ -178,3 +113,29 @@ class JettonMaster(Contract):
             .store_address(new_admin_address)
             .end_cell()
         )
+
+    @classmethod
+    def calculate_user_jetton_wallet_address(
+            cls,
+            owner_address: Union[Address, str],
+            jetton_wallet_code: str,
+            jetton_master_address: Union[Address, str],
+    ) -> Address:
+        if isinstance(owner_address, str):
+            owner_address = Address(owner_address)
+
+        if isinstance(jetton_master_address, str):
+            jetton_master_address = Address(jetton_master_address)
+
+        code = Cell.one_from_boc(jetton_wallet_code)
+        data = (
+            begin_cell()
+            .store_coins(0)
+            .store_address(owner_address)
+            .store_address(jetton_master_address)
+            .store_ref(code)
+            .end_cell()
+        )
+        state_init = StateInit(code=code, data=data)
+
+        return Address((0, state_init.serialize().hash))

@@ -36,7 +36,7 @@ from ...client import (
     Client,
 )
 from ...contract import Contract
-from ...jetton import JettonMaster, JettonWallet
+from ...jetton import JettonMasterStandard, JettonWalletStandard
 from ...jetton.dex.dedust import Factory
 from ...jetton.dex.stonfi import StonfiRouterV1, StonfiRouterV2
 from ...jetton.dex.stonfi.utils import get_stonfi_router_details
@@ -541,7 +541,7 @@ class Wallet(Contract):
                 .end_cell()
             )
 
-        jetton_wallet_address = await JettonMaster.get_wallet_address(
+        jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
             client=self.client,
             owner_address=self.address.to_str(),
             jetton_master_address=jetton_master_address,
@@ -550,7 +550,7 @@ class Wallet(Contract):
         message_hash = await self.transfer(
             destination=jetton_wallet_address,
             amount=amount,
-            body=JettonWallet.build_transfer_body(
+            body=JettonWalletStandard.build_transfer_body(
                 recipient_address=destination,
                 response_address=self.address,
                 jetton_amount=int(jetton_amount * (10 ** jetton_decimals)),
@@ -577,7 +577,7 @@ class Wallet(Contract):
                 jetton_wallet_address = wallets.get(data.jetton_master_address.to_str(), None)
 
                 if jetton_wallet_address is None:
-                    jetton_wallet_address = await JettonMaster.get_wallet_address(
+                    jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
                         client=self.client,
                         owner_address=self.address.to_str(),
                         jetton_master_address=data.jetton_master_address,
@@ -590,7 +590,7 @@ class Wallet(Contract):
                 self.create_wallet_internal_message(
                     destination=data.jetton_wallet_address,
                     value=to_nano(data.amount),
-                    body=JettonWallet.build_transfer_body(
+                    body=JettonWalletStandard.build_transfer_body(
                         recipient_address=data.destination,
                         response_address=self.address,
                         jetton_amount=int(data.jetton_amount * (10 ** data.jetton_decimals)),

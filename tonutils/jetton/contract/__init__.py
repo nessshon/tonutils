@@ -1,10 +1,10 @@
 from .stablecoin import JettonMasterStablecoin, JettonWalletStablecoin
-from .standard import JettonMaster, JettonWallet
+from .standard import JettonMasterStandard, JettonWalletStandard
 
 __all__ = [
     "JettonMasterStablecoin",
     "JettonWalletStablecoin",
 
-    "JettonMaster",
-    "JettonWallet",
+    "JettonMasterStandard",
+    "JettonWalletStandard",
 ]

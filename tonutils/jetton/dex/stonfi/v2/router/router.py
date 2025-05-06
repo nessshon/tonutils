@@ -5,7 +5,7 @@ import aiohttp
 from pytoniq_core import Address, Cell, begin_cell
 
 from tonutils.client import Client
-from tonutils.jetton import JettonMaster, JettonWallet
+from tonutils.jetton import JettonMasterStandard, JettonWalletStandard
 from .constants import *
 from ..pton.pton import StonfiPTONV2
 
@@ -169,12 +169,12 @@ class StonfiRouterV2:
     ) -> Tuple[Address, int, Cell]:
         contract_address = self.router_address
 
-        offer_jetton_wallet_address = await JettonMaster.get_wallet_address(
+        offer_jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
             client=self.client,
             owner_address=user_wallet_address,
             jetton_master_address=offer_jetton_address,
         )
-        ask_jetton_wallet_address = await JettonMaster.get_wallet_address(
+        ask_jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
             client=self.client,
             owner_address=contract_address,
             jetton_master_address=ask_jetton_address,
@@ -197,7 +197,7 @@ class StonfiRouterV2:
             deadline=deadline,
         )
 
-        body = JettonWallet.build_transfer_body(
+        body = JettonWalletStandard.build_transfer_body(
             jetton_amount=offer_amount,
             recipient_address=contract_address,
             response_address=user_wallet_address,
@@ -275,7 +275,7 @@ class StonfiRouterV2:
     ) -> tuple[Address, int, Cell]:
         contract_address = self.router_address
 
-        ask_jetton_wallet_address = await JettonMaster.get_wallet_address(
+        ask_jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
             client=self.client,
             owner_address=contract_address,
             jetton_master_address=ask_jetton_address,

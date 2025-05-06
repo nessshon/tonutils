@@ -10,7 +10,7 @@ from tonutils.client import (
     Client,
 )
 from .constants import *
-from ... import JettonMaster, JettonWallet
+from ... import JettonMasterStandard, JettonWalletStandard
 
 
 class PoolType(Enum):
@@ -218,7 +218,7 @@ class Factory:
             ],
         )
 
-        jetton_wallet_address = await JettonMaster.get_wallet_address(
+        jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
             client=self.client,
             owner_address=recipient_address,
             jetton_master_address=offer_jetton_address,
@@ -239,7 +239,7 @@ class Factory:
         jetton_vault_address = await self.get_vault_address(Asset.jetton(offer_jetton_address))
         forward_ton_amount = forward_gas_amount or GasConstants.swap_jetton_to_jetton.FORWARD_GAS_AMOUNT
 
-        body = JettonWallet.build_transfer_body(
+        body = JettonWalletStandard.build_transfer_body(
             recipient_address=jetton_vault_address,
             jetton_amount=offer_amount,
             response_address=recipient_address,
@@ -276,7 +276,7 @@ class Factory:
             ],
         )
 
-        jetton_wallet_address = await JettonMaster.get_wallet_address(
+        jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
             client=self.client,
             owner_address=recipient_address,
             jetton_master_address=offer_jetton_address,
@@ -297,7 +297,7 @@ class Factory:
         jetton_vault_address = await self.get_vault_address(Asset.jetton(offer_jetton_address))
         forward_ton_amount = forward_gas_amount or GasConstants.swap_jetton_to_ton.FORWARD_GAS_AMOUNT
 
-        body = JettonWallet.build_transfer_body(
+        body = JettonWalletStandard.build_transfer_body(
             recipient_address=jetton_vault_address,
             jetton_amount=offer_amount,
             response_address=recipient_address,

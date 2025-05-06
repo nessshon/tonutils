@@ -1,7 +1,7 @@
-from .master import JettonMaster
-from .wallet import JettonWallet
+from .master import JettonMasterStandard
+from .wallet import JettonWalletStandard
 
 __all__ = [
-    "JettonMaster",
-    "JettonWallet",
+    "JettonMasterStandard",
+    "JettonWalletStandard",
 ]

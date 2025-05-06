@@ -1,14 +1,14 @@
 from .contract import (
-    JettonMaster,
-    JettonWallet,
+    JettonMasterStandard,
+    JettonWalletStandard,
 
     JettonMasterStablecoin,
     JettonWalletStablecoin,
 )
 
 __all__ = [
-    "JettonMaster",
-    "JettonWallet",
+    "JettonMasterStandard",
+    "JettonWalletStandard",
 
     "JettonMasterStablecoin",
     "JettonWalletStablecoin",

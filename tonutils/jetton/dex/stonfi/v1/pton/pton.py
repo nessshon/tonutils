@@ -3,7 +3,7 @@ from typing import Tuple, Optional
 from pytoniq_core import Address, Cell, begin_cell
 
 from tonutils.client import Client
-from tonutils.jetton import JettonMaster, JettonWallet
+from tonutils.jetton import JettonMasterStandard, JettonWalletStandard
 from .constants import *
 
 
@@ -41,13 +41,13 @@ class StonfiPTONV1:
             forward_ton_amount: int = 0,
             query_id: int = 0,
     ) -> Tuple[Address, int, Cell]:
-        to = await JettonMaster.get_wallet_address(
+        to = await JettonMasterStandard.get_wallet_address(
             client=self.client,
             owner_address=destination_address,
             jetton_master_address=self.address,
         )
 
-        body = JettonWallet.build_transfer_body(
+        body = JettonWalletStandard.build_transfer_body(
             jetton_amount=ton_amount,
             recipient_address=destination_address,
             response_address=refund_address,
