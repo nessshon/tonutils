@@ -1,0 +1,64 @@
+site_author: Ness
+site_name: Tonutils
+site_description: Documentation for tonutils — Python library for working with TON Blockchain, including examples, how-to guides, and reference materials.
+
+repo_url: https://github.com/nessshon/tonutils
+edit_uri: https://github.com/nessshon/tonutils/tree/main/docs
+
+theme:
+  name: material
+  favicon: assets/logo.png
+  logo: assets/logo.png
+
+  features:
+    - content.code.copy
+    - content.action.view
+    - search.suggest
+    - search.highlight
+    - navigation.tabs
+    - navigation.footer
+    - content.tabs.link
+  palette:
+    scheme: slate
+    primary: black
+    toggle:
+      icon: material/brightness-4
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+
+plugins:
+  - search
+  - autorefs
+
+nav:
+  - Overview: index.md
+  - Guide:
+      - Getting testnet assets: guide/getting-testnet-assets.md
+      - Installation and Initialization: guide/installation-and-initialization.md
+  - How to:
+      - Get Contract information: how-to/get-contract-information.md
+      - Get Contract code and data: how-to/get-contract-code-and-data.md
+      - Use FunC hash functions: how-to/use-func-hash-functions.md
+      - Get Jetton Wallet address: how-to/get-jetton-wallet-address.md
+      - Get NFT Item address: how-to/get-nft-item-address.md
+  - Cookbook:
+      - Minting TON DNS Subdomains: cookbook/subdomains.md
+      - Creating Compressed NFTs: cookbook/cnft.md
+
+extra:
+  analytics:
+    provider: google
+    property: G-4SLDSR08T5
+  social:
+    - icon: fontawesome/brands/telegram
+      link: https://t.me/nessshon
+    - icon: fontawesome/brands/github
+      link: https://github.com/nessshon
