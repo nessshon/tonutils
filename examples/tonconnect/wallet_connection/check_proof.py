@@ -1,4 +1,5 @@
 from storage import FileStorage
+
 from tonutils.tonconnect import TonConnect
 from tonutils.tonconnect.utils.exceptions import TonConnectError
 from tonutils.tonconnect.utils.proof import generate_proof_payload, verify_proof_payload

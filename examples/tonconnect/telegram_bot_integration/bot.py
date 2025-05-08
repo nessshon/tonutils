@@ -18,9 +18,9 @@ from tonutils.tonconnect.models import WalletApp, Event, EventError, SendTransac
 from tonutils.tonconnect.utils.exceptions import TonConnectError, UserRejectsError, RequestTimeoutError
 from tonutils.wallet.data import TransferData
 
-BOT_TOKEN = "your bot token"  # noqa
-REDIS_DSN = "redis://localhost:6379"  # noqa
-TC_MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/tonutils/main/examples/tonconnect/tonconnect-manifest.json"  # noqa
+BOT_TOKEN = "your bot token"
+REDIS_DSN = "redis://localhost:6379"
+TC_MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/tonutils/main/examples/tonconnect/tonconnect-manifest.json"
 
 redis = Redis.from_url(url=REDIS_DSN)
 dp = Dispatcher(storage=RedisStorage(redis))

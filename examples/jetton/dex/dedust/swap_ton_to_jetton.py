@@ -5,28 +5,31 @@ from tonutils.jetton.dex.dedust import Factory
 from tonutils.utils import to_nano, to_amount
 from tonutils.wallet import WalletV4R2
 
-# Set to True for the test network, False for the main network
-IS_TESTNET = True
-
 # Mnemonic phrase
 MNEMONIC = "word1 word2 word3 ..."
 
 # Address of the Jetton Master contract
-JETTON_MASTER_ADDRESS = "kQC-lmDXBZ5xENZ9zKukBOpCmz81_m8aoPOcrQgVAGDown7O"  # noqa
+JETTON_MASTER_ADDRESS = "EQ..."  # noqa
+
+# Number of decimal places for the Jetton
+JETTON_DECIMALS = 9
 
 # Amount of TON to swap
-SWAP_TON_AMOUNT = 1
+TON_AMOUNT = 1
+
+# Minimum amount of Jettons to receive (in base units, considering decimals)
+MIN_AMOUNT = 0
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client()
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     to, value, body = await Factory(client).get_swap_ton_to_jetton_tx_params(
         recipient_address=wallet.address,
         offer_jetton_address=Address(JETTON_MASTER_ADDRESS),
-        offer_amount=to_nano(SWAP_TON_AMOUNT),
-        min_ask_amount=0,
+        offer_amount=to_nano(TON_AMOUNT),
+        min_ask_amount=to_nano(MIN_AMOUNT, JETTON_DECIMALS),
     )
 
     tx_hash = await wallet.transfer(

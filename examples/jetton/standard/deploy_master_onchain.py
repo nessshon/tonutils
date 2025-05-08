@@ -23,7 +23,7 @@ async def main() -> None:
             symbol="NESS",
             description="Probably nothing",
             decimals=9,
-            image_data=b'image data',
+            image="https://example.com/image.png",
         ),
         admin_address=ADMIN_ADDRESS,
     )
