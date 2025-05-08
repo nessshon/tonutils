@@ -10,7 +10,7 @@ Compressed NFT (cNFT) is a specialized digital asset format that optimizes data 
 - **Enhanced security**: Merkle trees enable fast data integrity checks and robust asset protection.  
 - **Cost reduction**: Shift minting costs to end users and create “virtual” on-chain items only when needed.
 
-## Supporting compressed NFT in wallets and marketplaces
+## Compressed NFT Support
 
 **Current limitations**  
 Most popular wallets and marketplaces do not display unclaimed cNFTs or NFTs from collections that are not official partners. For example, the Telegram wallet and the Getgems marketplace index only the first 200 items for unofficial collections, which poses challenges for larger collections.
@@ -21,9 +21,9 @@ A malicious actor could create hundreds of thousands of NFTs at minimal cost, fo
 **Potential solution**  
 Provide a dedicated interface where users can claim their cNFTs. Once claimed, NFTs are indexed and displayed in wallets and marketplaces as standard NFTs, ensuring better visibility and accessibility.
 
-## Configuration and deployment guide
+## Setup & Deployment
 
-### NFT collection and item preparation
+### NFT preparation
 
 Before deployment, you need to prepare the metadata and images for your NFTs.
 
@@ -58,9 +58,10 @@ Before deployment, you need to prepare the metadata and images for your NFTs.
 * **Images**: Prepare images for the collection (for example, `logo.png` for the avatar) and for each NFT (for example, `0.png`, `1.png`, etc.).
 * **JSON files**: Host your `collection.json` and NFT JSON files on a publicly accessible server or repository. Ensure each file has a unique URL.
 
-> **Note:** All images and JSON files must be directly accessible via their URLs.
+!!! note
+    All images and JSON files must be directly accessible via their URLs.
 
-### TON Connect manifest preparation
+### TC Manifest preparation
 
 Create a [TON Connect manifest](https://github.com/ton-blockchain/ton-connect/blob/main/requests-responses.md#app-manifest) JSON file to describe your application during the wallet connection process.  
 **Example:**
@@ -73,9 +74,10 @@ Create a [TON Connect manifest](https://github.com/ton-blockchain/ton-connect/bl
 }
 ```
 
-> **Note:** Ensure that this file is publicly accessible via its URL.
+!!! note
+    Ensure that this file is publicly accessible via its URL.
 
-### Owner list preparation
+### Owner List preparation
 
 Prepare an `owners.txt` file that lists the addresses of NFT owners, one per line. The first address corresponds to item index `0`, the second to item index `1`, and so on.  
 **Example:**
@@ -88,7 +90,7 @@ UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0
 ### Infrastructure preparation
 Set up a server to host your API and the interface for claiming NFTs. Also, obtain a domain for accessing the API. In this example, a local test deployment is run on a home machine using ngrok to create a public URL.
 
-### Claiming API and interface setup
+### Claiming API Setup
 
 1.  **Clone the repository**  
     Clone the project containing all necessary source files:
@@ -189,7 +191,7 @@ Set up a server to host your API and the interface for claiming NFTs. Also, obta
 14. **Deployment complete!**
     
 
-### Run the Telegram bot for NFT claiming interface
+### Run Claiming Bot
 
 1.  **Update the `.env` file**  
     Add the `COLLECTION_ADDRESS` obtained during deployment to your `.env` file.

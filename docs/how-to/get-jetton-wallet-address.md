@@ -5,11 +5,12 @@ There are several ways to obtain the address of a Jetton Wallet.
 
 ### Standard Jetton
 
-#### Using the `get_wallet_address` method
+#### Using get-method
 
 ```python
 from tonutils.client import ToncenterV3Client
 from tonutils.jetton import JettonMasterStandard
+
 
 async def main() -> None:
     client = ToncenterV3Client()
@@ -23,18 +24,21 @@ async def main() -> None:
     )
     print(wallet_address.to_str())
 
+    
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
 
-#### Calculating the address locally
+#### Calculating locally
 
 !!! note
     Prepare the Jetton Wallet contract code by following the instructions in [Get Contract code and data](get-contract-code-and-data.md).
 
 ```python
 from tonutils.jetton import JettonMasterStandard
+
 
 def main() -> None:
     owner_address = "UQ..."
@@ -48,19 +52,23 @@ def main() -> None:
     )
     print(wallet_address.to_str())
 
+    
 if __name__ == "__main__":
     main()
 ```
 
 ---
 
-### Stablecoin Jetton (e.g., USD₮, NOT)
+### Stablecoin Jetton
 
-#### Using the `get_wallet_address` method
+e.g., USD₮, NOT
+
+#### Using get-method
 
 ```python
 from tonutils.client import ToncenterV3Client
 from tonutils.jetton import JettonMasterStablecoin
+
 
 async def main() -> None:
     client = ToncenterV3Client()
@@ -74,18 +82,21 @@ async def main() -> None:
     )
     print(wallet_address.to_str())
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
 
-#### Calculating the address locally
+#### Calculating locally
 
 !!! note
     Prepare the Jetton Wallet contract code by following the instructions in [Get Contract code and data](get-contract-code-and-data.md).
 
 ```python
 from tonutils.jetton import JettonMasterStablecoin
+
 
 def main() -> None:
     owner_address = "UQ..."
@@ -98,6 +109,7 @@ def main() -> None:
         jetton_master_address,
     )
     print(wallet_address.to_str())
+
 
 if __name__ == "__main__":
     main()

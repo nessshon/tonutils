@@ -1,5 +1,3 @@
-# Getting Testnet Assets
-
 This section explains how to claim testnet assets.
 
 ---

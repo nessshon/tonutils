@@ -10,7 +10,7 @@ To install the base `tonutils` package:
 pip install tonutils
 ```
 
-If you need to use [Native ADNL](#pytoniq) connections (for example, via the [pytoniq](https://github.com/yungwine/pytoniq) library), install with optional dependencies:
+If you need to use [Native ADNL](#pytoniq) connections, install with optional dependencies:
 
 ```bash
 pip install 'tonutils[pytoniq]'

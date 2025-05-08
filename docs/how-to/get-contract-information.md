@@ -3,6 +3,7 @@ This example shows how to retrieve full contract details, including balance, sta
 ```python
 from tonutils.client import ToncenterV3Client
 
+
 async def main() -> None:
     client = ToncenterV3Client()
     contract_address = "EQ..."
@@ -16,8 +17,10 @@ async def main() -> None:
     print(f"Last Transaction LT: {contract.last_transaction_lt}")
     print(f"Last Transaction Hash: {contract.last_transaction_hash}")
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
 

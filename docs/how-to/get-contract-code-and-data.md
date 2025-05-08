@@ -18,6 +18,7 @@ To retrieve the code and data of a contract, you can use TON explorers such as [
 ```python
 from tonutils.client import ToncenterV3Client
 
+
 async def main() -> None:
     client = ToncenterV3Client()
     contract_address = "EQ..."
@@ -29,8 +30,10 @@ async def main() -> None:
     # Print contract data (hex-encoded BOC)
     print(account.data.to_boc().hex())
 
+    
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
 

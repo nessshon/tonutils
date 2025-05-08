@@ -5,11 +5,12 @@ There are several ways to obtain the address of an NFT Item.
 
 ### Standard collections
 
-#### Using the `get_nft_address_by_index` get-method
+#### Using get-method
 
 ```python
 from tonutils.client import ToncenterV3Client
 from tonutils.nft import Collection
+
 
 async def main() -> None:
     client = ToncenterV3Client()
@@ -23,18 +24,21 @@ async def main() -> None:
     )
     print(nft_address.to_str())
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
 
-#### Calculating the address locally
+#### Calculating locally
 
 !!! note
     Prepare the NFT Item contract code by following the instructions in [Get Contract code and data](get-contract-code-and-data.md).
 
 ```python
 from tonutils.nft import Collection
+
 
 def main() -> None:
     nft_index = 1
@@ -48,6 +52,7 @@ def main() -> None:
     )
     print(nft_address.to_str())
 
+
 if __name__ == "__main__":
     main()
 ```
@@ -59,13 +64,14 @@ if __name__ == "__main__":
 !!! note
     The index is computed as `slice_hash(name)`. See [Use FunC hash functions](use-func-hash-functions.md/#slice_hash) for details.
 
-#### Using the `get_nft_address_by_index` get-method
+#### Using get-method
 
 ```python
 from pytoniq_core import begin_cell
 from tonutils.client import ToncenterV3Client
 from tonutils.nft import Collection
 from tonutils.utils import slice_hash
+
 
 async def main() -> None:
     client = ToncenterV3Client()
@@ -80,8 +86,10 @@ async def main() -> None:
     )
     print(nft_address.to_str())
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
 
@@ -92,12 +100,13 @@ if __name__ == "__main__":
 !!! note
     The index is computed as `string_hash(telemint_token_name)`. See [Use FunC hash functions](use-func-hash-functions.md/#string_hash) for details.
 
-#### Using the `get_nft_address_by_index` get-method
+#### Using get-method
 
 ```python
 from tonutils.client import ToncenterV3Client
 from tonutils.nft import Collection
 from tonutils.utils import string_hash
+
 
 async def main() -> None:
     client = ToncenterV3Client()
@@ -112,7 +121,9 @@ async def main() -> None:
     )
     print(nft_address.to_str())
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
