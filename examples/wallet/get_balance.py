@@ -1,4 +1,4 @@
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.utils import to_nano
 from tonutils.wallet import (
     WalletV3R1,
@@ -11,18 +11,15 @@ from tonutils.wallet import (
     # HighloadWalletV3,
 )
 
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
-
 # Set to True for test network, False for main network
 IS_TESTNET = True
 
-# Mnemonic phrase for creating the wallet
-MNEMONIC: list[str] = []
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET)
     wallet, public_key, private_key, mnemonic = WalletV3R1.from_mnemonic(client, MNEMONIC)
 
     # Uncomment and use the following lines to create different wallet versions from mnemonic:

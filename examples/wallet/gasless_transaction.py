@@ -13,8 +13,8 @@ from tonutils.wallet import WalletV5R1
 # API key for accessing the Tonapi (obtainable from https://tonconsole.com)
 API_KEY = ""
 
-# Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
 
 # The address of the Jetton Master contract
 JETTON_MASTER_ADDRESS = "EQ..."
@@ -33,7 +33,7 @@ BASE_JETTON_SEND_AMOUNT = 0.05
 
 
 async def main() -> None:
-    tonapi, client = AsyncTonapi(API_KEY), TonapiClient(API_KEY)
+    tonapi, client = AsyncTonapi(api_key=API_KEY), TonapiClient(api_key=API_KEY)
     wallet, public_key, private_key, _ = WalletV5R1.from_mnemonic(client, MNEMONIC)
 
     gasless_config = await tonapi.gasless.get_config()

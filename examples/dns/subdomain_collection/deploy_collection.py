@@ -1,4 +1,4 @@
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.dns import Domain
 from tonutils.dns.subdomain_collection import SubdomainCollection
 from tonutils.dns.subdomain_collection.content import SubdomainCollectionContent
@@ -7,14 +7,11 @@ from tonutils.nft.royalty_params import RoyaltyParams
 from tonutils.wallet import WalletV4R2
 from tonutils.wallet.data import TransferData
 
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
-
 # Set to True for test network, False for main network
 IS_TESTNET = True
 
-# Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
 
 # NFT domain name and address from TON DNS Domains
 # Obtainable from https://dns.ton.org/ or https://dns.ton.org/?testnet=true
@@ -47,7 +44,7 @@ COLLECTION_METADATA = {
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     collection = SubdomainCollection(

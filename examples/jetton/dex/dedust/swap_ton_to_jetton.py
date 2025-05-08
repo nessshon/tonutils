@@ -1,18 +1,15 @@
 from pytoniq_core import Address
 
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.jetton.dex.dedust import Factory
 from tonutils.utils import to_nano, to_amount
 from tonutils.wallet import WalletV4R2
 
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
-
 # Set to True for the test network, False for the main network
 IS_TESTNET = True
 
-# Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
 
 # Address of the Jetton Master contract
 JETTON_MASTER_ADDRESS = "kQC-lmDXBZ5xENZ9zKukBOpCmz81_m8aoPOcrQgVAGDown7O"  # noqa
@@ -22,7 +19,7 @@ SWAP_TON_AMOUNT = 1
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     to, value, body = await Factory(client).get_swap_ton_to_jetton_tx_params(

@@ -1,19 +1,16 @@
 from pytoniq_core import Address
 
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.dns import Domain
 from tonutils.dns.subdomain_manager import SubdomainManager
 from tonutils.wallet import WalletV4R2
 from tonutils.wallet.data import TransferData
 
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
-
 # Set to True for test network, False for main network
 IS_TESTNET = False
 
-# Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
 
 # The address of the administrator for managing the Subdomain Manager
 ADMIN_ADDRESS = "UQ..."
@@ -24,7 +21,7 @@ DOMAIN_ADDRESS = "EQ..."
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     subdomain_manager = SubdomainManager(Address(ADMIN_ADDRESS))

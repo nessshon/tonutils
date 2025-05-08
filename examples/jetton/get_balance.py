@@ -1,9 +1,6 @@
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.jetton import JettonMasterStandard, JettonWalletStandard
 from tonutils.utils import to_amount
-
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
 
 # Set to True for test network, False for main network
 IS_TESTNET = True
@@ -19,7 +16,7 @@ JETTON_DECIMALS = 9
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET)
 
     jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
         client=client,

@@ -1,19 +1,16 @@
 import aiohttp
 from pytoniq_core import Address
 
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.jetton.dex.stonfi import StonfiRouterV1
 from tonutils.utils import to_nano, to_amount
 from tonutils.wallet import WalletV4R2
 
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
-
 # Set to True for the test network, False for the main network
 IS_TESTNET = False
 
-# Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
 
 # Addresses of the Jetton Masters for swapping
 FROM_JETTON_MASTER_ADDRESS = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"  # noqa
@@ -28,7 +25,7 @@ JETTON_AMOUNT = 1
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     to, value, body = await StonfiRouterV1(client).get_swap_jetton_to_jetton_tx_params(

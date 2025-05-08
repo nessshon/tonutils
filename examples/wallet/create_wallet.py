@@ -1,4 +1,4 @@
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.wallet import (
     # Uncomment the following lines to use different wallet versions:
     # WalletV2R1,
@@ -14,15 +14,12 @@ from tonutils.wallet import (
     # PreprocessedWalletV2R1,
 )
 
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
-
 # Set to True for test network, False for main network
 IS_TESTNET = True
 
 
 def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET)
     wallet, public_key, private_key, mnemonic = WalletV4R2.create(client)
 
     # Uncomment and use the following lines to create different wallet versions:

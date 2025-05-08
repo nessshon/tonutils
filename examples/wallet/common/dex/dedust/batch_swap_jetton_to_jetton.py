@@ -1,16 +1,13 @@
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.wallet import WalletV4R2
 from tonutils.wallet.data import DedustSwapJettonToJettonData
 
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
-
-# Mnemonic phrase for creating the wallet
-MNEMONIC: list[str] = []
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY)
+    client = ToncenterV3Client()
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     tx_hash = await wallet.batch_dedust_swap_jetton_to_jetton(

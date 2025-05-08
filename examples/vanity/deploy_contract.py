@@ -17,27 +17,24 @@ Found: EQC7PA9iWnUVWv001Drj3vTu-pmAkTc30OarHy5iDJ1uNESS salt: 7c9398f0999a96fe54
 Step 4: Copy the `salt` value from the console output and use it in the `SALT` constant below.
 """
 
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.jetton import JettonMasterStandard
 from tonutils.jetton.content import JettonOnchainContent
 from tonutils.vanity import Vanity
 from tonutils.wallet import WalletV4R2
 
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
-
 # Set to True for test network, False for main network
 IS_TESTNET = True
 
-# Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
 
 # The salt for the vanity address
 SALT = ""
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     jetton_master = JettonMasterStandard(

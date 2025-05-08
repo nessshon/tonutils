@@ -1,15 +1,12 @@
-from tonutils.client import TonapiClient
+from tonutils.client import ToncenterV3Client
 from tonutils.nft import NFTSoulbound
 from tonutils.wallet import WalletV4R2
-
-# API key for accessing the Tonapi (obtainable from https://tonconsole.com)
-API_KEY = ""
 
 # Set to True for test network, False for main network
 IS_TESTNET = True
 
-# Mnemonic phrase used to connect the wallet
-MNEMONIC: list[str] = []
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
 
 # Address of the NFT to be revoked
 NFT_ADDRESS = "EQ..."
@@ -17,7 +14,7 @@ NFT_ADDRESS = "EQ..."
 
 async def main() -> None:
     # Initialize TonapiClient and Wallet
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = NFTSoulbound.build_revoke_body()
