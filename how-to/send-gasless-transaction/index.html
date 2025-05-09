@@ -13,10 +13,10 @@
       
       
       
-        <link rel="prev" href="../..">
+        <link rel="prev" href="../send-encrypted-message/">
       
       
-        <link rel="next" href="../getting-testnet-assets/">
+        <link rel="next" href="../send-claim-mintless-jetton/">
       
       
       <link rel="icon" href="../../assets/logo.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Installation and Initialization - Tonutils</title>
+        <title>Send Gasless transaction - Tonutils</title>
       
     
     
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#installation" class="md-skip">
+        <a href="#prerequisites" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Installation and Initialization
+              Send Gasless transaction
             
           </span>
         </div>
@@ -221,13 +221,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../guide/installation-and-initialization/" class="md-tabs__link">
           
   
   
@@ -283,11 +281,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../how-to/get-contract-information/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../get-contract-information/" class="md-tabs__link">
           
   
   
@@ -407,29 +407,24 @@
       
   
   
-    
   
   
-  
     
     
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
             
   
   
@@ -442,7 +437,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Guide
@@ -453,30 +448,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Installation and Initialization
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../guide/installation-and-initialization/" class="md-nav__link">
         
   
   
@@ -487,123 +462,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Installation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#available-clients" class="md-nav__link">
-    <span class="md-ellipsis">
-      Available Clients
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Available Clients">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rpc-api" class="md-nav__link">
-    <span class="md-ellipsis">
-      RPC API
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="RPC API">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#toncenter" class="md-nav__link">
-    <span class="md-ellipsis">
-      toncenter
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#tonapi" class="md-nav__link">
-    <span class="md-ellipsis">
-      tonapi
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#quicknode" class="md-nav__link">
-    <span class="md-ellipsis">
-      quicknode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#tatum" class="md-nav__link">
-    <span class="md-ellipsis">
-      tatum
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#native-adnl" class="md-nav__link">
-    <span class="md-ellipsis">
-      Native ADNL
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Native ADNL">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pytoniq" class="md-nav__link">
-    <span class="md-ellipsis">
-      pytoniq
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -616,7 +474,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-testnet-assets/" class="md-nav__link">
+      <a href="../../guide/getting-testnet-assets/" class="md-nav__link">
         
   
   
@@ -639,7 +497,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wallet-operations/" class="md-nav__link">
+      <a href="../../guide/wallet-operations/" class="md-nav__link">
         
   
   
@@ -662,7 +520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../jetton-operations/" class="md-nav__link">
+      <a href="../../guide/jetton-operations/" class="md-nav__link">
         
   
   
@@ -685,7 +543,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../nft-operations/" class="md-nav__link">
+      <a href="../../guide/nft-operations/" class="md-nav__link">
         
   
   
@@ -708,7 +566,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dns-operations/" class="md-nav__link">
+      <a href="../../guide/dns-operations/" class="md-nav__link">
         
   
   
@@ -969,24 +827,29 @@
       
   
   
+    
   
   
+  
     
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -999,7 +862,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             How to
@@ -1013,7 +876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to/get-contract-information/" class="md-nav__link">
+      <a href="../get-contract-information/" class="md-nav__link">
         
   
   
@@ -1036,7 +899,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to/get-contract-code-and-data/" class="md-nav__link">
+      <a href="../get-contract-code-and-data/" class="md-nav__link">
         
   
   
@@ -1059,7 +922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to/get-nft-item-address/" class="md-nav__link">
+      <a href="../get-nft-item-address/" class="md-nav__link">
         
   
   
@@ -1082,7 +945,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to/get-jetton-wallet-address/" class="md-nav__link">
+      <a href="../get-jetton-wallet-address/" class="md-nav__link">
         
   
   
@@ -1105,7 +968,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to/create-multiple-wallets/" class="md-nav__link">
+      <a href="../create-multiple-wallets/" class="md-nav__link">
         
   
   
@@ -1128,7 +991,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to/send-encrypted-message/" class="md-nav__link">
+      <a href="../send-encrypted-message/" class="md-nav__link">
         
   
   
@@ -1148,10 +1011,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../how-to/send-gasless-transaction/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Send Gasless transaction
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1162,6 +1045,42 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1174,7 +1093,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to/send-claim-mintless-jetton/" class="md-nav__link">
+      <a href="../send-claim-mintless-jetton/" class="md-nav__link">
         
   
   
@@ -1197,7 +1116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to/use-func-hash-functions/" class="md-nav__link">
+      <a href="../use-func-hash-functions/" class="md-nav__link">
         
   
   
@@ -1289,101 +1208,20 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      Installation
+      Prerequisites
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#available-clients" class="md-nav__link">
+  <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
-      Available Clients
+      Example
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Available Clients">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#rpc-api" class="md-nav__link">
-    <span class="md-ellipsis">
-      RPC API
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="RPC API">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#toncenter" class="md-nav__link">
-    <span class="md-ellipsis">
-      toncenter
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#tonapi" class="md-nav__link">
-    <span class="md-ellipsis">
-      tonapi
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#quicknode" class="md-nav__link">
-    <span class="md-ellipsis">
-      quicknode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#tatum" class="md-nav__link">
-    <span class="md-ellipsis">
-      tatum
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#native-adnl" class="md-nav__link">
-    <span class="md-ellipsis">
-      Native ADNL
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Native ADNL">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pytoniq" class="md-nav__link">
-    <span class="md-ellipsis">
-      pytoniq
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1407,100 +1245,131 @@
     
       
     
-    <a href="https://github.com/nessshon/tonutils/tree/main/docs/guide/installation-and-initialization.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/nessshon/tonutils/tree/main/docs/how-to/send-gasless-transaction.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-  <h1>Installation and Initialization</h1>
+  <h1>Send Gasless transaction</h1>
 
-<p>This section explains how to install the <code>tonutils</code> library and select the appropriate client depending on your needs.</p>
-<hr />
-<h2 id="installation">Installation</h2>
-<p>To install the base <code>tonutils</code> package:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>tonutils
-</code></pre></div>
-<p>If you need to use <a href="#pytoniq">Native ADNL</a> connections, install with optional dependencies:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;tonutils[pytoniq]&#39;</span>
-</code></pre></div>
-<hr />
-<h2 id="available-clients">Available Clients</h2>
-<h3 id="rpc-api">RPC API</h3>
-<h4 id="toncenter">toncenter</h4>
-<p><strong><a href="https://toncenter.com">toncenter.com</a></strong> — fast and reliable HTTP API for The Open Network.  </p>
+<p>This example demonstrates how to send a <strong>gasless</strong> Jetton transfer.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>API key is optional, but for better performance it is recommended to obtain one via  <a href="https://t.me/tonapibot">@tonapibot</a>.</p>
+<p>This method leverages the gasless relayer feature provided by <a href="https://tonapi.io">tonapi.io</a>.
+You must obtain an API key from <a href="https://tonconsole.com">tonconsole.com</a>.</p>
 </div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">ToncenterV2Client</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">ToncenterV3Client</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">API_KEY</span> <span class="o">=</span> <span class="s2">&quot;your api key&quot;</span>  <span class="c1"># Optional</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">IS_TESTNET</span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Using Toncenter V3 client</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">client_v3</span> <span class="o">=</span> <span class="n">ToncenterV3Client</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">API_KEY</span><span class="p">,</span> <span class="n">is_testnet</span><span class="o">=</span><span class="n">IS_TESTNET</span><span class="p">)</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># Using Toncenter V2 client (if needed)</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1"># client_v2 = ToncenterV2Client(api_key=API_KEY, is_testnet=IS_TESTNET)</span>
+<hr />
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Install dependencies:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>pytonapi
 </code></pre></div>
 <hr />
-<h4 id="tonapi">tonapi</h4>
-<p><strong><a href="https://tonapi.io">tonapi.io</a></strong> — REST API to the TON blockchain explorer.  </p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Requires an API key from <a href="https://tonconsole.com">tonconsole.com</a>.</p>
-</div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">TonapiClient</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">API_KEY</span> <span class="o">=</span> <span class="s2">&quot;your api key&quot;</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">IS_TESTNET</span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TonapiClient</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">API_KEY</span><span class="p">,</span> <span class="n">is_testnet</span><span class="o">=</span><span class="n">IS_TESTNET</span><span class="p">)</span>
-</code></pre></div>
-<hr />
-<h4 id="quicknode">quicknode</h4>
-<p><strong><a href="https://quicknode.com">quicknode.com</a></strong> — low-latency HTTP API access to TON via global infrastructure.  </p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Requires an API URL from <a href="https://quicknode.com">quicknode.com</a>.</p>
-<p>Quicknode does not support testnet!</p>
-</div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">QuicknodeClient</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">HTTP_PROVIDER_URL</span> <span class="o">=</span> <span class="s2">&quot;https://blissful-withered-surf.ton-mainnet.quiknode.pro/d6e8...1964&quot;</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">QuicknodeClient</span><span class="p">(</span><span class="n">HTTP_PROVIDER_URL</span><span class="p">)</span>
-</code></pre></div>
-<hr />
-<h4 id="tatum">tatum</h4>
-<p><strong><a href="https://tatum.io">tatum.io</a></strong> — RPCs and APIs powering Web3.  </p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Requires an API key from <a href="https://tatum.io">tatum.io</a>.</p>
-</div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">TatumClient</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">API_KEY</span> <span class="o">=</span> <span class="s2">&quot;your api key&quot;</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">IS_TESTNET</span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TatumClient</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">API_KEY</span><span class="p">,</span> <span class="n">is_testnet</span><span class="o">=</span><span class="n">IS_TESTNET</span><span class="p">)</span>
-</code></pre></div>
-<hr />
-<h3 id="native-adnl">Native ADNL</h3>
-<h4 id="pytoniq">pytoniq</h4>
-<p><strong><a href="https://github.com/yungwine/pytoniq">pytoniq</a></strong> — library for direct interaction with Lite servers.  </p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>For better performance, provide your own config, which can be obtained from the <a href="https://t.me/liteserver_bot">liteserver bot</a>.</p>
-</div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">LiteserverClient</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">IS_TESTNET</span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">LiteserverClient</span><span class="p">(</span><span class="n">is_testnet</span><span class="o">=</span><span class="n">IS_TESTNET</span><span class="p">)</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># Using custom configuration</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># config = {}  # Your LiteServer config here </span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="c1"># client = LiteserverClient(config=config)</span>
+<h3 id="example">Example</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">pytonapi</span> <span class="kn">import</span> <span class="n">AsyncTonapi</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">pytoniq_core</span> <span class="kn">import</span> <span class="n">Address</span><span class="p">,</span> <span class="n">Cell</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">TonapiClient</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">from</span> <span class="nn">tonutils.jetton</span> <span class="kn">import</span> <span class="n">JettonMasterStandard</span><span class="p">,</span> <span class="n">JettonWalletStandard</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="kn">from</span> <span class="nn">tonutils.utils</span> <span class="kn">import</span> <span class="n">to_nano</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="kn">from</span> <span class="nn">tonutils.wallet</span> <span class="kn">import</span> <span class="n">WalletV5R1</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># API key for accessing the Tonapi (obtainable from https://tonconsole.com)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">API_KEY</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1"># Mnemonic phrase</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">MNEMONIC</span> <span class="o">=</span> <span class="s2">&quot;word1 word2 word3 ...&quot;</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c1"># The address of the Jetton Master contract</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="n">JETTON_MASTER_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;EQ...&quot;</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="c1"># Number of decimal places for the Jetton</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">JETTON_DECIMALS</span> <span class="o">=</span> <span class="mi">9</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="c1"># Amount of Jettons to transfer (in base units, considering decimals)</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="n">JETTON_AMOUNT</span> <span class="o">=</span> <span class="mf">0.01</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="c1"># The address of the recipient</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="n">DESTINATION_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;UQ...&quot;</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="c1"># Amount for jetton transfer.</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="n">BASE_JETTON_SEND_AMOUNT</span> <span class="o">=</span> <span class="mf">0.05</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>    <span class="n">tonapi</span><span class="p">,</span> <span class="n">client</span> <span class="o">=</span> <span class="n">AsyncTonapi</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">API_KEY</span><span class="p">),</span> <span class="n">TonapiClient</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">API_KEY</span><span class="p">)</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>    <span class="n">wallet</span><span class="p">,</span> <span class="n">public_key</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">WalletV5R1</span><span class="o">.</span><span class="n">from_mnemonic</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">MNEMONIC</span><span class="p">)</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>    <span class="n">gasless_config</span> <span class="o">=</span> <span class="k">await</span> <span class="n">tonapi</span><span class="o">.</span><span class="n">gasless</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>    <span class="n">relayer_address</span> <span class="o">=</span> <span class="n">Address</span><span class="p">(</span><span class="n">gasless_config</span><span class="o">.</span><span class="n">relay_address</span><span class="p">)</span>
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a>    <span class="n">jetton_wallet_address</span> <span class="o">=</span> <span class="k">await</span> <span class="n">JettonMasterStandard</span><span class="o">.</span><span class="n">get_wallet_address</span><span class="p">(</span>
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>        <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span>
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>        <span class="n">owner_address</span><span class="o">=</span><span class="n">wallet</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>        <span class="n">jetton_master_address</span><span class="o">=</span><span class="n">JETTON_MASTER_ADDRESS</span><span class="p">,</span>
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a>    <span class="p">)</span>
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a>    <span class="n">tether_transfer_body</span> <span class="o">=</span> <span class="n">JettonWalletStandard</span><span class="o">.</span><span class="n">build_transfer_body</span><span class="p">(</span>
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a>        <span class="n">jetton_amount</span><span class="o">=</span><span class="n">to_nano</span><span class="p">(</span><span class="n">JETTON_AMOUNT</span><span class="p">,</span> <span class="n">JETTON_DECIMALS</span><span class="p">),</span>
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a>        <span class="n">recipient_address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">DESTINATION_ADDRESS</span><span class="p">),</span>
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a>        <span class="n">response_address</span><span class="o">=</span><span class="n">relayer_address</span><span class="p">,</span>
+<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a>        <span class="n">forward_amount</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>    <span class="p">)</span>
+<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a>    <span class="n">message_to_estimate</span> <span class="o">=</span> <span class="n">wallet</span><span class="o">.</span><span class="n">create_internal_msg</span><span class="p">(</span>
+<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a>        <span class="n">dest</span><span class="o">=</span><span class="n">jetton_wallet_address</span><span class="p">,</span>
+<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a>        <span class="n">value</span><span class="o">=</span><span class="n">to_nano</span><span class="p">(</span><span class="n">BASE_JETTON_SEND_AMOUNT</span><span class="p">),</span>
+<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a>        <span class="n">body</span><span class="o">=</span><span class="n">tether_transfer_body</span><span class="p">,</span>
+<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a>    <span class="p">)</span>
+<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>
+<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a>    <span class="n">sign_raw_params</span> <span class="o">=</span> <span class="k">await</span> <span class="n">tonapi</span><span class="o">.</span><span class="n">gasless</span><span class="o">.</span><span class="n">estimate_gas_price</span><span class="p">(</span>
+<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a>        <span class="n">master_id</span><span class="o">=</span><span class="n">JETTON_MASTER_ADDRESS</span><span class="p">,</span>
+<a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a>        <span class="n">body</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a>            <span class="s2">&quot;wallet_address&quot;</span><span class="p">:</span> <span class="n">wallet</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">to_str</span><span class="p">(),</span>
+<a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a>            <span class="s2">&quot;wallet_public_key&quot;</span><span class="p">:</span> <span class="n">public_key</span><span class="o">.</span><span class="n">hex</span><span class="p">(),</span>
+<a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a>            <span class="s2">&quot;messages&quot;</span><span class="p">:</span> <span class="p">[</span>
+<a id="__codelineno-1-61" name="__codelineno-1-61" href="#__codelineno-1-61"></a>                <span class="p">{</span>
+<a id="__codelineno-1-62" name="__codelineno-1-62" href="#__codelineno-1-62"></a>                    <span class="s2">&quot;boc&quot;</span><span class="p">:</span> <span class="n">message_to_estimate</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span><span class="o">.</span><span class="n">to_boc</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">(),</span>
+<a id="__codelineno-1-63" name="__codelineno-1-63" href="#__codelineno-1-63"></a>                <span class="p">}</span>
+<a id="__codelineno-1-64" name="__codelineno-1-64" href="#__codelineno-1-64"></a>            <span class="p">]</span>
+<a id="__codelineno-1-65" name="__codelineno-1-65" href="#__codelineno-1-65"></a>        <span class="p">}</span>
+<a id="__codelineno-1-66" name="__codelineno-1-66" href="#__codelineno-1-66"></a>    <span class="p">)</span>
+<a id="__codelineno-1-67" name="__codelineno-1-67" href="#__codelineno-1-67"></a>
+<a id="__codelineno-1-68" name="__codelineno-1-68" href="#__codelineno-1-68"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-1-69" name="__codelineno-1-69" href="#__codelineno-1-69"></a>        <span class="n">seqno</span> <span class="o">=</span> <span class="k">await</span> <span class="n">WalletV5R1</span><span class="o">.</span><span class="n">get_seqno</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">wallet</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+<a id="__codelineno-1-70" name="__codelineno-1-70" href="#__codelineno-1-70"></a>    <span class="k">except</span> <span class="p">(</span><span class="ne">Exception</span><span class="p">,):</span>
+<a id="__codelineno-1-71" name="__codelineno-1-71" href="#__codelineno-1-71"></a>        <span class="n">seqno</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-1-72" name="__codelineno-1-72" href="#__codelineno-1-72"></a>
+<a id="__codelineno-1-73" name="__codelineno-1-73" href="#__codelineno-1-73"></a>    <span class="n">tether_transfer_for_send</span> <span class="o">=</span> <span class="n">wallet</span><span class="o">.</span><span class="n">create_signed_internal_msg</span><span class="p">(</span>
+<a id="__codelineno-1-74" name="__codelineno-1-74" href="#__codelineno-1-74"></a>        <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-1-75" name="__codelineno-1-75" href="#__codelineno-1-75"></a>            <span class="n">wallet</span><span class="o">.</span><span class="n">create_wallet_internal_message</span><span class="p">(</span>
+<a id="__codelineno-1-76" name="__codelineno-1-76" href="#__codelineno-1-76"></a>                <span class="n">destination</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">address</span><span class="p">),</span>
+<a id="__codelineno-1-77" name="__codelineno-1-77" href="#__codelineno-1-77"></a>                <span class="n">value</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">amount</span><span class="p">),</span>
+<a id="__codelineno-1-78" name="__codelineno-1-78" href="#__codelineno-1-78"></a>                <span class="n">body</span><span class="o">=</span><span class="n">Cell</span><span class="o">.</span><span class="n">one_from_boc</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">payload</span><span class="p">),</span>
+<a id="__codelineno-1-79" name="__codelineno-1-79" href="#__codelineno-1-79"></a>            <span class="p">)</span> <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">sign_raw_params</span><span class="o">.</span><span class="n">messages</span>
+<a id="__codelineno-1-80" name="__codelineno-1-80" href="#__codelineno-1-80"></a>        <span class="p">],</span>
+<a id="__codelineno-1-81" name="__codelineno-1-81" href="#__codelineno-1-81"></a>        <span class="n">seqno</span><span class="o">=</span><span class="n">seqno</span><span class="p">,</span>
+<a id="__codelineno-1-82" name="__codelineno-1-82" href="#__codelineno-1-82"></a>        <span class="n">valid_until</span><span class="o">=</span><span class="n">sign_raw_params</span><span class="o">.</span><span class="n">valid_until</span><span class="p">,</span>
+<a id="__codelineno-1-83" name="__codelineno-1-83" href="#__codelineno-1-83"></a>    <span class="p">)</span>
+<a id="__codelineno-1-84" name="__codelineno-1-84" href="#__codelineno-1-84"></a>    <span class="n">ext_message</span> <span class="o">=</span> <span class="n">wallet</span><span class="o">.</span><span class="n">create_external_msg</span><span class="p">(</span>
+<a id="__codelineno-1-85" name="__codelineno-1-85" href="#__codelineno-1-85"></a>        <span class="n">dest</span><span class="o">=</span><span class="n">wallet</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+<a id="__codelineno-1-86" name="__codelineno-1-86" href="#__codelineno-1-86"></a>        <span class="n">body</span><span class="o">=</span><span class="n">tether_transfer_for_send</span><span class="p">,</span>
+<a id="__codelineno-1-87" name="__codelineno-1-87" href="#__codelineno-1-87"></a>        <span class="n">state_init</span><span class="o">=</span><span class="n">wallet</span><span class="o">.</span><span class="n">state_init</span> <span class="k">if</span> <span class="n">seqno</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-1-88" name="__codelineno-1-88" href="#__codelineno-1-88"></a>    <span class="p">)</span>
+<a id="__codelineno-1-89" name="__codelineno-1-89" href="#__codelineno-1-89"></a>
+<a id="__codelineno-1-90" name="__codelineno-1-90" href="#__codelineno-1-90"></a>    <span class="k">await</span> <span class="n">tonapi</span><span class="o">.</span><span class="n">gasless</span><span class="o">.</span><span class="n">send</span><span class="p">(</span>
+<a id="__codelineno-1-91" name="__codelineno-1-91" href="#__codelineno-1-91"></a>        <span class="n">body</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-1-92" name="__codelineno-1-92" href="#__codelineno-1-92"></a>            <span class="s2">&quot;wallet_public_key&quot;</span><span class="p">:</span> <span class="n">public_key</span><span class="o">.</span><span class="n">hex</span><span class="p">(),</span>
+<a id="__codelineno-1-93" name="__codelineno-1-93" href="#__codelineno-1-93"></a>            <span class="s2">&quot;boc&quot;</span><span class="p">:</span> <span class="n">ext_message</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span><span class="o">.</span><span class="n">to_boc</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">(),</span>
+<a id="__codelineno-1-94" name="__codelineno-1-94" href="#__codelineno-1-94"></a>        <span class="p">}</span>
+<a id="__codelineno-1-95" name="__codelineno-1-95" href="#__codelineno-1-95"></a>    <span class="p">)</span>
+<a id="__codelineno-1-96" name="__codelineno-1-96" href="#__codelineno-1-96"></a>
+<a id="__codelineno-1-97" name="__codelineno-1-97" href="#__codelineno-1-97"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A gasless transfer sent!&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-98" name="__codelineno-1-98" href="#__codelineno-1-98"></a>
+<a id="__codelineno-1-99" name="__codelineno-1-99" href="#__codelineno-1-99"></a>
+<a id="__codelineno-1-100" name="__codelineno-1-100" href="#__codelineno-1-100"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-1-101" name="__codelineno-1-101" href="#__codelineno-1-101"></a>    <span class="kn">import</span> <span class="nn">asyncio</span>
+<a id="__codelineno-1-102" name="__codelineno-1-102" href="#__codelineno-1-102"></a>
+<a id="__codelineno-1-103" name="__codelineno-1-103" href="#__codelineno-1-103"></a>    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </code></pre></div>
 
 
@@ -1535,7 +1404,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../.." class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+          <a href="../send-encrypted-message/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Send Encrypted message">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1545,20 +1414,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Overview
+                Send Encrypted message
               </div>
             </div>
           </a>
         
         
           
-          <a href="../getting-testnet-assets/" class="md-footer__link md-footer__link--next" aria-label="Next: Getting testnet assets">
+          <a href="../send-claim-mintless-jetton/" class="md-footer__link md-footer__link--next" aria-label="Next: Send/Claim Mintless jetton">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Getting testnet assets
+                Send/Claim Mintless jetton
               </div>
             </div>
             <div class="md-footer__button md-icon">
