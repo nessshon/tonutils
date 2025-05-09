@@ -27,31 +27,47 @@ theme:
 markdown_extensions:
   - admonition
   - pymdownx.details
+  - pymdownx.snippets
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - attr_list
-
 plugins:
   - search
   - autorefs
+  - include-markdown
 
 nav:
   - Overview: index.md
   - Guide:
-      - Getting testnet assets: guide/getting-testnet-assets.md
       - Installation and Initialization: guide/installation-and-initialization.md
+      - Getting testnet assets: guide/getting-testnet-assets.md
+      - Wallet Operations: guide/wallet-operations.md
+      - Jetton Operations: guide/jetton-operations.md
+      - NFT Operations: guide/nft-operations.md
+      - DNS Operations: guide/dns-operations.md
+  - Ton Connect:
+      - Wallet Connection: ton-connect/wallet-connection.md
+      - Sending Transactions: ton-connect/sending-transactions.md
+      - Telegram Bot Integration: ton-connect/telegram-bot-integration.md
+  - Cookbook:
+      - Creating Vanity Address: cookbook/vanity.md
+      - Creating Compressed NFTs: cookbook/cnft.md
+      - Minting TON DNS Subdomains: cookbook/subdomains.md
   - How to:
       - Get Contract information: how-to/get-contract-information.md
       - Get Contract code and data: how-to/get-contract-code-and-data.md
-      - Use FunC hash functions: how-to/use-func-hash-functions.md
-      - Get Jetton Wallet address: how-to/get-jetton-wallet-address.md
       - Get NFT Item address: how-to/get-nft-item-address.md
-  - Cookbook:
-      - Minting TON DNS Subdomains: cookbook/subdomains.md
-      - Creating Compressed NFTs: cookbook/cnft.md
+      - Get Jetton Wallet address: how-to/get-jetton-wallet-address.md
+      - Create Multiple Wallets: how-to/create-multiple-wallets.md
+      - Send Encrypted message: how-to/send-encrypted-message.md
+      - Send Gasless transaction: how-to/send-gasless-transaction.md
+      - Send/Claim Mintless jetton: how-to/send-claim-mintless-jetton.md
+      - Use FunC hash functions: how-to/use-func-hash-functions.md
+  - Donate: donate.md
+  - Sponsors: sponsors.md
 
 extra:
   analytics:
