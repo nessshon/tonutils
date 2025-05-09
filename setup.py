@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="tonutils",
-    version="0.3.7",
+    version="0.3.8",
     author="nessshon",
     description=(
         "Tonutils is a high-level, object-oriented Python library "
@@ -15,9 +15,10 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/nessshon/tonutils",
     project_urls={
+        "Documentation": "https://nessshon.github.io/tonutils",
         "Examples": "https://github.com/nessshon/tonutils/tree/main/examples",
         "Source": "https://github.com/nessshon/tonutils",
-        "TON Blockchain": "https://ton.org",
+        "TON": "https://ton.org",
     },
     packages=setuptools.find_packages(include=["tonutils", "tonutils.*"]),
     package_data={"tonutils": ["py.typed"]},
