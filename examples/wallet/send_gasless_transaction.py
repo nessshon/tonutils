@@ -1,7 +1,3 @@
-"""
-Install pytonapi before running:
-pip install pytonapi
-"""
 from pytonapi import AsyncTonapi
 from pytoniq_core import Address, Cell
 

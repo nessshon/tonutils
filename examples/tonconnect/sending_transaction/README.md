@@ -27,7 +27,7 @@ Create a JSON file describing your application. This manifest is displayed in th
     }
 
 !!! note
-Ensure this file is publicly accessible via its URL.
+    Ensure this file is publicly accessible via its URL.
 
 ### Storage Implementation
 
