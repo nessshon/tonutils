@@ -66,11 +66,10 @@ client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 
 **[quicknode.com](https://quicknode.com)** — low-latency HTTP API access to TON via global infrastructure.  
 
-!!! note 
-    Does not support testnet!
-
 !!! note
     Requires an API URL from [quicknode.com](https://quicknode.com).
+
+    Quicknode does not support testnet!
 
 ```python
 from tonutils.client import QuicknodeClient

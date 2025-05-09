@@ -5,7 +5,7 @@ It covers key operations such as:
 * Importing wallets from mnemonic or private key
 * Sending transactions (TON, NFTs, Jettons)
 * Performing batch transfers
-* Executing Jetton swaps (via **STON.fi** and **DeDus.io**)
+* Executing Jetton swaps (via **STON.fi** and **DeDust.io**)
 
 ---
 
@@ -122,11 +122,23 @@ This will publish the wallet contract on-chain.
 
 #### Swap TON → Jetton
 
+!!! note
+    Before using these instructions, **please consult the official documentation** of [STON.fi](https://docs.ston.fi/).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
+
 ```python
 --8<-- "examples/wallet/common/dex/stonfi/swap_ton_to_jetton.py"
 ```
 
 #### Swap Jetton → TON
+
+!!! note
+    Before using these instructions, **please consult the official documentation** of [STON.fi](https://docs.ston.fi/).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
 
 ```python
 --8<-- "examples/wallet/common/dex/stonfi/swap_jetton_to_ton.py"
@@ -134,11 +146,23 @@ This will publish the wallet contract on-chain.
 
 #### Swap Jetton → Jetton
 
+!!! note
+    Before using these instructions, **please consult the official documentation** of [STON.fi](https://docs.ston.fi/).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
+
 ```python
 --8<-- "examples/wallet/common/dex/stonfi/swap_jetton_to_jetton.py"
 ```
 
 #### Batch Swap TON → Jetton
+
+!!! note
+    Before using these instructions, **please consult the official documentation** of [STON.fi](https://docs.ston.fi/).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
 
 ```python
 --8<-- "examples/wallet/common/dex/stonfi/batch_swap_ton_to_jetton.py"
@@ -146,19 +170,37 @@ This will publish the wallet contract on-chain.
 
 #### Batch Swap Jetton → TON
 
+!!! note
+    Before using these instructions, **please consult the official documentation** of [STON.fi](https://docs.ston.fi/).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
+
 ```python
 --8<-- "examples/wallet/common/dex/stonfi/batch_swap_jetton_to_ton.py"
 ```
 
 #### Batch Swap Jetton → Jetton
 
+!!! note
+    Before using these instructions, **please consult the official documentation** of [STON.fi](https://docs.ston.fi/).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
+
 ```python
 --8<-- "examples/wallet/common/dex/stonfi/batch_swap_jetton_to_jetton.py"
 ```
 
-### Using DeDus.io
+### Using DeDust.io
 
 #### Swap TON → Jetton
+
+!!! note
+    Before using these instructions, **please consult the official documentation** of [DeDust.io](https://docs.dedust.io/docs/introduction).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
 
 ```python
 --8<-- "examples/wallet/common/dex/dedust/swap_ton_to_jetton.py"
@@ -166,11 +208,23 @@ This will publish the wallet contract on-chain.
 
 #### Swap Jetton → TON
 
+!!! note
+    Before using these instructions, **please consult the official documentation** of [DeDust.io](https://docs.dedust.io/docs/introduction).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
+
 ```python
 --8<-- "examples/wallet/common/dex/dedust/swap_jetton_to_ton.py"
 ```
 
 #### Swap Jetton → Jetton
+
+!!! note
+    Before using these instructions, **please consult the official documentation** of [DeDust.io](https://docs.dedust.io/docs/introduction).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
 
 ```python
 --8<-- "examples/wallet/common/dex/dedust/swap_jetton_to_jetton.py"
@@ -178,17 +232,35 @@ This will publish the wallet contract on-chain.
 
 #### Batch Swap TON → Jetton
 
+!!! note
+    Before using these instructions, **please consult the official documentation** of [DeDust.io](https://docs.dedust.io/docs/introduction).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
+
 ```python
 --8<-- "examples/wallet/common/dex/dedust/batch_swap_ton_to_jetton.py"
 ```
 
 #### Batch Swap Jetton → TON
 
+!!! note
+    Before using these instructions, **please consult the official documentation** of [DeDust.io](https://docs.dedust.io/docs/introduction).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
+
 ```python
 --8<-- "examples/wallet/common/dex/dedust/batch_swap_jetton_to_ton.py"
 ```
 
 #### Batch Swap Jetton → Jetton
+
+!!! note
+    Before using these instructions, **please consult the official documentation** of [DeDust.io](https://docs.dedust.io/docs/introduction).
+    Use with caution and **always test carefully on a testnet** first.
+    I take **no responsibility** for any lost funds.
+    If you find errors or have suggestions for improvement, feel free to **open a pull request** — let’s make this better together.
 
 ```python
 --8<-- "examples/wallet/common/dex/dedust/batch_swap_jetton_to_jetton.py"

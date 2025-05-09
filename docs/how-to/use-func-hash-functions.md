@@ -10,6 +10,7 @@ from pytoniq_core import begin_cell
 def main() -> None:
     c = begin_cell().store_string("ness").end_cell()
     cell_hash_result = cell_hash(c)
+
     print(f"bytes: {cell_hash_result[0]}")
     print(f"int: {cell_hash_result[1]}")
 
@@ -32,6 +33,7 @@ from pytoniq_core import begin_cell
 def main() -> None:
     s = begin_cell().store_string("ness")
     slice_hash_result = slice_hash(s)
+
     print(f"bytes: {slice_hash_result[0]}")
     print(f"int: {slice_hash_result[1]}")
 
@@ -52,6 +54,7 @@ from tonutils.utils import string_hash
 
 def main() -> None:
     string_hash_result = string_hash("ness")
+
     print(f"bytes: {string_hash_result[0]}")
     print(f"int: {string_hash_result[1]}")
 

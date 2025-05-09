@@ -1,0 +1,1 @@
+--8<-- "examples/tonconnect/sending_transaction/README.md"

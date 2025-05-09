@@ -1,5 +1,8 @@
 This example shows how to retrieve full contract details, including balance, status, code, data, and last transaction metadata.
 
+---
+
+### Example
 ```python
 from tonutils.client import ToncenterV3Client
 
