@@ -9,7 +9,6 @@ theme:
   name: material
   favicon: assets/logo.png
   logo: assets/logo.png
-
   features:
     - content.code.copy
     - content.action.view
@@ -19,25 +18,77 @@ theme:
     - navigation.footer
     - content.tabs.link
   palette:
-    scheme: slate
-    primary: black
-    toggle:
-      icon: material/brightness-4
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      toggle:
+        icon: material/brightness-4
+        name: Switch to dark mode
 
 markdown_extensions:
+  - attr_list
   - admonition
   - pymdownx.details
   - pymdownx.snippets
+  - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
-  - attr_list
+
 plugins:
   - search
   - autorefs
   - include-markdown
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - build: true
+          default: true
+          locale: en
+          name: English
+        - build: true
+          default: false
+          locale: ru
+          name: Русский
+          nav_translations:
+            Overview: Обзор
+            Guide: Руководство
+            Installation and Initialization: Установка и инициализация
+            Getting testnet assets: Получить тестовые токены
+            Wallet Operations: Операции с кошельком
+            Jetton Operations: Операции с Jetton
+            NFT Operations: Операции с NFT
+            DNS Operations: Операции с DNS
+            Ton Connect: Ton Connect
+            Wallet Connection: Подключение кошелька
+            Sending Transactions: Отправка транзакций
+            Telegram Bot Integration: Интеграция с Telegram-ботом
+            Cookbook: Примеры
+            Creating Vanity Address: Создание красивого адреса
+            Creating Compressed NFTs: Создание сжатых NFT
+            Minting TON DNS Subdomains: Создание поддоменов TON
+            How to: Как
+            Get Contract information: Получить информацию о контракте
+            Get Contract code and data: Получить код и данные контракта
+            Get NFT Item address: Получить адрес NFT
+            Get Jetton Wallet address: Получить адрес Jetton кошелька
+            Create Multiple Wallets: Создать несколько кошельков
+            Send Encrypted message: Отправить зашифрованное сообщения
+            Send Gasless transaction: Отправить транзакцию без оплаты газа
+            Send/Claim Mintless jetton: Отправить/Запросить Mintless jetton
+            Use FunC hash functions: Использовать хеш-функций FunC
+            Sponsors: Спонсоры
+            Donate: Поддержать
 
 nav:
   - Overview: index.md
@@ -48,10 +99,10 @@ nav:
       - Jetton Operations: guide/jetton-operations.md
       - NFT Operations: guide/nft-operations.md
       - DNS Operations: guide/dns-operations.md
-  - Ton Connect:
-      - Wallet Connection: ton-connect/wallet-connection.md
-      - Sending Transactions: ton-connect/sending-transactions.md
-      - Telegram Bot Integration: ton-connect/telegram-bot-integration.md
+      - Ton Connect:
+          - Wallet Connection: guide/ton-connect/wallet-connection.md
+          - Sending Transactions: guide/ton-connect/sending-transactions.md
+          - Telegram Bot Integration: guide/ton-connect/telegram-bot-integration.md
   - Cookbook:
       - Creating Vanity Address: cookbook/vanity.md
       - Creating Compressed NFTs: cookbook/cnft.md
@@ -66,8 +117,8 @@ nav:
       - Send Gasless transaction: how-to/send-gasless-transaction.md
       - Send/Claim Mintless jetton: how-to/send-claim-mintless-jetton.md
       - Use FunC hash functions: how-to/use-func-hash-functions.md
-  - Donate: donate.md
   - Sponsors: sponsors.md
+  - Donate: donate.md
 
 extra:
   analytics:
@@ -78,3 +129,5 @@ extra:
       link: https://t.me/nessshon
     - icon: fontawesome/brands/github
       link: https://github.com/nessshon
+
+copyright: "Created with ❤️ by Ness"
