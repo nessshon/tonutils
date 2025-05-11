@@ -1,9 +1,10 @@
 site_author: Ness
 site_name: Tonutils
+site_url: https://nessshon.github.io/tonutils/
 site_description: Documentation for tonutils — Python library for working with TON Blockchain, including examples, how-to guides, and reference materials.
 
-repo_url: https://github.com/nessshon/tonutils
-edit_uri: https://github.com/nessshon/tonutils/tree/main/docs
+repo_url: https://github.com/nessshon/tonutils/
+edit_uri: https://github.com/nessshon/tonutils/tree/main/docs/
 
 theme:
   name: material
