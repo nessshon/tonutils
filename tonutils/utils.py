@@ -184,30 +184,27 @@ def serialize_onchain_dict(data: Dict[str, Any]) -> Cell:
     return dict_cell.serialize()
 
 
-def cell_hash(c: Cell) -> Tuple[bytes, int]:
+def cell_hash(c: Cell) -> int:
     """
     Calculates the representation hash of the given cell c and returns it as a 256-bit unsigned integer x.
     This function is handy for signing and verifying signatures of arbitrary entities structured as a tree of cells.
     """
-    h = c.hash
-    return h, int.from_bytes(h, "big")
+    return int.from_bytes(c.hash, "big")
 
 
-def slice_hash(s: Slice) -> Tuple[bytes, int]:
+def slice_hash(s: Slice) -> int:
     """
     Computes the hash of the given slice s and returns it as a 256-bit unsigned integer x.
     The result is equivalent to creating a standard cell containing only the data and references from s and then computing its hash using cell_hash.
     """
-    h = s.to_cell().hash
-    return h, int.from_bytes(h, "big")
+    return int.from_bytes(s.to_cell().hash, "big")
 
 
-def string_hash(s: str) -> Tuple[bytes, int]:
+def string_hash(s: str) -> int:
     """
     Calculates the SHA-256 hash of the data bits in the given slice s.
     A cell underflow exception is thrown if the bit length of s is not a multiple of eight.
     The hash is returned as a 256-bit unsigned integer x.
     """
     data = begin_cell().store_snake_string(s).end_cell().get_data_bytes()
-    sha256 = hashlib.sha256(data).digest()
-    return sha256, int.from_bytes(sha256, "big")
+    return int.from_bytes(hashlib.sha256(data).digest(), "big")
