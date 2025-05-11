@@ -72,6 +72,8 @@
   
     
     
+      
+    
     
     
     
@@ -125,8 +127,60 @@
     </div>
     
       
+        <form class="md-header__option" data-md-component="palette">
+  
     
     
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../../ru/guide/nft-operations/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
     
     
       
@@ -247,26 +301,6 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../ton-connect/wallet-connection/" class="md-tabs__link">
-          
-  
-  
-  Ton Connect
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
         <a href="../../cookbook/vanity/" class="md-tabs__link">
           
   
@@ -305,13 +339,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../donate/" class="md-tabs__link">
+      <a href="../../sponsors/" class="md-tabs__link">
         
   
   
     
   
-  Donate
+  Sponsors
 
       </a>
     </li>
@@ -324,13 +358,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../sponsors/" class="md-tabs__link">
+      <a href="../../donate/" class="md-tabs__link">
         
   
   
     
   
-  Sponsors
+  Donate
 
       </a>
     </li>
@@ -815,6 +849,48 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#listing-on-getgemsio" class="md-nav__link">
+    <span class="md-ellipsis">
+      Listing on Getgems.io
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Listing on Getgems.io">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-nft-for-sale" class="md-nav__link">
+    <span class="md-ellipsis">
+      List NFT for Sale
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-nft-price" class="md-nav__link">
+    <span class="md-ellipsis">
+      Change NFT Price
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancel-nft-sale" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cancel NFT Sale
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -842,6 +918,124 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Ton Connect
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            Ton Connect
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ton-connect/wallet-connection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Wallet Connection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ton-connect/sending-transactions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sending Transactions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ton-connect/telegram-bot-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Telegram Bot Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -880,7 +1074,7 @@
   
   
   <span class="md-ellipsis">
-    Ton Connect
+    Cookbook
     
   </span>
   
@@ -890,123 +1084,6 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            Ton Connect
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ton-connect/wallet-connection/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Wallet Connection
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ton-connect/sending-transactions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Sending Transactions
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ton-connect/telegram-bot-integration/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Telegram Bot Integration
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    Cookbook
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Cookbook
           </label>
@@ -1106,10 +1183,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
@@ -1122,8 +1199,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             How to
           </label>
@@ -1350,12 +1427,12 @@
   
   
     <li class="md-nav__item">
-      <a href="../../donate/" class="md-nav__link">
+      <a href="../../sponsors/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Donate
+    Sponsors
     
   </span>
   
@@ -1372,12 +1449,12 @@
   
   
     <li class="md-nav__item">
-      <a href="../../sponsors/" class="md-nav__link">
+      <a href="../../donate/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Sponsors
+    Donate
     
   </span>
   
@@ -1623,6 +1700,48 @@
   <a href="#return-collection-balance" class="md-nav__link">
     <span class="md-ellipsis">
       Return Collection Balance
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listing-on-getgemsio" class="md-nav__link">
+    <span class="md-ellipsis">
+      Listing on Getgems.io
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Listing on Getgems.io">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-nft-for-sale" class="md-nav__link">
+    <span class="md-ellipsis">
+      List NFT for Sale
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-nft-price" class="md-nav__link">
+    <span class="md-ellipsis">
+      Change NFT Price
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancel-nft-sale" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cancel NFT Sale
     </span>
   </a>
   
@@ -2747,6 +2866,161 @@ It covers <strong>Standard</strong>, <strong>Soulbound</strong>, <strong>Editabl
 <a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a>
 <a id="__codelineno-17-34" name="__codelineno-17-34" href="#__codelineno-17-34"></a>    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </code></pre></div>
+<h3 id="listing-on-getgemsio">Listing on Getgems.io</h3>
+<h4 id="list-nft-for-sale">List NFT for Sale</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="kn">from</span> <span class="nn">pytoniq_core</span> <span class="kn">import</span> <span class="n">Address</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">ToncenterV3Client</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="kn">from</span> <span class="nn">tonutils.nft</span> <span class="kn">import</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">NFT</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="kn">from</span> <span class="nn">tonutils.nft.marketplace.getgems.addresses</span> <span class="kn">import</span> <span class="o">*</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="kn">from</span> <span class="nn">tonutils.nft.marketplace.getgems.contract.salev3r3</span> <span class="kn">import</span> <span class="n">SaleV3R3</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="kn">from</span> <span class="nn">tonutils.utils</span> <span class="kn">import</span> <span class="n">to_nano</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="kn">from</span> <span class="nn">tonutils.wallet</span> <span class="kn">import</span> <span class="n">WalletV4R2</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="c1"># Set to True for test network, False for main network</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="n">IS_TESTNET</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="c1"># Mnemonic phrase</span>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="n">MNEMONIC</span> <span class="o">=</span> <span class="s2">&quot;word1 word2 word3 ...&quot;</span>
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="c1"># Address of the NFT to be listed for sale</span>
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a><span class="n">NFT_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;EQ..&quot;</span>
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a>
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="c1"># Sale price for the NFT in TON</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="n">PRICE</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="__codelineno-18-21" name="__codelineno-18-21" href="#__codelineno-18-21"></a>
+<a id="__codelineno-18-22" name="__codelineno-18-22" href="#__codelineno-18-22"></a>
+<a id="__codelineno-18-23" name="__codelineno-18-23" href="#__codelineno-18-23"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-18-24" name="__codelineno-18-24" href="#__codelineno-18-24"></a>    <span class="n">client</span> <span class="o">=</span> <span class="n">ToncenterV3Client</span><span class="p">(</span><span class="n">is_testnet</span><span class="o">=</span><span class="n">IS_TESTNET</span><span class="p">)</span>
+<a id="__codelineno-18-25" name="__codelineno-18-25" href="#__codelineno-18-25"></a>    <span class="n">wallet</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">WalletV4R2</span><span class="o">.</span><span class="n">from_mnemonic</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">MNEMONIC</span><span class="p">)</span>
+<a id="__codelineno-18-26" name="__codelineno-18-26" href="#__codelineno-18-26"></a>
+<a id="__codelineno-18-27" name="__codelineno-18-27" href="#__codelineno-18-27"></a>    <span class="n">nft_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">NFT</span><span class="o">.</span><span class="n">get_nft_data</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">NFT_ADDRESS</span><span class="p">)</span>
+<a id="__codelineno-18-28" name="__codelineno-18-28" href="#__codelineno-18-28"></a>    <span class="n">royalty_params</span> <span class="o">=</span> <span class="k">await</span> <span class="n">Collection</span><span class="o">.</span><span class="n">get_royalty_params</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">nft_data</span><span class="o">.</span><span class="n">collection_address</span><span class="p">)</span>
+<a id="__codelineno-18-29" name="__codelineno-18-29" href="#__codelineno-18-29"></a>
+<a id="__codelineno-18-30" name="__codelineno-18-30" href="#__codelineno-18-30"></a>    <span class="n">price</span> <span class="o">=</span> <span class="n">to_nano</span><span class="p">(</span><span class="n">PRICE</span><span class="p">)</span>
+<a id="__codelineno-18-31" name="__codelineno-18-31" href="#__codelineno-18-31"></a>    <span class="n">royalty_fee</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">price</span> <span class="o">*</span> <span class="p">(</span><span class="n">royalty_params</span><span class="o">.</span><span class="n">base</span> <span class="o">/</span> <span class="n">royalty_params</span><span class="o">.</span><span class="n">factor</span><span class="p">))</span>
+<a id="__codelineno-18-32" name="__codelineno-18-32" href="#__codelineno-18-32"></a>    <span class="n">marketplace_fee</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">price</span> <span class="o">*</span> <span class="mf">0.05</span><span class="p">)</span>
+<a id="__codelineno-18-33" name="__codelineno-18-33" href="#__codelineno-18-33"></a>
+<a id="__codelineno-18-34" name="__codelineno-18-34" href="#__codelineno-18-34"></a>    <span class="n">sale</span> <span class="o">=</span> <span class="n">SaleV3R3</span><span class="p">(</span>
+<a id="__codelineno-18-35" name="__codelineno-18-35" href="#__codelineno-18-35"></a>        <span class="n">nft_address</span><span class="o">=</span><span class="n">NFT_ADDRESS</span><span class="p">,</span>
+<a id="__codelineno-18-36" name="__codelineno-18-36" href="#__codelineno-18-36"></a>        <span class="n">owner_address</span><span class="o">=</span><span class="n">wallet</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+<a id="__codelineno-18-37" name="__codelineno-18-37" href="#__codelineno-18-37"></a>        <span class="n">marketplace_address</span><span class="o">=</span><span class="n">TESTNET_GETGEMS_ADDRESS</span> <span class="k">if</span> <span class="n">IS_TESTNET</span> <span class="k">else</span> <span class="n">GETGEMS_ADDRESS</span><span class="p">,</span>
+<a id="__codelineno-18-38" name="__codelineno-18-38" href="#__codelineno-18-38"></a>        <span class="n">marketplace_fee_address</span><span class="o">=</span><span class="n">TESTNET_GETGEMS_FEE_ADDRESS</span> <span class="k">if</span> <span class="n">IS_TESTNET</span> <span class="k">else</span> <span class="n">GETGEMS_FEE_ADDRESS</span><span class="p">,</span>
+<a id="__codelineno-18-39" name="__codelineno-18-39" href="#__codelineno-18-39"></a>        <span class="n">royalty_address</span><span class="o">=</span><span class="n">royalty_params</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+<a id="__codelineno-18-40" name="__codelineno-18-40" href="#__codelineno-18-40"></a>        <span class="n">marketplace_fee</span><span class="o">=</span><span class="n">marketplace_fee</span><span class="p">,</span>
+<a id="__codelineno-18-41" name="__codelineno-18-41" href="#__codelineno-18-41"></a>        <span class="n">royalty_fee</span><span class="o">=</span><span class="n">royalty_fee</span><span class="p">,</span>
+<a id="__codelineno-18-42" name="__codelineno-18-42" href="#__codelineno-18-42"></a>        <span class="n">price</span><span class="o">=</span><span class="n">price</span><span class="p">,</span>
+<a id="__codelineno-18-43" name="__codelineno-18-43" href="#__codelineno-18-43"></a>    <span class="p">)</span>
+<a id="__codelineno-18-44" name="__codelineno-18-44" href="#__codelineno-18-44"></a>    <span class="n">body</span> <span class="o">=</span> <span class="n">sale</span><span class="o">.</span><span class="n">build_transfer_nft_body</span><span class="p">(</span>
+<a id="__codelineno-18-45" name="__codelineno-18-45" href="#__codelineno-18-45"></a>        <span class="n">destination</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">TESTNET_GETGEMS_DEPLOYER_ADDRESS</span> <span class="k">if</span> <span class="n">IS_TESTNET</span> <span class="k">else</span> <span class="n">GETGEMS_DEPLOYER_ADDRESS</span><span class="p">),</span>
+<a id="__codelineno-18-46" name="__codelineno-18-46" href="#__codelineno-18-46"></a>        <span class="n">owner_address</span><span class="o">=</span><span class="n">wallet</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+<a id="__codelineno-18-47" name="__codelineno-18-47" href="#__codelineno-18-47"></a>        <span class="n">state_init</span><span class="o">=</span><span class="n">sale</span><span class="o">.</span><span class="n">state_init</span><span class="p">,</span>
+<a id="__codelineno-18-48" name="__codelineno-18-48" href="#__codelineno-18-48"></a>    <span class="p">)</span>
+<a id="__codelineno-18-49" name="__codelineno-18-49" href="#__codelineno-18-49"></a>
+<a id="__codelineno-18-50" name="__codelineno-18-50" href="#__codelineno-18-50"></a>    <span class="n">tx_hash</span> <span class="o">=</span> <span class="k">await</span> <span class="n">wallet</span><span class="o">.</span><span class="n">transfer</span><span class="p">(</span>
+<a id="__codelineno-18-51" name="__codelineno-18-51" href="#__codelineno-18-51"></a>        <span class="n">destination</span><span class="o">=</span><span class="n">NFT_ADDRESS</span><span class="p">,</span>
+<a id="__codelineno-18-52" name="__codelineno-18-52" href="#__codelineno-18-52"></a>        <span class="n">amount</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+<a id="__codelineno-18-53" name="__codelineno-18-53" href="#__codelineno-18-53"></a>        <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+<a id="__codelineno-18-54" name="__codelineno-18-54" href="#__codelineno-18-54"></a>    <span class="p">)</span>
+<a id="__codelineno-18-55" name="__codelineno-18-55" href="#__codelineno-18-55"></a>
+<a id="__codelineno-18-56" name="__codelineno-18-56" href="#__codelineno-18-56"></a>    <span class="c1"># Print the result of the operation</span>
+<a id="__codelineno-18-57" name="__codelineno-18-57" href="#__codelineno-18-57"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;NFT </span><span class="si">{</span><span class="n">NFT_ADDRESS</span><span class="si">}</span><span class="s2"> successfully put on sale at price </span><span class="si">{</span><span class="n">PRICE</span><span class="si">}</span><span class="s2"> TON.&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-58" name="__codelineno-18-58" href="#__codelineno-18-58"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Transaction hash: </span><span class="si">{</span><span class="n">tx_hash</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-59" name="__codelineno-18-59" href="#__codelineno-18-59"></a>
+<a id="__codelineno-18-60" name="__codelineno-18-60" href="#__codelineno-18-60"></a>
+<a id="__codelineno-18-61" name="__codelineno-18-61" href="#__codelineno-18-61"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-18-62" name="__codelineno-18-62" href="#__codelineno-18-62"></a>    <span class="kn">import</span> <span class="nn">asyncio</span>
+<a id="__codelineno-18-63" name="__codelineno-18-63" href="#__codelineno-18-63"></a>
+<a id="__codelineno-18-64" name="__codelineno-18-64" href="#__codelineno-18-64"></a>    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div>
+<h4 id="change-nft-price">Change NFT Price</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">ToncenterV3Client</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="kn">from</span> <span class="nn">tonutils.nft</span> <span class="kn">import</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">NFT</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="kn">from</span> <span class="nn">tonutils.nft.marketplace.getgems.contract.salev3r3</span> <span class="kn">import</span> <span class="n">SaleV3R3</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="kn">from</span> <span class="nn">tonutils.wallet</span> <span class="kn">import</span> <span class="n">WalletV4R2</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="c1"># Set to True for test network, False for main network</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="n">IS_TESTNET</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="c1"># Mnemonic phrase</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="n">MNEMONIC</span> <span class="o">=</span> <span class="s2">&quot;word1 word2 word3 ...&quot;</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="c1"># Address of the NFT and sale contract</span>
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="n">NFT_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;EQ...&quot;</span>
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="n">SALE_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;EQ...&quot;</span>
+<a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>
+<a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a><span class="c1"># New sale price for the NFT in TON</span>
+<a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a><span class="n">PRICE</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a>
+<a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a>
+<a id="__codelineno-19-20" name="__codelineno-19-20" href="#__codelineno-19-20"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-19-21" name="__codelineno-19-21" href="#__codelineno-19-21"></a>    <span class="n">client</span> <span class="o">=</span> <span class="n">ToncenterV3Client</span><span class="p">(</span><span class="n">is_testnet</span><span class="o">=</span><span class="n">IS_TESTNET</span><span class="p">)</span>
+<a id="__codelineno-19-22" name="__codelineno-19-22" href="#__codelineno-19-22"></a>    <span class="n">wallet</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">WalletV4R2</span><span class="o">.</span><span class="n">from_mnemonic</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">MNEMONIC</span><span class="p">)</span>
+<a id="__codelineno-19-23" name="__codelineno-19-23" href="#__codelineno-19-23"></a>
+<a id="__codelineno-19-24" name="__codelineno-19-24" href="#__codelineno-19-24"></a>    <span class="n">nft_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">NFT</span><span class="o">.</span><span class="n">get_nft_data</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">NFT_ADDRESS</span><span class="p">)</span>
+<a id="__codelineno-19-25" name="__codelineno-19-25" href="#__codelineno-19-25"></a>    <span class="n">royalty_params</span> <span class="o">=</span> <span class="k">await</span> <span class="n">Collection</span><span class="o">.</span><span class="n">get_royalty_params</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">nft_data</span><span class="o">.</span><span class="n">collection_address</span><span class="p">)</span>
+<a id="__codelineno-19-26" name="__codelineno-19-26" href="#__codelineno-19-26"></a>
+<a id="__codelineno-19-27" name="__codelineno-19-27" href="#__codelineno-19-27"></a>    <span class="n">price</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">PRICE</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">)</span>
+<a id="__codelineno-19-28" name="__codelineno-19-28" href="#__codelineno-19-28"></a>    <span class="n">royalty_fee</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">price</span> <span class="o">*</span> <span class="p">(</span><span class="n">royalty_params</span><span class="o">.</span><span class="n">base</span> <span class="o">/</span> <span class="n">royalty_params</span><span class="o">.</span><span class="n">factor</span><span class="p">))</span>
+<a id="__codelineno-19-29" name="__codelineno-19-29" href="#__codelineno-19-29"></a>    <span class="n">marketplace_fee</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">price</span> <span class="o">*</span> <span class="mf">0.05</span><span class="p">)</span>
+<a id="__codelineno-19-30" name="__codelineno-19-30" href="#__codelineno-19-30"></a>
+<a id="__codelineno-19-31" name="__codelineno-19-31" href="#__codelineno-19-31"></a>    <span class="n">body</span> <span class="o">=</span> <span class="n">SaleV3R3</span><span class="o">.</span><span class="n">build_change_price_body</span><span class="p">(</span>
+<a id="__codelineno-19-32" name="__codelineno-19-32" href="#__codelineno-19-32"></a>        <span class="n">marketplace_fee</span><span class="o">=</span><span class="n">marketplace_fee</span><span class="p">,</span>
+<a id="__codelineno-19-33" name="__codelineno-19-33" href="#__codelineno-19-33"></a>        <span class="n">royalty_fee</span><span class="o">=</span><span class="n">royalty_fee</span><span class="p">,</span>
+<a id="__codelineno-19-34" name="__codelineno-19-34" href="#__codelineno-19-34"></a>        <span class="n">price</span><span class="o">=</span><span class="n">price</span><span class="p">,</span>
+<a id="__codelineno-19-35" name="__codelineno-19-35" href="#__codelineno-19-35"></a>    <span class="p">)</span>
+<a id="__codelineno-19-36" name="__codelineno-19-36" href="#__codelineno-19-36"></a>
+<a id="__codelineno-19-37" name="__codelineno-19-37" href="#__codelineno-19-37"></a>    <span class="n">tx_hash</span> <span class="o">=</span> <span class="k">await</span> <span class="n">wallet</span><span class="o">.</span><span class="n">transfer</span><span class="p">(</span>
+<a id="__codelineno-19-38" name="__codelineno-19-38" href="#__codelineno-19-38"></a>        <span class="n">destination</span><span class="o">=</span><span class="n">SALE_ADDRESS</span><span class="p">,</span>
+<a id="__codelineno-19-39" name="__codelineno-19-39" href="#__codelineno-19-39"></a>        <span class="n">amount</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
+<a id="__codelineno-19-40" name="__codelineno-19-40" href="#__codelineno-19-40"></a>        <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+<a id="__codelineno-19-41" name="__codelineno-19-41" href="#__codelineno-19-41"></a>    <span class="p">)</span>
+<a id="__codelineno-19-42" name="__codelineno-19-42" href="#__codelineno-19-42"></a>
+<a id="__codelineno-19-43" name="__codelineno-19-43" href="#__codelineno-19-43"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully updated the price for NFT sale.&quot;</span><span class="p">)</span>
+<a id="__codelineno-19-44" name="__codelineno-19-44" href="#__codelineno-19-44"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Transaction hash: </span><span class="si">{</span><span class="n">tx_hash</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-19-45" name="__codelineno-19-45" href="#__codelineno-19-45"></a>
+<a id="__codelineno-19-46" name="__codelineno-19-46" href="#__codelineno-19-46"></a>
+<a id="__codelineno-19-47" name="__codelineno-19-47" href="#__codelineno-19-47"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-19-48" name="__codelineno-19-48" href="#__codelineno-19-48"></a>    <span class="kn">import</span> <span class="nn">asyncio</span>
+<a id="__codelineno-19-49" name="__codelineno-19-49" href="#__codelineno-19-49"></a>
+<a id="__codelineno-19-50" name="__codelineno-19-50" href="#__codelineno-19-50"></a>    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div>
+<h4 id="cancel-nft-sale">Cancel NFT Sale</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="kn">from</span> <span class="nn">tonutils.client</span> <span class="kn">import</span> <span class="n">ToncenterV3Client</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="kn">from</span> <span class="nn">tonutils.nft.marketplace.getgems.contract.salev3r3</span> <span class="kn">import</span> <span class="n">SaleV3R3</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="kn">from</span> <span class="nn">tonutils.wallet</span> <span class="kn">import</span> <span class="n">WalletV4R2</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="c1"># Set to True for test network, False for main network</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="n">IS_TESTNET</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="c1"># Mnemonic phrase</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="n">MNEMONIC</span> <span class="o">=</span> <span class="s2">&quot;word1 word2 word3 ...&quot;</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="c1"># Address of the sale contract</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="n">SALE_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;EQ...&quot;</span>
+<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a>
+<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a>
+<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a>    <span class="n">client</span> <span class="o">=</span> <span class="n">ToncenterV3Client</span><span class="p">(</span><span class="n">is_testnet</span><span class="o">=</span><span class="n">IS_TESTNET</span><span class="p">)</span>
+<a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a>    <span class="n">wallet</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">WalletV4R2</span><span class="o">.</span><span class="n">from_mnemonic</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">MNEMONIC</span><span class="p">)</span>
+<a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a>
+<a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a>    <span class="n">body</span> <span class="o">=</span> <span class="n">SaleV3R3</span><span class="o">.</span><span class="n">build_cancel_sale_body</span><span class="p">()</span>
+<a id="__codelineno-20-20" name="__codelineno-20-20" href="#__codelineno-20-20"></a>
+<a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a>    <span class="n">tx_hash</span> <span class="o">=</span> <span class="k">await</span> <span class="n">wallet</span><span class="o">.</span><span class="n">transfer</span><span class="p">(</span>
+<a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a>        <span class="n">destination</span><span class="o">=</span><span class="n">SALE_ADDRESS</span><span class="p">,</span>
+<a id="__codelineno-20-23" name="__codelineno-20-23" href="#__codelineno-20-23"></a>        <span class="n">amount</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+<a id="__codelineno-20-24" name="__codelineno-20-24" href="#__codelineno-20-24"></a>        <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+<a id="__codelineno-20-25" name="__codelineno-20-25" href="#__codelineno-20-25"></a>    <span class="p">)</span>
+<a id="__codelineno-20-26" name="__codelineno-20-26" href="#__codelineno-20-26"></a>
+<a id="__codelineno-20-27" name="__codelineno-20-27" href="#__codelineno-20-27"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sale has been successfully canceled.&quot;</span><span class="p">)</span>
+<a id="__codelineno-20-28" name="__codelineno-20-28" href="#__codelineno-20-28"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Transaction hash: </span><span class="si">{</span><span class="n">tx_hash</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-20-29" name="__codelineno-20-29" href="#__codelineno-20-29"></a>
+<a id="__codelineno-20-30" name="__codelineno-20-30" href="#__codelineno-20-30"></a>
+<a id="__codelineno-20-31" name="__codelineno-20-31" href="#__codelineno-20-31"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-20-32" name="__codelineno-20-32" href="#__codelineno-20-32"></a>    <span class="kn">import</span> <span class="nn">asyncio</span>
+<a id="__codelineno-20-33" name="__codelineno-20-33" href="#__codelineno-20-33"></a>
+<a id="__codelineno-20-34" name="__codelineno-20-34" href="#__codelineno-20-34"></a>    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div>
 
 
 
@@ -2818,6 +3092,10 @@ It covers <strong>Standard</strong>, <strong>Soulbound</strong>, <strong>Editabl
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Created with ❤️ by Ness
+    </div>
   
   
     Made with

@@ -70,6 +70,8 @@
   
     
     
+      
+    
     
     
     
@@ -123,8 +125,60 @@
     </div>
     
       
+        <form class="md-header__option" data-md-component="palette">
+  
     
     
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/ru/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
     
     
       
@@ -245,26 +299,6 @@
     
     
       <li class="md-tabs__item">
-        <a href="ton-connect/wallet-connection/" class="md-tabs__link">
-          
-  
-  
-  Ton Connect
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
         <a href="cookbook/vanity/" class="md-tabs__link">
           
   
@@ -303,13 +337,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="donate/" class="md-tabs__link">
+      <a href="sponsors/" class="md-tabs__link">
         
   
   
     
   
-  Donate
+  Sponsors
 
       </a>
     </li>
@@ -322,13 +356,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="sponsors/" class="md-tabs__link">
+      <a href="donate/" class="md-tabs__link">
         
   
   
     
   
-  Sponsors
+  Donate
 
       </a>
     </li>
@@ -627,6 +661,124 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Ton Connect
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            Ton Connect
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="guide/ton-connect/wallet-connection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Wallet Connection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="guide/ton-connect/sending-transactions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sending Transactions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="guide/ton-connect/telegram-bot-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Telegram Bot Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -660,7 +812,7 @@
   
   
   <span class="md-ellipsis">
-    Ton Connect
+    Cookbook
     
   </span>
   
@@ -670,123 +822,6 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            Ton Connect
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="ton-connect/wallet-connection/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Wallet Connection
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="ton-connect/sending-transactions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Sending Transactions
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="ton-connect/telegram-bot-integration/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Telegram Bot Integration
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    Cookbook
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Cookbook
           </label>
@@ -886,10 +921,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
@@ -902,8 +937,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             How to
           </label>
@@ -1130,12 +1165,12 @@
   
   
     <li class="md-nav__item">
-      <a href="donate/" class="md-nav__link">
+      <a href="sponsors/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Donate
+    Sponsors
     
   </span>
   
@@ -1152,12 +1187,12 @@
   
   
     <li class="md-nav__item">
-      <a href="sponsors/" class="md-nav__link">
+      <a href="donate/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Sponsors
+    Donate
     
   </span>
   
@@ -1252,12 +1287,11 @@
 <p>Tonutils combines these capabilities into a powerful and flexible toolkit for developers, making it easier to build applications on top of the TON ecosystem.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>To <strong>reliably</strong> retrieve blockchain data — such as transaction lists, NFT lists, counts, and similar details — it is <strong>strongly recommended</strong> to use indexer APIs like <a href="https://toncenter.com/">Toncenter</a>, <a href="https://tonapi.io">Tonapi</a>, and similar services.
-For working specifically with Tonapi, you can also use my Python library <a href="https://github.com/nessshon/pytonapi">pytonapi</a>.</p>
+<p>To <strong>reliably</strong> retrieve blockchain data — such as transaction lists, NFT lists, counts, and similar details — it is <strong>strongly recommended</strong> to use indexer APIs like <a href="https://toncenter.com/">Toncenter</a>, <a href="https://tonapi.io">Tonapi</a>, and similar services. For working specifically with Tonapi, you can also use my Python library <a href="https://github.com/nessshon/pytonapi">pytonapi</a>.</p>
 </div>
 <hr />
 <h2 id="contribution">Contribution</h2>
-<p>We welcome your contributions! If you have ideas for improvements or have identified a bug, please create an issue or submit a pull request on <a href="https://github.com/nessshon/tonutils/pulls">GitHub</a>.</p>
+<p>Your contribution is welcome! If you have ideas for improvements or have identified a bug, please create an issue or submit a pull request on <a href="https://github.com/nessshon/tonutils/pulls">GitHub</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The documentation is currently under development. Sections and materials are continuously being updated and expanded. Some parts may contain inaccuracies or incomplete details; please use with caution.</p>
@@ -1317,6 +1351,10 @@ For working specifically with Tonapi, you can also use my Python library <a href
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Created with ❤️ by Ness
+    </div>
   
   
     Made with

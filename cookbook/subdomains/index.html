@@ -72,6 +72,8 @@
   
     
     
+      
+    
     
     
     
@@ -125,8 +127,60 @@
     </div>
     
       
+        <form class="md-header__option" data-md-component="palette">
+  
     
     
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../../ru/cookbook/subdomains/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
     
     
       
@@ -241,26 +295,6 @@
   
   
   
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../ton-connect/wallet-connection/" class="md-tabs__link">
-          
-  
-  
-  Ton Connect
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
     
   
   
@@ -305,13 +339,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../donate/" class="md-tabs__link">
+      <a href="../../sponsors/" class="md-tabs__link">
         
   
   
     
   
-  Donate
+  Sponsors
 
       </a>
     </li>
@@ -324,13 +358,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../sponsors/" class="md-tabs__link">
+      <a href="../../donate/" class="md-tabs__link">
         
   
   
     
   
-  Sponsors
+  Donate
 
       </a>
     </li>
@@ -582,15 +616,8 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
+              
+                
   
   
   
@@ -607,10 +634,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
             
   
   
@@ -623,8 +650,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
             <span class="md-nav__icon md-icon"></span>
             Ton Connect
           </label>
@@ -637,7 +664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ton-connect/wallet-connection/" class="md-nav__link">
+      <a href="../../guide/ton-connect/wallet-connection/" class="md-nav__link">
         
   
   
@@ -660,7 +687,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ton-connect/sending-transactions/" class="md-nav__link">
+      <a href="../../guide/ton-connect/sending-transactions/" class="md-nav__link">
         
   
   
@@ -683,7 +710,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ton-connect/telegram-bot-integration/" class="md-nav__link">
+      <a href="../../guide/ton-connect/telegram-bot-integration/" class="md-nav__link">
         
   
   
@@ -694,6 +721,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -729,10 +764,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
@@ -745,8 +780,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Cookbook
           </label>
@@ -1103,10 +1138,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
@@ -1119,8 +1154,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             How to
           </label>
@@ -1347,12 +1382,12 @@
   
   
     <li class="md-nav__item">
-      <a href="../../donate/" class="md-nav__link">
+      <a href="../../sponsors/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Donate
+    Sponsors
     
   </span>
   
@@ -1369,12 +1404,12 @@
   
   
     <li class="md-nav__item">
-      <a href="../../sponsors/" class="md-nav__link">
+      <a href="../../donate/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Sponsors
+    Donate
     
   </span>
   
@@ -1657,15 +1692,12 @@
   <h1>Minting TON DNS Subdomains</h1>
 
 <h2 id="introduction">Introduction</h2>
-<p>This guide walks you through creating and managing subdomains on the TON blockchain using open-source tools. It covers
-deploying subdomain management contracts, issuing subdomains, and managing DNS records with practical examples.</p>
+<p>This guide walks you through creating and managing <strong>subdomains on the TON blockchain</strong> using open-source tools. It covers deploying subdomain management contracts, issuing subdomains, and managing DNS records with practical examples.</p>
 <h2 id="implementation">Implementation</h2>
-<p>There are two open-source implementations available for managing subdomains on TON, depending on the level of complexity
-and control you need:</p>
+<p>There are two open-source implementations available for managing subdomains on TON, depending on the level of complexity and control you need:</p>
 <h3 id="subdomain-collection">Subdomain Collection</h3>
 <p><a href="https://github.com/nessshon/subdomains-toolbox/tree/main/collection-contracts/admin-mint">GitHub ↗</a></p>
-<p>This is a more advanced solution where each subdomain is represented as an NFT. The owner of the collection is
-responsible for issuing subdomains, while each NFT owner has full control over their subdomain.</p>
+<p>This is a more advanced solution where each subdomain is represented as an NFT. The owner of the collection is responsible for issuing subdomains, while each NFT owner has full control over their subdomain.</p>
 <p><strong>Key Features:</strong></p>
 <ul>
 <li>Subdomains can be transferred or sold</li>
@@ -1674,8 +1706,7 @@ responsible for issuing subdomains, while each NFT owner has full control over t
 </ul>
 <h3 id="subdomain-manager">Subdomain Manager</h3>
 <p><a href="https://github.com/Gusarich/simple-subdomain">GitHub ↗</a></p>
-<p>This is a basic implementation where a single smart contract acts as the centralized subdomain manager. The
-administrator is responsible for issuing subdomains and configuring their DNS records.</p>
+<p>This is a basic implementation where a single smart contract acts as the centralized subdomain manager. The administrator is responsible for issuing subdomains and configuring their DNS records.</p>
 <p><strong>Key Features:</strong></p>
 <ul>
 <li>Suitable for simple use cases</li>
@@ -1683,8 +1714,7 @@ administrator is responsible for issuing subdomains and configuring their DNS re
 <li>Centralized control through one smart contract</li>
 </ul>
 <h2 id="environment-setup">Environment Setup</h2>
-<p>This guide uses <strong>Python</strong> along with the open-source <strong>tonutils</strong> library, which supports both subdomain management
-implementations.</p>
+<p>This guide uses <strong>Python</strong> along with the open-source <strong>tonutils</strong> library, which supports both subdomain management implementations.</p>
 <h3 id="prerequisites">Prerequisites</h3>
 <ul>
 <li><strong>Python 3.10+</strong></li>
@@ -1707,27 +1737,22 @@ implementations.</p>
 </ul>
 <h2 id="subdomain-collection_1">Subdomain Collection</h2>
 <h3 id="metadata-setup">Metadata Setup</h3>
-<p>Before deploying the subdomain collection, you need to launch the metadata API. This service is responsible for
-generating dynamic images and attributes for your subdomain NFTs, making them visually identifiable.</p>
+<p>Before deploying the subdomain collection, you need to launch the metadata API. This service is responsible for generating dynamic images and attributes for your subdomain NFTs, making them visually identifiable.</p>
 <ol>
-<li>
-<p>Clone the repository:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/nessshon/subdomains-toolbox
+<li>Clone the repository:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/nessshon/subdomains-toolbox
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">cd</span><span class="w"> </span>metadata-api
-</code></pre></div></p>
-</li>
-<li>
-<p>Start the API using Docker:<br />
-   The API will be running on port <code>8001</code>. You will need to configure SSL and set up a reverse proxy to expose it
-   securely.
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker-compose<span class="w"> </span>up<span class="w"> </span>-d
-</code></pre></div></p>
-</li>
-<li>
-<p>Test the API:<br />
-   Visit <code>https://your-domain.com/api/ton/example.png</code> in your browser. If set up correctly, you’ll see a generated
-   image for the subdomain <code>example</code>.</p>
-</li>
+</code></pre></div>
+<ol>
+<li>Start the API using Docker:<br />
+   The API will be running on port <code>8001</code>. You will need to configure SSL and set up a reverse proxy to expose it securely.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker-compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<ol>
+<li>Test the API:<br />
+   Visit <code>https://your-domain.com/api/ton/example.png</code> in your browser. If set up correctly, you’ll see a generated image for the subdomain <code>example</code>.</li>
 </ol>
 <h3 id="deploy-the-collection">Deploy the Collection</h3>
 <p>Once the API is running, you can deploy the NFT collection smart contract for your subdomains.</p>
@@ -1830,8 +1855,7 @@ generating dynamic images and attributes for your subdomain NFTs, making them vi
 </ol>
 <h3 id="managing-records">Managing Records</h3>
 <h4 id="setting-records">Setting Records</h4>
-<p>The record-setting mechanism for NFT subdomains is similar to the one used in the <strong>TON DNS Domains</strong> collection. You
-can assign one of the following record types to a subdomain — examples for each are provided below.</p>
+<p>The record-setting mechanism for NFT subdomains is similar to the one used in the <strong>TON DNS Domains</strong> collection. You can assign one of the following record types to a subdomain — examples for each are provided below.</p>
 <details>
   <summary><strong>Set Wallet Record</strong></summary>
 
@@ -2162,8 +2186,7 @@ can assign one of the following record types to a subdomain — examples for eac
 
 <h2 id="subdomain-manager_1">Subdomain Manager</h2>
 <h3 id="deploy-the-manager">Deploy the Manager</h3>
-<p>Below is an example of how to deploy the Subdomain Manager using the tonutils Python library. This script initializes
-the smart contract, links it to the main domain, and sends the necessary transactions from your wallet.</p>
+<p>Below is an example of how to deploy the Subdomain Manager using the tonutils Python library. This script initializes the smart contract, links it to the main domain, and sends the necessary transactions from your wallet.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">import</span> <span class="nn">asyncio</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kn">from</span> <span class="nn">pytoniq_core</span> <span class="kn">import</span> <span class="n">Address</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
@@ -2571,10 +2594,7 @@ the smart contract, links it to the main domain, and sends the necessary transac
 </details>
 
 <h2 id="conclusion">Conclusion</h2>
-<p>TON blockchain offers flexible options for subdomain management, whether you prefer a centralized approach with the
-Subdomain Manager or a decentralized, NFT-based solution with the Subdomain Collection. Both solutions are easy to
-implement and provide powerful tools to manage your subdomains and DNS records efficiently. This guide provides all the
-necessary steps to get started and take control of your subdomains on TON.</p>
+<p>TON blockchain offers flexible options for subdomain management, whether you prefer a centralized approach with the Subdomain Manager or a decentralized, NFT-based solution with the Subdomain Collection. Both solutions are easy to implement and provide powerful tools to manage your subdomains and DNS records efficiently. This guide provides all the necessary steps to get started and take control of your subdomains on TON.</p>
 <h2 id="see-also">See also</h2>
 <ul>
 <li><a href="https://github.com/nessshon/subdomains-toolbox">TON Subdomains Toolbox</a></li>
@@ -2652,6 +2672,10 @@ necessary steps to get started and take control of your subdomains on TON.</p>
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Created with ❤️ by Ness
+    </div>
   
   
     Made with

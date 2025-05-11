@@ -1,6 +1,6 @@
 
 <!doctype html>
-<html lang="en" class="no-js">
+<html lang="ru" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -68,6 +68,8 @@
   
     
     
+      
+    
     
     
     
@@ -88,8 +90,8 @@
       
 
 <header class="md-header" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/." title="Tonutils" class="md-header__button md-logo" aria-label="Tonutils" data-md-component="logo">
+  <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
+    <a href="/ru/" title="Tonutils" class="md-header__button md-logo" aria-label="Tonutils" data-md-component="logo">
       
   <img src="/assets/logo.png" alt="logo">
 
@@ -116,8 +118,60 @@
     </div>
     
       
+        <form class="md-header__option" data-md-component="palette">
+  
     
     
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Выберите язык">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="/how-to/use-func-hash-functions/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="/ru/how-to/use-func-hash-functions/" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
     
     
       
@@ -130,16 +184,16 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <input type="text" class="md-search__input" name="query" aria-label="Поиск" placeholder="Поиск" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
       </label>
-      <nav class="md-search__options" aria-label="Search">
+      <nav class="md-search__options" aria-label="Поиск">
         
-        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+        <button type="reset" class="md-search__icon md-icon" title="Очистить" aria-label="Очистить" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
@@ -152,7 +206,7 @@
       <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            Initializing search
+            Инициализация поиска
           </div>
           <ol class="md-search-result__list" role="presentation"></ol>
         </div>
@@ -164,7 +218,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/nessshon/tonutils" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/nessshon/tonutils" title="Перейти к репозиторию" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -185,7 +239,7 @@
         
           
             
-<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+<nav class="md-tabs" aria-label="Вкладки" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
       
@@ -195,13 +249,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="/." class="md-tabs__link">
+      <a href="/ru/" class="md-tabs__link">
         
   
   
     
   
-  Overview
+  Обзор
 
       </a>
     </li>
@@ -216,11 +270,11 @@
     
     
       <li class="md-tabs__item">
-        <a href="/guide/installation-and-initialization/" class="md-tabs__link">
+        <a href="/ru/guide/installation-and-initialization/" class="md-tabs__link">
           
   
   
-  Guide
+  Руководство
 
         </a>
       </li>
@@ -236,11 +290,11 @@
     
     
       <li class="md-tabs__item">
-        <a href="/ton-connect/wallet-connection/" class="md-tabs__link">
+        <a href="/ru/cookbook/vanity/" class="md-tabs__link">
           
   
   
-  Ton Connect
+  Примеры
 
         </a>
       </li>
@@ -256,31 +310,11 @@
     
     
       <li class="md-tabs__item">
-        <a href="/cookbook/vanity/" class="md-tabs__link">
+        <a href="/ru/how-to/get-contract-information/" class="md-tabs__link">
           
   
   
-  Cookbook
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="/how-to/get-contract-information/" class="md-tabs__link">
-          
-  
-  
-  How to
+  Как
 
         </a>
       </li>
@@ -294,13 +328,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="/donate/" class="md-tabs__link">
+      <a href="/ru/sponsors/" class="md-tabs__link">
         
   
   
     
   
-  Donate
+  Спонсоры
 
       </a>
     </li>
@@ -313,13 +347,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="/sponsors/" class="md-tabs__link">
+      <a href="/ru/donate/" class="md-tabs__link">
         
   
   
     
   
-  Sponsors
+  Поддержать
 
       </a>
     </li>
@@ -346,9 +380,9 @@
   
 
 
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Навигация" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/." title="Tonutils" class="md-nav__button md-logo" aria-label="Tonutils" data-md-component="logo">
+    <a href="/ru/" title="Tonutils" class="md-nav__button md-logo" aria-label="Tonutils" data-md-component="logo">
       
   <img src="/assets/logo.png" alt="logo">
 
@@ -357,7 +391,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nessshon/tonutils" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/nessshon/tonutils" title="Перейти к репозиторию" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -377,12 +411,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/." class="md-nav__link">
+      <a href="/ru/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Overview
+    Обзор
     
   </span>
   
@@ -418,7 +452,7 @@
   
   
   <span class="md-ellipsis">
-    Guide
+    Руководство
     
   </span>
   
@@ -429,7 +463,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Guide
+            Руководство
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -440,12 +474,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/guide/installation-and-initialization/" class="md-nav__link">
+      <a href="/ru/guide/installation-and-initialization/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Installation and Initialization
+    Установка и инициализация
     
   </span>
   
@@ -463,12 +497,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/guide/getting-testnet-assets/" class="md-nav__link">
+      <a href="/ru/guide/getting-testnet-assets/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Getting testnet assets
+    Получить тестовые токены
     
   </span>
   
@@ -486,12 +520,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/guide/wallet-operations/" class="md-nav__link">
+      <a href="/ru/guide/wallet-operations/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Wallet Operations
+    Операции с кошельком
     
   </span>
   
@@ -509,12 +543,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/guide/jetton-operations/" class="md-nav__link">
+      <a href="/ru/guide/jetton-operations/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Jetton Operations
+    Операции с Jetton
     
   </span>
   
@@ -532,12 +566,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/guide/nft-operations/" class="md-nav__link">
+      <a href="/ru/guide/nft-operations/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    NFT Operations
+    Операции с NFT
     
   </span>
   
@@ -555,17 +589,135 @@
   
   
     <li class="md-nav__item">
-      <a href="/guide/dns-operations/" class="md-nav__link">
+      <a href="/ru/guide/dns-operations/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    DNS Operations
+    Операции с DNS
     
   </span>
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Ton Connect
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            Ton Connect
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="/ru/guide/ton-connect/wallet-connection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Подключение кошелька
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="/ru/guide/ton-connect/sending-transactions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Отправка транзакций
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="/ru/guide/ton-connect/telegram-bot-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Интеграция с Telegram-ботом
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -604,7 +756,7 @@
   
   
   <span class="md-ellipsis">
-    Ton Connect
+    Примеры
     
   </span>
   
@@ -615,7 +767,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            Ton Connect
+            Примеры
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -626,12 +778,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/ton-connect/wallet-connection/" class="md-nav__link">
+      <a href="/ru/cookbook/vanity/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Wallet Connection
+    Создание красивого адреса
     
   </span>
   
@@ -649,12 +801,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/ton-connect/sending-transactions/" class="md-nav__link">
+      <a href="/ru/cookbook/cnft/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Sending Transactions
+    Создание сжатых NFT
     
   </span>
   
@@ -672,12 +824,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/ton-connect/telegram-bot-integration/" class="md-nav__link">
+      <a href="/ru/cookbook/subdomains/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Telegram Bot Integration
+    Создание поддоменов TON
     
   </span>
   
@@ -721,7 +873,7 @@
   
   
   <span class="md-ellipsis">
-    Cookbook
+    Как
     
   </span>
   
@@ -732,7 +884,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            Cookbook
+            Как
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -743,12 +895,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/cookbook/vanity/" class="md-nav__link">
+      <a href="/ru/how-to/get-contract-information/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Creating Vanity Address
+    Получить информацию о контракте
     
   </span>
   
@@ -766,12 +918,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/cookbook/cnft/" class="md-nav__link">
+      <a href="/ru/how-to/get-contract-code-and-data/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Creating Compressed NFTs
+    Получить код и данные контракта
     
   </span>
   
@@ -789,83 +941,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/cookbook/subdomains/" class="md-nav__link">
+      <a href="/ru/how-to/get-nft-item-address/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Minting TON DNS Subdomains
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    How to
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            How to
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="/how-to/get-contract-information/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Get Contract information
+    Получить адрес NFT
     
   </span>
   
@@ -883,12 +964,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/how-to/get-contract-code-and-data/" class="md-nav__link">
+      <a href="/ru/how-to/get-jetton-wallet-address/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Get Contract code and data
+    Получить адрес Jetton кошелька
     
   </span>
   
@@ -906,12 +987,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/how-to/get-nft-item-address/" class="md-nav__link">
+      <a href="/ru/how-to/create-multiple-wallets/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Get NFT Item address
+    Создать несколько кошельков
     
   </span>
   
@@ -929,12 +1010,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/how-to/get-jetton-wallet-address/" class="md-nav__link">
+      <a href="/ru/how-to/send-encrypted-message/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Get Jetton Wallet address
+    Отправить зашифрованное сообщения
     
   </span>
   
@@ -952,12 +1033,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/how-to/create-multiple-wallets/" class="md-nav__link">
+      <a href="/ru/how-to/send-gasless-transaction/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Create Multiple Wallets
+    Отправить транзакцию без оплаты газа
     
   </span>
   
@@ -975,12 +1056,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/how-to/send-encrypted-message/" class="md-nav__link">
+      <a href="/ru/how-to/send-claim-mintless-jetton/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Send Encrypted message
+    Отправить/Запросить Mintless jetton
     
   </span>
   
@@ -998,58 +1079,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/how-to/send-gasless-transaction/" class="md-nav__link">
+      <a href="/ru/how-to/use-func-hash-functions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Send Gasless transaction
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="/how-to/send-claim-mintless-jetton/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Send/Claim Mintless jetton
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="/how-to/use-func-hash-functions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Use FunC hash functions
+    Использовать хеш-функций FunC
     
   </span>
   
@@ -1074,12 +1109,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/donate/" class="md-nav__link">
+      <a href="/ru/sponsors/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Donate
+    Спонсоры
     
   </span>
   
@@ -1096,12 +1131,12 @@
   
   
     <li class="md-nav__item">
-      <a href="/sponsors/" class="md-nav__link">
+      <a href="/ru/donate/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Sponsors
+    Поддержать
     
   </span>
   
@@ -1124,7 +1159,7 @@
                   <div class="md-sidebar__inner">
                     
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+<nav class="md-nav md-nav--secondary" aria-label="Содержание">
   
   
   
@@ -1159,6 +1194,10 @@
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Created with ❤️ by Ness
+    </div>
   
   
     Made with
@@ -1206,7 +1245,7 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "/", "features": ["content.code.copy", "content.action.view", "search.suggest", "search.highlight", "navigation.tabs", "navigation.footer", "content.tabs.link"], "search": "/assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "/", "features": ["content.code.copy", "content.action.view", "search.suggest", "search.highlight", "navigation.tabs", "navigation.footer", "content.tabs.link"], "search": "/assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": null}</script>
     
     
       <script src="/assets/javascripts/bundle.c8b220af.min.js"></script>
