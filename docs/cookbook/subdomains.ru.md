@@ -1,88 +1,88 @@
-## Introduction
+## Введение
 
-This guide walks you through creating and managing **subdomains on the TON blockchain** using open-source tools. It covers deploying subdomain management contracts, issuing subdomains, and managing DNS records with practical examples.
+Это руководство проведёт вас через процесс создания и управления **поддоменами в блокчейне TON** с использованием инструментов с открытым исходным кодом. Оно охватывает развертывание контрактов управления поддоменами, выпуск поддоменов и управление DNS-записями с практическими примерами.
 
-## Implementation
+## Реализация
 
-There are two open-source implementations available for managing subdomains on TON, depending on the level of complexity and control you need:
+Существует две реализации с открытым исходным кодом для управления поддоменами в TON, выбор зависит от требуемого уровня сложности и контроля:
 
-### Subdomain Collection
+### Коллекция поддоменов
 
 [GitHub ↗](https://github.com/nessshon/subdomains-toolbox/tree/main/collection-contracts/admin-mint)
 
-This is a more advanced solution where each subdomain is represented as an NFT. The owner of the collection is responsible for issuing subdomains, while each NFT owner has full control over their subdomain.
+Это более продвинутое решение, в котором каждый поддомен представлен в виде NFT. Владелец коллекции отвечает за выпуск поддоменов, а каждый владелец NFT получает полный контроль над своим поддоменом.
 
-**Key Features:**
+**Основные особенности:**
 
-- Subdomains can be transferred or sold
-- Decentralized record management — each subdomain has its own smart contract
-- Requires additional infrastructure (e.g., metadata API)
+* Поддомены можно передавать и продавать
+* Децентрализованное управление записями — у каждого поддомена свой смарт-контракт
+* Требует дополнительной инфраструктуры (например, API для метаданных)
 
-### Subdomain Manager
+### Менеджер поддоменов
 
 [GitHub ↗](https://github.com/Gusarich/simple-subdomain)
 
-This is a basic implementation where a single smart contract acts as the centralized subdomain manager. The administrator is responsible for issuing subdomains and configuring their DNS records.
+Это базовая реализация, где один смарт-контракт выполняет роль централизованного менеджера поддоменов. Администратор отвечает за выпуск поддоменов и настройку их DNS-записей.
 
-**Key Features:**
+**Основные особенности:**
 
-- Suitable for simple use cases
-- Quick and easy setup
-- Centralized control through one smart contract
+* Подходит для простых сценариев
+* Быстрая и лёгкая настройка
+* Централизованное управление через один смарт-контракт
 
-## Environment Setup
+## Настройка окружения
 
-This guide uses **Python** along with the open-source **tonutils** library, which supports both subdomain management implementations.
+В этом руководстве используется **Python** совместно с библиотекой с открытым исходным кодом **tonutils**, которая поддерживает обе реализации управления поддоменами.
 
-### Prerequisites
+### Необходимые компоненты
 
 * **Python 3.10+**
-* A registered **.ton domain**:
+* Зарегистрированный **домен .ton**:  
     * Mainnet: [dns.ton.org](https://dns.ton.org)
     * Testnet: [dns.ton.org?testnet=true](https://dns.ton.org?testnet=true)
 
-### Install Dependencies
+### Установка зависимостей
 
-Install the required Python library:
+Установите необходимую Python-библиотеку:
 
 ```bash
 pip install tonutils
 ```
 
-### Additional Requirements for Subdomain Collection
+### Дополнительные требования для коллекции поддоменов
 
-If you’re using the Subdomain Collection approach, you’ll also need:
+Если вы используете подход с коллекцией поддоменов, вам также понадобятся:
 
-- A server to host the **metadata API**
-- A **domain name** pointing to that server for metadata access
-- **Docker** and **Docker Compose** for easy deployment of the API
+* Сервер для размещения **API метаданных**
+* **Доменное имя**, указывающее на этот сервер, для доступа к метаданным
+* Установленные **Docker** и **Docker Compose** для развертывания API
 
-## Subdomain Collection
+## Коллекция поддоменов
 
-### Metadata Setup
+### Настройка метаданных
 
-Before deploying the subdomain collection, you need to launch the metadata API. This service is responsible for generating dynamic images and attributes for your subdomain NFTs, making them visually identifiable.
+Перед развертыванием коллекции поддоменов необходимо запустить API метаданных. Этот сервис отвечает за генерацию динамических изображений и атрибутов для ваших NFT-поддоменов, делая их визуально распознаваемыми.
 
-1. Clone the repository:
+1. Клонируйте репозиторий:  
 
-   ```bash
-   git clone https://github.com/nessshon/subdomains-toolbox
-   cd metadata-api
-   ```
+     ```bash
+     git clone https://github.com/nessshon/subdomains-toolbox
+     cd metadata-api
+     ```
 
-2. Start the API using Docker:  
-   The API will be running on port `8001`. You will need to configure SSL and set up a reverse proxy to expose it securely.
+2. Запустите API с помощью Docker:  
+   API будет работать на порту `8001`. Необходимо настроить SSL и обратный прокси для безопасного доступа.
 
-   ```bash
-   docker-compose up -d
-   ```
+     ```bash
+     docker-compose up -d
+     ```
 
-3. Test the API:  
-   Visit `https://your-domain.com/api/ton/example.png` in your browser. If set up correctly, you’ll see a generated image for the subdomain `example`.
+3. Проверьте работу API:  
+   Откройте в браузере `https://your-domain.com/api/ton/example.png`. При корректной настройке вы увидите сгенерированное изображение для поддомена `example`.
 
-### Deploy the Collection
+### Развертывание коллекции
 
-Once the API is running, you can deploy the NFT collection smart contract for your subdomains.
+После запуска API вы можете развернуть смарт-контракт NFT коллекции для ваших поддоменов.
 
 ```python
 import asyncio
@@ -174,24 +174,24 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-### Minting Subdomains
+### Выпуск поддоменов
 
-To mint a new subdomain as an NFT:
+Чтобы выпустить новый поддомен в виде NFT:
 
-1. Open your TON wallet (e.g., Tonkeeper).
-2. Send **0.1 TON** to the Subdomain Collection contract address (printed during deployment).
-3. In the transaction comment field, enter the desired subdomain name (e.g., `alice` for `alice.ghost.ton`).
-4. Ensure the subdomain name is valid (alphanumeric, no special characters) and not already minted.
-5. After the transaction is confirmed, the subdomain NFT will be sent to your wallet.
+1. Откройте свой TON-кошелёк (например, Tonkeeper).
+2. Отправьте **0.1 TON** на адрес контракта коллекции поддоменов (он отображается при развертывании).
+3. В поле комментария к транзакции укажите желаемое имя поддомена (например, `alice` для `alice.ghost.ton`).
+4. Убедитесь, что имя поддомена корректно (только латинские буквы и цифры, без специальных символов) и ещё не занято.
+5. После подтверждения транзакции NFT поддомен будет отправлен в ваш кошелёк.
 
-### Managing Records
+### Управление записями
 
-#### Setting Records
+#### Установка записей
 
-The record-setting mechanism for NFT subdomains is similar to the one used in the **TON DNS Domains** collection. You can assign one of the following record types to a subdomain — examples for each are provided below.
+Механизм установки записей для NFT поддоменов аналогичен тому, что используется в коллекции **TON DNS Domains**. Вы можете назначить поддомену одну из следующих типов записей — ниже приведены примеры для каждого случая.
 
 <details>
-  <summary><strong>Set Wallet Record</strong></summary>
+  <summary><strong>Установить Wallet запись</strong></summary>
 
 ```python
 import asyncio
@@ -235,7 +235,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Set Site Record</strong></summary>
+  <summary><strong>Установить Site запись</strong></summary>
 
 ```python
 import asyncio
@@ -278,7 +278,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Set TON Storage Record</strong></summary>
+  <summary><strong>Установить Storage запись</strong></summary>
 
 ```python
 import asyncio
@@ -321,7 +321,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Set Next Resolver Record</strong></summary>
+  <summary><strong>Установить Next Resolver запись</strong></summary>
 
 ```python
 import asyncio
@@ -364,12 +364,12 @@ if __name__ == "__main__":
 
 </details>
 
-#### Deleting Records
+#### Удаление записей
 
-Similarly, you can delete existing records. Below are examples for each type.
+Аналогично, вы можете удалять уже существующие записи. Ниже приведены примеры для каждого типа.
 
 <details>
-  <summary><strong>Delete Wallet Record</strong></summary>
+  <summary><strong>Удалить Wallet запись</strong></summary>
 
 ```python
 import asyncio
@@ -409,7 +409,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Delete Site Record</strong></summary>
+  <summary><strong>Удалить Site запись</strong></summary>
 
 ```python
 import asyncio
@@ -449,7 +449,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Delete TON Storage Record</strong></summary>
+  <summary><strong>Удалить Storage запись</strong></summary>
 
 ```python
 import asyncio
@@ -489,7 +489,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Delete Next Resolver Record</strong></summary>
+  <summary><strong>Удалить Next Resolver запись</strong></summary>
 
 ```python
 import asyncio
@@ -528,11 +528,11 @@ if __name__ == "__main__":
 
 </details>
 
-## Subdomain Manager
+## Менеджер поддоменов
 
-### Deploy the Manager
+### Развёртывание менеджера
 
-Below is an example of how to deploy the Subdomain Manager using the tonutils Python library. This script initializes the smart contract, links it to the main domain, and sends the necessary transactions from your wallet.
+Ниже приведён пример того, как развернуть Менеджер поддоменов с помощью библиотеки tonutils на Python. Этот скрипт инициализирует смарт-контракт, привязывает его к основному домену и отправляет необходимые транзакции от вашего кошелька.
 
 ```python
 import asyncio
@@ -588,12 +588,12 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-### Setting Records
+### Установка записей
 
-You can set one of the following record types for a subdomain. Below are examples for each.
+Вы можете установить один из следующих типов записей для поддомена. Ниже приведены примеры для каждого случая.
 
 <details>
-  <summary><strong>Set Wallet Record</strong></summary>
+  <summary><strong>Установить Wallet запись</strong></summary>
 
 ```python
 import asyncio
@@ -640,7 +640,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Set Site Record</strong></summary>
+  <summary><strong>Установить Site запись</strong></summary>
 
 ```python
 import asyncio
@@ -686,7 +686,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Set TON Storage Record</strong></summary>
+  <summary><strong>Установить Storage запись</strong></summary>
 
 ```python
 import asyncio
@@ -732,7 +732,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Set Next Resolver Record</strong></summary>
+  <summary><strong>Установить Next Resolver запись</strong></summary>
 
 ```python
 import asyncio
@@ -778,12 +778,12 @@ if __name__ == "__main__":
 
 </details>
 
-### Deleting Records
+### Удаление записей
 
-Similarly, you can delete existing records. Below are examples for each type.
+Аналогично, вы можете удалять существующие записи. Ниже приведены примеры для каждого типа.
 
 <details>
-  <summary>Delete Wallet Record</summary>
+  <summary>Удалить Wallet запись</summary>
 
 ```python
 import asyncio
@@ -826,7 +826,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Delete Site Record</strong></summary>
+  <summary><strong>Удалить Site запись</strong></summary>
 
 ```python
 import asyncio
@@ -869,7 +869,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Delete TON Storage Record</strong></summary>
+  <summary><strong>Удалить Storage запись</strong></summary>
 
 ```python
 import asyncio
@@ -912,7 +912,7 @@ if __name__ == "__main__":
 </details>
 
 <details>
-  <summary><strong>Delete Next Resolver Record</strong></summary>
+  <summary><strong>Удалить Next Resolver запись</strong></summary>
 
 ```python
 import asyncio
@@ -954,13 +954,13 @@ if __name__ == "__main__":
 
 </details>
 
-Conclusion
+Заключение
 ----------
 
-TON blockchain offers flexible options for subdomain management, whether you prefer a centralized approach with the Subdomain Manager or a decentralized, NFT-based solution with the Subdomain Collection. Both solutions are easy to implement and provide powerful tools to manage your subdomains and DNS records efficiently. This guide provides all the necessary steps to get started and take control of your subdomains on TON.
+Блокчейн TON предлагает гибкие варианты управления поддоменами — будь то централизованный подход с использованием Менеджера поддоменов или децентрализованное решение на основе NFT с Коллекцией поддоменов. Обе схемы легко реализуются и предоставляют мощные инструменты для эффективного управления поддоменами и DNS-записями. Это руководство включает все необходимые шаги для начала работы и полного контроля над вашими поддоменами в TON.
 
-See also
---------
+См. Также
+---------
 
 * [TON Subdomains Toolbox](https://github.com/nessshon/subdomains-toolbox)
 * [Subdomain Manager Contract](https://github.com/Gusarich/simple-subdomain)

@@ -1,4 +1,3 @@
-
 To retrieve the code and data of a contract, you can use TON explorers such as [tonviewer.com](https://tonviewer.com), [tonscan.org](https://tonscan.org), and others, or use the `get_raw_account` method programmatically.
 
 ---
@@ -37,4 +36,4 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-[See RawAccount fields overview](get-contract-information.md/#rawaccount-fields-overview)
+[See RawAccount fields overview](get-contract-information.md/#_2)

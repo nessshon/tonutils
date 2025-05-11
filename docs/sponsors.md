@@ -14,20 +14,15 @@ I sincerely thank everyone who supports this project. ❤️
 
 ---
 
-### Individual Supporters
+### Special Thanks
 
 - [Igroman787](https://github.com/Igroman787)  
-  Special thanks for the support.
-
 - [Roman Inozemtsev](https://github.com/inozemtsev-roman)  
-  Thank you for the valuable support and engagement.
-
 - [Cron](https://tonviewer.com/EQCDee0do0lD1Nhwwz1CJj4895Cv_EUM2vKCpLzHzqSakTIg)  
-  Thank you for your support.
 
 ---
 
-### All Supporters
+### Supporters
 
 Thank you to everyone who has supported this project at any time!
 
@@ -38,5 +33,5 @@ Thank you to everyone who has supported this project at any time!
 
 ### Want to Support?
 
-If you want to support my work, [go to the Donate page](donate.md) or make a direct contribution!  
+If you want to support my work, [go to the Donate page](donate.md)!  
 Your support helps the project grow and improve.

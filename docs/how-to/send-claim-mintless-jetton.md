@@ -1,5 +1,4 @@
-This guide provides examples to **claim** or **send** mintless Jettons using `TonapiClient`.
-Mintless Jettons require a custom payload and sometimes a `state_init` during the first claim.
+This example contains information on how to **claim** or **send** mintless Jettons using `TonapiClient`.
 
 !!! note
     You need an API key from [tonconsole.com](https://tonconsole.com).

@@ -1,10 +1,10 @@
-There are several ways to obtain the address of a Jetton Wallet.
+Существует несколько способов получить адрес Jetton-кошелька.
 
 ---
 
-### Standard Jetton
+### Стандартный Jetton
 
-#### Using get-method
+#### Через get-метод
 
 ```python
 from tonutils.client import ToncenterV3Client
@@ -30,10 +30,10 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-#### Calculating locally
+#### Локальный расчёт
 
 !!! note
-    Prepare the Jetton Wallet contract code by following the instructions in [Get Contract code and data](get-contract-code-and-data.md).
+    Подготовьте код контракта Jetton Wallet, следуя инструкции из раздела [Получение кода и данных контракта](get-contract-code-and-data.md).
 
 ```python
 from tonutils.jetton import JettonMasterStandard
@@ -60,9 +60,9 @@ if __name__ == "__main__":
 
 ### Stablecoin Jetton
 
-e.g., USD₮, NOT
+например, USD₮, NOT
 
-#### Using get-method
+#### Через get-метод
 
 ```python
 from tonutils.client import ToncenterV3Client
@@ -88,10 +88,10 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-#### Calculating locally
+#### Локальный расчёт
 
 !!! note
-    Prepare the Jetton Wallet contract code by following the instructions in [Get Contract code and data](get-contract-code-and-data.md).
+    Подготовьте код контракта Jetton Wallet, следуя инструкции из раздела [Получение кода и данных контракта](get-contract-code-and-data.md).
 
 ```python
 from tonutils.jetton import JettonMasterStablecoin

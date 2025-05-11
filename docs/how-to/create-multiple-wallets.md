@@ -1,4 +1,4 @@
-This guide shows how to generate **multiple wallet addresses** from a single mnemonic by changing the `subwallet_id`.
+This example shows how to generate **multiple wallet addresses** from a single mnemonic by changing the `subwallet_id`.
 Each `subwallet_id` produces a unique address under the same seed phrase.
 
 ---

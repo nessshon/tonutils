@@ -1,10 +1,10 @@
-There are several ways to obtain the address of an NFT Item.
+Существует несколько способов получить адрес NFT-элемента.
 
 ---
 
-### Standard collections
+### Стандартные коллекции
 
-#### Using get-method
+#### Через get-метод
 
 ```python
 from tonutils.client import ToncenterV3Client
@@ -30,10 +30,10 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-#### Calculating locally
+#### Локальный расчёт
 
 !!! note
-    Prepare the NFT Item contract code by following the instructions in [Get Contract code and data](get-contract-code-and-data.md).
+    Подготовьте код контракта NFT Item, следуя инструкции из раздела [Получение кода и данных контракта](get-contract-code-and-data.md).
 
 ```python
 from tonutils.nft import Collection
@@ -58,12 +58,12 @@ if __name__ == "__main__":
 
 ---
 
-### TON DNS Domains collection
+### Коллекция TON DNS Domains
 
 !!! note
-    The index is computed as `slice_hash(name)`. See [Use FunC hash functions](use-func-hash-functions.md/#slice_hash) for details.
+    Индекс рассчитывается как `slice_hash(name)`. Подробности смотрите в разделе [Использование хеш-функций FunC](use-func-hash-functions.md/#slice_hash).
 
-#### Using get-method
+#### Через get-метод
 
 ```python
 from pytoniq_core import begin_cell
@@ -97,9 +97,9 @@ if __name__ == "__main__":
 ### Telegram Gifts / Anonymous Telegram Numbers
 
 !!! note
-    The index is computed as `string_hash(telemint_token_name)`. See [Use FunC hash functions](use-func-hash-functions.md/#string_hash) for details.
+    Индекс рассчитывается как `string_hash(telemint_token_name)`. Подробнее в разделе [Использование хеш-функций FunC](use-func-hash-functions.md/#string_hash).
 
-#### Using get-method
+#### Через get-метод
 
 ```python
 from tonutils.client import ToncenterV3Client

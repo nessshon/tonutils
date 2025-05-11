@@ -1,1 +1,0 @@
---8<-- "examples/tonconnect/wallet_connection/README.md"

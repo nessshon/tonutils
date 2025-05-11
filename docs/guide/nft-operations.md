@@ -124,3 +124,23 @@ It covers **Standard**, **Soulbound**, **Editable**, and **Editable Onchain** co
 ```python
 --8<-- "examples/nft/return_collection_balance.py"
 ```
+
+### Listing on Getgems.io
+
+#### List NFT for Sale
+
+```python
+--8<-- "examples/nft/marketplace/getgems/put_on_sale.py"
+```
+
+#### Change NFT Price
+
+```python
+--8<-- "examples/nft/marketplace/getgems/change_price.py"
+```
+
+#### Cancel NFT Sale
+
+```python
+--8<-- "examples/nft/marketplace/getgems/cancel_sale.py"
+```

@@ -25,14 +25,13 @@
 Tonutils combines these capabilities into a powerful and flexible toolkit for developers, making it easier to build applications on top of the TON ecosystem.
 
 !!! note
-    To **reliably** retrieve blockchain data — such as transaction lists, NFT lists, counts, and similar details — it is **strongly recommended** to use indexer APIs like [Toncenter](https://toncenter.com/), [Tonapi](https://tonapi.io), and similar services.
-    For working specifically with Tonapi, you can also use my Python library [pytonapi](https://github.com/nessshon/pytonapi).
+    To **reliably** retrieve blockchain data — such as transaction lists, NFT lists, counts, and similar details — it is **strongly recommended** to use indexer APIs like [Toncenter](https://toncenter.com/), [Tonapi](https://tonapi.io), and similar services. For working specifically with Tonapi, you can also use my Python library [pytonapi](https://github.com/nessshon/pytonapi).
 
 ---
 
 ## Contribution
 
-We welcome your contributions! If you have ideas for improvements or have identified a bug, please create an issue or submit a pull request on [GitHub](https://github.com/nessshon/tonutils/pulls).
+Your contribution is welcome! If you have ideas for improvements or have identified a bug, please create an issue or submit a pull request on [GitHub](https://github.com/nessshon/tonutils/pulls).
 
 !!! note
     The documentation is currently under development. Sections and materials are continuously being updated and expanded. Some parts may contain inaccuracies or incomplete details; please use with caution.

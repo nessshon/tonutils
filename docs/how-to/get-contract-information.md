@@ -31,27 +31,27 @@ if __name__ == "__main__":
 
 ### `RawAccount` fields overview
 
-- **balance** → integer (in nanoTON)  
+* **balance** → integer (in nanoTON)  
   Current balance of the contract.
 
-- **status** → string  
+* **status** → string  
   Contract status, one of:
-    - `active` → contract exists and is active
-    - `nonexist` → contract does not exist
-    - `frozen` → contract is frozen
-    - `uninit` → contract exists but is not initialized
+    * `active` → contract exists and is active
+    * `nonexist` → contract does not exist
+    * `frozen` → contract is frozen
+    * `uninit` → contract exists but is not initialized
 
-- **code** → `Cell` (optional)  
+* **code** → `Cell` (optional)  
   The contract’s executable code (if present).
 
-- **data** → `Cell` (optional)  
+* **data** → `Cell` (optional)  
   The contract’s persistent data (if present).
 
-- **last_transaction_lt** → integer (optional)  
+* **last_transaction_lt** → integer (optional)  
   Logical time (LT) of the most recent transaction.
 
-- **last_transaction_hash** → string (optional)  
+* **last_transaction_hash** → string (optional)  
   Hash of the most recent transaction.
 
-- **state_init** → `StateInit` (optional)  
+* **state_init** → `StateInit` (optional)  
   Combined object representing the full contract state if both code and data are available.

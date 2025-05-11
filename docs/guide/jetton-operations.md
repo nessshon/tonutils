@@ -1,5 +1,5 @@
 This section provides a complete guide to working with Jettons using the `tonutils` library.
-It covers operations for both **Stablecoin Jettons** and **Standard Jettons**, including deployment, minting, burning, administration, and swaps through decentralized exchanges like **STON.fi** and **DeDust.io**.
+It covers operations for both **Stablecoin Jettons** (by Notcoin) and **Standard Jettons**, including deployment, minting, burning, administration, and swaps through decentralized exchanges like **STON.fi** and **DeDust.io**.
 
 ---
 
@@ -51,13 +51,13 @@ It covers operations for both **Stablecoin Jettons** and **Standard Jettons**, i
 
 ## Standard Jetton
 
-### Deploy Jetton Master Onchain
+### Deploy Jetton Master (onchain)
 
 ```python
 --8<-- "examples/jetton/standard/deploy_master_onchain.py"
 ```
 
-### Deploy Jetton Master Offchain
+### Deploy Jetton Master (offchain)
 
 ```python
 --8<-- "examples/jetton/standard/deploy_master_offchain.py"

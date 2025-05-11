@@ -1,1 +1,0 @@
---8<-- "examples/tonconnect/telegram_bot_integration/README.md"

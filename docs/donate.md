@@ -1,5 +1,3 @@
-# Donate
-
 Thank you for considering supporting my work!  
 Your contributions help me continue developing and improving this project. ❤️
 
