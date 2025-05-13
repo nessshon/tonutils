@@ -62,12 +62,17 @@ class Collection(Contract):
             nft_item_code: str,
             collection_address: Union[Address, str],
             index_len: int = 64,
+            is_telemint_token: bool = False,
     ) -> Address:
         if isinstance(collection_address, Address):
             collection_address = collection_address.to_str()
 
         code = Cell.one_from_boc(nft_item_code)
-        data = begin_cell().store_uint(index, index_len).store_address(collection_address).end_cell()
+        if is_telemint_token:
+            config = begin_cell().store_uint(index, index_len).store_address(collection_address).end_cell()
+            data = begin_cell().store_ref(config).store_maybe_ref(None).end_cell()
+        else:
+            data = begin_cell().store_uint(index, index_len).store_address(collection_address).end_cell()
         state_init = StateInit(code=code, data=data)
 
         return Address((0, state_init.serialize().hash))
