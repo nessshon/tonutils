@@ -91,7 +91,7 @@ class WalletV5R1(Wallet):
     def create_signed_internal_msg(self, messages: List[WalletMessage], seqno: int, **kwargs) -> Cell:
         return self.raw_create_transfer_msg(
             private_key=self.private_key,
-            op_code=SIGNED_ITERNAL_OPCODE,
+            op_code=SIGNED_INTERNAL_OPCODE,
             messages=messages,
             seqno=seqno,
             **kwargs,
