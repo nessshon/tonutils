@@ -76,7 +76,7 @@ async def main() -> None:
     client = ToncenterV3Client()
     domain_name = "temp"
     domain_index = slice_hash(begin_cell().store_string(domain_name))
-    collection_address = "EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz"
+    collection_address = "EQ..."
 
     nft_address = await Collection.get_nft_address_by_index(
         client,
@@ -90,6 +90,36 @@ if __name__ == "__main__":
     import asyncio
 
     asyncio.run(main())
+```
+
+#### Локальный расчёт
+
+!!! note
+    Подготовьте код контракта NFT Item, следуя инструкции из раздела [Получение кода и данных контракта](get-contract-code-and-data.md).
+
+```python
+from pytoniq_core import begin_cell
+from tonutils.nft import Collection
+from tonutils.utils import slice_hash
+
+
+def main() -> None:
+    domain_name = "temp"
+    domain_index = slice_hash(begin_cell().store_string(domain_name))
+    nft_item_code = "..."
+    collection_address = "EQ..."
+
+    nft_address = Collection.calculate_nft_item_address(
+        domain_index,
+        nft_item_code,
+        collection_address,
+        index_len=256,
+    )
+    print(nft_address.to_str())
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 ---
@@ -109,9 +139,9 @@ from tonutils.utils import string_hash
 
 async def main() -> None:
     client = ToncenterV3Client()
-    token_name = "8888888"
-    token_index = string_hash(token_name)
-    collection_address = "EQAOQdwdw8kGftJCSFgOErM1mBjYPe4DBPq8-AhF6vr9si5N"
+    telemint_token_name = "8888888"
+    token_index = string_hash(telemint_token_name)
+    collection_address = "EQ..."
 
     nft_address = await Collection.get_nft_address_by_index(
         client,
@@ -125,4 +155,34 @@ if __name__ == "__main__":
     import asyncio
 
     asyncio.run(main())
+```
+
+#### Локальный расчёт
+
+!!! note
+    Подготовьте код контракта NFT Item, следуя инструкции из раздела [Получение кода и данных контракта](get-contract-code-and-data.md).
+
+```python
+from tonutils.nft import Collection
+from tonutils.utils import string_hash
+
+
+def main() -> None:
+    telemint_token_name = "8888888"
+    token_index = string_hash(telemint_token_name)
+    nft_item_code = "..."
+    collection_address = "EQ..."
+
+    nft_address = Collection.calculate_nft_item_address(
+        token_index,
+        nft_item_code,
+        collection_address,
+        index_len=256,
+        is_telemint_token=True,
+    )
+    print(nft_address.to_str())
+
+
+if __name__ == "__main__":
+    main()
 ```
