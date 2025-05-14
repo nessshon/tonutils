@@ -1,5 +1,6 @@
 # Core dependencies
 aiohttp~=3.10.11
+aiolimiter~=1.2.1
 cachetools~=5.5.0
 pytoniq-core~=0.1.36
 pycryptodomex~=3.20.0
