@@ -53,6 +53,9 @@ Found: EQC7PA9iWnUVWv001Drj3vTu-pmAkTc30OarHy5iDJ1uNESS salt: 7c9398f0999a96fe54
 
 ## Красивый адрес кошелька
 
+!!! note
+    Сгенерированные с помощью данного инструмента **мнемоническая фраза** и **ID кошелька** подходят только для `WalletV3R2`.
+
 Чтобы создать **красивый адрес кошелька** с использованием ускорения на GPU, выполните следующие шаги.
 
 ### Проверьте требования
@@ -116,7 +119,7 @@ Found: EQC7PA9iWnUVWv001Drj3vTu-pmAkTc30OarHy5iDJ1uNESS salt: 7c9398f0999a96fe54
 
 ```python
 from tonutils.client import ToncenterV3Client
-from tonutils.wallet import WalletV4R2
+from tonutils.wallet import WalletV3R2
 
 # Set to True for test network, False for main network
 IS_TESTNET = True
@@ -130,7 +133,7 @@ WALLET_ID = 0
 
 def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET)
-    wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC, WALLET_ID)
+    wallet, public_key, private_key, mnemonic = WalletV3R2.from_mnemonic(client, MNEMONIC, WALLET_ID)
 
     print(f"Address: {wallet.address.to_str()}")
 
