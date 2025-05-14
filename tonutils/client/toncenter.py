@@ -25,6 +25,7 @@ class ToncenterV2Client(Client):
             api_key: Optional[str] = None,
             is_testnet: bool = False,
             base_url: Optional[str] = None,
+            rps: Optional[int] = None,
     ) -> None:
         """
         Initialize the ToncenterV2Client.
@@ -34,12 +35,13 @@ class ToncenterV2Client(Client):
         :param is_testnet: Whether to use the testnet environment. Defaults to False.
         :param base_url: Optional custom base URL for the Toncenter API.
             If not set, defaults to the official Toncenter URLs.
+        :param rps: Optional requests per second (RPS) limit.
         """
         default_url = "https://testnet.toncenter.com" if is_testnet else "https://toncenter.com"
         base_url = (base_url or default_url).rstrip("/") + self.API_VERSION_PATH
         headers = {"X-Api-Key": api_key} if api_key else {}
 
-        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet)
+        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet, rps=rps)
 
     @staticmethod
     async def _read_content(response: aiohttp.ClientResponse) -> Any:
@@ -128,6 +130,7 @@ class ToncenterV3Client(Client):
             api_key: Optional[str] = None,
             is_testnet: bool = False,
             base_url: Optional[str] = None,
+            rps: Optional[int] = None,
     ) -> None:
         """
         Initialize the ToncenterV3Client.
@@ -137,6 +140,7 @@ class ToncenterV3Client(Client):
         :param is_testnet: Use testnet if True; defaults to mainnet.
         :param base_url: Optional custom base URL for Toncenter API.
             Defaults to official Toncenter endpoints.
+        :param rps: Optional requests per second (RPS) limit.
         """
         default_url = (
             "https://testnet.toncenter.com"
@@ -146,7 +150,7 @@ class ToncenterV3Client(Client):
         base_url = (base_url or default_url).rstrip("/") + self.API_VERSION_PATH
         headers = {"X-Api-Key": api_key} if api_key else {}
 
-        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet)
+        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet, rps=rps)
 
     async def run_get_method(
             self,

@@ -22,6 +22,7 @@ class TonapiClient(Client):
             api_key: str,
             is_testnet: bool = False,
             base_url: Optional[str] = None,
+            rps: Optional[int] = None,
     ) -> None:
         """
         Initialize the TonapiClient.
@@ -30,6 +31,7 @@ class TonapiClient(Client):
             You can obtain one at: https://tonconsole.com
         :param is_testnet: If True, uses the testnet endpoint. Defaults to False (mainnet).
         :param base_url: Optional custom base URL. If not provided, uses the official endpoint.
+        :param rps: Optional requests per second (RPS) limit.
         """
         if not api_key:
             raise ValueError("`api_key` is required to initialize TonapiClient.")
@@ -38,7 +40,7 @@ class TonapiClient(Client):
         base_url = (base_url or default_url).rstrip("/") + self.API_VERSION_PATH
         headers = {"Authorization": f"Bearer {api_key}"}
 
-        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet)
+        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet, rps=rps)
 
     async def run_get_method(
             self,

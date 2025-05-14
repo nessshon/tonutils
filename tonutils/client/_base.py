@@ -4,6 +4,7 @@ import json
 from typing import Any, Optional, List, Dict
 
 import aiohttp
+from aiolimiter import AsyncLimiter
 
 from ..account import RawAccount
 from ..exceptions import PytoniqDependencyError
@@ -19,6 +20,9 @@ class Client:
         self.headers = kwargs.get("headers", {})
         self.timeout = kwargs.get("timeout", 10)
         self.is_testnet = kwargs.get("is_testnet", False)
+
+        self.rps = kwargs.get("rps", None)
+        self._limiter = AsyncLimiter(self.rps, time_period=1) if self.rps else None
 
     @staticmethod
     async def _read_content(response: aiohttp.ClientResponse) -> Any:
@@ -59,8 +63,13 @@ class Client:
         :param body: Optional request body data.
         :return: The response content as a dictionary.
         """
+        if self._limiter is not None:
+            async with self._limiter:
+                pass
+
         url = self.base_url + path
         self.headers.update(headers or {})
+
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:
                 async with session.request(

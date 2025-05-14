@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .toncenter import ToncenterV2Client
 
 
@@ -10,15 +12,16 @@ class QuicknodeClient(ToncenterV2Client):
 
     API_VERSION_PATH = ""  # QuickNode does not use versioned path by default
 
-    def __init__(self, http_provider_url: str) -> None:
+    def __init__(self, http_provider_url: str, rps: Optional[int] = None) -> None:
         """
         Initialize the QuicknodeClient.
 
         :param http_provider_url: The full HTTP provider URL for QuickNode.
             You can obtain one at: https://quicknode.com
+        :param rps: Optional requests per second (RPS) limit.
         """
         if not http_provider_url:
             raise ValueError("`http_provider_url` is required to initialize QuicknodeClient")
 
         base_url = http_provider_url.rstrip("/") + self.API_VERSION_PATH
-        super().__init__(base_url=base_url)
+        super().__init__(base_url=base_url, rps=rps)

@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import os
+from decimal import Decimal
 from typing import Any, Dict, Tuple, Union
 
 from Cryptodome.Cipher import AES
@@ -146,7 +147,7 @@ def to_amount(value: int, decimals: int = 9, precision: int = 2) -> Union[float,
     return rounded_ton_value if rounded_ton_value % 1 != 0 else int(rounded_ton_value)
 
 
-def to_nano(value: Union[int, float], decimals: int = 9) -> int:
+def to_nano(value: Union[int, float, Decimal], decimals: int = 9) -> int:
     """
     Converts TON value to nanoton.
 
@@ -154,7 +155,7 @@ def to_nano(value: Union[int, float], decimals: int = 9) -> int:
     :param decimals: The number of decimal places in the input value. Defaults to 9.
     :return: The value of the input in nanoton.
     """
-    if not isinstance(value, (int, float)):
+    if not isinstance(value, (int, float, Decimal)):
         raise ValueError("Value must be a positive integer or float.")
 
     return round(value * (10 ** decimals))

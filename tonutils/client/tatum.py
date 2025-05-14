@@ -18,6 +18,7 @@ class TatumClient(ToncenterV2Client):
             api_key: str,
             is_testnet: bool = False,
             base_url: Optional[str] = None,
+            rps: Optional[int] = None,
     ) -> None:
         """
         Initialize the TatumClient.
@@ -26,6 +27,7 @@ class TatumClient(ToncenterV2Client):
             You can obtain one at: https://tatum.io/
         :param is_testnet: Whether to use the testnet environment. Defaults to False.
         :param base_url: Optional custom base URL. Defaults to Tatum's public gateway.
+        :param rps: Optional requests per second (RPS) limit.
         """
         if not api_key:
             raise ValueError("`api_key` is required to initialize TatumClient.")
@@ -37,4 +39,4 @@ class TatumClient(ToncenterV2Client):
         )
         base_url = (base_url or default_url).rstrip("/") + self.API_VERSION_PATH
 
-        super().__init__(base_url=base_url, api_key=api_key, is_testnet=is_testnet)
+        super().__init__(base_url=base_url, api_key=api_key, is_testnet=is_testnet, rps=rps)
