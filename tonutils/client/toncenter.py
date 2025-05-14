@@ -1,6 +1,5 @@
 import base64
-import json
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional
 
 import aiohttp
 from pytoniq_core import Cell
@@ -43,71 +42,14 @@ class ToncenterV2Client(Client):
         super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet)
 
     @staticmethod
-    async def __read_content(response: aiohttp.ClientResponse) -> Any:
-        """
-        Read the response content.
+    async def _read_content(response: aiohttp.ClientResponse) -> Any:
+        content = await Client._read_content(response)
 
-        :param response: The HTTP response object.
-        :return: The response content.
-        """
-        try:
-            data = await response.read()
-            try:
-                content = json.loads(data.decode())
-            except json.JSONDecodeError:
-                content = data.decode()
-        except aiohttp.ClientPayloadError as e:
-            content = {"error": f"Payload error occurred: {e}"}
-        except Exception as e:
-            raise aiohttp.ClientError(f"Failed to read response content: {e}")
+        if not isinstance(content, dict):
+            raise aiohttp.ClientError("Invalid response type")
         if not content.get("ok"):
             raise aiohttp.ClientError(content.get("error", content))
-
         return content.get("result")
-
-    async def _request(
-            self,
-            method: str,
-            path: str,
-            headers: Optional[Dict[str, Any]] = None,
-            params: Optional[Dict[str, Any]] = None,
-            body: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        """
-        Make an HTTP request.
-
-        :param method: The HTTP method (GET or POST).
-        :param path: The API path.
-        :param headers: Optional headers to include in the request.
-        :param params: Optional query parameters.
-        :param body: Optional request body data.
-        :return: The response content as a dictionary.
-        """
-        url = self.base_url + path
-        self.headers.update(headers or {})
-        try:
-            async with aiohttp.ClientSession(headers=self.headers) as session:
-                async with session.request(
-                        method=method,
-                        url=url,
-                        params=params,
-                        json=body,
-                        timeout=self.timeout,
-                ) as response:
-                    content = await self.__read_content(response)
-
-                    if not response.ok:
-                        raise aiohttp.ClientResponseError(
-                            request_info=response.request_info,
-                            history=response.history,
-                            status=response.status,
-                            message=content.get("error", content)
-                        )
-
-                    return content
-
-        except aiohttp.ClientError:
-            raise
 
     async def run_get_method(
             self,

@@ -21,7 +21,7 @@ class Client:
         self.is_testnet = kwargs.get("is_testnet", False)
 
     @staticmethod
-    async def __read_content(response: aiohttp.ClientResponse) -> Any:
+    async def _read_content(response: aiohttp.ClientResponse) -> Any:
         """
         Read the response content.
 
@@ -70,12 +70,12 @@ class Client:
                         json=body,
                         timeout=self.timeout,
                 ) as response:
-                    content = await self.__read_content(response)
+                    content = await self._read_content(response)
 
                     if not response.ok:
                         raise aiohttp.ClientResponseError(
-                            request_info=response.request_info,
-                            history=response.history,
+                            request_info=response.request_info,  # type: ignore
+                            history=response.history,  # type: ignore
                             status=response.status,
                             message=content.get("error", content)
                         )
