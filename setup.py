@@ -25,6 +25,7 @@ setuptools.setup(
     python_requires=">=3.10",
     install_requires=[
         "aiohttp>=3.9.0,<3.12",
+        "aiolimiter~=1.2.1",
         "cachetools~=5.5.0",
         "pycryptodomex~=3.20.0",
         "PyNaCl~=1.5.0",
