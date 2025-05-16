@@ -5,7 +5,7 @@ from tonutils.dns.subdomain_collection.content import SubdomainCollectionContent
 from tonutils.dns.subdomain_collection.data import FullDomain
 from tonutils.nft.royalty_params import RoyaltyParams
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import TransferData
+from tonutils.wallet.messages import TransferMessage
 
 # Set to True for test network, False for main network
 IS_TESTNET = True
@@ -44,7 +44,7 @@ COLLECTION_METADATA = {
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     collection = SubdomainCollection(
@@ -58,17 +58,17 @@ async def main() -> None:
         full_domain=FullDomain(DOMAIN_NAME, "ton"),
     )
 
-    tx_hash = await wallet.batch_transfer(
+    tx_hash = await wallet.batch_transfer_messages(
         [
             # Deploy collection
-            TransferData(
+            TransferMessage(
                 destination=collection.address,
                 amount=0.05,
                 body=collection.build_deploy_body(),
                 state_init=collection.state_init,
             ),
             # Binding a Subdomain Collection to the main domain
-            TransferData(
+            TransferMessage(
                 destination=DOMAIN_ADDRESS,
                 amount=0.05,
                 body=Domain.build_set_next_resolver_record_body(collection.address),

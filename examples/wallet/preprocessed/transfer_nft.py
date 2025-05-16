@@ -1,6 +1,6 @@
 from tonutils.client import ToncenterV3Client
 from tonutils.wallet import PreprocessedWalletV2R1
-from tonutils.wallet.data import TransferNFTData
+from tonutils.wallet.messages import TransferNFTMessage
 
 # Set to True for test network, False for main network
 IS_TESTNET = True
@@ -10,24 +10,24 @@ MNEMONIC = "word1 word2 word3 ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, public_key, private_key, mnemonic = PreprocessedWalletV2R1.from_mnemonic(client, MNEMONIC)
 
-    tx_hash = await wallet.batch_nft_transfer(
-        data_list=[
-            TransferNFTData(
+    tx_hash = await wallet.batch_transfer_messages(
+        messages=[
+            TransferNFTMessage(
                 destination="UQ...",
                 nft_address="EQ...",
             ),
-            TransferNFTData(
+            TransferNFTMessage(
                 destination="UQ...",
                 nft_address="EQ...",
             ),
-            TransferNFTData(
+            TransferNFTMessage(
                 destination="UQ...",
                 nft_address="EQ...",
             ),
-            TransferNFTData(
+            TransferNFTMessage(
                 destination="UQ...",
                 nft_address="EQ...",
             ),

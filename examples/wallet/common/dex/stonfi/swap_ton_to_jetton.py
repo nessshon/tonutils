@@ -1,5 +1,6 @@
 from tonutils.client import ToncenterV3Client
 from tonutils.wallet import WalletV4R2
+from tonutils.wallet.messages import StonfiSwapTONToJettonMessage
 
 # Set to True for the test network, False for the main network
 IS_TESTNET = False
@@ -18,13 +19,15 @@ SWAP_TON_AMOUNT = 1
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    tx_hash = await wallet.stonfi_swap_ton_to_jetton(
-        jetton_master_address=TO_JETTON_MASTER_ADDRESS,
-        ton_amount=SWAP_TON_AMOUNT,
-        jetton_decimals=JETTON_DECIMALS,
+    tx_hash = await wallet.transfer_message(
+        message=StonfiSwapTONToJettonMessage(
+            jetton_master_address=TO_JETTON_MASTER_ADDRESS,
+            ton_amount=SWAP_TON_AMOUNT,
+            jetton_decimals=JETTON_DECIMALS,
+        ),
     )
 
     print("Successfully swapped TON to Jetton!")

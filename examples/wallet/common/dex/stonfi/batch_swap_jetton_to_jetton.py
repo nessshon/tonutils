@@ -1,6 +1,6 @@
 from tonutils.client import ToncenterV3Client
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import StonfiSwapJettonToJettonData
+from tonutils.wallet.messages import StonfiSwapJettonToJettonMessage
 
 # Set to True for the test network, False for the main network
 IS_TESTNET = False
@@ -13,30 +13,30 @@ async def main() -> None:
     client = ToncenterV3Client()
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    tx_hash = await wallet.batch_stonfi_swap_jetton_to_jetton(
-        data_list=[
-            StonfiSwapJettonToJettonData(
+    tx_hash = await wallet.batch_transfer_messages(
+        messages=[
+            StonfiSwapJettonToJettonMessage(
                 from_jetton_master_address="EQ...",
                 to_jetton_master_address="EQ...",
                 jetton_amount=0.01,
                 from_jetton_decimals=9,
                 to_jetton_decimals=9,
             ),
-            StonfiSwapJettonToJettonData(
+            StonfiSwapJettonToJettonMessage(
                 from_jetton_master_address="EQ...",
                 to_jetton_master_address="EQ...",
                 jetton_amount=0.01,
                 from_jetton_decimals=9,
                 to_jetton_decimals=9,
             ),
-            StonfiSwapJettonToJettonData(
+            StonfiSwapJettonToJettonMessage(
                 from_jetton_master_address="EQ...",
                 to_jetton_master_address="EQ...",
                 jetton_amount=0.01,
                 from_jetton_decimals=9,
                 to_jetton_decimals=9,
             ),
-            StonfiSwapJettonToJettonData(
+            StonfiSwapJettonToJettonMessage(
                 from_jetton_master_address="EQ...",
                 to_jetton_master_address="EQ...",
                 jetton_amount=0.01,

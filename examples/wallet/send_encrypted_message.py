@@ -18,7 +18,7 @@ COMMENT = "Hello from tonutils!"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = await wallet.build_encrypted_comment_body(

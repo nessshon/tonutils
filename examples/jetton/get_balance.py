@@ -16,7 +16,7 @@ JETTON_DECIMALS = 9
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
 
     jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
         client=client,

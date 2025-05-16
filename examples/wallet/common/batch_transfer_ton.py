@@ -1,6 +1,6 @@
 from tonutils.client import ToncenterV3Client
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import TransferData
+from tonutils.wallet.messages import TransferMessage
 
 # Set to True for test network, False for main network
 IS_TESTNET = True
@@ -10,27 +10,27 @@ MNEMONIC = "word1 word2 word3 ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    tx_hash = await wallet.batch_transfer(
-        data_list=[
-            TransferData(
+    tx_hash = await wallet.batch_transfer_messages(
+        messages=[
+            TransferMessage(
                 destination="UQ...",
                 amount=0.01,
                 body="Hello from tonutils!",
             ),
-            TransferData(
+            TransferMessage(
                 destination="UQ...",
                 amount=0.01,
                 body="Hello from tonutils!",
             ),
-            TransferData(
+            TransferMessage(
                 destination="UQ...",
                 amount=0.01,
                 body="Hello from tonutils!",
             ),
-            TransferData(
+            TransferMessage(
                 destination="UQ...",
                 amount=0.01,
                 body="Hello from tonutils!",

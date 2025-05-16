@@ -16,7 +16,7 @@ from storage import TCRedisStorage
 from tonutils.tonconnect import TonConnect
 from tonutils.tonconnect.models import WalletApp, Event, EventError, SendTransactionResponse
 from tonutils.tonconnect.utils.exceptions import TonConnectError, UserRejectsError, RequestTimeoutError
-from tonutils.wallet.data import TransferData
+from tonutils.wallet.messages import TransferMessage
 
 BOT_TOKEN = "your bot token"
 REDIS_DSN = "redis://localhost:6379"
@@ -259,14 +259,14 @@ async def callback_query_handler(callback_query: CallbackQuery, state: FSMContex
         await state.update_data(rpc_request_id=rpc_request_id)
 
     elif callback_query.data == "send_batch_transaction":
-        transfer_data = [
-            TransferData(
+        messages = [
+            TransferMessage(
                 destination=connector.account.address,
                 amount=0.000000001,
                 body="Hello from tonutils!",
             ) for _ in range(4)
         ]
-        rpc_request_id = await connector.send_batch_transfer(transfer_data)
+        rpc_request_id = await connector.send_batch_transfer(messages)
         await send_transaction_window(callback_query.from_user.id)
         await state.update_data(rpc_request_id=rpc_request_id)
 

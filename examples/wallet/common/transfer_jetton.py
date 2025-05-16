@@ -1,5 +1,6 @@
 from tonutils.client import ToncenterV3Client
 from tonutils.wallet import WalletV4R2
+from tonutils.wallet.messages import TransferJettonMessage
 
 # Set to True for the test network, False for the main network
 IS_TESTNET = True
@@ -24,15 +25,17 @@ COMMENT = "Hello from tonutils!"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    tx_hash = await wallet.transfer_jetton(
-        destination=DESTINATION_ADDRESS,
-        jetton_master_address=JETTON_MASTER_ADDRESS,
-        jetton_amount=JETTON_AMOUNT,
-        jetton_decimals=JETTON_DECIMALS,
-        forward_payload=COMMENT,
+    tx_hash = await wallet.transfer_message(
+        message=TransferJettonMessage(
+            destination=DESTINATION_ADDRESS,
+            jetton_master_address=JETTON_MASTER_ADDRESS,
+            jetton_amount=JETTON_AMOUNT,
+            jetton_decimals=JETTON_DECIMALS,
+            forward_payload=COMMENT,
+        ),
     )
 
     print(f"Successfully transferred {JETTON_AMOUNT} jettons!")

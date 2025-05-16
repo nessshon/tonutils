@@ -1,5 +1,6 @@
 from tonutils.client import ToncenterV3Client
 from tonutils.wallet import WalletV4R2
+from tonutils.wallet.messages import DedustSwapJettonToJettonMessage
 
 # Mnemonic phrase
 MNEMONIC = "word1 word2 word3 ..."
@@ -20,12 +21,14 @@ async def main() -> None:
     client = ToncenterV3Client()
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    tx_hash = await wallet.dedust_swap_jetton_to_jetton(
-        from_jetton_master_address=FROM_JETTON_MASTER_ADDRESS,
-        to_jetton_master_address=TO_JETTON_MASTER_B_ADDRESS,
-        jetton_amount=JETTON_AMOUNT,
-        from_jetton_decimals=FROM_JETTON_DECIMALS,
-        to_jetton_decimals=TO_JETTON_DECIMALS,
+    tx_hash = await wallet.transfer_message(
+        message=DedustSwapJettonToJettonMessage(
+            from_jetton_master_address=FROM_JETTON_MASTER_ADDRESS,
+            to_jetton_master_address=TO_JETTON_MASTER_B_ADDRESS,
+            jetton_amount=JETTON_AMOUNT,
+            from_jetton_decimals=FROM_JETTON_DECIMALS,
+            to_jetton_decimals=TO_JETTON_DECIMALS,
+        ),
     )
 
     print("Successfully swapped Jetton to Jetton!")

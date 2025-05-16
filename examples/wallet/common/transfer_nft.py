@@ -1,5 +1,6 @@
 from tonutils.client import ToncenterV3Client
 from tonutils.wallet import WalletV4R2
+from tonutils.wallet.messages import TransferNFTMessage
 
 # Set to True for test network, False for main network
 IS_TESTNET = True
@@ -16,13 +17,15 @@ COMMENT = "Hello from tonutils!"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    tx_hash = await wallet.transfer_nft(
-        destination=NEW_OWNER_ADDRESS,
-        nft_address=NFT_ADDRESS,
-        forward_payload=COMMENT,
+    tx_hash = await wallet.transfer_message(
+        message=TransferNFTMessage(
+            destination=NEW_OWNER_ADDRESS,
+            nft_address=NFT_ADDRESS,
+            forward_payload=COMMENT,
+        ),
     )
 
     print("Successfully transferred!")

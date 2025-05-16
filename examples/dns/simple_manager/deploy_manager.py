@@ -4,7 +4,7 @@ from tonutils.client import ToncenterV3Client
 from tonutils.dns import Domain
 from tonutils.dns.subdomain_manager import SubdomainManager
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import TransferData
+from tonutils.wallet.messages import TransferMessage
 
 # Set to True for test network, False for main network
 IS_TESTNET = False
@@ -21,21 +21,21 @@ DOMAIN_ADDRESS = "EQ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     subdomain_manager = SubdomainManager(Address(ADMIN_ADDRESS))
 
-    tx_hash = await wallet.batch_transfer(
+    tx_hash = await wallet.batch_transfer_messages(
         [
             # Deploy collection
-            TransferData(
+            TransferMessage(
                 destination=subdomain_manager.address,
                 amount=0.05,
                 state_init=subdomain_manager.state_init,
             ),
             # Binding a Subdomain Manager to the main domain
-            TransferData(
+            TransferMessage(
                 destination=DOMAIN_ADDRESS,
                 amount=0.05,
                 body=Domain.build_set_next_resolver_record_body(subdomain_manager.address),
