@@ -5,6 +5,7 @@ from typing import Union
 from pytoniq_core import Address, Cell, StateInit, begin_cell
 
 from ...royalty_params import RoyaltyParams
+from ....cache import async_cache
 from ....client import Client
 from ....contract import Contract
 
@@ -38,6 +39,7 @@ class Collection(Contract):
         return RoyaltyParams(base, factor, royalty_address)
 
     @classmethod
+    @async_cache()
     async def get_nft_address_by_index(
             cls,
             client: Client,

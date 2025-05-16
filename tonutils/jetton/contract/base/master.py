@@ -2,6 +2,7 @@ from typing import Union
 
 from pytoniq_core import Address
 
+from tonutils.cache import async_cache
 from tonutils.client import Client
 from tonutils.contract import Contract
 from tonutils.jetton.data import JettonMasterData
@@ -45,6 +46,7 @@ class JettonMaster(Contract):
         )
 
     @classmethod
+    @async_cache()
     async def get_wallet_address(
             cls,
             client: Client,

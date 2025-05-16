@@ -6,6 +6,7 @@ from typing import List, Optional, Union
 
 from pytoniq_core import Address, Cell, begin_cell
 
+from tonutils.cache import async_cache
 from tonutils.client import (
     Client,
 )
@@ -99,17 +100,19 @@ class Factory:
     def default_deadline(cls) -> int:
         return int(time.time()) + TX_DEADLINE
 
-    async def get_vault_address(self, asset: Asset) -> Address:
+    @async_cache()
+    async def get_vault_address(self, factory_address: Address, asset: Asset) -> Address:
         method_result = await self.client.run_get_method(
-            address=self.factory_address.to_str(),
+            address=factory_address.to_str(),
             method_name="get_vault_address",
             stack=[asset.to_cell()],
         )
         return method_result[0]
 
-    async def get_pool_address(self, pool_type: PoolType, assets: List[Asset]) -> Address:
+    @async_cache()
+    async def get_pool_address(self, factory_address: Address, pool_type: PoolType, assets: List[Asset]) -> Address:
         method_result = await self.client.run_get_method(
-            address=self.factory_address.to_str(),
+            address=factory_address.to_str(),
             method_name="get_pool_address",
             stack=[
                 pool_type.value,
@@ -203,6 +206,7 @@ class Factory:
             jetton_custom_payload: Optional[Cell] = None,
     ) -> tuple[Address, int, Cell]:
         offer_pool_address = await self.get_pool_address(
+            factory_address=self.factory_address,
             pool_type=PoolType.VOLATILE,
             assets=[
                 Asset.jetton(offer_jetton_address),
@@ -211,6 +215,7 @@ class Factory:
         )
 
         ask_pool_address = await self.get_pool_address(
+            factory_address=self.factory_address,
             pool_type=PoolType.VOLATILE,
             assets=[
                 Asset.native(),
@@ -236,7 +241,7 @@ class Factory:
             reject_payload=reject_payload,
         )
 
-        jetton_vault_address = await self.get_vault_address(Asset.jetton(offer_jetton_address))
+        jetton_vault_address = await self.get_vault_address(self.factory_address, Asset.jetton(offer_jetton_address))
         forward_ton_amount = forward_gas_amount or GasConstants.swap_jetton_to_jetton.FORWARD_GAS_AMOUNT
 
         body = JettonWalletStandard.build_transfer_body(
@@ -269,6 +274,7 @@ class Factory:
             jetton_custom_payload: Optional[Cell] = None,
     ) -> tuple[Address, int, Cell]:
         pool_address = await self.get_pool_address(
+            factory_address=self.factory_address,
             pool_type=PoolType.VOLATILE,
             assets=[
                 Asset.native(),
@@ -294,7 +300,7 @@ class Factory:
             reject_payload=reject_payload,
         )
 
-        jetton_vault_address = await self.get_vault_address(Asset.jetton(offer_jetton_address))
+        jetton_vault_address = await self.get_vault_address(self.factory_address, Asset.jetton(offer_jetton_address))
         forward_ton_amount = forward_gas_amount or GasConstants.swap_jetton_to_ton.FORWARD_GAS_AMOUNT
 
         body = JettonWalletStandard.build_transfer_body(
@@ -324,6 +330,7 @@ class Factory:
             forward_gas_amount: Optional[int] = None,
     ) -> tuple[Address, int, Cell]:
         pool_address = await self.get_pool_address(
+            factory_address=self.factory_address,
             pool_type=PoolType.VOLATILE,
             assets=[
                 Asset.native(),
