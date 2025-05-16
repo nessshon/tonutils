@@ -1,7 +1,6 @@
 import base64
 from typing import Any, List, Optional
 
-import aiohttp
 from pytoniq_core import Cell
 
 from ._base import Client
@@ -26,6 +25,7 @@ class ToncenterV2Client(Client):
             is_testnet: bool = False,
             base_url: Optional[str] = None,
             rps: Optional[int] = None,
+            max_retries: int = 0,
     ) -> None:
         """
         Initialize the ToncenterV2Client.
@@ -36,22 +36,19 @@ class ToncenterV2Client(Client):
         :param base_url: Optional custom base URL for the Toncenter API.
             If not set, defaults to the official Toncenter URLs.
         :param rps: Optional requests per second (RPS) limit.
+        :param max_retries: Number of retries for rate-limited requests. Defaults to 0.
         """
         default_url = "https://testnet.toncenter.com" if is_testnet else "https://toncenter.com"
         base_url = (base_url or default_url).rstrip("/") + self.API_VERSION_PATH
         headers = {"X-Api-Key": api_key} if api_key else {}
 
-        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet, rps=rps)
-
-    @staticmethod
-    async def _read_content(response: aiohttp.ClientResponse) -> Any:
-        content = await Client._read_content(response)
-
-        if not isinstance(content, dict):
-            raise aiohttp.ClientError("Invalid response type")
-        if not content.get("ok"):
-            raise aiohttp.ClientError(content.get("error", content))
-        return content.get("result")
+        super().__init__(
+            base_url=base_url,
+            headers=headers,
+            is_testnet=is_testnet,
+            rps=rps,
+            max_retries=max_retries,
+        )
 
     async def run_get_method(
             self,
@@ -131,6 +128,7 @@ class ToncenterV3Client(Client):
             is_testnet: bool = False,
             base_url: Optional[str] = None,
             rps: Optional[int] = None,
+            max_retries: int = 0,
     ) -> None:
         """
         Initialize the ToncenterV3Client.
@@ -141,6 +139,7 @@ class ToncenterV3Client(Client):
         :param base_url: Optional custom base URL for Toncenter API.
             Defaults to official Toncenter endpoints.
         :param rps: Optional requests per second (RPS) limit.
+        :param max_retries: Number of retries for rate-limited requests. Defaults to 0.
         """
         default_url = (
             "https://testnet.toncenter.com"
@@ -150,7 +149,13 @@ class ToncenterV3Client(Client):
         base_url = (base_url or default_url).rstrip("/") + self.API_VERSION_PATH
         headers = {"X-Api-Key": api_key} if api_key else {}
 
-        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet, rps=rps)
+        super().__init__(
+            base_url=base_url,
+            headers=headers,
+            is_testnet=is_testnet,
+            rps=rps,
+            max_retries=max_retries,
+        )
 
     async def run_get_method(
             self,

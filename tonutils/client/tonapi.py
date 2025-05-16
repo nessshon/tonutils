@@ -23,15 +23,16 @@ class TonapiClient(Client):
             is_testnet: bool = False,
             base_url: Optional[str] = None,
             rps: Optional[int] = None,
+            max_retries: int = 0,
     ) -> None:
         """
         Initialize the TonapiClient.
 
-        :param api_key: API key for accessing TonAPI services.
-            You can obtain one at: https://tonconsole.com
+        :param api_key: API key for accessing TonAPI services. You can obtain one at: https://tonconsole.com
         :param is_testnet: If True, uses the testnet endpoint. Defaults to False (mainnet).
         :param base_url: Optional custom base URL. If not provided, uses the official endpoint.
         :param rps: Optional requests per second (RPS) limit.
+        :param max_retries: Number of retries for rate-limited requests. Defaults to 0.
         """
         if not api_key:
             raise ValueError("`api_key` is required to initialize TonapiClient.")
@@ -40,7 +41,13 @@ class TonapiClient(Client):
         base_url = (base_url or default_url).rstrip("/") + self.API_VERSION_PATH
         headers = {"Authorization": f"Bearer {api_key}"}
 
-        super().__init__(base_url=base_url, headers=headers, is_testnet=is_testnet, rps=rps)
+        super().__init__(
+            base_url=base_url,
+            headers=headers,
+            is_testnet=is_testnet,
+            rps=rps,
+            max_retries=max_retries,
+        )
 
     async def run_get_method(
             self,

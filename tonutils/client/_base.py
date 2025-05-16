@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import json
+import random
 from typing import Any, Optional, List, Dict
 
 import aiohttp
 from aiolimiter import AsyncLimiter
 
 from ..account import RawAccount
-from ..exceptions import PytoniqDependencyError
+from ..exceptions import *
 
 
 class Client:
@@ -21,111 +23,149 @@ class Client:
         self.timeout = kwargs.get("timeout", 10)
         self.is_testnet = kwargs.get("is_testnet", False)
 
-        self.rps = kwargs.get("rps", None)
-        self._limiter = AsyncLimiter(self.rps, time_period=1) if self.rps else None
+        self.rps = kwargs.get("rps", 1)
+        self.max_retries = kwargs.get("max_retries", 0)
+
+        self._session = aiohttp.ClientSession(
+            headers=self.headers,
+            timeout=aiohttp.ClientTimeout(total=self.timeout)
+        )
+        self._limiter = AsyncLimiter(
+            max_rate=self.rps,
+            time_period=1,
+        ) if self.rps else None
 
     @staticmethod
-    async def _read_content(response: aiohttp.ClientResponse) -> Any:
+    async def _parse_response(response: aiohttp.ClientResponse) -> Any:
         """
-        Read the response content.
+        Parse and normalize the HTTP response content.
 
-        :param response: The HTTP response object.
-        :return: The response content.
+        Handles Toncenter-style responses like {"ok": false, "result": "..."}.
+
+        :param response: aiohttp response object.
+        :return: Parsed content (dict or str), or normalized error dict.
         """
+        raw_data = await response.read()
+
         try:
-            data = await response.read()
-            try:
-                content = json.loads(data.decode())
-            except json.JSONDecodeError:
-                content = data.decode()
-        except aiohttp.ClientPayloadError as e:
-            content = {"error": f"Payload error occurred: {e}"}
-        except Exception as e:
-            raise aiohttp.ClientError(f"Failed to read response content: {e}")
+            content = json.loads(raw_data.decode())
+        except json.JSONDecodeError:
+            content = raw_data.decode()
+
+        if isinstance(content, dict) and "ok" in content:
+            if not content.get("ok", False):
+                return {
+                    "error": content.get("result"),
+                    "code": content.get("code", 0)
+                }
+            return content.get("result")
 
         return content
+
+    @staticmethod
+    async def _apply_retry_delay(
+            response: Optional[aiohttp.ClientResponse] = None,
+            default_delay: int = 1,
+    ) -> None:
+        """
+        Wait for a retry delay based on the 'Retry-After' header or fallback.
+
+        Adds random jitter to avoid retry bursts.
+
+        :param response: aiohttp response with optional 'Retry-After' header.
+        :param default_delay: Default delay in seconds if header not found or invalid.
+        """
+        retry_after = default_delay
+
+        if response and "Retry-After" in response.headers:
+            raw_value = response.headers["Retry-After"]
+            try:
+                retry_after = int(raw_value)
+            except (ValueError, TypeError):
+                retry_after = default_delay
+
+        seconds = retry_after + random.uniform(0.2, 0.5)
+        await asyncio.sleep(seconds)
 
     async def _request(
             self,
             method: str,
             path: str,
-            headers: Optional[Dict[str, Any]] = None,
             params: Optional[Dict[str, Any]] = None,
             body: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        Make an HTTP request.
+        Perform an HTTP request with retry logic for rate limiting (HTTP 429).
 
-        :param method: The HTTP method (GET or POST).
-        :param path: The API path.
-        :param headers: Optional headers to include in the request.
+        :param method: HTTP method ("GET", "POST", etc.).
+        :param path: Endpoint path to append to base URL.
         :param params: Optional query parameters.
-        :param body: Optional request body data.
-        :return: The response content as a dictionary.
+        :param body: Optional request JSON body.
+
+        :return: Parsed response content as a dictionary.
+
+        :raises RateLimitExceeded: if all retries are exhausted due to 429.
+        :raises UnauthorizedError: if response status is 401.
+        :raises HTTPClientResponseError: for any other non-OK responses.
         """
-        if self._limiter is not None:
-            async with self._limiter:
-                pass
+        url = f"{self.base_url}{path}"
 
-        url = self.base_url + path
-        self.headers.update(headers or {})
+        for attempt in range(self.max_retries + 1):
+            if self._limiter:
+                await self._limiter.acquire()
 
-        try:
-            async with aiohttp.ClientSession(headers=self.headers) as session:
-                async with session.request(
+            try:
+                async with self._session.request(
                         method=method,
                         url=url,
                         params=params,
                         json=body,
-                        timeout=self.timeout,
                 ) as response:
-                    content = await self._read_content(response)
+                    content = await self._parse_response(response)
 
+                    if response.status == 429 or (isinstance(content, dict) and content.get("code") == 429):
+                        await self._apply_retry_delay(response)
+                        continue
+                    if response.status == 401:
+                        raise UnauthorizedError(url)
                     if not response.ok:
-                        raise aiohttp.ClientResponseError(
-                            request_info=response.request_info,  # type: ignore
-                            history=response.history,  # type: ignore
-                            status=response.status,
-                            message=content.get("error", content)
-                        )
+                        raise HTTPClientResponseError(url, response.status, str(content))
 
                     return content
 
-        except aiohttp.ClientError:
-            raise
+            except (aiohttp.ClientError, asyncio.TimeoutError):
+                raise
+
+        raise RateLimitExceeded(url, self.max_retries + 1)
 
     async def _get(
             self,
             method: str,
             params: Optional[Dict[str, Any]] = None,
-            headers: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Make a GET request.
 
         :param method: The API method.
         :param params: Optional query parameters.
-        :param headers: Optional headers to include in the request.
         :return: The response content as a dictionary.
         """
-        return await self._request("GET", method, headers, params=params)
+        return await self._request("GET", method, params=params)
 
     async def _post(
             self,
             method: str,
             params: Optional[Dict[str, Any]] = None,
             body: Optional[Dict[str, Any]] = None,
-            headers: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Make a POST request.
 
         :param method: The API method.
         :param body: The request body data.
-        :param headers: Optional headers to include in the request.
         :return: The response content as a dictionary.
         """
-        return await self._request("POST", method, headers, params=params, body=body)
+        return await self._request("POST", method, params=params, body=body)
 
     async def run_get_method(
             self,
@@ -168,6 +208,12 @@ class Client:
         :return: The balance of the account as an integer.
         """
         raise NotImplementedError
+
+    async def close(self):
+        """
+        Close the client session.
+        """
+        await self._session.close()
 
 
 class LiteBalancer:
