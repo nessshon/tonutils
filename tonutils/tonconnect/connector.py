@@ -27,7 +27,7 @@ from .provider.bridge import HTTPBridge
 from .storage import IStorage
 from .utils.exceptions import *
 from .utils.logger import logger
-from ..wallet.data import TransferData
+from ..wallet.messages import TransferMessage
 
 
 class Connector:
@@ -417,7 +417,7 @@ class Connector:
             )
             # Wait for the response or a timeout.
             await asyncio.wait_for(
-                asyncio.shield(self.bridge.send_request(request, rpc_request_id)),  # Защищаем future
+                asyncio.shield(self.bridge.send_request(request, rpc_request_id)),
                 timeout=timeout,
             )
 
@@ -656,22 +656,20 @@ class Connector:
         :param state_init: An optional StateInit.
         :return: The RPC request ID for the transaction.
         """
-        message = Transaction.create_message(destination, amount, body, state_init)
-        transaction = Transaction(messages=[message])
+        transaction = Transaction(messages=[Transaction.create_message(destination, amount, body, state_init)])
         request_id = await self.send_transaction(transaction)
 
         logger.debug(f"Transfer sent for user_id={self.user_id} with request ID={request_id}")
         return request_id
 
-    async def send_batch_transfer(self, data_list: List[TransferData]) -> int:
+    async def send_batch_transfer(self, messages: List[TransferMessage]) -> int:
         """
         Sends multiple transfers (batch transaction) in one request.
 
-        :param data_list: A list of TransferData objects, each describing a transfer.
+        :param messages: A list of TransferMessage objects, each describing a transfer.
         :return: The RPC request ID for the batched transaction.
         """
-        messages = [Transaction.create_message(**data.__dict__) for data in data_list]
-        transaction = Transaction(messages=messages)
+        transaction = Transaction(messages=[Transaction.create_message(**data.__dict__) for data in messages])
         request_id = await self.send_transaction(transaction)
 
         logger.debug(f"Batch transfer sent for user_id={self.user_id} with request ID={request_id}")

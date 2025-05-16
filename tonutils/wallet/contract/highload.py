@@ -17,16 +17,12 @@ from pytoniq_core.crypto.signature import sign_message
 
 from ._base import Wallet
 from ..data import (
-    TransferData,
-    TransferNFTData,
-    TransferJettonData,
     HighloadWalletV2Data,
     HighloadWalletV3Data,
 )
+from ..messages import TransferMessageType
 from ..op_codes import *
-from ...client import (
-    Client,
-)
+from ...client import Client
 from ...utils import to_nano
 
 
@@ -433,9 +429,9 @@ class HighloadWalletV3(Wallet):
 
         return message_hash
 
-    async def batch_transfer(
+    async def transfer_message(
             self,
-            data_list: List[TransferData],
+            message: TransferMessageType,
             send_mode: Optional[int] = None,
             query_id: Optional[int] = None,
             created_at: Optional[int] = None,
@@ -443,172 +439,57 @@ class HighloadWalletV3(Wallet):
             **kwargs,
     ) -> str:
         """
-        Perform a batch transfer operation.
+        Transfer a single TransferMessageType instance to the blockchain.
 
-        :param data_list: The list of transfer data.
+        This method builds the provided TransferMessageType into a WalletMessage
+        and sends it using the raw_transfer method. You can override default parameters
+        like send_mode, query_id, created_at, and timeout for fine control.
+
+        :param message: TransferMessageType instance describing the transfer (TON, Jetton, NFT, Swap).
         :param send_mode: The send mode. Defaults to 3.
         :param query_id: The query ID for the transaction. If not provided, it will be calculated.
         :param created_at: Timestamp when the message was created. Defaults to current time minus 30 seconds.
         :param timeout: Timeout for the message. Defaults to the wallet's timeout.
+        :param kwargs: Additional arguments forwarded to raw_transfer.
+        :return: The hash of the transfer message.
+        """
+        message = await message.build(self)
+        return await self.raw_transfer(
+            messages=[message],
+            send_mode=send_mode,
+            query_id=query_id,
+            created_at=created_at,
+            timeout=timeout,
+            **kwargs,
+        )
+
+    async def batch_transfer_messages(
+            self,
+            messages: List[TransferMessageType],
+            send_mode: Optional[int] = None,
+            query_id: Optional[int] = None,
+            created_at: Optional[int] = None,
+            timeout: Optional[int] = None,
+            **kwargs,
+    ) -> str:
+        """
+        Transfer multiple TransferMessageType instances in a single batch transaction.
+
+        This method builds each TransferMessageType into a WalletMessage and sends them together
+        using the raw_transfer method. Supports overriding send_mode, query_id, created_at, and timeout
+        for the entire batch.
+
+        :param messages: List of TransferMessageType instances describing each transfer (TON, Jetton, NFT, Swap).
+        :param send_mode: The send mode. Defaults to 3.
+        :param query_id: The query ID for the transaction. If not provided, it will be calculated.
+        :param created_at: Timestamp when the message was created. Defaults to current time minus 30 seconds.
+        :param timeout: Timeout for the message. Defaults to the wallet's timeout.
+        :param kwargs: Additional arguments forwarded to raw_transfer.
         :return: The hash of the batch transfer message.
         """
-        return await super().batch_transfer(
-            data_list=data_list,
-            send_mode=send_mode,
-            query_id=query_id,
-            created_at=created_at,
-            timeout=timeout,
-            **kwargs,
-        )
-
-    async def transfer_nft(
-            self,
-            destination: Union[Address, str],
-            nft_address: Union[Address, str],
-            response_address: Optional[Union[Address, str]] = None,
-            forward_payload: Optional[Union[Cell, str]] = None,
-            forward_amount: Union[int, float] = 0.001,
-            amount: Union[int, float] = 0.05,
-            send_mode: Optional[int] = None,
-            query_id: Optional[int] = None,
-            created_at: Optional[int] = None,
-            timeout: Optional[int] = None,
-            **kwargs,
-    ) -> str:
-        """
-        Transfer an NFT to a destination address.
-
-        :param destination: The destination address.
-        :param nft_address: The NFT item address.
-        :param response_address: The address to receive the notification. Defaults to the destination address.
-        :param forward_payload: Optional forward payload.
-            If a string is provided, it will be used as a transaction comment.
-            If forward_amount is greater than 0, this payload will be included with the notification to the new owner.
-        :param forward_amount: Forward amount in TON. Defaults to 0.001.
-            A notification will be sent to the new owner if the amount is greater than 0;
-        :param amount: The amount to transfer. Defaults to 0.05.
-        :param send_mode: The send mode. Defaults to 3.
-        :param query_id: The query ID for the transaction. If not provided, it will be calculated.
-        :param created_at: Timestamp when the message was created. Defaults to current time minus 30 seconds.
-        :param timeout: Timeout for the message. Defaults to the wallet's timeout.
-        :param kwargs: Additional arguments.
-        :return: The hash of the NFT transfer message.
-        """
-        return await super().transfer_nft(
-            destination=destination,
-            nft_address=nft_address,
-            response_address=response_address,
-            forward_payload=forward_payload,
-            forward_amount=forward_amount,
-            amount=amount,
-            send_mode=send_mode,
-            query_id=query_id,
-            created_at=created_at,
-            timeout=timeout,
-            **kwargs,
-        )
-
-    async def batch_nft_transfer(
-            self,
-            data_list: List[TransferNFTData],
-            send_mode: Optional[int] = None,
-            query_id: Optional[int] = None,
-            created_at: Optional[int] = None,
-            timeout: Optional[int] = None,
-            **kwargs,
-    ) -> str:
-        """
-        Perform a batch NFT transfer operation.
-
-        :param data_list: The list of NFT transfer data.
-        :param send_mode: The send mode. Defaults to 3.
-        :param query_id: The query ID for the transaction. If not provided, it will be calculated.
-        :param created_at: Timestamp when the message was created. Defaults to current time minus 30 seconds.
-        :param timeout: Timeout for the message. Defaults to the wallet's timeout.
-        :param kwargs: Additional arguments.
-        :return: The hash of the batch NFT transfer message.
-        """
-        return await super().batch_nft_transfer(
-            data_list=data_list,
-            send_mode=send_mode,
-            query_id=query_id,
-            created_at=created_at,
-            timeout=timeout,
-            **kwargs,
-        )
-
-    async def transfer_jetton(
-            self,
-            destination: Union[Address, str],
-            jetton_master_address: Union[Address, str],
-            jetton_amount: Union[int, float],
-            jetton_decimals: int = 9,
-            forward_payload: Optional[Union[Cell, str]] = None,
-            forward_amount: Union[int, float] = 0.001,
-            amount: Union[int, float] = 0.05,
-            send_mode: Optional[int] = None,
-            query_id: Optional[int] = None,
-            created_at: Optional[int] = None,
-            timeout: Optional[int] = None,
-            **kwargs,
-    ) -> str:
-        """
-        Transfer a jetton to a destination address.
-
-        :param destination: The destination address.
-        :param jetton_master_address: The jetton master address.
-        :param jetton_amount: The amount of jettons to transfer.
-        :param jetton_decimals: The jetton decimals. Defaults to 9.
-        :param forward_payload: Optional forward payload.
-            If a string is provided, it will be used as a transaction comment.
-            If forward_amount is greater than 0, this payload will be included with the notification to the new owner.
-        :param forward_amount: Forward amount in TON. Defaults to 0.001.
-            A notification will be sent to the new owner if the amount is greater than 0;
-        :param amount: The amount to transfer. Defaults to 0.05.
-        :param send_mode: The send mode. Defaults to 3.
-        :param query_id: The query ID for the transaction. If not provided, it will be calculated.
-        :param created_at: Timestamp when the message was created. Defaults to current time minus 30 seconds.
-        :param timeout: Timeout for the message. Defaults to the wallet's timeout.
-        :param kwargs: Additional arguments.
-        :return: The hash of the jetton transfer message.
-        """
-        return await super().transfer_jetton(
-            destination=destination,
-            jetton_master_address=jetton_master_address,
-            jetton_amount=jetton_amount,
-            jetton_decimals=jetton_decimals,
-            forward_payload=forward_payload,
-            forward_amount=forward_amount,
-            amount=amount,
-            send_mode=send_mode,
-            query_id=query_id,
-            created_at=created_at,
-            timeout=timeout,
-            **kwargs,
-        )
-
-    async def batch_jetton_transfer(
-            self,
-            data_list: List[TransferJettonData],
-            send_mode: Optional[int] = None,
-            query_id: Optional[int] = None,
-            created_at: Optional[int] = None,
-            timeout: Optional[int] = None,
-            **kwargs,
-    ) -> str:
-        """
-        Perform a batch jetton transfer operation.
-
-        :param data_list: The list of jetton transfer data.
-        :param send_mode: The send mode. Defaults to 3.
-        :param query_id: The query ID for the transaction. If not provided, it will be calculated.
-        :param created_at: Timestamp when the message was created. Defaults to current time minus 30 seconds.
-        :param timeout: Timeout for the message. Defaults to the wallet's timeout.
-        :param kwargs: Additional arguments.
-        :return: The hash of the batch jetton transfer message.
-        """
-        return await super().batch_jetton_transfer(
-            data_list=data_list,
+        messages = [await message.build(self) for message in messages]
+        return await self.raw_transfer(
+            messages=messages,
             send_mode=send_mode,
             query_id=query_id,
             created_at=created_at,
