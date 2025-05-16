@@ -2,19 +2,30 @@ class TonutilsException(Exception):
     pass
 
 
-class UnknownClientError(TonutilsException):
-    """
-    Exception raised when an unknown client is provided.
+class APIClientError(TonutilsException):
+    """Base class for all API client errors."""
+    pass
 
-    This exception informs the user that an unknown client was provided
-    and provides guidance on how to fix it.
-    """
 
-    def __init__(self, input_client: str) -> None:
-        super().__init__(
-            f"Unknown client: {input_client}! "
-            f"Please, specify one of: TonapiClient, ToncenterClient, LiteserverClient."
-        )
+class RateLimitExceeded(APIClientError):
+    """Raised when the request fails due to exceeding rate limits."""
+
+    def __init__(self, url: str, attempts: int):
+        super().__init__(f"Request to {url} failed after {attempts} attempts due to rate limiting (HTTP 429).")
+
+
+class UnauthorizedError(APIClientError):
+    """Raised when unauthorized (401)."""
+
+    def __init__(self, url: str):
+        super().__init__(f"Unauthorized (HTTP 401). Check your API key or permissions for {url}.")
+
+
+class HTTPClientResponseError(APIClientError):
+    """Raised when a non-OK HTTP response is received."""
+
+    def __init__(self, url: str, status: int, message: str):
+        super().__init__(f"HTTP {status} Error for {url}: {message}")
 
 
 class PytoniqDependencyError(TonutilsException):
