@@ -37,10 +37,10 @@ API_KEY = "your api key"  # Optional
 IS_TESTNET = True
 
 # Using Toncenter V3 client
-client_v3 = ToncenterV3Client(api_key=API_KEY, is_testnet=IS_TESTNET)
+client_v3 = ToncenterV3Client(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1, max_retries=1)
 
 # Using Toncenter V2 client (if needed)
-# client_v2 = ToncenterV2Client(api_key=API_KEY, is_testnet=IS_TESTNET)
+# client_v2 = ToncenterV2Client(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1, max_retries=1)
 ```
 
 ---
@@ -57,7 +57,7 @@ from tonutils.client import TonapiClient
 
 API_KEY = "your api key"
 IS_TESTNET = True
-client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1, max_retries=1)
 ```
 
 ---
@@ -75,7 +75,7 @@ client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
 from tonutils.client import QuicknodeClient
 
 HTTP_PROVIDER_URL = "https://blissful-withered-surf.ton-mainnet.quiknode.pro/d6e8...1964"
-client = QuicknodeClient(HTTP_PROVIDER_URL)
+client = QuicknodeClient(HTTP_PROVIDER_URL, rps=1, max_retries=1)
 ```
 
 ---
@@ -92,7 +92,7 @@ from tonutils.client import TatumClient
 
 API_KEY = "your api key"
 IS_TESTNET = True
-client = TatumClient(api_key=API_KEY, is_testnet=IS_TESTNET)
+client = TatumClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1, max_retries=1)
 ```
 
 ---

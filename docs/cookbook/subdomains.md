@@ -94,7 +94,7 @@ from tonutils.dns.subdomain_collection.content import SubdomainCollectionContent
 from tonutils.dns.subdomain_collection.data import FullDomain
 from tonutils.nft.royalty_params import RoyaltyParams
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import TransferData
+from tonutils.wallet.data import TransferMessage
 
 # Set to True for test network
 IS_TESTNET = True
@@ -134,7 +134,7 @@ Example of the metadata for the NFT collection (JSON format):
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     collection = SubdomainCollection(
@@ -151,14 +151,14 @@ async def main() -> None:
     tx_hash = await wallet.batch_transfer(
         [
             # Deploy collection
-            TransferData(
+            TransferMessage(
                 destination=collection.address,
                 amount=0.05,
                 body=collection.build_deploy_body(),
                 state_init=collection.state_init,
             ),
             # Bind Subdomain Collection to the main domain
-            TransferData(
+            TransferMessage(
                 destination=DOMAIN_ADDRESS,
                 amount=0.05,
                 body=Domain.build_set_next_resolver_record_body(collection.address),
@@ -215,7 +215,7 @@ WALLET_ADDRESS = "UQ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = Domain.build_set_wallet_record_body(Address(WALLET_ADDRESS))
@@ -258,7 +258,7 @@ ADNL_ADDRESS = "a1b2c3..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = Domain.build_set_site_record_body(ADNL_ADDRESS)
@@ -301,7 +301,7 @@ BAG_ID = "1234567890abcdef..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = Domain.build_set_storage_record_body(BAG_ID)
@@ -345,7 +345,7 @@ CONTRACT_ADDRESS = "EQ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = Domain.build_set_next_resolver_record_body(Address(CONTRACT_ADDRESS))
@@ -389,7 +389,7 @@ NFT_DOMAIN_ADDRESS = "EQ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = Domain.build_delete_wallet_record_body()
@@ -429,7 +429,7 @@ NFT_DOMAIN_ADDRESS = "EQ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = Domain.build_delete_site_record_body()
@@ -469,7 +469,7 @@ NFT_DOMAIN_ADDRESS = "EQ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = Domain.build_delete_storage_record_body()
@@ -509,7 +509,7 @@ NFT_DOMAIN_ADDRESS = "EQ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = Domain.build_delete_next_resolver_record_body()
@@ -542,7 +542,7 @@ from tonutils.client import ToncenterV3Client
 from tonutils.dns import Domain
 from tonutils.dns.subdomain_manager import SubdomainManager
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import TransferData
+from tonutils.wallet.data import TransferMessage
 
 # Set to True for test network
 IS_TESTNET = True
@@ -558,7 +558,7 @@ DOMAIN_ADDRESS = "EQ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     subdomain_manager = SubdomainManager(Address(ADMIN_ADDRESS))
@@ -566,13 +566,13 @@ async def main() -> None:
     tx_hash = await wallet.batch_transfer(
         [
             # Deploy Subdomain Manager
-            TransferData(
+            TransferMessage(
                 destination=subdomain_manager.address,
                 amount=0.05,
                 state_init=subdomain_manager.state_init,
             ),
             # Bind Subdomain Manager to the main domain as a next resolver
-            TransferData(
+            TransferMessage(
                 destination=DOMAIN_ADDRESS,
                 amount=0.05,
                 body=Domain.build_set_next_resolver_record_body(subdomain_manager.address),
@@ -620,7 +620,7 @@ SUBDOMAIN = "example"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = SubdomainManager.build_set_wallet_record_body(SUBDOMAIN, Address(WALLET_ADDRESS))
@@ -666,7 +666,7 @@ SUBDOMAIN = "example"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = SubdomainManager.build_set_site_record_body(SUBDOMAIN, ADNL_ADDRESS)
@@ -712,7 +712,7 @@ SUBDOMAIN = "example"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = SubdomainManager.build_set_storage_record_body(SUBDOMAIN, BAG_ID)
@@ -759,7 +759,7 @@ SUBDOMAIN = "example"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = SubdomainManager.build_set_next_resolver_record_body(SUBDOMAIN, Address(CONTRACT_ADDRESS))
@@ -806,7 +806,7 @@ SUBDOMAIN = "example"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = SubdomainManager.build_delete_wallet_record_body(SUBDOMAIN)
@@ -849,7 +849,7 @@ SUBDOMAIN = "example"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = SubdomainManager.build_delete_site_record_body(SUBDOMAIN, False)
@@ -892,7 +892,7 @@ SUBDOMAIN = "example"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = SubdomainManager.build_delete_storage_record_body(SUBDOMAIN, True)
@@ -935,7 +935,7 @@ SUBDOMAIN = "example"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     body = SubdomainManager.build_delete_next_resolver_record_body(SUBDOMAIN)

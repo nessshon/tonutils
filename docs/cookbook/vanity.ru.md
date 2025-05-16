@@ -132,7 +132,7 @@ WALLET_ID = 0
 
 
 def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET)
+    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, public_key, private_key, mnemonic = WalletV3R2.from_mnemonic(client, MNEMONIC, WALLET_ID)
 
     print(f"Address: {wallet.address.to_str()}")

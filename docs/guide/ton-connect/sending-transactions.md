@@ -1,4 +1,4 @@
-This guide provides step-by-step instructions for integrating and
+from tonutils.wallet.messages import TransferMessageThis guide provides step-by-step instructions for integrating and
 managing transaction sending using the `TonConnect` from the `tonutils` library. Whether you're a beginner or an
 experienced developer, this guide will help you implement transaction functionality efficiently.
 
@@ -191,8 +191,8 @@ max_messages = connector.get_max_supported_messages()
 print(f"Maximum number of messages: {max_messages}. Sending {max_messages} transactions...")
 
 rpc_request_id = await connector.send_batch_transfer(
-    data_list=[
-        TransferData(
+    messages=[
+        TransferMessage(
             destination=connector.account.address,
             amount=0.000000001,
             body="Hello from tonutils!",
@@ -237,7 +237,7 @@ import aiofiles
 from tonutils.tonconnect import TonConnect, IStorage
 from tonutils.tonconnect.models import Event, EventError, SendTransactionResponse
 from tonutils.tonconnect.utils.exceptions import TonConnectError, UserRejectsError, RequestTimeoutError
-from tonutils.wallet.data import TransferData
+from tonutils.wallet.data import TransferMessage
 
 
 class FileStorage(IStorage):
@@ -392,8 +392,8 @@ async def main() -> None:
                 print(f"Maximum number of messages: {max_messages}. Sending {max_messages} transactions...")
 
                 rpc_request_id = await connector.send_batch_transfer(
-                    data_list=[
-                        TransferData(
+                    messages=[
+                        TransferMessage(
                             destination=connector.account.address,
                             amount=0.000000001,
                             body="Hello from tonutils!",

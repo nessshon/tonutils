@@ -36,4 +36,4 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-[See RawAccount fields overview](get-contract-information.md/#_2)
+[See RawAccount fields overview](get-contract-information.md/#rawaccount-fields-overview)
