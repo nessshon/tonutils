@@ -94,7 +94,7 @@ from tonutils.dns.subdomain_collection.content import SubdomainCollectionContent
 from tonutils.dns.subdomain_collection.data import FullDomain
 from tonutils.nft.royalty_params import RoyaltyParams
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import TransferMessage
+from tonutils.wallet.messages import TransferMessage
 
 # Set to True for test network
 IS_TESTNET = True
@@ -542,7 +542,7 @@ from tonutils.client import ToncenterV3Client
 from tonutils.dns import Domain
 from tonutils.dns.subdomain_manager import SubdomainManager
 from tonutils.wallet import WalletV4R2
-from tonutils.wallet.data import TransferMessage
+from tonutils.wallet.messages import TransferMessage
 
 # Set to True for test network
 IS_TESTNET = True

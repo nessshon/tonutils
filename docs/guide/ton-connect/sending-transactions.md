@@ -237,7 +237,7 @@ import aiofiles
 from tonutils.tonconnect import TonConnect, IStorage
 from tonutils.tonconnect.models import Event, EventError, SendTransactionResponse
 from tonutils.tonconnect.utils.exceptions import TonConnectError, UserRejectsError, RequestTimeoutError
-from tonutils.wallet.data import TransferMessage
+from tonutils.wallet.messages import TransferMessage
 
 
 class FileStorage(IStorage):

@@ -97,7 +97,7 @@ from storage import TCRedisStorage
 from tonutils.tonconnect import TonConnect
 from tonutils.tonconnect.models import WalletApp, Event, EventError, SendTransactionResponse
 from tonutils.tonconnect.utils.exceptions import TonConnectError, UserRejectsError, RequestTimeoutError
-from tonutils.wallet.data import TransferMessage
+from tonutils.wallet.messages import TransferMessage
 
 BOT_TOKEN = "your bot token"
 REDIS_DSN = "redis://localhost:6379"
@@ -594,7 +594,7 @@ from storage import TCRedisStorage
 from tonutils.tonconnect import TonConnect
 from tonutils.tonconnect.models import WalletApp, Event, EventError, SendTransactionResponse
 from tonutils.tonconnect.utils.exceptions import TonConnectError, UserRejectsError, RequestTimeoutError
-from tonutils.wallet.data import TransferMessage
+from tonutils.wallet.messages import TransferMessage
 
 BOT_TOKEN = "your bot token"
 REDIS_DSN = "redis://localhost:6379"
