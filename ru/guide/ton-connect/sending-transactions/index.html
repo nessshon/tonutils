@@ -1563,7 +1563,7 @@
 
   <h1>Отправка транзакций</h1>
 
-<p>Это руководство содержит пошаговые инструкции по интеграции и управлению отправкой транзакций с использованием
+<p>from tonutils.wallet.messages import TransferMessageЭто руководство содержит пошаговые инструкции по интеграции и управлению отправкой транзакций с использованием
 <code>TonConnect</code> из библиотеки <code>tonutils</code>. Независимо от того, являетесь ли вы начинающим или опытным разработчиком, это
 руководство поможет вам эффективно реализовать функциональность отправки транзакций.</p>
 <h2 id="_1">Установка</h2>
@@ -1713,8 +1713,8 @@
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum number of messages: </span><span class="si">{</span><span class="n">max_messages</span><span class="si">}</span><span class="s2">. Sending </span><span class="si">{</span><span class="n">max_messages</span><span class="si">}</span><span class="s2"> transactions...&quot;</span><span class="p">)</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">rpc_request_id</span> <span class="o">=</span> <span class="k">await</span> <span class="n">connector</span><span class="o">.</span><span class="n">send_batch_transfer</span><span class="p">(</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="n">data_list</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>        <span class="n">TransferData</span><span class="p">(</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>        <span class="n">TransferMessage</span><span class="p">(</span>
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>            <span class="n">destination</span><span class="o">=</span><span class="n">connector</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>            <span class="n">amount</span><span class="o">=</span><span class="mf">0.000000001</span><span class="p">,</span>
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>            <span class="n">body</span><span class="o">=</span><span class="s2">&quot;Hello from tonutils!&quot;</span><span class="p">,</span>
@@ -1751,7 +1751,7 @@
 <a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="kn">from</span> <span class="nn">tonutils.tonconnect</span> <span class="kn">import</span> <span class="n">TonConnect</span><span class="p">,</span> <span class="n">IStorage</span>
 <a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="kn">from</span> <span class="nn">tonutils.tonconnect.models</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">EventError</span><span class="p">,</span> <span class="n">SendTransactionResponse</span>
 <a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="kn">from</span> <span class="nn">tonutils.tonconnect.utils.exceptions</span> <span class="kn">import</span> <span class="n">TonConnectError</span><span class="p">,</span> <span class="n">UserRejectsError</span><span class="p">,</span> <span class="n">RequestTimeoutError</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="kn">from</span> <span class="nn">tonutils.wallet.data</span> <span class="kn">import</span> <span class="n">TransferData</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="kn">from</span> <span class="nn">tonutils.wallet.messages</span> <span class="kn">import</span> <span class="n">TransferMessage</span>
 <a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>
 <a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>
 <a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="k">class</span> <span class="nc">FileStorage</span><span class="p">(</span><span class="n">IStorage</span><span class="p">):</span>
@@ -1906,8 +1906,8 @@
 <a id="__codelineno-10-164" name="__codelineno-10-164" href="#__codelineno-10-164"></a>                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum number of messages: </span><span class="si">{</span><span class="n">max_messages</span><span class="si">}</span><span class="s2">. Sending </span><span class="si">{</span><span class="n">max_messages</span><span class="si">}</span><span class="s2"> transactions...&quot;</span><span class="p">)</span>
 <a id="__codelineno-10-165" name="__codelineno-10-165" href="#__codelineno-10-165"></a>
 <a id="__codelineno-10-166" name="__codelineno-10-166" href="#__codelineno-10-166"></a>                <span class="n">rpc_request_id</span> <span class="o">=</span> <span class="k">await</span> <span class="n">connector</span><span class="o">.</span><span class="n">send_batch_transfer</span><span class="p">(</span>
-<a id="__codelineno-10-167" name="__codelineno-10-167" href="#__codelineno-10-167"></a>                    <span class="n">data_list</span><span class="o">=</span><span class="p">[</span>
-<a id="__codelineno-10-168" name="__codelineno-10-168" href="#__codelineno-10-168"></a>                        <span class="n">TransferData</span><span class="p">(</span>
+<a id="__codelineno-10-167" name="__codelineno-10-167" href="#__codelineno-10-167"></a>                    <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+<a id="__codelineno-10-168" name="__codelineno-10-168" href="#__codelineno-10-168"></a>                        <span class="n">TransferMessage</span><span class="p">(</span>
 <a id="__codelineno-10-169" name="__codelineno-10-169" href="#__codelineno-10-169"></a>                            <span class="n">destination</span><span class="o">=</span><span class="n">connector</span><span class="o">.</span><span class="n">account</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
 <a id="__codelineno-10-170" name="__codelineno-10-170" href="#__codelineno-10-170"></a>                            <span class="n">amount</span><span class="o">=</span><span class="mf">0.000000001</span><span class="p">,</span>
 <a id="__codelineno-10-171" name="__codelineno-10-171" href="#__codelineno-10-171"></a>                            <span class="n">body</span><span class="o">=</span><span class="s2">&quot;Hello from tonutils!&quot;</span><span class="p">,</span>
