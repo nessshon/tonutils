@@ -1,5 +1,5 @@
-from .contract import Domain
+from .contract import DNS
 
 __all__ = [
-    "Domain",
+    "DNS",
 ]

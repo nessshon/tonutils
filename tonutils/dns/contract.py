@@ -1,13 +1,100 @@
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 from pytoniq_core import Cell, begin_cell, Address
 
 from .categories import *
 from .op_codes import *
-from .utils import ByteHexConverter, hash_name
+from .utils import (
+    ByteHexConverter,
+    DnsRecordParser,
+    domain_to_bytes,
+)
+from ..client import Client, TonapiClient
+from ..utils import string_hash
 
 
-class Domain:
+class DNS:
+    ROOT_DNS_ADDRESS = "Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq"  # noqa
+
+    @classmethod
+    async def dnsresolve(
+            cls,
+            client: Client,
+            address: Union[Address, str],
+            domain: Cell,
+            category: int,
+    ) -> Tuple[int, Cell]:
+        if isinstance(address, str):
+            address = Address(address)
+
+        # For Tonapi client, use `category` as hex string instead of int
+        if isinstance(client, TonapiClient):
+            category = hex(category)  # type: ignore
+
+        method_result = await client.run_get_method(
+            address=address.to_str(),
+            method_name="dnsresolve",
+            stack=[domain, category],
+        )
+        return method_result
+
+    @classmethod
+    async def _resolve(
+            cls,
+            client: Client,
+            domain: bytes,
+            category: str,
+            dns_address: Union[Address, str],
+    ) -> Union[Address, Cell, bytes, None]:
+        result = await cls.dnsresolve(
+            client,
+            address=dns_address,
+            domain=begin_cell().store_bytes(domain).end_cell(),
+            category=string_hash(category),
+        )
+        if len(result) != 2:
+            raise ValueError("Invalid dnsresolve response")
+
+        result_len, cell = result
+        bit_len = len(domain) * 8
+
+        if result_len == 0 or not cell:
+            return None
+        if isinstance(cell, list) and not cell:
+            cell = None
+        if result_len % 8 != 0 or result_len > bit_len:
+            raise ValueError(f"Invalid result length {result_len}/{bit_len}")
+
+        if result_len == bit_len:
+            if category == DNS_NEXT_RESOLVER_CATEGORY:
+                return DnsRecordParser.parse_next_resolver(cell)
+            elif category == DNS_WALLET_CATEGORY:
+                return DnsRecordParser.parse_wallet(cell)
+            elif category == DNS_STORAGE_CATEGORY:
+                return DnsRecordParser.parse_storage(cell)
+            elif category == DNS_SITE_CATEGORY:
+                return DnsRecordParser.parse_site(cell)
+            return cell
+
+        next_address = DnsRecordParser.parse_next_resolver(cell)
+        remaining_domain = domain[result_len // 8:]
+        return await cls._resolve(client, remaining_domain, category, next_address)
+
+    @classmethod
+    async def resolve(
+            cls,
+            client: Client,
+            domain: str,
+            category: str,
+            dns_address: Optional[Union[Address, str]] = None,
+    ) -> Union[Address, Cell, bytes, None]:
+        if dns_address is None:
+            dns_address = cls.ROOT_DNS_ADDRESS
+        if isinstance(dns_address, str):
+            dns_address = Address(dns_address)
+
+        domain_bytes = domain_to_bytes(domain)
+        return await cls._resolve(client, domain_bytes, category, dns_address)
 
     @classmethod
     def _create_change_dns_cell(
@@ -28,7 +115,7 @@ class Domain:
             begin_cell()
             .store_uint(CHANGE_DNS_RECORD_OPCODE, 32)
             .store_uint(query_id, 64)
-            .store_uint(hash_name(name), 256)
+            .store_uint(string_hash(name), 256)
         )
 
         if record_value:
@@ -62,7 +149,7 @@ class Domain:
         :param is_storage: Boolean indicating whether the record is for storage (True) or a regular site (False).
         :return: A Cell object representing the site or storage record.
         """
-        opcode = SET_STORAGE_CATEGORY if is_storage else SET_SITE_CATEGORY
+        opcode = PREFIX_STORAGE_CATEGORY if is_storage else PREFIX_SITE_CATEGORY
         return (
             begin_cell()
             .store_uint(opcode, 16)
@@ -79,8 +166,8 @@ class Domain:
         :param address: The Address object representing the new next resolver.
         :return: A Cell object containing the next resolver record.
         """
-        record_cell = cls._build_address_record_cell(SET_NEXT_RESOLVER_CATEGORY, address)
-        return cls._create_change_dns_cell("dns_next_resolver", record_cell)
+        record_cell = cls._build_address_record_cell(PREFIX_NEXT_RESOLVER_CATEGORY, address)
+        return cls._create_change_dns_cell(DNS_NEXT_RESOLVER_CATEGORY, record_cell)
 
     @classmethod
     def build_delete_next_resolver_record_body(cls) -> Cell:
@@ -89,7 +176,7 @@ class Domain:
 
         :return: A Cell object to delete the next resolver record.
         """
-        return cls._create_change_dns_cell("dns_next_resolver")
+        return cls._create_change_dns_cell(DNS_NEXT_RESOLVER_CATEGORY)
 
     @classmethod
     def build_set_wallet_record_body(cls, address: Address) -> Cell:
@@ -99,8 +186,8 @@ class Domain:
         :param address: The Address object representing the new wallet.
         :return: A Cell object containing the wallet record.
         """
-        record_cell = cls._build_address_record_cell(SET_WALLET_CATEGORY, address)
-        return cls._create_change_dns_cell("wallet", record_cell)
+        record_cell = cls._build_address_record_cell(PREFIX_WALLET_CATEGORY, address)
+        return cls._create_change_dns_cell(DNS_WALLET_CATEGORY, record_cell)
 
     @classmethod
     def build_delete_wallet_record_body(cls) -> Cell:
@@ -109,7 +196,7 @@ class Domain:
 
         :return: A Cell object to delete the wallet record.
         """
-        return cls._create_change_dns_cell("wallet")
+        return cls._create_change_dns_cell(DNS_WALLET_CATEGORY)
 
     @classmethod
     def build_set_site_record_body(
@@ -125,7 +212,7 @@ class Domain:
         :return: A Cell object containing the site record.
         """
         record_cell = cls._build_site_record_cell(addr, is_storage)
-        return cls._create_change_dns_cell("site", record_cell)
+        return cls._create_change_dns_cell(DNS_SITE_CATEGORY, record_cell)
 
     @classmethod
     def build_delete_site_record_body(cls) -> Cell:
@@ -134,7 +221,7 @@ class Domain:
 
         :return: A Cell object to delete the site record.
         """
-        return cls._create_change_dns_cell("site")
+        return cls._create_change_dns_cell(DNS_SITE_CATEGORY)
 
     @classmethod
     def build_set_storage_record_body(cls, bag_id: Union[bytes, bytearray, str]) -> Cell:
@@ -145,7 +232,7 @@ class Domain:
         :return: A Cell object containing the storage record.
         """
         record_cell = cls._build_site_record_cell(bag_id, is_storage=True)
-        return cls._create_change_dns_cell("storage", record_cell)
+        return cls._create_change_dns_cell(DNS_STORAGE_CATEGORY, record_cell)
 
     @classmethod
     def build_delete_storage_record_body(cls) -> Cell:
@@ -154,4 +241,4 @@ class Domain:
 
         :return: A Cell object to delete the storage record.
         """
-        return cls._create_change_dns_cell("storage")
+        return cls._create_change_dns_cell(DNS_STORAGE_CATEGORY)
