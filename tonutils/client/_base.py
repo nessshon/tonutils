@@ -8,6 +8,22 @@ import aiohttp
 from ..account import RawAccount
 from ..exceptions import PytoniqDependencyError
 
+class TransactionReceipt:
+
+    def __init__(
+            self,
+            hash: str,
+            block: str,
+            block_hash: str,
+            success: str,
+            raw_transaction: Optional[dict] = None,
+    ) -> None:
+        self.hash = hash
+        self.block = block
+        self.block_hash = block_hash
+        self.success = success
+        self.raw_transaction = raw_transaction
+
 
 class Client:
     """
@@ -157,6 +173,13 @@ class Client:
 
         :param address: The blockchain account address.
         :return: The balance of the account as an integer.
+        """
+        raise NotImplementedError
+
+
+    async def get_transaction(self, address: str, hash: str) -> int:
+        """
+        Retrieve the transaction details for a given address and hash.
         """
         raise NotImplementedError
 

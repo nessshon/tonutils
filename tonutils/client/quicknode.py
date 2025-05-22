@@ -2,8 +2,8 @@ from typing import Any, List, Optional
 
 from pytoniq_core import Cell
 
-from ._base import Client
-from ..account import AccountStatus, RawAccount
+from tonutils.client._base import Client, TransactionReceipt
+from tonutils.account import AccountStatus, RawAccount
 
 
 class QuickNodeClient(Client):
@@ -69,3 +69,8 @@ class QuickNodeClient(Client):
         raw_account = await self.get_raw_account(address)
 
         return raw_account.balance
+
+    async def get_transaction(self, address: str, hash: str) -> None:
+        method = "/getTransactions"
+        await self.run_get_method(self, address, method, ["hash", hash])
+
