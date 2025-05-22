@@ -24,6 +24,8 @@ from ..op_codes import *
 from ..utils import validate_mnemonic
 from ...client import Client
 from ...contract import Contract
+from ...dns import DNS
+from ...dns.categories import DNS_WALLET_CATEGORY
 from ...utils import (
     create_encrypted_comment_cell,
     message_to_boc_hex,
@@ -341,7 +343,7 @@ class Wallet(Contract):
         """
         Transfer funds to a destination address.
 
-        :param destination: The destination address.
+        :param destination: The destination address or TON domain name.
         :param amount: The amount to transfer. Defaults to 0.
         :param body: The body of the message. Defaults to an empty cell.
             If a string is provided, it will be used as a transaction comment.
@@ -350,7 +352,15 @@ class Wallet(Contract):
         :return: The hash of the transfer message.
         """
         if isinstance(destination, str):
-            destination = Address(destination)
+            if destination.endswith((".ton", ".t.me")):
+                destination = await DNS.resolve(
+                    self.client,
+                    destination,
+                    DNS_WALLET_CATEGORY,
+                )
+                assert isinstance(destination, Address), "Unable to resolve wallet address"
+            else:
+                destination = Address(destination)
 
         message_hash = await self.raw_transfer(
             messages=[
