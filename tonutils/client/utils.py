@@ -158,6 +158,7 @@ class RunGetMethodStack:
             },
             "tonapi": {
                 int: lambda x: x,
+                str: lambda x: x,
                 Cell: lambda x: x.to_boc().hex(),
                 Slice: lambda x: x.to_cell().to_boc().hex(),
                 Address: lambda x: x.to_str()
