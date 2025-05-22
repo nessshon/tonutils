@@ -45,8 +45,10 @@ class Client:
         :param response: aiohttp response object.
         :return: Parsed content (dict or str), or normalized error dict.
         """
-        raw_data = await response.read()
+        if "application/json" not in response.headers.get("Content-Type", ""):
+            return {"error": f"Unsupported response format. HTTP {response.status}"}
 
+        raw_data = await response.read()
         try:
             content = json.loads(raw_data.decode())
         except json.JSONDecodeError:
