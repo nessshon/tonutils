@@ -1,5 +1,5 @@
 from tonutils.client import ToncenterV3Client
-from tonutils.dns import Domain
+from tonutils.dns import DNS
 from tonutils.dns.subdomain_collection import SubdomainCollection
 from tonutils.dns.subdomain_collection.content import SubdomainCollectionContent
 from tonutils.dns.subdomain_collection.data import FullDomain
@@ -71,7 +71,7 @@ async def main() -> None:
             TransferMessage(
                 destination=DOMAIN_ADDRESS,
                 amount=0.05,
-                body=Domain.build_set_next_resolver_record_body(collection.address),
+                body=DNS.build_set_next_resolver_record_body(collection.address),
             ),
         ]
     )

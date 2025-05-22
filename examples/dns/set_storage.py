@@ -1,5 +1,5 @@
 from tonutils.client import ToncenterV3Client
-from tonutils.dns.contract import Domain
+from tonutils.dns.contract import DNS
 from tonutils.wallet import WalletV4R2
 
 # Set to True for test network, False for main network
@@ -19,7 +19,7 @@ async def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = Domain.build_set_storage_record_body(BAG_ID)
+    body = DNS.build_set_storage_record_body(BAG_ID)
 
     tx_hash = await wallet.transfer(
         destination=NFT_DOMAIN_ADDRESS,

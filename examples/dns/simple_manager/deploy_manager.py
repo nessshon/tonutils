@@ -1,7 +1,7 @@
 from pytoniq_core import Address
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns import Domain
+from tonutils.dns import DNS
 from tonutils.dns.subdomain_manager import SubdomainManager
 from tonutils.wallet import WalletV4R2
 from tonutils.wallet.messages import TransferMessage
@@ -38,7 +38,7 @@ async def main() -> None:
             TransferMessage(
                 destination=DOMAIN_ADDRESS,
                 amount=0.05,
-                body=Domain.build_set_next_resolver_record_body(subdomain_manager.address),
+                body=DNS.build_set_next_resolver_record_body(subdomain_manager.address),
             ),
         ]
     )
