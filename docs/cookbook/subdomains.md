@@ -88,7 +88,7 @@ Once the API is running, you can deploy the NFT collection smart contract for yo
 import asyncio
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns import Domain
+from tonutils.dns import DNS
 from tonutils.dns.subdomain_collection import SubdomainCollection
 from tonutils.dns.subdomain_collection.content import SubdomainCollectionContent
 from tonutils.dns.subdomain_collection.data import FullDomain
@@ -161,7 +161,7 @@ async def main() -> None:
             TransferMessage(
                 destination=DOMAIN_ADDRESS,
                 amount=0.05,
-                body=Domain.build_set_next_resolver_record_body(collection.address),
+                body=DNS.build_set_next_resolver_record_body(collection.address),
             ),
         ]
     )
@@ -198,7 +198,7 @@ import asyncio
 from pytoniq_core import Address
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns.contract import Domain
+from tonutils.dns.contract import DNS
 from tonutils.wallet import WalletV4R2
 
 # Set to True for test network
@@ -218,7 +218,7 @@ async def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = Domain.build_set_wallet_record_body(Address(WALLET_ADDRESS))
+    body = DNS.build_set_wallet_record_body(Address(WALLET_ADDRESS))
 
     tx_hash = await wallet.transfer(
         destination=NFT_DOMAIN_ADDRESS,
@@ -241,7 +241,7 @@ if __name__ == "__main__":
 import asyncio
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns.contract import Domain
+from tonutils.dns.contract import DNS
 from tonutils.wallet import WalletV4R2
 
 # Set to True for test network
@@ -261,7 +261,7 @@ async def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = Domain.build_set_site_record_body(ADNL_ADDRESS)
+    body = DNS.build_set_site_record_body(ADNL_ADDRESS)
 
     tx_hash = await wallet.transfer(
         destination=NFT_DOMAIN_ADDRESS,
@@ -284,7 +284,7 @@ if __name__ == "__main__":
 import asyncio
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns.contract import Domain
+from tonutils.dns.contract import DNS
 from tonutils.wallet import WalletV4R2
 
 # Set to True for test network
@@ -304,7 +304,7 @@ async def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = Domain.build_set_storage_record_body(BAG_ID)
+    body = DNS.build_set_storage_record_body(BAG_ID)
 
     tx_hash = await wallet.transfer(
         destination=NFT_DOMAIN_ADDRESS,
@@ -328,7 +328,7 @@ import asyncio
 
 from pytoniq_core import Address
 from tonutils.client import ToncenterV3Client
-from tonutils.dns.contract import Domain
+from tonutils.dns.contract import DNS
 from tonutils.wallet import WalletV4R2
 
 # Set to True for test network
@@ -348,7 +348,7 @@ async def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = Domain.build_set_next_resolver_record_body(Address(CONTRACT_ADDRESS))
+    body = DNS.build_set_next_resolver_record_body(Address(CONTRACT_ADDRESS))
 
     tx_hash = await wallet.transfer(
         destination=NFT_DOMAIN_ADDRESS,
@@ -375,7 +375,7 @@ Similarly, you can delete existing records. Below are examples for each type.
 import asyncio
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns.contract import Domain
+from tonutils.dns.contract import DNS
 from tonutils.wallet import WalletV4R2
 
 # Set to True for test network
@@ -392,7 +392,7 @@ async def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = Domain.build_delete_wallet_record_body()
+    body = DNS.build_delete_wallet_record_body()
 
     tx_hash = await wallet.transfer(
         destination=NFT_DOMAIN_ADDRESS,
@@ -415,7 +415,7 @@ if __name__ == "__main__":
 import asyncio
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns.contract import Domain
+from tonutils.dns.contract import DNS
 from tonutils.wallet import WalletV4R2
 
 # Set to True for test network
@@ -432,7 +432,7 @@ async def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = Domain.build_delete_site_record_body()
+    body = DNS.build_delete_site_record_body()
 
     tx_hash = await wallet.transfer(
         destination=NFT_DOMAIN_ADDRESS,
@@ -455,7 +455,7 @@ if __name__ == "__main__":
 import asyncio
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns.contract import Domain
+from tonutils.dns.contract import DNS
 from tonutils.wallet import WalletV4R2
 
 # Set to True for test network
@@ -472,7 +472,7 @@ async def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = Domain.build_delete_storage_record_body()
+    body = DNS.build_delete_storage_record_body()
 
     tx_hash = await wallet.transfer(
         destination=NFT_DOMAIN_ADDRESS,
@@ -495,7 +495,7 @@ if __name__ == "__main__":
 import asyncio
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns.contract import Domain
+from tonutils.dns.contract import DNS
 from tonutils.wallet import WalletV4R2
 
 # Set to True for test network
@@ -512,7 +512,7 @@ async def main() -> None:
     client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    body = Domain.build_delete_next_resolver_record_body()
+    body = DNS.build_delete_next_resolver_record_body()
 
     tx_hash = await wallet.transfer(
         destination=NFT_DOMAIN_ADDRESS,
@@ -539,7 +539,7 @@ import asyncio
 from pytoniq_core import Address
 
 from tonutils.client import ToncenterV3Client
-from tonutils.dns import Domain
+from tonutils.dns import DNS
 from tonutils.dns.subdomain_manager import SubdomainManager
 from tonutils.wallet import WalletV4R2
 from tonutils.wallet.messages import TransferMessage
@@ -575,7 +575,7 @@ async def main() -> None:
             TransferMessage(
                 destination=DOMAIN_ADDRESS,
                 amount=0.05,
-                body=Domain.build_set_next_resolver_record_body(subdomain_manager.address),
+                body=DNS.build_set_next_resolver_record_body(subdomain_manager.address),
             ),
         ]
     )
