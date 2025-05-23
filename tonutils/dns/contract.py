@@ -15,6 +15,7 @@ from ..utils import string_hash
 
 class DNS:
     ROOT_DNS_ADDRESS = "Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq"  # noqa
+    TESTNET_ROOT_DNS_ADDRESS = "Ef_v5x0Thgr6pq6ur2NvkWhIf4DxAxsL-Nk5rknT6n99oPKX"  # noqa
 
     @classmethod
     async def dnsresolve(
@@ -49,7 +50,7 @@ class DNS:
         result = await cls.dnsresolve(
             client,
             address=dns_address,
-            domain=begin_cell().store_bytes(domain).end_cell(),
+            domain=begin_cell().store_snake_bytes(domain).end_cell(),
             category=string_hash(category),
         )
         if len(result) != 2:
@@ -89,7 +90,15 @@ class DNS:
             dns_address: Optional[Union[Address, str]] = None,
     ) -> Union[Address, Cell, bytes, None]:
         if dns_address is None:
-            dns_address = cls.ROOT_DNS_ADDRESS
+            try:
+                blockchain_config = await client.get_config_params()
+                dns_address = Address((-1, blockchain_config[4].dns_root_addr))
+            except (Exception,):
+                dns_address = (
+                    cls.TESTNET_ROOT_DNS_ADDRESS
+                    if client.is_testnet else
+                    cls.ROOT_DNS_ADDRESS
+                )
         if isinstance(dns_address, str):
             dns_address = Address(dns_address)
 
