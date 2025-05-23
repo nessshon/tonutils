@@ -28,7 +28,7 @@ from ...dns import DNS
 from ...dns.categories import DNS_WALLET_CATEGORY
 from ...utils import (
     create_encrypted_comment_cell,
-    message_to_boc_hex,
+    normalize_hash,
     to_nano,
 )
 
@@ -249,10 +249,10 @@ class Wallet(Contract):
         Deploy the wallet to the blockchain.
         """
         message = await self._create_deploy_msg()
-        message_boc_hex, message_hash = message_to_boc_hex(message)
-        await self.client.send_message(message_boc_hex)
+        message_boc = message.serialize().to_boc()
+        await self.client.send_message(message_boc.hex())
 
-        return message_hash
+        return normalize_hash(message).hex()
 
     async def balance(self) -> float:
         """
@@ -327,10 +327,10 @@ class Wallet(Contract):
         )
         state_init = self.state_init if seqno == 0 else None
         message = self.create_external_msg(dest=self.address, body=body, state_init=state_init)
-        message_boc_hex, message_hash = message_to_boc_hex(message)
+        message_boc = message.serialize().to_boc()
+        await self.client.send_message(message_boc.hex())
 
-        await self.client.send_message(message_boc_hex)
-        return message_hash
+        return normalize_hash(message).hex()
 
     async def transfer(
             self,

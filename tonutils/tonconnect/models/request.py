@@ -8,7 +8,11 @@ from typing import Any, Dict, List, Optional, Union
 from pytoniq_core import Address, Cell, StateInit, begin_cell, MessageAny
 
 from .chain import CHAIN
-from ...utils import boc_to_base64_string, to_nano, message_to_boc_hex
+from ...utils import (
+    boc_to_base64_string,
+    normalize_hash,
+    to_nano,
+)
 
 
 class ItemName(str, Enum):
@@ -282,8 +286,7 @@ class SendTransactionResponse:
         :return: The hexadecimal representation of the Cell's normalized hash.
         """
         message = MessageAny.deserialize(self.cell.begin_parse())
-        _, message_hash = message_to_boc_hex(message)
-        return message_hash
+        return normalize_hash(message).hex()
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> SendTransactionResponse:

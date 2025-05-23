@@ -4,7 +4,7 @@ import hmac
 import json
 import os
 from decimal import Decimal
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Union
 
 from Cryptodome.Cipher import AES
 from nacl.bindings import crypto_scalarmult
@@ -12,37 +12,32 @@ from nacl.signing import SigningKey
 from pytoniq_core import Address, Cell, MessageAny, begin_cell, HashMap, Slice
 
 
-def message_to_boc_hex(message: MessageAny, normalize_hash: bool = True) -> Tuple[str, str]:
+def normalize_hash(message: Union[MessageAny, str]) -> bytes:
     """
-    Converts a message into its BoC (Bag of Cells) hex representation and computes a hash.
+    Computes the normalized hash of an external message.
+    If the message is not external, returns the regular hash.
 
-    If `normalize_hash` is True, the hash is computed on a normalized version of the message:
-    - Only the destination address and body are retained.
-    - The body is stored as a reference in a new cell for consistent structure and hash.
-
-    :param message: The original message object to serialize.
-    :param normalize_hash: Whether to normalize the message before hashing.
-    :return: A tuple containing (BoC hex string, message hash hex string).
+    :param message: The message object or its BoC string.
+    :return: Hash as raw bytes.
     """
-    # Serialize the full message into a cell and convert to BoC hex
-    message_cell = message.serialize()
-    message_boc = message_cell.to_boc()
+    if isinstance(message, str):
+        message = MessageAny.deserialize(Slice.one_from_boc(message))
 
-    # Compute the hash from either the original or normalized message
-    if normalize_hash and message.is_external:
-        message_cell = (
-            begin_cell()
-            .store_uint(2, 2)
-            .store_address(None)
-            .store_address(message.info.dest)
-            .store_coins(0)
-            .store_bool(False)
-            .store_bool(True)
-            .store_ref(message.body)
-            .end_cell()
-        )
+    if not message.is_external:
+        return message.serialize().hash
 
-    return message_boc.hex(), message_cell.hash.hex()
+    cell = (
+        begin_cell()
+        .store_uint(2, 2)
+        .store_address(None)
+        .store_address(message.info.dest)
+        .store_coins(0)
+        .store_bool(False)
+        .store_bool(True)
+        .store_ref(message.body)
+        .end_cell()
+    )
+    return cell.hash
 
 
 def boc_to_base64_string(boc: Union[str, bytes]) -> str:
