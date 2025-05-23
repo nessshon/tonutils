@@ -52,7 +52,8 @@ class RunGetMethodResult:
         :return: The parsed value, which could be a processed Cell, Slice, or other data type.
         """
         if isinstance(item, list):
-            item = {"type": item[0], "value": item[1]}
+            value = item[1]["bytes"] if isinstance(item[1], dict) and "bytes" in item[1] else item[1]
+            item = {"type": item[0], "value": value}
 
         source_key_map = {
             "toncenter": {"num": "value", "cell": "value", "slice": "value", "list": "value", "null": None},
@@ -152,6 +153,7 @@ class RunGetMethodStack:
         packers = {
             "toncenter": {
                 int: lambda x: x,
+                str: lambda x: x,
                 Cell: lambda x: boc_to_base64_string(x.to_boc()),
                 Slice: lambda x: boc_to_base64_string(x.to_cell().to_boc()),
                 Address: lambda x: boc_to_base64_string(begin_cell().store_address(x).end_cell().to_boc())

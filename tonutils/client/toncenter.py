@@ -63,9 +63,9 @@ class ToncenterV2Client(Client):
             "address": address,
             "method": method_name,
             "stack": [
-                {"type": "num", "value": str(v)}
+                ["num", str(v)]
                 if isinstance(v, int) else
-                {"type": "slice", "value": v}
+                ["slice", v]
                 for v in (stack or [])
             ],
         }
