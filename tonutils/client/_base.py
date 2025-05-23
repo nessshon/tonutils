@@ -211,6 +211,14 @@ class Client:
         """
         raise NotImplementedError
 
+    async def get_config_params(self) -> Dict[int, Any]:
+        """
+        Retrieve configuration parameters from the blockchain.
+
+        :return: A dictionary containing the configuration parameters.
+        """
+        raise NotImplementedError
+
 
 class LiteBalancer:
     """

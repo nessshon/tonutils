@@ -135,3 +135,7 @@ class LiteserverClient(Client):
     async def get_account_balance(self, address: str) -> int:
         raw_account = await self.get_raw_account(address)
         return raw_account.balance
+
+    @require_pytoniq
+    async def get_config_params(self) -> Dict[int, Any]:
+        return await self.client.get_config_all()

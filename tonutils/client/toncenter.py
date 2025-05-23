@@ -1,10 +1,10 @@
 import base64
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pytoniq_core import Cell
+from pytoniq_core import Builder, Cell, HashMap
 
 from ._base import Client
-from .utils import RunGetMethodStack, RunGetMethodResult
+from .utils import RunGetMethodStack, RunGetMethodResult, unpack_config
 from ..account import AccountStatus, RawAccount
 from ..utils import boc_to_base64_string
 
@@ -111,6 +111,23 @@ class ToncenterV2Client(Client):
 
         return raw_account.balance
 
+    async def get_config_params(self) -> Dict[int, Any]:
+        method = "/getConfigAll"
+        result = await self._get(method=method)
+
+        config = result.get("config")
+        if not config or "bytes" not in config:
+            raise ValueError("Invalid config response: missing 'bytes' field")
+        dict_cell = Cell.one_from_boc(config["bytes"])
+
+        config_map = HashMap.parse(
+            dict_cell=dict_cell.begin_parse(),
+            key_length=32,
+            key_deserializer=lambda src: Builder().store_bits(src).to_slice().load_int(32),
+            value_deserializer=lambda src: src.load_ref().begin_parse(),
+        )
+        return unpack_config(config_map)
+
 
 class ToncenterV3Client(Client):
     """
@@ -210,3 +227,14 @@ class ToncenterV3Client(Client):
         raw_account = await self.get_raw_account(address)
 
         return raw_account.balance
+
+    async def get_config_params(self) -> Dict[int, Any]:
+        client = ToncenterV2Client(
+            is_testnet=self.is_testnet,
+            rps=self.rps,
+            max_retries=self.max_retries,
+        )
+        client.headers = self.headers
+        client._limiter = self._limiter
+
+        return await client.get_config_params()

@@ -1,7 +1,7 @@
 from contextlib import suppress
 from typing import Any, List, Optional, Union
 
-from pytoniq_core import Address, Cell, Slice, begin_cell
+from pytoniq_core import Address, Cell, ConfigParam, Slice, begin_cell
 
 from ._base import Client
 from ..utils import boc_to_base64_string
@@ -177,3 +177,25 @@ class RunGetMethodStack:
             raise ValueError(f"Unsupported item type '{type(item)}' for target '{target}'")
 
         return pack_fn(item)
+
+
+def unpack_config(config: dict) -> dict:
+    """
+    Processes a config dictionary, deserializing known parameters.
+
+    If a key exists in ConfigParam.params, its value is deserialized.
+    Otherwise, the original value is returned.
+
+    :param config: Dictionary of config parameters {int: Cell}.
+    :return: Dictionary with deserialized values where possible.
+    """
+    result = {}
+
+    for key, value in config.items():
+        param = ConfigParam.params.get(key)
+        if param is not None:
+            result[key] = param.deserialize(value)
+        else:
+            result[key] = value
+
+    return result

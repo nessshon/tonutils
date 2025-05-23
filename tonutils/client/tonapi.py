@@ -1,9 +1,9 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pytoniq_core import Cell
+from pytoniq_core import Builder, Cell, HashMap
 
 from ._base import Client
-from .utils import RunGetMethodStack, RunGetMethodResult
+from .utils import RunGetMethodStack, RunGetMethodResult, unpack_config
 from ..account import AccountStatus, RawAccount
 
 
@@ -94,3 +94,20 @@ class TonapiClient(Client):
         raw_account = await self.get_raw_account(address)
 
         return raw_account.balance
+
+    async def get_config_params(self) -> Dict[int, Any]:
+        method = "/blockchain/config"
+        result = await self._get(method=method)
+
+        config = result.get("raw")
+        if not config:
+            raise ValueError("Invalid config response: missing 'raw' field")
+        dict_cell = Cell.one_from_boc(config)
+
+        config_map = HashMap.parse(
+            dict_cell=dict_cell[0].begin_parse(),
+            key_length=32,
+            key_deserializer=lambda src: Builder().store_bits(src).to_slice().load_int(32),
+            value_deserializer=lambda src: src.load_ref().begin_parse(),
+        )
+        return unpack_config(config_map)
