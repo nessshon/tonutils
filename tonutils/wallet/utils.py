@@ -40,7 +40,7 @@ def validate_mnemonic(func: Callable) -> Callable:
         valid_lengths, mnemonic_length = (12, 18, 24), len(mnemonic)
 
         assert mnemonic_length in valid_lengths, \
-            f'Invalid mnemonic length: {mnemonic_length}. Valid lengths: {valid_lengths}'
+            f"Invalid mnemonic length: {mnemonic_length}. Valid lengths: {valid_lengths}"
 
         invalid_words = [(i, w) for i, w in enumerate(mnemonic, start=1) if w not in words]
 
