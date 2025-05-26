@@ -155,26 +155,33 @@ class WalletInfo:
         signature_message.extend("ton-connect".encode())
         signature_message.extend(hashlib.sha256(message).digest())
 
-        # Retrieve and validate the public key
+        # Prepare public key
         public_key = self.account.public_key
-        if isinstance(public_key, str):
-            try:
+        try:
+            if isinstance(public_key, str):
                 public_key_bytes = bytes.fromhex(public_key)
-            except ValueError:
-                logger.debug("Public key is not a valid hex string.")
+            elif isinstance(public_key, bytes):
+                public_key_bytes = public_key
+            else:
+                logger.debug("Public key must be str or bytes.")
                 return False
-        elif isinstance(public_key, bytes):
-            public_key_bytes = public_key
-        else:
-            logger.debug("Public key is neither str nor bytes.")
+        except ValueError:
+            logger.debug("Invalid hex in public key.")
             return False
 
-        # Verify the signature
+        # Prepare signature
+        signature = (
+            bytes.fromhex(self.ton_proof.signature)
+            if isinstance(self.ton_proof.signature, str)
+            else self.ton_proof.signature
+        )
+
+        # Verify signature
         try:
             verify_key = VerifyKey(public_key_bytes)
             verify_key.verify(
                 hashlib.sha256(signature_message).digest(),
-                self.ton_proof.signature,
+                signature,
             )
             logger.debug("Proof is ok!")
             return True
