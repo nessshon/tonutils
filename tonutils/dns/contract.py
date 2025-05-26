@@ -9,6 +9,7 @@ from .utils import (
     DnsRecordParser,
     domain_to_bytes,
 )
+from ..cache import async_cache
 from ..client import Client, TonapiClient
 from ..utils import string_hash
 
@@ -18,6 +19,7 @@ class DNS:
     TESTNET_ROOT_DNS_ADDRESS = "Ef_v5x0Thgr6pq6ur2NvkWhIf4DxAxsL-Nk5rknT6n99oPKX"  # noqa
 
     @classmethod
+    @async_cache(ttl=30)
     async def dnsresolve(
             cls,
             client: Client,
@@ -82,6 +84,7 @@ class DNS:
         return await cls._resolve(client, remaining_domain, category, next_address)
 
     @classmethod
+    @async_cache(ttl=30)
     async def resolve(
             cls,
             client: Client,
