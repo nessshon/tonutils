@@ -15,6 +15,7 @@ from .account import RawAccount
 from .client import (
     Client,
 )
+from .dns.utils import resolve_wallet_address
 from .utils import to_amount
 
 
@@ -173,9 +174,11 @@ class Contract:
     async def get_balance(cls, client: Client, address: Union[Address, str]) -> float:
         """
         Retrieve the current balance of the contract in TON.
-        """
-        if isinstance(address, str):
-            address = Address(address)
 
+        :param client: The client to interact with the blockchain.
+        :param address: Address object, address string, or a .ton/.t.me domain.
+        :return: Wallet balance in TON.
+        """
+        address = await resolve_wallet_address(client, address)
         balance = await client.get_account_balance(address.to_str())
         return to_amount(balance, precision=9)

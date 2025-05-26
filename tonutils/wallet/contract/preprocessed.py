@@ -16,6 +16,7 @@ from ..data import (
 )
 from ..op_codes import *
 from ...client import Client
+from ...dns.utils import resolve_wallet_address
 
 
 class PreprocessedWalletV2(Wallet):
@@ -78,6 +79,7 @@ class PreprocessedWalletV2(Wallet):
             client: Client,
             address: Union[Address, str],
     ) -> int:
+        address = await resolve_wallet_address(client, address)
         raw_account = await cls.get_raw_account(client, address)
         seqno = 0
         if raw_account.data is not None:
@@ -90,6 +92,7 @@ class PreprocessedWalletV2(Wallet):
             client: Client,
             address: Union[Address, str],
     ) -> Optional[int]:
+        address = await resolve_wallet_address(client, address)
         raw_account = await cls.get_raw_account(client, address)
         public_key = None
         if raw_account.data is not None:
@@ -130,7 +133,7 @@ class PreprocessedWalletV2(Wallet):
             messages: List[WalletMessage],
             **kwargs,
     ) -> Cell:
-        assert len(messages) <= 255, 'For preprocessed wallet v2, maximum messages amount is 255'
+        assert len(messages) <= 255, "For preprocessed wallet v2, maximum messages amount is 255"
 
         seqno = kwargs.get("seqno", 0)
         valid_until = kwargs.get("valid_until", int(time.time()) + 3600)
@@ -212,6 +215,7 @@ class PreprocessedWalletV2R1(Wallet):
             client: Client,
             address: Union[Address, str],
     ) -> int:
+        address = await resolve_wallet_address(client, address)
         raw_account = await cls.get_raw_account(client, address)
         seqno = 0
         if raw_account.data is not None:
@@ -224,6 +228,7 @@ class PreprocessedWalletV2R1(Wallet):
             client: Client,
             address: Union[Address, str],
     ) -> Optional[int]:
+        address = await resolve_wallet_address(client, address)
         raw_account = await cls.get_raw_account(client, address)
         public_key = None
         if raw_account.data is not None:
@@ -264,7 +269,7 @@ class PreprocessedWalletV2R1(Wallet):
             messages: List[WalletMessage],
             **kwargs,
     ) -> Cell:
-        assert len(messages) <= 255, 'For preprocessed wallet v2 r1, maximum messages amount is 255'
+        assert len(messages) <= 255, "For preprocessed wallet v2 r1, maximum messages amount is 255"
 
         seqno = kwargs.get("seqno", 0)
         valid_until = kwargs.get("valid_until", int(time.time()) + 3600)

@@ -5,6 +5,7 @@ from typing import Optional, Union, TYPE_CHECKING
 
 from pytoniq_core import Address, Cell, StateInit, WalletMessage, begin_cell
 
+from tonutils.dns.utils import resolve_wallet_address
 from tonutils.jetton import JettonMasterStandard, JettonWalletStandard
 from tonutils.jetton.dex.dedust import Factory
 from tonutils.jetton.dex.stonfi import StonfiRouterV1, StonfiRouterV2
@@ -28,7 +29,7 @@ class TransferMessage(TransferMessageBase):
     """
     Data class for transferring funds.
 
-    :param destination: The destination address.
+    :param destination: Address object, address string, or a .ton/.t.me domain.
     :param amount: The amount to transfer.
     :param body: The body of the message. Defaults to an empty cell.
         If a string is provided, it will be used as a transaction comment.
@@ -44,9 +45,6 @@ class TransferMessage(TransferMessageBase):
             state_init: Optional[StateInit] = None,
             **kwargs,
     ) -> None:
-        if isinstance(destination, str):
-            destination = Address(destination)
-
         self.destination = destination
         self.amount = amount
         self.body = body
@@ -54,6 +52,8 @@ class TransferMessage(TransferMessageBase):
         self.other = kwargs
 
     async def build(self, wallet: Wallet) -> WalletMessage:
+        self.destination = await resolve_wallet_address(wallet.client, self.destination)
+
         return wallet.create_wallet_internal_message(
             destination=self.destination,
             value=to_nano(self.amount),
@@ -67,7 +67,7 @@ class TransferNFTMessage(TransferMessageBase):
     """
     Data class for transferring NFT.
 
-    :param destination: The destination address.
+    :param destination: Address object, address string, or a .ton/.t.me domain.
     :param nft_address: The NFT item address.
     :param response_address: The address to receive the notification. Defaults to the destination address.
     :param forward_payload: Optional forward payload.
@@ -89,8 +89,6 @@ class TransferNFTMessage(TransferMessageBase):
             amount: Union[int, float] = 0.05,
             **kwargs,
     ) -> None:
-        if isinstance(destination, str):
-            destination = Address(destination)
         if isinstance(nft_address, str):
             nft_address = Address(nft_address)
         if isinstance(forward_payload, str):
@@ -110,6 +108,8 @@ class TransferNFTMessage(TransferMessageBase):
         self.other = kwargs
 
     async def build(self, wallet: Wallet) -> WalletMessage:
+        self.destination = await resolve_wallet_address(wallet.client, self.destination)
+
         return wallet.create_wallet_internal_message(
             destination=self.nft_address,
             value=to_nano(self.amount),
@@ -128,7 +128,7 @@ class TransferJettonMessage(TransferMessageBase):
     """
     Data class for transferring jettons.
 
-    :param destination: The destination address.
+    :param destination: Address object, address string, or a .ton/.t.me domain.
     :param jetton_master_address: The jetton master address.
     :param jetton_amount: The amount of jettons to transfer.
     :param jetton_decimals: The jetton decimals. Defaults to 9.
@@ -154,8 +154,6 @@ class TransferJettonMessage(TransferMessageBase):
             amount: Union[int, float] = 0.05,
             **kwargs,
     ) -> None:
-        if isinstance(destination, str):
-            destination = Address(destination)
         if isinstance(jetton_master_address, str):
             jetton_master_address = Address(jetton_master_address)
         if isinstance(jetton_wallet_address, str):
@@ -179,6 +177,8 @@ class TransferJettonMessage(TransferMessageBase):
         self.other = kwargs
 
     async def build(self, wallet: Wallet) -> WalletMessage:
+        self.destination = await resolve_wallet_address(wallet.client, self.destination)
+
         if self.jetton_wallet_address is None:
             self.jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
                 client=wallet.client,

@@ -23,6 +23,7 @@ from ..data import (
 from ..messages import TransferMessageType
 from ..op_codes import *
 from ...client import Client
+from ...dns.utils import resolve_wallet_address
 from ...utils import to_nano
 
 
@@ -154,10 +155,12 @@ class HighloadWalletV3(Wallet):
     async def get_timeout(cls, client: Client, address: Union[Address, str]) -> int:
         """
         Get the timeout of the wallet.
-        """
-        if isinstance(address, str):
-            address = Address(address)
 
+        :param client: The client to interact with the blockchain.
+        :param address: Address object, address string, or a .ton/.t.me domain.
+        :return: The timeout of the wallet.
+        """
+        address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
             address=address.to_str(),
             method_name="get_timeout",
@@ -174,10 +177,14 @@ class HighloadWalletV3(Wallet):
     ) -> bool:
         """
         Get is processed of the wallet.
-        """
-        if isinstance(address, str):
-            address = Address(address)
 
+        :param client: The client to interact with the blockchain.
+        :param address: Address object, address string, or a .ton/.t.me domain.
+        :param query_id: Query id.
+        :param need_clean: Need clean.
+        :return: Is processed of the wallet.
+        """
+        address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
             address=address.to_str(),
             method_name="processed?",
@@ -189,10 +196,12 @@ class HighloadWalletV3(Wallet):
     async def get_last_cleaned(cls, client: Client, address: Union[Address, str]) -> int:
         """
         Get the last cleaned time of the wallet.
-        """
-        if isinstance(address, str):
-            address = Address(address)
 
+        :param client: The client to interact with the blockchain.
+        :param address: Address object, address string, or a .ton/.t.me domain.
+        :return: The last cleaned time of the wallet.
+        """
+        address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
             address=address.to_str(),
             method_name="get_last_clean_time",
@@ -396,7 +405,7 @@ class HighloadWalletV3(Wallet):
         """
         Transfer funds to a destination address.
 
-        :param destination: The destination address.
+        :param destination: Address object, address string, or a .ton/.t.me domain.
         :param amount: The amount to transfer. Defaults to 0.
         :param body: The body of the message. Defaults to an empty cell.
             If a string is provided, it will be used as a transaction comment.
@@ -408,9 +417,7 @@ class HighloadWalletV3(Wallet):
         :param kwargs: Additional arguments.
         :return: The hash of the transfer message.
         """
-        if isinstance(destination, str):
-            destination = Address(destination)
-
+        destination = await resolve_wallet_address(self.client, destination)
         message_hash = await self.raw_transfer(
             messages=[
                 self.create_wallet_internal_message(

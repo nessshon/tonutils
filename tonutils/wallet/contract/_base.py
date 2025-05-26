@@ -24,8 +24,7 @@ from ..op_codes import *
 from ..utils import validate_mnemonic
 from ...client import Client
 from ...contract import Contract
-from ...dns import DNS
-from ...dns.categories import DNS_WALLET_CATEGORY
+from ...dns.utils import resolve_wallet_address
 from ...utils import (
     create_encrypted_comment_cell,
     normalize_hash,
@@ -270,10 +269,12 @@ class Wallet(Contract):
     ) -> int:
         """
         Get the sequence number (seqno) of the wallet.
-        """
-        if isinstance(address, str):
-            address = Address(address)
 
+        :param client: The client to interact with the blockchain.
+        :param address: Address object, address string, or a .ton/.t.me domain.
+        :return: The sequence number (seqno) of the wallet.
+        """
+        address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
             address=address.to_str(),
             method_name="seqno",
@@ -288,10 +289,12 @@ class Wallet(Contract):
     ) -> int:
         """
         Get the public key of the wallet.
-        """
-        if isinstance(address, str):
-            address = Address(address)
 
+        :param client: The client to interact with the blockchain.
+        :param address: Address object, address string, or a .ton/.t.me domain.
+        :return: The public key of the wallet.
+        """
+        address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
             address=address.to_str(),
             method_name="get_public_key",
@@ -343,7 +346,7 @@ class Wallet(Contract):
         """
         Transfer funds to a destination address.
 
-        :param destination: The destination address or TON domain name.
+        :param destination: Address object, address string, or a .ton/.t.me domain.
         :param amount: The amount to transfer. Defaults to 0.
         :param body: The body of the message. Defaults to an empty cell.
             If a string is provided, it will be used as a transaction comment.
@@ -351,17 +354,7 @@ class Wallet(Contract):
         :param kwargs: Additional arguments.
         :return: The hash of the transfer message.
         """
-        if isinstance(destination, str):
-            if destination.endswith((".ton", ".t.me")):
-                destination = await DNS.resolve(
-                    self.client,
-                    destination,
-                    DNS_WALLET_CATEGORY,
-                )
-                assert isinstance(destination, Address), "Unable to resolve wallet address"
-            else:
-                destination = Address(destination)
-
+        destination = await resolve_wallet_address(self.client, destination)
         message_hash = await self.raw_transfer(
             messages=[
                 self.create_wallet_internal_message(
@@ -410,11 +403,10 @@ class Wallet(Contract):
         Build an encrypted comment body.
 
         :param text: The comment text to encrypt.
-        :param destination: The destination address for the encrypted comment.
+        :param destination: Address object, address string, or a .ton/.t.me domain.
         :return: The encrypted comment cell.
         """
-        if isinstance(destination, str):
-            destination = Address(destination)
+        destination = await resolve_wallet_address(self.client, destination)
         their_key = await self.get_public_key(self.client, destination)
 
         return create_encrypted_comment_cell(
