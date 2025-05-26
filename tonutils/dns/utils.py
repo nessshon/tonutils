@@ -3,6 +3,7 @@ from typing import Union
 from pytoniq_core import Cell, Address
 
 from .categories import *
+from ..client import Client
 
 
 def domain_to_bytes(domain: str) -> bytes:
@@ -88,3 +89,27 @@ class DnsRecordParser:
             return cls.parse_storage(cell)
         else:
             raise ValueError(f"Unknown site record prefix: {prefix:#x}")
+
+
+async def resolve_wallet_address(client: Client, value: Union[Address, str]) -> Address:
+    """
+    Convert input (Address, address string, or .ton/.t.me domain) into a valid Address.
+
+    :param client: TON client instance.
+    :param value: Address object, address string, or a .ton/.t.me domain.
+    :return: Resolved Address object.
+    """
+    from . import DNS
+    if isinstance(value, Address):
+        return value
+
+    if not isinstance(value, str):
+        raise ValueError("Input must be a string or Address instance")
+
+    if value.endswith((".ton", ".t.me")):
+        address = await DNS.resolve(client, value, DNS_WALLET_CATEGORY)
+        if not isinstance(address, Address):
+            raise TypeError("Unable to resolve wallet address from domain")
+        return address
+
+    return Address(value)
