@@ -2,8 +2,8 @@ from typing import Any, List, Optional
 
 from pytoniq_core import Cell
 
-from tonutils.client._base import Client, TransactionReceipt
-from tonutils.account import AccountStatus, RawAccount
+from ._base import Client, TransactionReceipt
+from ..account import AccountStatus, RawAccount
 
 
 class TonapiClient(Client):
@@ -79,23 +79,26 @@ class TonapiClient(Client):
 
         return raw_account.balance
 
-
     async def get_block_hash(self, block_id: str) -> None:
         method = f"/v2/blockchain/blocks/{block_id}"
-        block = await self._get(method=method)
+        try:
+            block = await self._get(method=method)
+        except Exception as e:
+            if "not found" in str(e):
+                return None
         if block:
             return block.get("root_hash")
         return None
 
+
     async def get_transaction(self, address: str, hash: str) -> None:
         method = f"/v2/blockchain/transactions/{hash}"
+        txn = None
         try:
             txn = await self._get(method=method)
         except Exception as e:
             if "not found" in str(e):
                 return None
-            else:
-                raise e
         if txn:
             block_hash = await self.get_block_hash(txn.get("block"))
         else:
