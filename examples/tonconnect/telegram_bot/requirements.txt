@@ -1,0 +1,5 @@
+aiogram~=3.20.0
+cachetools==5.5.2
+environs==14.2.0
+redis==6.2.0
+tonutils==0.4.4b2

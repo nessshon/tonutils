@@ -1,0 +1,7 @@
+{
+  "url": "https://t.me/tonconnect_demo_bot",
+  "name": "Demo Bot with Python Tonutils",
+  "iconUrl": "https://raw.githubusercontent.com/nessshon/tonutils/refs/heads/main/examples/tonconnect/telegram_bot/public/icon.png",
+  "termsOfUseUrl": "https://raw.githubusercontent.com/nessshon/tonutils/refs/heads/main/examples/tonconnect/telegram_bot/public/terms-of-use.txt",
+  "privacyPolicyUrl": "https://raw.githubusercontent.com/nessshon/tonutils/refs/heads/main/examples/tonconnect/telegram_bot/public/privacy-policy.txt"
+}

@@ -1,0 +1,18 @@
+services:
+
+  bot:
+    build: .
+    command: sh -c "cd /usr/src/app && python -m src"
+    container_name: "tonconnect-demo-bot"
+    restart: unless-stopped
+    depends_on:
+      - redis
+    volumes:
+      - ./:/usr/src/app
+
+  redis:
+    image: redis:7.2.3-alpine
+    container_name: "tonconnect-demo-redis"
+    restart: unless-stopped
+    volumes:
+      - ./redis/data:/data
