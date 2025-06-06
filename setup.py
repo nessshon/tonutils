@@ -24,15 +24,15 @@ setuptools.setup(
     package_data={"tonutils": ["py.typed"]},
     python_requires=">=3.10",
     install_requires=[
-        "aiohttp>=3.9.0,<3.12",
+        "aiohttp>=3.9.0,<=3.12.2",
         "aiolimiter~=1.2.1",
         "cachetools~=5.5.0",
         "pycryptodomex~=3.20.0",
         "PyNaCl~=1.5.0",
-        "pytoniq-core~=0.1.36",
+        "pytoniq-core~=0.1.41",
     ],
     extras_require={
-        "pytoniq": ["pytoniq~=0.1.39"],
+        "pytoniq": ["pytoniq~=0.1.40"],
     },
     classifiers=[
         "Development Status :: 4 - Beta",
