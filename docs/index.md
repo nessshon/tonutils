@@ -11,6 +11,9 @@
 
 **Tonutils** is a high-level, object-oriented Python library designed to simplify interaction with the TON blockchain. It integrates several major services and tools, including:
 
+!!! tip
+    For a better understanding of TON internal architecture and core principles, we also recommend reviewing the [official TON documentation](https://docs.ton.org).
+
 **RPC APIs**
 
   * [tonapi.io](https://tonapi.io) — REST API for accessing TON blockchain data.
@@ -24,8 +27,8 @@
 
 Tonutils combines these capabilities into a powerful and flexible toolkit for developers, making it easier to build applications on top of the TON ecosystem.
 
-!!! note
-    To **reliably** retrieve blockchain data — such as transaction lists, NFT lists, counts, and similar details — it is **strongly recommended** to use indexer APIs like [Toncenter](https://toncenter.com/), [Tonapi](https://tonapi.io), and similar services. For working specifically with Tonapi, you can also use my Python library [pytonapi](https://github.com/nessshon/pytonapi).
+!!! tip
+    To retrieve blockchain data — such as transaction lists, NFT lists, counts, and similar details — it is **strongly recommended** to use indexer APIs like [Toncenter](https://toncenter.com/), [Tonapi](https://tonapi.io), and similar services. For working specifically with Tonapi, you can also use my Python library [pytonapi](https://github.com/nessshon/pytonapi).
 
 ---
 

@@ -1,6 +1,9 @@
 This section provides a complete guide to managing TON DNS records and subdomains using the `tonutils` library.
 It covers setting various DNS records, deploying and minting subdomains as NFTs, and using both subdomain collections and simple subdomain managers.
 
+!!! note
+    For a practical example of creating and managing TON subdomains, see [Cookbook: Minting TON Subdomains](../../cookbook/subdomains.md).
+
 ---
 
 ### Set Records

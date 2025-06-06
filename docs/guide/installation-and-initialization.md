@@ -22,6 +22,20 @@ pip install 'tonutils[pytoniq]'
 
 ### RPC API
 
+Вот эквивалент на английском:
+
+---
+
+#### Common Parameters
+
+All API clients in the `tonutils.client` library support request rate management parameters:
+
+* **`rps`** — requests per second limit.  
+  Different APIs enforce their own rate limits. This parameter helps ensure the client does not exceed those limits, avoiding `rate limit` errors.
+
+* **`max_retries`** — number of retry attempts **when a rate limit error (HTTP 429) occurs**.  
+  If the API temporarily rejects a request due to too many requests, the client will wait and retry.
+
 #### toncenter
 
 **[toncenter.com](https://toncenter.com)** — fast and reliable HTTP API for The Open Network.  
@@ -37,10 +51,10 @@ API_KEY = "your api key"  # Optional
 IS_TESTNET = True
 
 # Using Toncenter V3 client
-client_v3 = ToncenterV3Client(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1, max_retries=1)
+client_v3 = ToncenterV3Client(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 
 # Using Toncenter V2 client (if needed)
-# client_v2 = ToncenterV2Client(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1, max_retries=1)
+# client_v2 = ToncenterV2Client(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 ```
 
 ---
@@ -57,7 +71,7 @@ from tonutils.client import TonapiClient
 
 API_KEY = "your api key"
 IS_TESTNET = True
-client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1, max_retries=1)
+client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 ```
 
 ---
@@ -75,7 +89,7 @@ client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1, max_retries
 from tonutils.client import QuicknodeClient
 
 HTTP_PROVIDER_URL = "https://blissful-withered-surf.ton-mainnet.quiknode.pro/d6e8...1964"
-client = QuicknodeClient(HTTP_PROVIDER_URL, rps=1, max_retries=1)
+client = QuicknodeClient(HTTP_PROVIDER_URL, rps=1)
 ```
 
 ---
@@ -92,7 +106,7 @@ from tonutils.client import TatumClient
 
 API_KEY = "your api key"
 IS_TESTNET = True
-client = TatumClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1, max_retries=1)
+client = TatumClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 ```
 
 ---
