@@ -56,6 +56,7 @@ class HTTPBridge:
         self.session = BridgeSession()
         # Holds futures by request ID so that we can retrieve the corresponding future upon response.
         self.pending_requests: Dict[int, asyncio.Future] = {}
+        self.request_event_types: Dict[int, Event] = {}
 
         self._api_token: Optional[str] = self._choose_api_token(api_tokens, wallet_app)
         self._on_wallet_status_changed = on_wallet_status_changed
@@ -73,7 +74,7 @@ class HTTPBridge:
         return self._is_closed
 
     @property
-    def client_session_closed(self) -> bool:
+    def is_session_closed(self) -> bool:
         """
         Checks whether the current aiohttp client session is closed.
         """
@@ -312,7 +313,7 @@ class HTTPBridge:
         # It's a CONNECT or DISCONNECT event
         if event_id is not None:
             # Prevent reprocessing older events (except for CONNECT)
-            if last_wallet_event_id is not None and event_id <= last_wallet_event_id:
+            if last_wallet_event_id is not None and event_id <= last_wallet_event_id and event_name != Event.CONNECT:
                 logger.debug(f"Ignoring older event ID {event_id} <= {last_wallet_event_id}")
                 return
             if event_name != Event.CONNECT:
@@ -414,7 +415,6 @@ class HTTPBridge:
 
         request.id = rpc_request_id
         message = json.dumps(request.to_dict())
-
         encoded_request = self.session.session_crypto.encrypt(
             message=message,
             receiver_pub_key=self.session.wallet_public_key,
@@ -427,7 +427,7 @@ class HTTPBridge:
 
         if rpc_request_id == self.RESERVED_ID:
             logger.debug("Reserved request ID used; no future to set.")
-            return
+            return None
 
         logger.debug(f"Request ID {rpc_request_id} sent successfully. Waiting for response...")
         future = self.pending_requests.get(rpc_request_id)
@@ -537,7 +537,7 @@ class HTTPBridge:
         """
         Stops the SSE subscription and clears the current session data.
         """
-        if not self.client_session_closed:
+        if not self.is_session_closed:
             await self.pause_sse()
 
         self.session = BridgeSession()

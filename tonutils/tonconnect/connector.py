@@ -4,7 +4,7 @@ import asyncio
 import inspect
 import json
 import time
-from typing import List, Tuple, Union, cast, Callable, Awaitable
+from typing import List, Union, cast, Callable, Awaitable
 
 from pytoniq_core import Address, Cell, StateInit
 
@@ -13,10 +13,14 @@ from .models import (
     DeviceInfo,
     Event,
     EventError,
+    Request,
     SendConnectRequest,
     SendDisconnectRequest,
     SendTransactionRequest,
     SendTransactionResponse,
+    SignDataPayload,
+    SignDataRequest,
+    SignDataResponse,
     TonProof,
     Transaction,
     WalletApp,
@@ -36,30 +40,31 @@ class Connector:
     send/receive transactions, and handle events such as CONNECT, DISCONNECT, and TRANSACTION.
     """
 
+    SIGN_DATA_TIMEOUT = 300
     DISCONNECT_TIMEOUT = 600
     STANDARD_UNIVERSAL_URL = "tc://"
 
-    class PendingTransactionContext:
+    class PendingRequestContext:
         """
-        A context manager for awaiting an RPC transaction response.
+        A context manager for awaiting an RPC request response.
         It retrieves the corresponding future from the connector’s pending_requests by ID.
         """
 
         def __init__(self, connector: Connector, rpc_request_id: int):
             """
             :param connector: The Connector instance.
-            :param rpc_request_id: Unique RPC request ID used to identify the transaction.
+            :param rpc_request_id: Unique RPC request ID used to identify the request.
             """
             self.connector = connector
             self.rpc_request_id = rpc_request_id
 
-        async def __aenter__(self) -> Union[TonConnectError, SendTransactionResponse]:
+        async def __aenter__(self) -> Union[TonConnectError, SendTransactionResponse, SignDataResponse]:
             """
-            Enters the context, returning the future’s result (either an error or a successful transaction response).
+            Enters the context, returning the future’s result (either an error or a successful response).
             """
             future = self.connector.bridge.pending_requests.get(self.rpc_request_id)
             if future is None or future.done():
-                logger.debug(f"No pending request with ID {self.rpc_request_id} found during transaction context entry")
+                logger.debug(f"No pending request with ID {self.rpc_request_id} found during request context entry")
                 raise TonConnectError(f"No pending request with ID {self.rpc_request_id}")
             return await future
 
@@ -214,6 +219,8 @@ class Connector:
                 if rpc_request_id != -1:
                     logger.debug(f"Attempted to cancel already cancelled request with ID: {rpc_request_id}")
             del self.bridge.pending_requests[rpc_request_id]
+        if rpc_request_id in self.bridge.request_event_types:
+            del self.bridge.request_event_types[rpc_request_id]
 
     async def _execute_event_handlers(self, handlers: List[Any], kwargs: Dict[str, Any]) -> None:
         """
@@ -284,89 +291,44 @@ class Connector:
         :param rpc_request_id: The unique ID correlating this response to a previous RPC request.
         """
         logger.debug(f"Received RPC response for user_id={self.user_id}: {response} (request ID: {rpc_request_id})")
+
         future = self.bridge.pending_requests.get(rpc_request_id)
         if future is None or future.done():
             logger.debug(f"Received RPC response for non-existent or completed request ID: {rpc_request_id}")
             return
 
-        error = SendTransactionEventError.from_response(response)
-        event: Union[Event, EventError] = EventError.TRANSACTION if error else Event.TRANSACTION
-        logger.debug(f"Processing event {event.name} for user_id={self.user_id}")
-        handlers, kwargs = self._get_handlers_and_kwargs(event)
-        kwargs["user_id"] = self.user_id
+        is_sign_data = self.bridge.request_event_types[rpc_request_id] == Event.SIGN_DATA
+        error = SendRequestEventError.from_response(response)
+        data: Dict[str, Any] = {"user_id": self.user_id}
 
-        if error is not None:
-            kwargs["error"] = error
-            future.set_result(error)
-            logger.debug(f"Transaction error for user_id={self.user_id}: {error}")
+        event: Union[Event, EventError]
+        result: Union[SendTransactionResponse, SignDataResponse, TonConnectError]
+
+        if error:
+            event = EventError.SIGN_DATA if is_sign_data else EventError.TRANSACTION
+            result = error
+            data["error"] = error
+            logger.debug(f"Request error for user_id={self.user_id}: {error}")
+        elif is_sign_data:
+            event = Event.SIGN_DATA
+            sign_data = SignDataResponse.from_dict(response)
+            result = sign_data
+            data["sign_data"] = sign_data
+            logger.debug(f"Sign Data successful for user_id={self.user_id}: {sign_data}")
         else:
+            event = Event.TRANSACTION
             transaction = SendTransactionResponse.from_dict(response)
-            kwargs["transaction"] = transaction
-            future.set_result(transaction)
+            result = transaction
+            data["transaction"] = transaction
             logger.debug(f"Transaction successful for user_id={self.user_id}: {transaction.boc}")
 
+        logger.debug(f"Processing event {event.name} for user_id={self.user_id}")
+        handlers, kwargs = self._get_handlers_and_kwargs(event)
+        kwargs.update(data)
+
+        future.set_result(result)
         self._clean_pending_request(rpc_request_id)
         await self._execute_event_handlers(handlers, kwargs)
-
-    @staticmethod
-    def _find_send_transaction_feature(features: List[Any]) -> Tuple[bool, Optional[Dict[str, Any]]]:
-        """
-        Searches for the 'SendTransaction' feature in the wallet's device features.
-        Also checks for a deprecated string-based 'SendTransaction'.
-
-        :param features: A list of features from the wallet device.
-        :return: A tuple (is_deprecated_supported, feature_dict_or_None).
-        """
-        is_deprecated_supported = "SendTransaction" in features
-
-        send_transaction_feature = None
-        for feature in features:
-            if isinstance(feature, dict) and feature.get("name") == "SendTransaction":
-                send_transaction_feature = feature
-                break
-
-        return is_deprecated_supported, send_transaction_feature
-
-    def _verify_send_transaction_feature(self, required_messages: int) -> None:
-        """
-        Verifies that the connected wallet supports the 'SendTransaction' feature
-        with enough messages for the request.
-
-        :param required_messages: How many messages the transaction requires.
-        :raises TonConnectError: If the wallet/device info is missing or does not support the feature.
-        """
-        if self.wallet is None or self.wallet.device is None:
-            logger.debug(f"Wallet or wallet device information is missing for user_id={self.user_id}")
-            raise TonConnectError("Wallet or wallet device information is missing.")
-
-        features = self.wallet.device.features
-        if not isinstance(features, list):
-            logger.debug(f"Invalid features format for user_id={self.user_id}")
-            raise TonConnectError("Features must be a list.")
-
-        is_deprecated, feature = self._find_send_transaction_feature(features)
-
-        if not is_deprecated and not feature:
-            logger.debug(f"SendTransaction feature not supported for user_id={self.user_id}")
-            raise WalletNotSupportFeatureError("Wallet does not support the 'SendTransaction' feature.")
-
-        max_messages = feature.get("maxMessages") if feature else None
-        if max_messages is not None:
-            if max_messages < required_messages:
-                logger.debug(
-                    f"Wallet cannot handle SendTransaction request for user_id=%d: max %d, required %d",
-                    self.user_id, max_messages, required_messages
-                )
-                raise WalletNotSupportFeatureError(
-                    f"Wallet cannot handle SendTransaction request: "
-                    f"max supported messages {max_messages}, required {required_messages}."
-                )
-        else:
-            logger.debug(
-                f"Connected wallet did not provide 'maxMessages' info "
-                f"for SendTransaction for user_id={self.user_id}."
-                "The request may be rejected by the wallet.",
-            )
 
     def _prepare_transaction(self, transaction: Transaction) -> None:
         """
@@ -376,8 +338,9 @@ class Connector:
         :param transaction: The Transaction object to be prepared.
         :raises TonConnectError: If the wallet is not connected or does not support SendTransaction.
         """
-        required_messages = len(transaction.messages)
-        self._verify_send_transaction_feature(required_messages)
+        if not self.wallet or not self.wallet.device:
+            raise TonConnectError("Wallet or device info is not available.")
+        self.wallet.device.verify_send_transaction_feature(self.wallet, len(transaction.messages))
 
         timestamp = int(time.time())
         transaction.valid_until = transaction.valid_until or timestamp + 300
@@ -388,6 +351,26 @@ class Connector:
         logger.debug(
             "Transaction prepared for user_id=%d: valid_until=%d, from=%s, network=%s",
             self.user_id, transaction.valid_until, transaction.from_, transaction.network
+        )
+
+    async def _process_rpc_request(
+            self,
+            request: Request,
+            connection: Dict[str, Any],
+            rpc_request_id: int,
+            timeout: int,
+    ) -> None:
+        connection["next_rpc_request_id"] = str(rpc_request_id + 1)
+        await self.bridge.storage.set_item(self.storage.KEY_CONNECTION, json.dumps(connection))
+
+        await asyncio.wait_for(
+            asyncio.shield(
+                self.bridge.send_request(
+                    request=request,
+                    rpc_request_id=rpc_request_id,
+                ),
+            ),
+            timeout=timeout,
         )
 
     async def _process_transaction(
@@ -404,22 +387,13 @@ class Connector:
         :param rpc_request_id: The unique RPC request ID for this transaction.
         """
         try:
+            self.bridge.request_event_types[rpc_request_id] = Event.TRANSACTION
+
             self._prepare_transaction(transaction)
             request = SendTransactionRequest(params=[transaction])
             timeout = int(transaction.valid_until - int(time.time()))  # type: ignore
 
-            connection["next_rpc_request_id"] = str(rpc_request_id + 1)
-            await self.bridge.storage.set_item(self.storage.KEY_CONNECTION, json.dumps(connection))
-
-            logger.debug(
-                "Sending SendTransactionRequest for user_id=%d with request ID=%d",
-                self.user_id, rpc_request_id
-            )
-            # Wait for the response or a timeout.
-            await asyncio.wait_for(
-                asyncio.shield(self.bridge.send_request(request, rpc_request_id)),
-                timeout=timeout,
-            )
+            await self._process_rpc_request(request, connection, rpc_request_id, timeout)
 
         except asyncio.TimeoutError:
             response = {"error": {"code": 500, "message": "Failed to send transaction: timeout."}}
@@ -433,6 +407,54 @@ class Connector:
                 self.user_id, rpc_request_id, e
             )
             await self._on_rpc_response_received(response, rpc_request_id)
+
+    async def _process_sign_data(
+            self,
+            payload: SignDataPayload,
+            connection: Dict[str, Any],
+            rpc_request_id: int,
+    ) -> None:
+        try:
+            self.bridge.request_event_types[rpc_request_id] = Event.SIGN_DATA
+
+            request = SignDataRequest(params=[payload])
+            timeout = self.SIGN_DATA_TIMEOUT
+
+            await self._process_rpc_request(request, connection, rpc_request_id, timeout)
+
+        except asyncio.TimeoutError:
+            response = {"error": {"code": 500, "message": "Failed to send sign data request: timeout."}}
+            logger.debug(f"Sign data timeout for user_id={self.user_id} with request ID={rpc_request_id}")
+            await self._on_rpc_response_received(response, rpc_request_id)
+
+        except Exception as e:
+            response = {"error": {"code": 0, "message": f"Failed to sign data: {e}"}}
+            logger.exception(
+                "Unexpected error during sign data for user_id=%d with request ID=%d: %s",
+                self.user_id, rpc_request_id, e
+            )
+            await self._on_rpc_response_received(response, rpc_request_id)
+
+    async def sign_data(self, payload: SignDataPayload) -> int:
+        """
+        Sends a sign data request to the wallet.
+
+        :param payload: The payload to sign.
+        :return: The RPC request ID for the sign data request.
+        """
+        if not self.wallet or not self.wallet.device:
+            raise TonConnectError("Wallet or device info is not available.")
+
+        self.wallet.device.verify_sign_data_feature(self.wallet, payload)
+        logger.debug(f"Send Sign Data for user_id={self.user_id}: {payload}")
+
+        connection = await self.bridge.get_stored_connection_data()  # type: ignore
+        rpc_request_id = int(connection.get("next_rpc_request_id", "0"))
+        self.bridge.pending_requests[rpc_request_id] = self._create_future()
+
+        asyncio.create_task(self._process_sign_data(payload, connection, rpc_request_id))
+        logger.debug(f"Send Sign Data task started for user_id={self.user_id} with request ID={rpc_request_id}")
+        return rpc_request_id
 
     async def send_transaction(self, transaction: Transaction) -> int:
         """
@@ -590,55 +612,40 @@ class Connector:
         if self._connect_timeout_task is not None and not self._connect_timeout_task.done():
             self._connect_timeout_task.cancel()
 
-    def is_transaction_pending(self, rpc_request_id: int) -> bool:
+    def is_request_pending(self, rpc_request_id: int) -> bool:
         """
-        Checks if a particular transaction (by RPC request ID) is still pending.
+        Checks if a particular request (by RPC request ID) is still pending.
 
-        :param rpc_request_id: The ID of the transaction to check.
+        :param rpc_request_id: The ID of the request to check.
         :return: True if pending, otherwise False.
         """
         future = self.bridge.pending_requests.get(rpc_request_id)
         return future is not None and not future.done()
 
-    def pending_transaction_context(self, rpc_request_id: int) -> Connector.PendingTransactionContext:
+    def pending_request_context(self, rpc_request_id: int) -> Connector.PendingRequestContext:
         """
-        Returns a context manager for awaiting the result of a transaction request.
+        Returns a context manager for awaiting the result of a pending request.
 
         :param rpc_request_id: The ID of the pending transaction.
-        :return: A PendingTransactionContext instance.
+        :return: A PendingRequestContext instance.
         """
-        return Connector.PendingTransactionContext(self, rpc_request_id)
+        return Connector.PendingRequestContext(self, rpc_request_id)
 
-    def cancel_pending_transaction(self, rpc_request_id: int) -> None:
+    def cancel_pending_request(self, rpc_request_id: int) -> None:
         """
-        Cancels a pending transaction by its RPC request ID, removing it from the pending list.
+        Cancels a pending request by its RPC request ID, removing it from the pending list.
 
-        :param rpc_request_id: The ID of the pending transaction to cancel.
+        :param rpc_request_id: The ID of the pending request to cancel.
         """
         future = self.bridge.pending_requests.get(rpc_request_id)
         if future is not None and not future.done():
             future.cancel()
             logger.debug(
-                "Cancelled pending transaction for user_id=%d with request ID=%d",
+                "Cancelled pending request for user_id=%d with request ID=%d",
                 self.user_id, rpc_request_id
             )
         if rpc_request_id in self.bridge.pending_requests:
             del self.bridge.pending_requests[rpc_request_id]
-
-    def get_max_supported_messages(self) -> Optional[int]:
-        """
-        Retrieves the maximum number of supported messages for the 'SendTransaction' feature
-        based on the connected wallet’s device features.
-
-        :return: The max number of messages or None if not specified.
-        """
-        if not self.wallet or not self.wallet.device:
-            logger.debug(f"No wallet or device information available for user_id={self.user_id}")
-            return None
-        _, feature = self._find_send_transaction_feature(self.wallet.device.features)  # type: ignore
-        max_messages = feature.get("maxMessages") if feature else None
-        logger.debug(f"Max supported messages for user_id={self.user_id}: {max_messages}")
-        return max_messages
 
     async def send_transfer(
             self,

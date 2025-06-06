@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 from dataclasses import dataclass, field
 from enum import Enum
@@ -245,6 +246,7 @@ class SendTransactionResponse:
     """
     Represents the response received after sending a transaction.
     """
+    id: Optional[int] = None
     _boc: Optional[str] = None
 
     @property
@@ -296,7 +298,7 @@ class SendTransactionResponse:
         :param data: A dictionary containing the transaction response data.
         :return: An instance of SendTransactionResponse.
         """
-        return cls(_boc=data.get("result"))
+        return cls(id=data.get("id"), _boc=data.get("result"))
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -304,7 +306,7 @@ class SendTransactionResponse:
 
         :return: A dictionary representation of the SendTransactionResponse.
         """
-        return {"boc": self._boc}
+        return {"id": self.id, "boc": self._boc}
 
 
 @dataclass
@@ -369,4 +371,163 @@ class SendConnectRequest:
         return {
             "manifestUrl": self.manifest_url,
             "items": [item.to_dict() for item in self.items]
+        }
+
+
+@dataclass
+class SignDataPayloadText:
+    text: str
+    type: str = "text"
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> SignDataPayloadText:
+        return cls(
+            text=data["text"],
+        )
+
+    def to_dict(self):
+        return {
+            "type": self.type,
+            "text": self.text
+        }
+
+
+@dataclass
+class SignDataPayloadBinary:
+    bytes: bytes
+    type: str = "binary"
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> SignDataPayloadBinary:
+        return cls(
+            bytes=base64.b64decode(data["bytes"]),
+        )
+
+    def to_dict(self):
+        return {
+            "type": self.type,
+            "bytes": base64.b64encode(self.bytes).decode(),
+        }
+
+
+@dataclass
+class SignDataPayloadCell:
+    schema: str
+    cell: Cell
+    type: str = "cell"
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> SignDataPayloadCell:
+        return cls(
+            schema=data["schema"],
+            cell=Cell.one_from_boc(base64.b64decode(data["cell"])),
+        )
+
+    def to_dict(self):
+        return {
+            "type": self.type,
+            "schema": self.schema,
+            "cell": boc_to_base64_string(self.cell.to_boc()),
+        }
+
+
+SignDataPayload = Union[
+    SignDataPayloadText,
+    SignDataPayloadBinary,
+    SignDataPayloadCell
+]
+
+
+@dataclass
+class SignDataResult:
+    signature: Union[str, bytes]
+    address: str
+    timestamp: int
+    domain: str
+    payload: SignDataPayload
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> SignDataResult:
+        payload_data = data["payload"]
+        payload_type = payload_data.get("type")
+
+        payload: Union[
+            SignDataPayloadText,
+            SignDataPayloadBinary,
+            SignDataPayloadCell
+        ]
+        if payload_type == "text":
+            payload = SignDataPayloadText.from_dict(payload_data)
+        elif payload_type == "binary":
+            payload = SignDataPayloadBinary.from_dict(payload_data)
+        elif payload_type == "cell":
+            payload = SignDataPayloadCell.from_dict(payload_data)
+        else:
+            raise ValueError(f"Unknown payload type: {payload_type}")
+
+        signature = data.get("signature")
+        if signature is None:
+            raise ValueError("Signature is missing")
+
+        return cls(
+            signature=base64.b64decode(signature),
+            address=data["address"],
+            timestamp=data["timestamp"],
+            domain=data["domain"],
+            payload=payload,
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        if isinstance(self.signature, bytes):
+            self.signature = base64.b64encode(self.signature).decode()
+
+        return {
+            "signature": self.signature,
+            "address": self.address,
+            "timestamp": self.timestamp,
+            "domain": self.domain,
+            "payload": self.payload.to_dict(),
+        }
+
+
+@dataclass
+class SignDataResponse:
+    id: str
+    result: SignDataResult
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]):
+        return SignDataResponse(
+            id=data["id"],
+            result=SignDataResult.from_dict(data["result"]),
+        )
+
+    def verify_sign_data(self, public_key: Union[str, bytes]) -> bool:
+        from ..utils.verifiers import verify_sign_data
+
+        return verify_sign_data(
+            public_key=public_key,
+            params=self.result,
+        )
+
+
+@dataclass
+class SignDataRequest(Request):
+    """
+    Represents a request to sign data using the wallet.
+    """
+    params: List[SignDataPayload] = field(default_factory=list)
+    id: Optional[int] = None
+    method: str = "signData"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the SignDataRpcRequest instance into a dictionary format suitable for JSON serialization.
+
+        :return: A dictionary representation of the SignDataRequest.
+        """
+        return {
+            "id": str(self.id) if self.id is not None else None,
+            "method": self.method,
+            "params": [json.dumps(payload.to_dict()) for payload in self.params],
         }

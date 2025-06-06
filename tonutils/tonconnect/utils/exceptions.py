@@ -86,6 +86,12 @@ class ManifestContentError(TonConnectError):
         super().__init__(message or "Manifest content error.")
 
 
+class MethodNotSupportedError(TonConnectError):
+    def __init__(self, message: Optional[str] = None) -> None:
+        self.info = "The requested method is not supported by the wallet or is unknown."
+        super().__init__(message or "Method not supported.")
+
+
 class _EventError:
     ERRORS: Dict[int, Type[TonConnectError]]
 
@@ -118,17 +124,17 @@ class ConnectEventError(_EventError):
         3: ManifestContentError,
         100: UnknownAppError,
         300: UserRejectsError,
-        400: ManifestContentError,
+        400: MethodNotSupportedError,
         500: RequestTimeoutError,
     }
 
 
-class SendTransactionEventError(_EventError):
+class SendRequestEventError(_EventError):
     ERRORS = {
         0: UnknownError,
         1: BadRequestError,
         100: UnknownAppError,
         300: UserRejectsError,
-        400: UnknownError,
+        400: MethodNotSupportedError,
         500: RequestTimeoutError,
     }

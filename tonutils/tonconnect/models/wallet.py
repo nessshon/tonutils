@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import hashlib
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse, parse_qs, urlencode
 
-from nacl.signing import VerifyKey
-
 from ..models import Account, DeviceInfo, TonProof
 from ..utils.exceptions import TonConnectError
 from ..utils.logger import logger
+from ..utils.verifiers import verify_ton_proof
 
 
 @dataclass
@@ -126,7 +125,7 @@ class WalletInfo:
     account: Optional[Account] = None
     ton_proof: Optional[TonProof] = None
 
-    def verify_proof(self, src_payload: Optional[str] = None) -> bool:
+    def verify_proof_payload(self, src_payload: Optional[str] = None) -> bool:
         """
         Verifies the TON proof against the wallet's account and device information.
 
@@ -135,59 +134,44 @@ class WalletInfo:
         :return: True if the proof is valid and unexpired, False otherwise.
         """
         if self.ton_proof is None or self.account is None:
+            logger.debug("Account or TON proof is missing.")
             return False
 
-        wc, whash = self.account.address.wc, self.account.address.hash_part
+        if self.account.public_key is None:
+            raise ValueError("Public key is missing and required for proof verification.")
 
-        # Construct the message for verification
-        message = bytearray()
-        message.extend("ton-proof-item-v2/".encode())
-        message.extend(wc.to_bytes(4, "little"))
-        message.extend(whash)
-        message.extend(self.ton_proof.domain_len.to_bytes(4, "little"))
-        message.extend(self.ton_proof.domain_val.encode())
-        message.extend(self.ton_proof.timestamp.to_bytes(8, "little"))
-        message.extend((src_payload or self.ton_proof.payload).encode())
-
-        # Construct the signature message
-        signature_message = bytearray()
-        signature_message.extend(bytes.fromhex("ffff"))
-        signature_message.extend("ton-connect".encode())
-        signature_message.extend(hashlib.sha256(message).digest())
-
-        # Prepare public key
-        public_key = self.account.public_key
-        try:
-            if isinstance(public_key, str):
-                public_key_bytes = bytes.fromhex(public_key)
-            elif isinstance(public_key, bytes):
-                public_key_bytes = public_key
-            else:
-                logger.debug("Public key must be str or bytes.")
-                return False
-        except ValueError:
-            logger.debug("Invalid hex in public key.")
+        payload = src_payload or self.ton_proof.payload
+        if not isinstance(payload, str) or len(payload) < 32:
+            logger.debug("Payload is invalid or too short.")
             return False
 
-        # Prepare signature
-        signature = (
-            bytes.fromhex(self.ton_proof.signature)
-            if isinstance(self.ton_proof.signature, str)
-            else self.ton_proof.signature
+        is_valid = verify_ton_proof(
+            public_key=self.account.public_key,
+            ton_proof=self.ton_proof,
+            address=self.account.address,
+            payload=payload,
         )
 
-        # Verify signature
-        try:
-            verify_key = VerifyKey(public_key_bytes)
-            verify_key.verify(
-                hashlib.sha256(signature_message).digest(),
-                signature,
-            )
-            logger.debug("Proof is ok!")
-            return True
-        except (Exception,):
+        if not is_valid:
             logger.debug("Proof is invalid!")
-        return False
+            return False
+
+        logger.debug("Proof is ok!")
+
+        # Parse expiration time (last 8 bytes of the second 16-byte segment)
+        try:
+            expire_hex = payload[16:32]
+            expire_time = int(expire_hex, 16)
+        except ValueError:
+            logger.debug("Invalid proof format: unable to parse expiration timestamp.")
+            return False
+
+        current_time = int(time.time())
+        if current_time > expire_time:
+            logger.debug("Proof has expired.")
+            return False
+
+        return True
 
     @classmethod
     def from_payload(cls, payload: Dict[str, Any]) -> WalletInfo:

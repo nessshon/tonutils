@@ -69,6 +69,7 @@ class TonConnect:
 
         self._connectors: Dict[Union[int, str], Connector] = {}
         self._connectors_lock = asyncio.Lock()
+        self._next_user_id = 1
 
         self.extra = extra
 
@@ -85,6 +86,7 @@ class TonConnect:
             "_events_data",
             "_connectors",
             "_connectors_lock",
+            "_next_user_id",
             "extra",
         }:
             super().__setattr__(name, value)
@@ -134,6 +136,8 @@ class TonConnect:
             EventError.DISCONNECT: [],
             Event.TRANSACTION: [],
             EventError.TRANSACTION: [],
+            Event.SIGN_DATA: [],
+            EventError.SIGN_DATA: [],
         }
 
     @staticmethod
@@ -150,6 +154,8 @@ class TonConnect:
             EventError.DISCONNECT: {},
             Event.TRANSACTION: {},
             EventError.TRANSACTION: {},
+            Event.SIGN_DATA: {},
+            EventError.SIGN_DATA: {},
         }
 
     def _init_user_storage(self, user_id: Union[int, str]) -> IStorage:
@@ -224,21 +230,26 @@ class TonConnect:
         async with self._connectors_lock:
             return self._connectors.get(user_id)
 
-    async def init_connector(self, user_id: Union[int, str]) -> Connector:
+    async def init_connector(self, user_id: Optional[Union[int, str]] = None) -> Connector:
         """
         Retrieves or creates a Connector for the specified user, then attempts to restore any existing connection.
+        If user_id is None, a unique integer ID is generated.
 
-        :param user_id: The user identifier.
-        :return: The ready-to-use Connector instance.
+        :param user_id: Optional user identifier.
+        :return: The Connector instance.
         """
         async with self._connectors_lock:
+            if user_id is None:
+                user_id = self._next_user_id
+                self._next_user_id += 1
+
             if user_id in self._connectors:
                 connector = self._connectors[user_id]
             else:
                 connector = await self.create_connector(user_id)
 
             # If there's no active wallet or the connector’s bridge session is closed, try to restore it.
-            if connector.wallet is None or connector.bridge.client_session_closed:
+            if connector.wallet is None or connector.bridge.is_session_closed:
                 try:
                     await connector.restore_connection()
                     logger.debug(f"Connection restored for user_id={user_id}")

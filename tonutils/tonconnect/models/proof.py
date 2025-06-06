@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import base64
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Union
 
 from ..utils.exceptions import TonConnectError
 
@@ -17,7 +17,7 @@ class TonProof:
     domain_len: int
     domain_val: str
     payload: str
-    signature: bytes
+    signature: Union[str, bytes]
 
     def __repr__(self) -> str:
         return (
@@ -50,9 +50,7 @@ class TonProof:
         if domain_val is None:
             raise TonConnectError("domain value not contains in ton_proof")
         payload = proof.get("payload")
-
-        signature_base64: Optional[str] = proof.get("signature")
-        signature = base64.b64decode(signature_base64) if signature_base64 else b""
+        signature = base64.b64decode(proof.get("signature"))
 
         return cls(
             timestamp=timestamp,
@@ -68,6 +66,9 @@ class TonProof:
 
         :return: A dictionary representation of the TonProof instance.
         """
+        if isinstance(self.signature, bytes):
+            self.signature = base64.b64encode(self.signature).decode()
+
         return {
             "timestamp": self.timestamp,
             "domain": {

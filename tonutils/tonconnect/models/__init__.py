@@ -14,6 +14,13 @@ from .request import (
     SendDisconnectRequest,
     SendTransactionRequest,
     SendTransactionResponse,
+    SignDataPayload,
+    SignDataPayloadCell,
+    SignDataPayloadText,
+    SignDataPayloadBinary,
+    SignDataRequest,
+    SignDataResponse,
+    SignDataResult,
 )
 from .wallet import (
     WalletApp,
@@ -34,6 +41,13 @@ __all__ = [
     "SendDisconnectRequest",
     "SendTransactionRequest",
     "SendTransactionResponse",
+    "SignDataPayload",
+    "SignDataPayloadCell",
+    "SignDataPayloadText",
+    "SignDataPayloadBinary",
+    "SignDataRequest",
+    "SignDataResponse",
+    "SignDataResult",
     "WalletApp",
     "WalletInfo",
 ]

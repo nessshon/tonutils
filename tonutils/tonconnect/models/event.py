@@ -9,6 +9,7 @@ class Event(str, Enum):
     CONNECT = "connect"
     DISCONNECT = "disconnect"
     TRANSACTION = "transaction"
+    SIGN_DATA = "sign_data"
 
 
 class EventError(str, Enum):
@@ -18,6 +19,7 @@ class EventError(str, Enum):
     CONNECT = "connect_error"
     DISCONNECT = "disconnect_error"
     TRANSACTION = "transaction_error"
+    SIGN_DATA = "sign_data_error"
 
 
 # Type alias for event handler functions.
