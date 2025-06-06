@@ -2,336 +2,350 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
         <loc>https://nessshon.github.io/tonutils/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/donate/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/donate/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/donate/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/sponsors/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/sponsors/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/sponsors/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/cookbook/cnft/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/cnft/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/cnft/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/cookbook/subdomains/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/subdomains/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/subdomains/"/>
     </url>
     <url>
+        <loc>https://nessshon.github.io/tonutils/cookbook/tonconnect-integration/</loc>
+        <lastmod>2025-06-06</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/tonconnect-integration/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/tonconnect-integration/"/>
+    </url>
+    <url>
+        <loc>https://nessshon.github.io/tonutils/cookbook/tonconnect-telegram/</loc>
+        <lastmod>2025-06-06</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/tonconnect-telegram/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/tonconnect-telegram/"/>
+    </url>
+    <url>
         <loc>https://nessshon.github.io/tonutils/cookbook/vanity/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/vanity/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/vanity/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/guide/dns-operations/</loc>
-        <lastmod>2025-05-22</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/dns-operations/"/>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/dns-operations/"/>
-    </url>
-    <url>
         <loc>https://nessshon.github.io/tonutils/guide/getting-testnet-assets/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/getting-testnet-assets/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/getting-testnet-assets/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/guide/installation-and-initialization/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/installation-and-initialization/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/installation-and-initialization/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/guide/jetton-operations/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/guide/usage-scenarios/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/jetton-operations/"/>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/jetton-operations/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/usage-scenarios/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/usage-scenarios/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/guide/nft-operations/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/guide/examples/dns-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/nft-operations/"/>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/nft-operations/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/dns-operations/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/dns-operations/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/guide/wallet-operations/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/guide/examples/jetton-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/wallet-operations/"/>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/wallet-operations/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/jetton-operations/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/jetton-operations/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/guide/ton-connect/sending-transactions/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/guide/examples/nft-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/ton-connect/sending-transactions/"/>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/ton-connect/sending-transactions/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/nft-operations/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/nft-operations/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/guide/ton-connect/telegram-bot-integration/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/guide/examples/ton-connect-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/ton-connect/telegram-bot-integration/"/>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/ton-connect/telegram-bot-integration/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/ton-connect-operations/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/ton-connect-operations/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/guide/ton-connect/wallet-connection/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/guide/examples/wallet-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/ton-connect/wallet-connection/"/>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/ton-connect/wallet-connection/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/wallet-operations/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/wallet-operations/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/how-to/create-multiple-wallets/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/create-multiple-wallets/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/create-multiple-wallets/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/how-to/get-contract-code-and-data/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/get-contract-code-and-data/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/get-contract-code-and-data/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/how-to/get-contract-information/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/get-contract-information/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/get-contract-information/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/how-to/get-jetton-wallet-address/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/get-jetton-wallet-address/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/get-jetton-wallet-address/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/how-to/get-nft-item-address/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/get-nft-item-address/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/get-nft-item-address/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/how-to/send-claim-mintless-jetton/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/send-claim-mintless-jetton/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/send-claim-mintless-jetton/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/how-to/send-encrypted-message/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/send-encrypted-message/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/send-encrypted-message/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/how-to/send-gasless-transaction/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/send-gasless-transaction/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/send-gasless-transaction/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/how-to/use-func-hash-functions/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/use-func-hash-functions/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/use-func-hash-functions/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/donate/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/donate/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/donate/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/sponsors/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/sponsors/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/sponsors/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/cookbook/cnft/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/cnft/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/cnft/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/cookbook/subdomains/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/subdomains/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/subdomains/"/>
     </url>
     <url>
+        <loc>https://nessshon.github.io/tonutils/ru/cookbook/tonconnect-integration/</loc>
+        <lastmod>2025-06-06</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/tonconnect-integration/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/tonconnect-integration/"/>
+    </url>
+    <url>
+        <loc>https://nessshon.github.io/tonutils/ru/cookbook/tonconnect-telegram/</loc>
+        <lastmod>2025-06-06</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/tonconnect-telegram/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/tonconnect-telegram/"/>
+    </url>
+    <url>
         <loc>https://nessshon.github.io/tonutils/ru/cookbook/vanity/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/cookbook/vanity/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/cookbook/vanity/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/ru/guide/dns-operations/</loc>
-        <lastmod>2025-05-22</lastmod>
-        <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/dns-operations/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/dns-operations/"/>
-    </url>
-    <url>
         <loc>https://nessshon.github.io/tonutils/ru/guide/getting-testnet-assets/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/getting-testnet-assets/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/getting-testnet-assets/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/guide/installation-and-initialization/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/installation-and-initialization/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/installation-and-initialization/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/ru/guide/jetton-operations/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/ru/guide/usage-scenarios/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/jetton-operations/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/jetton-operations/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/usage-scenarios/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/usage-scenarios/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/ru/guide/nft-operations/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/ru/guide/examples/dns-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/nft-operations/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/nft-operations/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/dns-operations/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/dns-operations/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/ru/guide/wallet-operations/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/ru/guide/examples/jetton-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/wallet-operations/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/wallet-operations/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/jetton-operations/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/jetton-operations/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/ru/guide/ton-connect/sending-transactions/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/ru/guide/examples/nft-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/ton-connect/sending-transactions/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/ton-connect/sending-transactions/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/nft-operations/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/nft-operations/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/ru/guide/ton-connect/telegram-bot-integration/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/ru/guide/examples/ton-connect-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/ton-connect/telegram-bot-integration/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/ton-connect/telegram-bot-integration/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/ton-connect-operations/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/ton-connect-operations/"/>
     </url>
     <url>
-        <loc>https://nessshon.github.io/tonutils/ru/guide/ton-connect/wallet-connection/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <loc>https://nessshon.github.io/tonutils/ru/guide/examples/wallet-operations/</loc>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
-        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/ton-connect/wallet-connection/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/ton-connect/wallet-connection/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/guide/examples/wallet-operations/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/guide/examples/wallet-operations/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/how-to/create-multiple-wallets/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/create-multiple-wallets/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/create-multiple-wallets/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/how-to/get-contract-code-and-data/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/get-contract-code-and-data/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/get-contract-code-and-data/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/how-to/get-contract-information/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/get-contract-information/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/get-contract-information/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/how-to/get-jetton-wallet-address/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/get-jetton-wallet-address/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/get-jetton-wallet-address/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/how-to/get-nft-item-address/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/get-nft-item-address/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/get-nft-item-address/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/how-to/send-claim-mintless-jetton/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/send-claim-mintless-jetton/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/send-claim-mintless-jetton/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/how-to/send-encrypted-message/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/send-encrypted-message/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/send-encrypted-message/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/how-to/send-gasless-transaction/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/send-gasless-transaction/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/send-gasless-transaction/"/>
     </url>
     <url>
         <loc>https://nessshon.github.io/tonutils/ru/how-to/use-func-hash-functions/</loc>
-        <lastmod>2025-05-22</lastmod>
+        <lastmod>2025-06-06</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://nessshon.github.io/tonutils/ru/how-to/use-func-hash-functions/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://nessshon.github.io/tonutils/how-to/use-func-hash-functions/"/>
