@@ -213,7 +213,7 @@ async with connector.connect_wallet_context() as response:
 * или не произойдёт ошибка.
 
 В случае успеха вы получите объект [WalletInfo](https://github.com/nessshon/tonutils/blob/main/tonutils/tonconnect/models/wallet.py#L118), содержащий данные подключенного кошелька.
-В случае ошибки будет возвращён экземпляр `TonConnectError`, который можно обработать, как описано в разделе [обработка ошибок](#connection-errors).
+В случае ошибки будет возвращён экземпляр `TonConnectError`, который можно обработать, как описано в разделе [обработка ошибок](#_36).
 
 ## Отправка запросов
 
@@ -394,7 +394,7 @@ rpc_request_id = await connector.sign_data(payload)
 * [`SendTransactionResponse`](https://github.com/nessshon/tonutils/blob/main/tonutils/tonconnect/models/requests.py#L244)
 * [`SignDataResponse`](https://github.com/nessshon/tonutils/blob/main/tonutils/tonconnect/models/requests.py#L493)
 
-В случае ошибки возвращается `TonConnectError`, который можно обработать, как описано в разделе [ошибки запроса](#request-errors).
+В случае ошибки возвращается `TonConnectError`, который можно обработать, как описано в разделе [ошибки запроса](#_37).
 
 #### Обработка подписанных данных
 
@@ -497,7 +497,7 @@ TON Connect генерирует два типа событий:
   * `user_id: int`
   * `error: TonConnectError`
 
-  **Примечание:** Все типы ошибок подробно описаны в разделе [обработка ошибок](#error-handling).
+  **Примечание:** Все типы ошибок подробно описаны в разделе [обработка ошибок](#_35).
 
 Вы можете обрабатывать эти ошибки так же, как обычные события, используя `register_event` или декораторы.
 Такое разделение позволяет чётко отделять логику обработки успеха и ошибок.
