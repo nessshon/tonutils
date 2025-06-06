@@ -109,7 +109,7 @@ class Wallet(Contract):
             - op_code: The operation code. Defaults to None.
         :return: The serialized message cell.
         """
-        assert len(messages) <= 4, 'For common wallet, maximum messages amount is 4'
+        assert len(messages) <= 4, "For common wallet, maximum messages amount is 4"
 
         seqno = kwargs.get("seqno", None)
         wallet_id = kwargs.get("wallet_id", self.wallet_id)
@@ -119,7 +119,7 @@ class Wallet(Contract):
         signing_message = begin_cell().store_uint(wallet_id, 32)
 
         if seqno == 0:
-            signing_message.store_bits('1' * 32)
+            signing_message.store_bits("1" * 32)
         else:
             if valid_until is not None:
                 signing_message.store_uint(valid_until, 32)
@@ -316,10 +316,9 @@ class Wallet(Contract):
             messages = []
 
         seqno = kwargs.get("seqno", None)
-
         if seqno is None:
             try:
-                kwargs["seqno"] = await self.get_seqno(self.client, self.address)
+                kwargs["seqno"] = seqno = await self.get_seqno(self.client, self.address)
             except (Exception,):
                 kwargs["seqno"] = seqno = 0
 

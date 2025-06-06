@@ -85,7 +85,7 @@ def create_encrypted_comment_cell(
     # Compute shared key
     shared_key = crypto_scalarmult(_our_private_key, _their_public_key)
 
-    data = text.encode('utf-8')
+    data = text.encode("utf-8")
 
     # Calculate prefix size and generate random prefix
     pfx_sz = 16
@@ -97,7 +97,7 @@ def create_encrypted_comment_cell(
     data = bytes(pfx) + data
 
     # Generate message key using HMAC with sender address
-    h = hmac.new(sender_address.to_str().encode('utf-8'), data, hashlib.sha512)
+    h = hmac.new(sender_address.to_str().encode("utf-8"), data, hashlib.sha512)
     msg_key = h.digest()[:16]
 
     # Generate encryption key using HMAC with shared key

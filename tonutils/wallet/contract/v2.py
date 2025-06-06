@@ -58,14 +58,14 @@ class WalletV2Base(Wallet):
             messages: List[WalletMessage],
             **kwargs,
     ) -> Cell:
-        assert len(messages) <= 1, 'For wallet v2, message amount must be 1'
+        assert len(messages) <= 1, "For wallet v2, message amount must be 1"
 
         seqno = kwargs.get("seqno", None)
         valid_until = kwargs.get("valid_until", None)
 
         signing_message = begin_cell().store_uint(seqno, 32)
         if seqno == 0:
-            signing_message.store_bits('1' * 32)
+            signing_message.store_bits("1" * 32)
         else:
             if valid_until is not None:
                 signing_message.store_uint(valid_until, 32)

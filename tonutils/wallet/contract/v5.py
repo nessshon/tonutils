@@ -112,7 +112,7 @@ class WalletV5R1(Wallet):
             messages: List[WalletMessage],
             **kwargs,
     ) -> Cell:
-        assert len(messages) <= 255, 'For wallet v5, maximum messages amount is 255'
+        assert len(messages) <= 255, "For wallet v5, maximum messages amount is 255"
 
         seqno = kwargs.get("seqno", None)
         op_code = kwargs.get("op_code", SIGNED_EXTERNAL_OPCODE)
@@ -123,7 +123,7 @@ class WalletV5R1(Wallet):
         signing_message.store_uint(wallet_id, 32)
 
         if seqno == 0:
-            signing_message.store_bits('1' * 32)
+            signing_message.store_bits("1" * 32)
         else:
             if valid_until is not None:
                 signing_message.store_uint(valid_until, 32)

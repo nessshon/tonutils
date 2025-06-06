@@ -45,7 +45,7 @@ def validate_mnemonic(func: Callable) -> Callable:
         invalid_words = [(i, w) for i, w in enumerate(mnemonic, start=1) if w not in words]
 
         if invalid_words:
-            invalid_words_str = ", ".join(f'{index}. {word}' for index, word in invalid_words)
+            invalid_words_str = ", ".join(f"{index}. {word}" for index, word in invalid_words)
             raise ValueError(f"Invalid mnemonic words: {invalid_words_str}")
 
         return func(cls, client, mnemonic, *args, **kwargs)

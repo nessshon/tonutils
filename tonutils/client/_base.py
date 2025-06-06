@@ -259,3 +259,6 @@ class LiteBalancer:
 
     async def raw_get_account_state(self, address):
         raise PytoniqDependencyError()
+
+    async def get_config_all(self) -> Dict[int, Any]:
+        raise PytoniqDependencyError()

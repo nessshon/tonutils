@@ -89,7 +89,7 @@ class HighloadWalletV2(Wallet):
             - offset: The offset for generating the query ID. Defaults to 7200.
         :return: A Cell containing the raw transfer message.
         """
-        assert len(messages) <= 254, 'For highload wallet, maximum messages amount is 254'
+        assert len(messages) <= 254, "For highload wallet, maximum messages amount is 254"
 
         wallet_id = kwargs.get("wallet_id", 698983191)
         query_id = kwargs.get("query_id", 0)
