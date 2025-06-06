@@ -19,7 +19,7 @@ class TatumClient(ToncenterV2Client):
             is_testnet: bool = False,
             base_url: Optional[str] = None,
             rps: Optional[int] = None,
-            max_retries: int = 0,
+            max_retries: int = 1,
     ) -> None:
         """
         Initialize the TatumClient.
@@ -29,7 +29,7 @@ class TatumClient(ToncenterV2Client):
         :param is_testnet: Whether to use the testnet environment. Defaults to False.
         :param base_url: Optional custom base URL. Defaults to Tatum's public gateway.
         :param rps: Optional requests per second (RPS) limit.
-        :param max_retries: Number of retries for rate-limited requests. Defaults to 0.
+        :param max_retries: Number of retries for rate-limited requests. Defaults to 1.
         """
         if not api_key:
             raise ValueError("`api_key` is required to initialize TatumClient.")

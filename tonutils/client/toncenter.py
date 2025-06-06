@@ -25,7 +25,7 @@ class ToncenterV2Client(Client):
             is_testnet: bool = False,
             base_url: Optional[str] = None,
             rps: Optional[int] = None,
-            max_retries: int = 0,
+            max_retries: int = 1,
     ) -> None:
         """
         Initialize the ToncenterV2Client.
@@ -36,7 +36,7 @@ class ToncenterV2Client(Client):
         :param base_url: Optional custom base URL for the Toncenter API.
             If not set, defaults to the official Toncenter URLs.
         :param rps: Optional requests per second (RPS) limit.
-        :param max_retries: Number of retries for rate-limited requests. Defaults to 0.
+        :param max_retries: Number of retries for rate-limited requests. Defaults to 1.
         """
         default_url = "https://testnet.toncenter.com" if is_testnet else "https://toncenter.com"
         base_url = (base_url or default_url).rstrip("/") + self.API_VERSION_PATH
@@ -145,7 +145,7 @@ class ToncenterV3Client(Client):
             is_testnet: bool = False,
             base_url: Optional[str] = None,
             rps: Optional[int] = None,
-            max_retries: int = 0,
+            max_retries: int = 1,
     ) -> None:
         """
         Initialize the ToncenterV3Client.
@@ -156,7 +156,7 @@ class ToncenterV3Client(Client):
         :param base_url: Optional custom base URL for Toncenter API.
             Defaults to official Toncenter endpoints.
         :param rps: Optional requests per second (RPS) limit.
-        :param max_retries: Number of retries for rate-limited requests. Defaults to 0.
+        :param max_retries: Number of retries for rate-limited requests. Defaults to 1.
         """
         default_url = (
             "https://testnet.toncenter.com"

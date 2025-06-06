@@ -23,7 +23,7 @@ class TonapiClient(Client):
             is_testnet: bool = False,
             base_url: Optional[str] = None,
             rps: Optional[int] = None,
-            max_retries: int = 0,
+            max_retries: int = 1,
     ) -> None:
         """
         Initialize the TonapiClient.
@@ -32,7 +32,7 @@ class TonapiClient(Client):
         :param is_testnet: If True, uses the testnet endpoint. Defaults to False (mainnet).
         :param base_url: Optional custom base URL. If not provided, uses the official endpoint.
         :param rps: Optional requests per second (RPS) limit.
-        :param max_retries: Number of retries for rate-limited requests. Defaults to 0.
+        :param max_retries: Number of retries for rate-limited requests. Defaults to 1.
         """
         if not api_key:
             raise ValueError("`api_key` is required to initialize TonapiClient.")
@@ -59,7 +59,7 @@ class TonapiClient(Client):
         method = f"/blockchain/accounts/{address}/methods/{method_name}"
 
         if stack:
-            query_params = '&'.join(f"args={arg}" for arg in stack)
+            query_params = "&".join(f"args={arg}" for arg in stack)
             method = f"{method}?{query_params}"
 
         result = await self._get(method=method)

@@ -16,7 +16,7 @@ class QuicknodeClient(ToncenterV2Client):
             self,
             http_provider_url: str,
             rps: Optional[int] = None,
-            max_retries: int = 0,
+            max_retries: int = 1,
     ) -> None:
         """
         Initialize the QuicknodeClient.
@@ -24,7 +24,7 @@ class QuicknodeClient(ToncenterV2Client):
         :param http_provider_url: The full HTTP provider URL for QuickNode.
             You can obtain one at: https://quicknode.com
         :param rps: Optional requests per second (RPS) limit.
-        :param max_retries: Number of retries for rate-limited requests. Defaults to 0.
+        :param max_retries: Number of retries for rate-limited requests. Defaults to 1.
         """
         if not http_provider_url:
             raise ValueError("`http_provider_url` is required to initialize QuicknodeClient")
