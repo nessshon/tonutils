@@ -13,7 +13,7 @@ TON Connect Demo Bot is a minimal example of integrating TON Connect with a Tele
 
 ## Features
 
-- Connects user wallets via TON Connect v2
+- Connects user wallets via TON Connect
 - Built with `aiogram` (async Telegram bot framework)
 - Stores session state in Redis
 - Automatically pauses bridge session on user inactivity
@@ -59,7 +59,7 @@ A detailed walkthrough of each module and the bot architecture is available in t
 ## Resources
 
 * [TON Connect Documentation and Specifications](https://github.com/ton-blockchain/ton-connect)
-* [tonutils TON Connect Documentation](https://nessshon.github.io/tonutils/)
+* [tonutils TON Connect Documentation](https://nessshon.github.io/tonutils/cookbook/tonconnect-integration/)
 * [aiogram Documentation](https://docs.aiogram.dev/)
 
 ## License
