@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Union
 
@@ -47,12 +46,12 @@ class Account:
 
         :return: A dictionary representation of the Account.
         """
-        if isinstance(self.public_key, bytes):
-            self.public_key = base64.b64encode(self.public_key).decode()
+        address = self.address.to_str(is_bounceable=False) if isinstance(self.address, Address) else self.address
+        public_key = self.public_key.hex() if isinstance(self.public_key, bytes) else self.public_key
 
         return {
-            "address": self.address,
+            "address": address,
             "network": self.chain.value,
             "walletStateInit": self.wallet_state_init,
-            "publicKey": self.public_key,
+            "publicKey": public_key,
         }
