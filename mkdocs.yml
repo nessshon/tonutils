@@ -63,61 +63,71 @@ plugins:
           name: Русский
           nav_translations:
             Overview: Обзор
+
             Guide: Руководство
-            Installation and Initialization: Установка и инициализация
-            Getting testnet assets: Получить тестовые токены
-            Wallet Operations: Операции с кошельком
-            Jetton Operations: Операции с Jetton
-            NFT Operations: Операции с NFT
-            DNS Operations: Операции с DNS
-            Ton Connect: Ton Connect
-            Wallet Connection: Подключение кошелька
-            Sending Transactions: Отправка транзакций
-            Telegram Bot Integration: Интеграция с Telegram-ботом
-            Cookbook: Примеры
-            Creating Vanity Address: Создание красивого адреса
-            Creating Compressed NFTs: Создание сжатых NFT
-            Minting TON DNS Subdomains: Создание поддоменов TON
-            How to: Как
-            Get Contract information: Получить информацию о контракте
-            Get Contract code and data: Получить код и данные контракта
-            Get NFT Item address: Получить адрес NFT
-            Get Jetton Wallet address: Получить адрес Jetton кошелька
-            Create Multiple Wallets: Создать несколько кошельков
-            Send Encrypted message: Отправить зашифрованное сообщения
-            Send Gasless transaction: Отправить транзакцию без оплаты газа
-            Send/Claim Mintless jetton: Отправить/Запросить Mintless jetton
-            Use FunC hash functions: Использовать хеш-функций FunC
+            Installation and Initialization: Установка и Инициализация
+            Getting Testnet Assets: Получение Тестовых Токенов
+            Usage Scenarios: Сценарии Использования
+            Usage Examples: Примеры Использования
+            Using TON Connect: Использование TON Connect
+            Wallet Operations: Операции с Кошельком
+            Working with Jettons: Операции с Jetton
+            Working with NFTs: Операции с NFT
+            Managing TON DNS: Управление TON DNS
+
+            Cookbooks: Рецепты
+            TON Connect Integration: Интеграция TON Connect
+            TON Connect Telegram Bot: Telegram-бот с TON Connect
+            Creating Vanity Address: Создание Красивого Адреса
+            Creating Compressed NFTs: Создание Сжатых NFT
+            Minting TON Subdomains: Выпуск Поддоменов TON
+
+            How To: Как
+            Get Contract Information: Получение Информации о Контракте
+            Get Contract Code and Data: Получение Кода и Данных Контракта
+            Get NFT Item Address: Получение Адреса NFT-Элемента
+            Get Jetton Wallet Address: Получение Адреса Кошелька Jetton
+            Create Multiple Wallets: Создание Нескольких Кошельков
+            Send Encrypted Message: Отправка Зашифрованного Сообщения
+            Send Gasless Transaction: Отправка Транзакции Без Комиссии
+            Send/Claim Mintless Jetton: Отправка/Запрос Mintless Jetton
+            Use FunC Hash Functions: Использование Хеш-Функций FunC
+
             Sponsors: Спонсоры
             Donate: Поддержать
 
 nav:
   - Overview: index.md
+
   - Guide:
       - Installation and Initialization: guide/installation-and-initialization.md
-      - Getting testnet assets: guide/getting-testnet-assets.md
-      - Wallet Operations: guide/wallet-operations.md
-      - Jetton Operations: guide/jetton-operations.md
-      - NFT Operations: guide/nft-operations.md
-      - DNS Operations: guide/dns-operations.md
-      - Ton Connect:
-          - Wallet Connection: guide/ton-connect/wallet-connection.md
-          - Sending Transactions: guide/ton-connect/sending-transactions.md
-          - Telegram Bot Integration: guide/ton-connect/telegram-bot-integration.md
-  - Cookbook:
+      - Getting Testnet Assets: guide/getting-testnet-assets.md
+      - Usage Scenarios: guide/usage-scenarios.md
+      - Usage Examples:
+          - Wallet Operations: guide/examples/wallet-operations.md
+          - Working with Jettons: guide/examples/jetton-operations.md
+          - Working with NFTs: guide/examples/nft-operations.md
+          - Managing TON DNS: guide/examples/dns-operations.md
+          - Using TON Connect: guide/examples/ton-connect-operations.md
+
+  - Cookbooks:
+      - TON Connect Integration: cookbook/tonconnect-integration.md
+      - TON Connect Telegram Bot: cookbook/tonconnect-telegram.md
       - Creating Vanity Address: cookbook/vanity.md
       - Creating Compressed NFTs: cookbook/cnft.md
-      - Minting TON DNS Subdomains: cookbook/subdomains.md
-  - How to:
-      - Get Contract information: how-to/get-contract-information.md
-      - Get Contract code and data: how-to/get-contract-code-and-data.md
-      - Get NFT Item address: how-to/get-nft-item-address.md
-      - Get Jetton Wallet address: how-to/get-jetton-wallet-address.md
+      - Minting TON Subdomains: cookbook/subdomains.md
+
+  - How To:
+      - Get Contract Information: how-to/get-contract-information.md
+      - Get Contract Code and Data: how-to/get-contract-code-and-data.md
+      - Get NFT Item Address: how-to/get-nft-item-address.md
+      - Get Jetton Wallet Address: how-to/get-jetton-wallet-address.md
       - Create Multiple Wallets: how-to/create-multiple-wallets.md
-      - Send Encrypted message: how-to/send-encrypted-message.md
-      - Send Gasless transaction: how-to/send-gasless-transaction.md
-      - Send/Claim Mintless jetton: how-to/send-claim-mintless-jetton.md
-      - Use FunC hash functions: how-to/use-func-hash-functions.md
+      - Send Encrypted Message: how-to/send-encrypted-message.md
+      - Send Gasless Transaction: how-to/send-gasless-transaction.md
+      - Send/Claim Mintless Jetton: how-to/send-claim-mintless-jetton.md
+      - Use FunC Hash Functions: how-to/use-func-hash-functions.md
+
   - Sponsors: sponsors.md
   - Donate: donate.md
 
