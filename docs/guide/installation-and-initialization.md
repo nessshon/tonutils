@@ -22,10 +22,6 @@ pip install 'tonutils[pytoniq]'
 
 ### RPC API
 
-Вот эквивалент на английском:
-
----
-
 #### Common Parameters
 
 All API clients in the `tonutils.client` library support request rate management parameters:

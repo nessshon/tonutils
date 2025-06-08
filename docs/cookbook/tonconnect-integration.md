@@ -230,7 +230,7 @@ rpc_request_id = await connector.send_transaction(
         messages=[
             Message(
                 address="UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness",
-                amount=str(1 * 1e9),
+                amount=str(int(1 * 1e9)),
             )
         ]
     )
