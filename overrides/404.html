@@ -1,0 +1,46 @@
+{% extends "main.html" %}
+
+{% block styles %}
+  {{ super() }}
+  <style>
+    .md-tabs,
+    .md-nav {
+      display: none !important;
+    }
+
+    .custom-404 {
+      text-align: center;
+      padding: 6rem 1rem;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <section class="md-content__inner md-typeset custom-404">
+    <div id="error-content">
+      <h1>Page Not Found</h1>
+      <p>The page you’re looking for doesn’t exist or has been removed.</p>
+      <p><a id="back-link" href="{{ base_url | url }}">Back to homepage</a></p>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    (function () {
+      const isRu = window.location.pathname.includes('/ru/');
+      const container = document.getElementById('error-content');
+
+      if (!container) return;
+
+      if (isRu) {
+        container.innerHTML = `
+          <h1>Страница не найдена</h1>
+          <p>Запрошенная страница не существует или была удалена.</p>
+          <p><a href="{{ base_url | url }}ru/">На главную</a></p>
+        `;
+      }
+    })();
+  </script>
+{% endblock %}

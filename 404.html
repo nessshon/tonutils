@@ -24,6 +24,7 @@
       
     
     
+  
       <link rel="stylesheet" href="/tonutils/assets/stylesheets/main.a40c8224.min.css">
       
         
@@ -33,6 +34,18 @@
 
 
     
+  <style>
+    .md-tabs,
+    .md-nav {
+      display: none !important;
+    }
+
+    .custom-404 {
+      text-align: center;
+      padding: 6rem 1rem;
+    }
+  </style>
+
     
       
     
@@ -1120,7 +1133,13 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+  <section class="md-content__inner md-typeset custom-404">
+    <div id="error-content">
+      <h1>Page Not Found</h1>
+      <p>The page you’re looking for doesn’t exist or has been removed.</p>
+      <p><a id="back-link" href="/tonutils/">Back to homepage</a></p>
+    </div>
+  </section>
 
               </article>
             </div>
@@ -1192,8 +1211,26 @@
     <script id="__config" type="application/json">{"base": "/tonutils/", "features": ["content.code.copy", "content.action.view", "search.suggest", "search.highlight", "navigation.tabs", "navigation.footer", "content.tabs.link"], "search": "/tonutils/assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}}</script>
     
     
+  
       <script src="/tonutils/assets/javascripts/bundle.60a45f97.min.js"></script>
       
     
+  <script>
+    (function () {
+      const isRu = window.location.pathname.includes('/ru/');
+      const container = document.getElementById('error-content');
+
+      if (!container) return;
+
+      if (isRu) {
+        container.innerHTML = `
+          <h1>Страница не найдена</h1>
+          <p>Запрошенная страница не существует или была удалена.</p>
+          <p><a href="/tonutils/ru/">На главную</a></p>
+        `;
+      }
+    })();
+  </script>
+
   </body>
 </html>
