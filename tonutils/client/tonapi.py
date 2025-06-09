@@ -108,5 +108,5 @@ class TonapiClient(Client):
             block=txn.get("block"),
             block_hash=block_hash,
             success=txn.get("success"),
-            raw_transaction=txn.get("out_msgs"),
+            raw_transaction=txn.get("in_msg"),
         )
