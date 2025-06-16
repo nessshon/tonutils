@@ -2,350 +2,350 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
         <loc>https://tonutils.ness.su/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/donate/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/donate/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/donate/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/sponsors/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/sponsors/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/sponsors/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/cookbook/cnft/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/cnft/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/cnft/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/cookbook/subdomains/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/subdomains/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/subdomains/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/cookbook/tonconnect-integration/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/tonconnect-integration/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/tonconnect-integration/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/cookbook/tonconnect-telegram/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/tonconnect-telegram/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/tonconnect-telegram/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/cookbook/vanity/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/vanity/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/vanity/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/guide/getting-testnet-assets/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/getting-testnet-assets/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/getting-testnet-assets/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/guide/installation-and-initialization/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/installation-and-initialization/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/installation-and-initialization/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/guide/usage-scenarios/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/usage-scenarios/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/usage-scenarios/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/guide/examples/dns-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/dns-operations/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/dns-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/guide/examples/jetton-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/jetton-operations/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/jetton-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/guide/examples/nft-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/nft-operations/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/nft-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/guide/examples/ton-connect-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/ton-connect-operations/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/ton-connect-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/guide/examples/wallet-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/wallet-operations/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/wallet-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/how-to/create-multiple-wallets/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/create-multiple-wallets/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/create-multiple-wallets/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/how-to/get-contract-code-and-data/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/get-contract-code-and-data/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/get-contract-code-and-data/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/how-to/get-contract-information/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/get-contract-information/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/get-contract-information/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/how-to/get-jetton-wallet-address/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/get-jetton-wallet-address/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/get-jetton-wallet-address/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/how-to/get-nft-item-address/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/get-nft-item-address/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/get-nft-item-address/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/how-to/send-claim-mintless-jetton/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/send-claim-mintless-jetton/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/send-claim-mintless-jetton/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/how-to/send-encrypted-message/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/send-encrypted-message/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/send-encrypted-message/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/how-to/send-gasless-transaction/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/send-gasless-transaction/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/send-gasless-transaction/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/how-to/use-func-hash-functions/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/use-func-hash-functions/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/use-func-hash-functions/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/donate/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/donate/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/donate/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/sponsors/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/sponsors/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/sponsors/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/cookbook/cnft/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/cnft/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/cnft/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/cookbook/subdomains/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/subdomains/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/subdomains/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/cookbook/tonconnect-integration/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/tonconnect-integration/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/tonconnect-integration/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/cookbook/tonconnect-telegram/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/tonconnect-telegram/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/tonconnect-telegram/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/cookbook/vanity/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/cookbook/vanity/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/cookbook/vanity/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/guide/getting-testnet-assets/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/getting-testnet-assets/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/getting-testnet-assets/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/guide/installation-and-initialization/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/installation-and-initialization/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/installation-and-initialization/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/guide/usage-scenarios/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/usage-scenarios/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/usage-scenarios/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/guide/examples/dns-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/dns-operations/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/dns-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/guide/examples/jetton-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/jetton-operations/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/jetton-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/guide/examples/nft-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/nft-operations/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/nft-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/guide/examples/ton-connect-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/ton-connect-operations/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/ton-connect-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/guide/examples/wallet-operations/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/guide/examples/wallet-operations/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/guide/examples/wallet-operations/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/how-to/create-multiple-wallets/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/create-multiple-wallets/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/create-multiple-wallets/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/how-to/get-contract-code-and-data/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/get-contract-code-and-data/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/get-contract-code-and-data/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/how-to/get-contract-information/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/get-contract-information/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/get-contract-information/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/how-to/get-jetton-wallet-address/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/get-jetton-wallet-address/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/get-jetton-wallet-address/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/how-to/get-nft-item-address/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/get-nft-item-address/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/get-nft-item-address/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/how-to/send-claim-mintless-jetton/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/send-claim-mintless-jetton/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/send-claim-mintless-jetton/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/how-to/send-encrypted-message/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/send-encrypted-message/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/send-encrypted-message/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/how-to/send-gasless-transaction/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/send-gasless-transaction/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/send-gasless-transaction/"/>
     </url>
     <url>
         <loc>https://tonutils.ness.su/ru/how-to/use-func-hash-functions/</loc>
-        <lastmod>2025-06-08</lastmod>
+        <lastmod>2025-06-16</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://tonutils.ness.su/ru/how-to/use-func-hash-functions/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://tonutils.ness.su/how-to/use-func-hash-functions/"/>
