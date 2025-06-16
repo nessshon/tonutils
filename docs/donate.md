@@ -14,7 +14,7 @@ You can send donations directly to the following addresses:
   `1FKJDBSxdtsMad84iYY96zLJBVEChehbx1`
 
 - **USDT (TRC-20)**  
-  `TGKmm9H3FApFw8xcgRcZDHSku68vozAjo9`
+  `TDHMG7JRkmJBDD1qd4bNhdfoy2uzVd8ixA`
 
 ---
 
