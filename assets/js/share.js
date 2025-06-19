@@ -16,8 +16,8 @@ document$.subscribe(() => {
     }
 
     .md-social-share svg {
-      width: 1.2em;
-      height: 1.2em;
+      width: 1em;
+      height: 1em;
       fill: currentColor;
     }
   `;
