@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block announce %}
+  <span id="announce-text" style="visibility: hidden;">
+    <strong>Your support</strong> powers Tonutils —
+    <a href="/donate/"><strong>donate</strong></a> ❤️
+    <strong>Follow</strong> <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a> to stay up to date
+  </span>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const el = document.getElementById("announce-text");
+      if (!el) return;
+
+      const isRu = window.location.pathname.includes('/ru/');
+      el.innerHTML = isRu
+        ? `<strong>Благодаря вашей поддержке</strong> развивается Tonutils —
+           <a href="/ru/donate/"><strong>поддержать</strong></a> ❤️
+           <strong>Подписывайтесь на</strong>
+           <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>, чтобы быть в курсе новостей`
+        : `<strong>Your support</strong> powers Tonutils —
+           <a href="/donate/"><strong>donate</strong></a> ❤️
+           <strong>Follow</strong>
+           <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a> to stay up to date`;
+
+      el.style.visibility = "visible";
+    });
+  </script>
+{% endblock %}
