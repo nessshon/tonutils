@@ -2,8 +2,6 @@
 
 {% block announce %}
   <span id="announce-text" style="visibility: hidden;">
-    <strong>Support</strong> Tonutils — <a href="/donate/"><strong>donate</strong></a> ❤️
-    <strong>Stay</strong> up to date — <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>
   </span>
 
   <script>
@@ -12,10 +10,14 @@
       if (!el) return;
 
       const isRu = window.location.pathname.includes('/ru/');
+      const isMobile = window.innerWidth < 600;
+
+      const br = isMobile ? '<br>' : ' ';
+
       el.innerHTML = isRu
-        ? `<strong>Поддержите</strong> Tonutils — <a href="/ru/donate/"><strong>донат</strong></a> ❤️
+        ? `<strong>Поддержите</strong> Tonutils — <a href="/ru/donate/"><strong>донатом</strong></a> ❤️${br}
            <strong>Следите</strong> за обновлениями — <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>`
-        : `<strong>Support</strong> Tonutils — <a href="/donate/"><strong>donate</strong></a> ❤️
+        : `<strong>Support</strong> Tonutils — <a href="/donate/"><strong>donate</strong></a> ❤️${br}
            <strong>Stay</strong> up to date — <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>`;
 
       el.style.visibility = "visible";
