@@ -2,10 +2,8 @@
 
 {% block announce %}
   <span id="announce-text" style="visibility: hidden;">
-    <strong>Your support</strong> powers Tonutils —
-    <a href="/donate/"><strong>donate</strong></a> ❤️
-    <br>
-    <strong>Follow</strong> <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a> to stay up to date
+    <strong>Support</strong> Tonutils — <a href="/donate/"><strong>donate</strong></a> ❤️
+    <strong>Stay</strong> up to date — <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>
   </span>
 
   <script>
@@ -15,16 +13,10 @@
 
       const isRu = window.location.pathname.includes('/ru/');
       el.innerHTML = isRu
-        ? `<strong>Благодаря вашей поддержке</strong> развивается Tonutils —
-           <a href="/ru/donate/"><strong>поддержать</strong></a> ❤️
-           <br>
-           <strong>Подписывайтесь на</strong>
-           <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>, чтобы быть в курсе новостей`
-        : `<strong>Your support</strong> powers Tonutils —
-           <a href="/donate/"><strong>donate</strong></a> ❤️
-           <br>
-           <strong>Follow</strong>
-           <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a> to stay up to date`;
+        ? `<strong>Поддержите</strong> Tonutils — <a href="/ru/donate/"><strong>донат</strong></a> ❤️
+           <strong>Следите</strong> за обновлениями — <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>`
+        : `<strong>Support</strong> Tonutils — <a href="/donate/"><strong>donate</strong></a> ❤️
+           <strong>Stay</strong> up to date — <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>`;
 
       el.style.visibility = "visible";
     });
