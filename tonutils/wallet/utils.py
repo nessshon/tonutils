@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable
+from typing import Callable, Literal
 
 from pytoniq_core.crypto.keys import words
 
@@ -10,19 +10,23 @@ class NetworkGlobalID(int, Enum):
 
 
 def generate_wallet_id(
-        subwallet_id: int,
+        subwallet_id: int = 0,
         workchain: int = 0,
         wallet_version: int = 0,
-        network_global_id: int = NetworkGlobalID.MAINNET,
+        network_global_id: Literal[NetworkGlobalID.TESTNET, NetworkGlobalID.MAINNET] = NetworkGlobalID.MAINNET,
 ) -> int:
     """
-    Generates a wallet ID based on global ID, workchain, wallet version, and wallet id.
+    Generates a wallet_id according to the TON V5 specification.
 
-    :param subwallet_id: The subwallet ID (16-bit unsigned integer).
-    :param workchain: The workchain value (8-bit signed integer).
-    :param wallet_version: The wallet version (8-bit unsigned integer).
-    :param network_global_id: The network global ID (32-bit signed integer).
+    :param subwallet_id: Subwallet counter (uint15), usually 0
+    :param workchain: Workchain ID (int8), e.g., 0 or -1
+    :param wallet_version: Wallet version (uint8), for V5R1 usually 0
+    :param network_global_id: Global network ID (e.g., -239 for mainnet, -3 for testnet)
+    :return: wallet_id as int32 (TON spec)
     """
+    if subwallet_id > 0x7FFF:
+        raise ValueError("subwallet_id must fit in 15 bits (0..32767)")
+
     ctx = 0
     ctx |= 1 << 31
     ctx |= (workchain & 0xFF) << 23

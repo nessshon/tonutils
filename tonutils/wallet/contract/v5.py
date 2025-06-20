@@ -26,9 +26,10 @@ class WalletV5R1(Wallet):
             public_key: bytes,
             private_key: bytes,
             wallet_id: Optional[int] = None,
+            subwallet_id: Optional[int] = None,
             workchain: Optional[int] = None,
             wallet_version: Optional[int] = None,
-            network_global_id: Optional[int] = None,
+            network_global_id: Optional[NetworkGlobalID] = None,
             **kwargs,
     ) -> None:
         """
@@ -37,18 +38,33 @@ class WalletV5R1(Wallet):
         :param client: The client to interact with the blockchain.
         :param public_key: The public key of the wallet.
         :param private_key: The private key of the wallet.
-        :param wallet_id: The wallet ID (32-bit unsigned integer).
-        :param workchain: The workchain value (8-bit signed integer).
-        :param wallet_version: The wallet version (8-bit unsigned integer).
-        :param network_global_id: The network global ID (32-bit signed integer).
+        :param wallet_id: Optional 32-bit wallet ID (uint32). If not provided, it's auto-generated as:
+                          `wallet_id = network_global_id ^ context_id`, where context_id is:
+                              - 1-bit constant `1`
+                              - 8-bit signed workchain ID (int8)
+                              - 8-bit wallet version (uint8)
+                              - 15-bit counter (subwallet ID)
+                          schema: https://github.com/ton-org/ton/blob/e6ba9c39a029d99c885cd55523bf617137f20808/src/wallets/v5r1/WalletV5R1WalletId.ts#L11
+        :param subwallet_id: Optional subwallet counter (uint15).
+                             Defaults to 0. Used to distinguish logical wallet instances.
+        :param workchain: Optional workchain ID (int8), common values:
+                          - `0` for basechain,
+                          - `-1` for masterchain.
+                          Used in `wallet_id` calculation if it's not explicitly provided.
+        :param wallet_version: Optional wallet version (uint8). For V5R1 wallets it is typically `0`.
+        :param network_global_id: Optional 32-bit signed network global ID.
+                                  Common values:
+                                  - `-239` for mainnet,
+                                  - `-3` for testnet.
+                                  If omitted, determined automatically based on the `client.is_testnet` flag.
         """
         network_global_id = network_global_id or (
             NetworkGlobalID.TESTNET
             if client.is_testnet else
             NetworkGlobalID.MAINNET
         )
-        wallet_id = generate_wallet_id(
-            subwallet_id=wallet_id or 0,
+        wallet_id = wallet_id or generate_wallet_id(
+            subwallet_id=subwallet_id or 0,
             workchain=workchain or 0,
             wallet_version=wallet_version or 0,
             network_global_id=network_global_id,
@@ -60,7 +76,7 @@ class WalletV5R1(Wallet):
             cls,
             client: Client,
             private_key: bytes,
-            wallet_id: int = 0,
+            wallet_id: Optional[int] = None,
             **kwargs,
     ) -> WalletV5R1:
         return super().from_private_key(client, private_key, wallet_id=wallet_id, **kwargs)
@@ -70,7 +86,7 @@ class WalletV5R1(Wallet):
             cls,
             client: Client,
             mnemonic: Union[List[str], str],
-            wallet_id: int = 0,
+            wallet_id: Optional[int] = None,
             **kwargs,
     ) -> Tuple[WalletV5R1, bytes, bytes, List[str]]:
         return super().from_mnemonic(client, mnemonic, wallet_id=wallet_id, **kwargs)
@@ -79,7 +95,7 @@ class WalletV5R1(Wallet):
     def create(
             cls,
             client: Client,
-            wallet_id: int = 0,
+            wallet_id: Optional[int] = None,
             **kwargs,
     ) -> Tuple[WalletV5R1, bytes, bytes, List[str]]:
         return super().create(client, wallet_id=wallet_id, **kwargs)
