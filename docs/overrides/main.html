@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block announce %}
+  <span id="announce-text" style="visibility: hidden;">
+  </span>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const el = document.getElementById("announce-text");
+      if (!el) return;
+
+      const isRu = window.location.pathname.includes('/ru/');
+      const isMobile = window.innerWidth < 600;
+
+      const br = isMobile ? '<br>' : ' ';
+
+      el.innerHTML = isRu
+        ? `<strong>Поддержите</strong> Tonutils — <a href="/ru/donate/"><strong>донатом</strong></a> ❤️${br}
+           <strong>Следите</strong> за обновлениями — <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>`
+        : `<strong>Support</strong> Tonutils — <a href="/donate/"><strong>donate</strong></a> ❤️${br}
+           <strong>Stay</strong> up to date — <a href="https://t.me/nessdev" target="_blank"><strong>@nessdev</strong></a>`;
+
+      el.style.visibility = "visible";
+    });
+  </script>
+{% endblock %}

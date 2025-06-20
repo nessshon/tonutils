@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://tonutils.ness.su/sitemap.xml
