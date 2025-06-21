@@ -14,6 +14,7 @@ theme:
   favicon: assets/logo.png
   logo: assets/logo.png
   features:
+    - announce.dismiss
     - content.code.copy
     - content.action.view
     - search.suggest
@@ -50,6 +51,9 @@ plugins:
   - search
   - autorefs
   - include-markdown
+  - social:
+  - minify:
+      minify_html: true
   - i18n:
       docs_structure: suffix
       fallback_to_default: true
@@ -86,15 +90,15 @@ plugins:
             Minting TON Subdomains: Выпуск Поддоменов TON
 
             How To: Как
-            Get Contract Information: Получение Информации о Контракте
-            Get Contract Code and Data: Получение Кода и Данных Контракта
-            Get NFT Item Address: Получение Адреса NFT-Элемента
-            Get Jetton Wallet Address: Получение Адреса Кошелька Jetton
-            Create Multiple Wallets: Создание Нескольких Кошельков
-            Send Encrypted Message: Отправка Зашифрованного Сообщения
-            Send Gasless Transaction: Отправка Транзакции Без Комиссии
-            Send/Claim Mintless Jetton: Отправка/Запрос Mintless Jetton
-            Use FunC Hash Functions: Использование Хеш-Функций FunC
+            Get Contract Information: Получить Информацию о Контракте
+            Get Contract Code and Data: Получить Код и Данные Контракта
+            Get NFT Item Address: Получить Адрес NFT-Элемента
+            Get Jetton Wallet Address: Получить Адрес Кошелька Jetton
+            Create Multiple Wallets: Создать Несколько Кошельков
+            Send Encrypted Message: Отправить Зашифрованное Сообщение
+            Send Gasless Transaction: Отправить Транзакцию Без Комиссии
+            Send/Claim Mintless Jetton: Отправить/Получить Mintless-Jetton
+            Use FunC Hash Functions: Использовать Хеш-Функции FunC
 
             Sponsors: Спонсоры
             Donate: Поддержать
@@ -143,5 +147,8 @@ extra:
       link: https://t.me/nessshon
     - icon: fontawesome/brands/github
       link: https://github.com/nessshon
+
+extra_javascript:
+  - assets/js/share.js
 
 copyright: "Created with ❤️ by Ness"
