@@ -431,7 +431,7 @@ class StonfiSwapJettonToTONMessage(TransferMessageBase):
 
     async def build(self, wallet: Wallet) -> WalletMessage:
         if self.dex_version is None and None in (self.router_address, self.pton_address):
-            self.dex_version, router_address, pton_address = await get_stonfi_router_details(
+            self.dex_version, self.router_address, self.pton_address = await get_stonfi_router_details(
                 offer_address=self.jetton_master_address.to_str(),
                 ask_address="ton",
                 amount=self.jetton_amount,
