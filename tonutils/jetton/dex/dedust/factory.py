@@ -46,7 +46,10 @@ class Asset:
         return Asset(AssetType.JETTON, minter)
 
     def to_cell(self) -> Cell:
-        if not isinstance(self.address, Address):
+        if (
+            not isinstance(self.address, Address)
+            and not self.asset_type == AssetType.NATIVE
+        ):
             raise TypeError("JETTON asset must have a valid Address")
 
         if self.asset_type == AssetType.NATIVE:
