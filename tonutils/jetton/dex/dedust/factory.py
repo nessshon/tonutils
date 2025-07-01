@@ -35,7 +35,7 @@ class Asset:
             address = Address(address)
 
         self.asset_type = asset_type
-        self.address = address
+        self.address: Optional[Address] = address
 
     @staticmethod
     def native() -> Asset:
@@ -47,8 +47,8 @@ class Asset:
 
     def to_cell(self) -> Cell:
         if (
-            not isinstance(self.address, Address)
-            and not self.asset_type == AssetType.NATIVE
+                not isinstance(self.address, Address)
+                and not self.asset_type == AssetType.NATIVE
         ):
             raise TypeError("JETTON asset must have a valid Address")
 
@@ -62,8 +62,8 @@ class Asset:
         return (
             begin_cell()
             .store_uint(AssetType.JETTON.value, 4)
-            .store_int(self.address.wc, 8)
-            .store_bytes(self.address.hash_part)
+            .store_int(self.address.wc, 8)  # type: ignore
+            .store_bytes(self.address.hash_part)  # type: ignore
             .end_cell()
         )
 
