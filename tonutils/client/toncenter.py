@@ -1,7 +1,7 @@
 import base64
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pytoniq_core import Builder, Cell, HashMap
+from pytoniq_core import Address, Builder, Cell, HashMap, Transaction, Slice
 
 from ._base import Client
 from .utils import RunGetMethodStack, RunGetMethodResult, unpack_config
@@ -52,10 +52,13 @@ class ToncenterV2Client(Client):
 
     async def run_get_method(
             self,
-            address: str,
+            address: Union[str, Address],
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> Any:
+        if isinstance(address, Address):
+            address = address.to_str()
+
         stack = RunGetMethodStack(self, stack).pack_to_toncenter()
         method = f"/runGetMethod"
 
@@ -78,7 +81,10 @@ class ToncenterV2Client(Client):
 
         await self._post(method=method, body={"boc": boc_to_base64_string(boc)})
 
-    async def get_raw_account(self, address: str) -> RawAccount:
+    async def get_raw_account(self, address: Union[str, Address]) -> RawAccount:
+        if isinstance(address, Address):
+            address = address.to_str()
+
         method = f"/getAddressInformation"
         params = {"address": address}
         result = await self._get(method=method, params=params)
@@ -106,7 +112,7 @@ class ToncenterV2Client(Client):
             last_transaction_hash=lt_hash,
         )
 
-    async def get_account_balance(self, address: str) -> int:
+    async def get_account_balance(self, address: Union[str, Address]) -> int:
         raw_account = await self.get_raw_account(address)
 
         return raw_account.balance
@@ -127,6 +133,32 @@ class ToncenterV2Client(Client):
             value_deserializer=lambda src: src.load_ref().begin_parse(),
         )
         return unpack_config(config_map)
+
+    async def get_transactions(
+            self,
+            address: Union[str, Address],
+            limit: int,
+            from_lt: Optional[int] = None,
+            to_lt: int = 0,
+    ) -> List[Transaction]:
+        if isinstance(address, Address):
+            address = address.to_str()
+
+        method = f"/getTransactions"
+
+        params = {"address": address, "limit": limit}
+        if from_lt is not None:
+            params["lt"] = from_lt
+        if to_lt is not None:
+            params["to_lt"] = to_lt
+        result = await self._get(method=method, params=params)
+
+        transactions = []
+        for tx in result:
+            cell_slice = Slice.one_from_boc(tx.get("data"))  # type: ignore
+            transactions.append(Transaction.deserialize(cell_slice))
+
+        return transactions
 
 
 class ToncenterV3Client(Client):
@@ -176,10 +208,13 @@ class ToncenterV3Client(Client):
 
     async def run_get_method(
             self,
-            address: str,
+            address: Union[str, Address],
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> Any:
+        if isinstance(address, Address):
+            address = address.to_str()
+
         stack = RunGetMethodStack(self, stack).pack_to_toncenter()
         method = f"/runGetMethod"
 
@@ -202,7 +237,10 @@ class ToncenterV3Client(Client):
 
         await self._post(method=method, body={"boc": boc_to_base64_string(boc)})
 
-    async def get_raw_account(self, address: str) -> RawAccount:
+    async def get_raw_account(self, address: Union[str, Address]) -> RawAccount:
+        if isinstance(address, Address):
+            address = address.to_str()
+
         method = f"/account"
         params = {"address": address}
         result = await self._get(method=method, params=params)
@@ -223,7 +261,7 @@ class ToncenterV3Client(Client):
             last_transaction_hash=lt_hash,
         )
 
-    async def get_account_balance(self, address: str) -> int:
+    async def get_account_balance(self, address: Union[str, Address]) -> int:
         raw_account = await self.get_raw_account(address)
 
         return raw_account.balance
@@ -238,3 +276,28 @@ class ToncenterV3Client(Client):
         client._limiter = self._limiter
 
         return await client.get_config_params()
+
+    async def get_transactions(
+            self,
+            address: Union[str, Address],
+            limit: int,
+            from_lt: Optional[int] = None,
+            to_lt: int = 0,
+    ) -> List[Transaction]:
+        if isinstance(address, Address):
+            address = address.to_str()
+
+        client = ToncenterV2Client(
+            is_testnet=self.is_testnet,
+            rps=self.rps,
+            max_retries=self.max_retries,
+        )
+        client.headers = self.headers
+        client._limiter = self._limiter
+
+        return await client.get_transactions(
+            address=address,
+            limit=limit,
+            from_lt=from_lt,
+            to_lt=to_lt,
+        )

@@ -10,6 +10,7 @@ from pytoniq_core import (
     StateInit,
     MessageAny,
     WalletMessage,
+    Transaction,
     begin_cell,
 )
 from pytoniq_core.crypto.keys import (
@@ -260,6 +261,27 @@ class Wallet(Contract):
         :return: Wallet balance in TON.
         """
         return await self.get_balance(self.client, self.address)
+
+    async def transactions(
+            self,
+            limit: int,
+            from_lt: Optional[int] = None,
+            to_lt: int = 0
+    ) -> List[Transaction]:
+        """
+        Retrieve a list of transactions for a given account.
+
+        :param limit: The maximum number of transactions to retrieve.
+        :param from_lt: Optional lower bound logical time (inclusive) to filter transactions after this LT.
+        :param to_lt: Optional upper bound logical time (exclusive) to filter transactions before this LT.
+        :return: A list of Transaction objects representing the account's transactions.
+        """
+        return await self.client.get_transactions(
+            address=self.address,
+            limit=limit,
+            from_lt=from_lt,
+            to_lt=to_lt,
+        )
 
     @classmethod
     async def get_seqno(

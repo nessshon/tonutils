@@ -3,10 +3,11 @@ from __future__ import annotations
 import asyncio
 import json
 import random
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional, List, Dict, Union
 
 import aiohttp
 from aiolimiter import AsyncLimiter
+from pytoniq_core import Address, Transaction
 
 from ..account import RawAccount
 from ..exceptions import *
@@ -171,7 +172,7 @@ class Client:
 
     async def run_get_method(
             self,
-            address: str,
+            address: Union[str, Address],
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> Any:
@@ -193,7 +194,7 @@ class Client:
         """
         raise NotImplementedError
 
-    async def get_raw_account(self, address: str) -> RawAccount:
+    async def get_raw_account(self, address: Union[str, Address]) -> RawAccount:
         """
         Retrieve raw account information from the blockchain.
 
@@ -202,7 +203,7 @@ class Client:
         """
         raise NotImplementedError
 
-    async def get_account_balance(self, address: str) -> int:
+    async def get_account_balance(self, address: Union[str, Address]) -> int:
         """
         Retrieve the balance of a blockchain account.
 
@@ -216,6 +217,24 @@ class Client:
         Retrieve configuration parameters from the blockchain.
 
         :return: A dictionary containing the configuration parameters.
+        """
+        raise NotImplementedError
+
+    async def get_transactions(
+            self,
+            address: Union[str, Address],
+            limit: int,
+            from_lt: Optional[int] = None,
+            to_lt: int = 0,
+    ) -> List[Transaction]:
+        """
+        Retrieve a list of transactions for a given account.
+
+        :param address: The blockchain account address.
+        :param limit: The maximum number of transactions to retrieve.
+        :param from_lt: Optional lower bound logical time (inclusive) to filter transactions after this LT.
+        :param to_lt: Optional upper bound logical time (exclusive) to filter transactions before this LT.
+        :return: A list of Transaction objects representing the account's transactions.
         """
         raise NotImplementedError
 
@@ -245,7 +264,7 @@ class LiteBalancer:
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         raise PytoniqDependencyError()
 
-    async def run_get_method(self, address: str, method_name: str, stack: List[Any]) -> Any:
+    async def run_get_method(self, address: Union[str, Address], method_name: str, stack: List[Any]) -> Any:
         raise PytoniqDependencyError()
 
     async def raw_send_message(self, message: bytes) -> None:
@@ -261,4 +280,13 @@ class LiteBalancer:
         raise PytoniqDependencyError()
 
     async def get_config_all(self) -> Dict[int, Any]:
+        raise PytoniqDependencyError()
+
+    async def get_transactions(
+            self,
+            address: Union[str, Address],
+            limit: int,
+            from_lt: Optional[int] = None,
+            to_lt: int = 0,
+    ) -> List[Transaction]:
         raise PytoniqDependencyError()

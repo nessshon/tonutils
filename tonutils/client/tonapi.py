@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pytoniq_core import Builder, Cell, HashMap
+from pytoniq_core import Address, Builder, Cell, HashMap, Transaction, Slice
 
 from ._base import Client
 from .utils import RunGetMethodStack, RunGetMethodResult, unpack_config
@@ -51,10 +51,13 @@ class TonapiClient(Client):
 
     async def run_get_method(
             self,
-            address: str,
+            address: Union[str, Address],
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> List[Any]:
+        if isinstance(address, Address):
+            address = address.to_str()
+
         stack = RunGetMethodStack(self, stack or []).pack_to_tonapi()
         method = f"/blockchain/accounts/{address}/methods/{method_name}"
 
@@ -70,7 +73,10 @@ class TonapiClient(Client):
 
         await self._post(method=method, body={"boc": boc})
 
-    async def get_raw_account(self, address: str) -> RawAccount:
+    async def get_raw_account(self, address: Union[str, Address]) -> RawAccount:
+        if isinstance(address, Address):
+            address = address.to_str()
+
         method = f"/blockchain/accounts/{address}"
         result = await self._get(method=method)
 
@@ -90,7 +96,7 @@ class TonapiClient(Client):
             last_transaction_hash=lt_hash,
         )
 
-    async def get_account_balance(self, address: str) -> int:
+    async def get_account_balance(self, address: Union[str, Address]) -> int:
         raw_account = await self.get_raw_account(address)
 
         return raw_account.balance
@@ -111,3 +117,29 @@ class TonapiClient(Client):
             value_deserializer=lambda src: src.load_ref().begin_parse(),
         )
         return unpack_config(config_map)
+
+    async def get_transactions(
+            self,
+            address: Union[str, Address],
+            limit: int,
+            from_lt: Optional[int] = None,
+            to_lt: int = 0,
+    ) -> List[Transaction]:
+        if isinstance(address, Address):
+            address = address.to_str()
+
+        method = f"/blockchain/accounts/{address}/transactions"
+
+        params = {"limit": limit}
+        if to_lt is not None:
+            params["after_lt"] = to_lt
+        if from_lt is not None:
+            params["before_lt"] = from_lt + 1
+        result = await self._get(method=method, params=params)
+
+        transactions = []
+        for tx in result.get("transactions", []):
+            cell_slice = Slice.one_from_boc(tx.get("raw"))
+            transactions.append(Transaction.deserialize(cell_slice))
+
+        return transactions

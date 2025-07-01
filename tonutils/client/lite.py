@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypeVar, cast, Union
 
-from pytoniq_core import Address, SimpleAccount
+from pytoniq_core import Address, SimpleAccount, Transaction
 
 from .utils import RunGetMethodStack, RunGetMethodResult
 from ..account import AccountStatus, RawAccount
@@ -21,8 +21,10 @@ except ImportError:
 
 from ._base import Client
 
+F = TypeVar("F", bound=Callable[..., Any])
 
-def require_pytoniq(func) -> Callable:
+
+def require_pytoniq(func: F) -> F:
     """
     Decorator to ensure that the pytoniq library is available and the client is initialized.
     """
@@ -34,7 +36,7 @@ def require_pytoniq(func) -> Callable:
         await self.initialize_client()
         return await func(self, *args, **kwargs)
 
-    return wrapper
+    return cast(F, wrapper)
 
 
 class LiteserverClient(Client):
@@ -90,7 +92,7 @@ class LiteserverClient(Client):
     @require_pytoniq
     async def run_get_method(
             self,
-            address: str,
+            address: Union[str, Address],
             method_name: str,
             stack: Optional[List[Any]] = None,
     ) -> Any:
@@ -103,8 +105,10 @@ class LiteserverClient(Client):
         return await self.client.raw_send_message(bytes.fromhex(boc))
 
     @require_pytoniq
-    async def get_raw_account(self, address: str) -> RawAccount:
-        address = Address(address)
+    async def get_raw_account(self, address: Union[str, Address]) -> RawAccount:
+        if isinstance(address, str):
+            address = Address(address)
+
         account, shard_account = await self.client.raw_get_account_state(address)
         simple_account = SimpleAccount.from_raw(account, address)
 
@@ -132,10 +136,28 @@ class LiteserverClient(Client):
         )
 
     @require_pytoniq
-    async def get_account_balance(self, address: str) -> int:
+    async def get_account_balance(self, address: Union[str, Address]) -> int:
         raw_account = await self.get_raw_account(address)
         return raw_account.balance
 
     @require_pytoniq
     async def get_config_params(self) -> Dict[int, Any]:
         return await self.client.get_config_all()
+
+    @require_pytoniq
+    async def get_transactions(
+            self,
+            address: Union[str, Address],
+            limit: int,
+            from_lt: Optional[int] = None,
+            to_lt: int = 0,
+    ) -> List[Transaction]:
+        if isinstance(address, Address):
+            address = address.to_str()
+
+        return await self.client.get_transactions(
+            address=address,
+            count=limit,
+            from_lt=from_lt,
+            to_lt=to_lt,
+        )
