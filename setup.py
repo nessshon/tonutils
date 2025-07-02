@@ -29,10 +29,10 @@ setuptools.setup(
         "cachetools~=5.5.0",
         "pycryptodomex~=3.20.0",
         "PyNaCl~=1.5.0",
-        "pytoniq-core~=0.1.41",
+        "pytoniq-core>=0.1.44",
     ],
     extras_require={
-        "pytoniq": ["pytoniq~=0.1.40"],
+        "pytoniq": ["pytoniq~=0.1.41"],
     },
     classifiers=[
         "Development Status :: 4 - Beta",
