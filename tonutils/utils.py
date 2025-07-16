@@ -7,8 +7,11 @@ from decimal import Decimal
 from typing import Any, Dict, Union
 
 from Cryptodome.Cipher import AES
-from nacl.bindings import crypto_scalarmult
-from nacl.signing import SigningKey
+from nacl.bindings import (
+    crypto_scalarmult,
+    crypto_sign_ed25519_sk_to_curve25519,
+    crypto_sign_ed25519_pk_to_curve25519,
+)
 from pytoniq_core import Address, Cell, MessageAny, begin_cell, HashMap, Slice
 
 
@@ -75,12 +78,12 @@ def create_encrypted_comment_cell(
     """
     root = begin_cell().store_uint(0x2167da4b, 32)
 
-    our_private_key_bytes = our_private_key[:32]
+    our_public_key_bytes = our_private_key[32:]
     their_public_key_bytes = their_public_key.to_bytes(32, byteorder='big')
 
     # Convert keys to Curve25519
-    _our_private_key = SigningKey(our_private_key_bytes).to_curve25519_private_key().encode()
-    _their_public_key = SigningKey(their_public_key_bytes).verify_key.to_curve25519_public_key().encode()
+    _our_private_key = crypto_sign_ed25519_sk_to_curve25519(our_private_key)
+    _their_public_key = crypto_sign_ed25519_pk_to_curve25519(their_public_key_bytes)
 
     # Compute shared key
     shared_key = crypto_scalarmult(_our_private_key, _their_public_key)
@@ -109,9 +112,7 @@ def create_encrypted_comment_cell(
     encrypted_data = c.encrypt(data)
 
     # XOR public keys
-    xor_key = bytearray(SigningKey(our_private_key_bytes).verify_key.encode())
-    for i in range(32):
-        xor_key[i] ^= SigningKey(their_public_key_bytes).verify_key.encode()[i]
+    xor_key = bytes([a ^ b for a, b in zip(our_public_key_bytes, their_public_key_bytes)])
 
     # Store data
     root.store_bytes(xor_key)
