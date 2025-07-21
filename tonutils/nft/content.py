@@ -25,6 +25,17 @@ class BaseOffchainContent(TlbScheme):
         raise NotImplementedError
 
 
+class SweetOffchainContent(BaseOffchainContent):
+
+    def __init__(self, base_uri: str) -> None:
+        super().__init__(base_uri)
+
+    def serialize(self) -> Cell:
+        return (
+            begin_cell().store_snake_string(self.base_uri).end_cell()
+        )
+
+
 class CollectionOffchainContent(BaseOffchainContent):
 
     def __init__(self, uri: str, prefix_uri: str) -> None:

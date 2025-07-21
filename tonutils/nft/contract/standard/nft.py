@@ -9,6 +9,7 @@ from ...content import (
     NFTOffchainContent,
     NFTModifiedOnchainContent,
     NFTModifiedOffchainContent,
+    SweetOffchainContent,
 )
 from ...data import NFTData
 
@@ -20,7 +21,7 @@ class NFTStandardBase(NFT):
             index: Optional[int] = None,
             collection_address: Optional[Address] = None,
             owner_address: Optional[Address] = None,
-            content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent]] = None,
+            content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent, SweetOffchainContent]] = None,
     ) -> None:
         self._data = self.create_data(index, collection_address, owner_address, content).serialize()
         self._code = Cell.one_from_boc(self.CODE_HEX)
@@ -31,7 +32,7 @@ class NFTStandardBase(NFT):
             index: int,
             collection_address: Address,
             owner_address: Optional[Address] = None,
-            content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent]] = None,
+            content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent, SweetOffchainContent]] = None,
     ) -> NFTData:
         return NFTData(
             index=index,
@@ -85,7 +86,7 @@ class SweetNFTStandard(NFTStandardBase):
             self,
             collection_address: Optional[Address] = None,
             owner_address: Optional[Address] = None,
-            content: Optional[NFTOffchainContent] = None,
+            content: Optional[SweetOffchainContent] = None,
     ) -> None:
         super().__init__(
             index=None,  # Index is automatically assigned by the collection contract for Sweet NFTs

@@ -13,6 +13,7 @@ from ...content import (
     NFTOffchainContent,
     NFTModifiedOnchainContent,
     NFTModifiedOffchainContent,
+    SweetOffchainContent,
 )
 from ...data import CollectionData
 from ...op_codes import *
@@ -29,6 +30,7 @@ class CollectionSoulboundBase(Collection):
                 CollectionOffchainContent,
                 CollectionModifiedOnchainContent,
                 CollectionModifiedOffchainContent,
+                SweetOffchainContent,
             ],
             royalty_params: RoyaltyParams,
     ) -> None:
@@ -286,7 +288,7 @@ class SweetCollectionSoulbound(CollectionSoulboundBase):
             self,
             owner_address: Address,
             next_item_index: int,
-            content: CollectionOffchainContent,
+            content: SweetOffchainContent,
             royalty_params: RoyaltyParams,
     ) -> None:
         super().__init__(
@@ -300,7 +302,7 @@ class SweetCollectionSoulbound(CollectionSoulboundBase):
     def build_mint_body(
             cls,
             owner_address: Address,
-            content: NFTOffchainContent,
+            content: SweetOffchainContent,
             amount: int = get_gas_fee(),
             query_id: int = 0,
     ) -> Cell:
