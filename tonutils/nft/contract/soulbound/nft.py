@@ -18,7 +18,7 @@ class NFTSoulboundBase(NFT):
 
     def __init__(
             self,
-            index: int,
+            index: Optional[int] = None,
             collection_address: Optional[Address] = None,
             owner_address: Optional[Address] = None,
             content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent]] = None,
@@ -117,6 +117,23 @@ class NFTSoulbound(NFTSoulboundBase):
     ) -> None:
         super().__init__(
             index=index,
+            collection_address=collection_address,
+            owner_address=owner_address,
+            content=content,
+        )
+
+class SweetNFTSoulbound(NFTSoulboundBase):
+    # https://github.com/sweet-io-org/miniapp-nft-contracts/blob/master/contracts/nft/soulbound_nft_item.fc
+    CODE_HEX = "b5ee9c7241020b01000194000114ff00f4a413f4bcf2c80b01020162020a0202cd030702cfd361110638048adf000e8698180b8d848adf07d201878022d8159c75a2909e382f970ca816a111060004b984018646583e4f187686400e78b016809678b6490686ba4c185ddf970cb00fd201821807802f001e98fe99f98410817e59351095d71812f824207f9784040601fac87022820186a0a90420c2009f31a63001cb077102820186a0a908029130e222812710a90420c20022b19e31a63001cb077102812710a908029130e2228103e8a90420c20022b19e31a63001cb0771028103e8a908029130e2228064a90420c20022b19d31a63001cb0771028064a908029130e2227aa90420c20058b105002a9aa63001cb07017aa908019130e201a63001cb07c900767082108b77173505c8cbff5003cf16103410238040708010c8cb055007cf165005fa0215cb6a12cb1fcb3f226eb39458cf17019132e201c901fb000201480809003b3b513434cffe900835d27080269fc07e90350c04090408f80c1c165b5b60001d00f232cfd633c58073c5b3327b55200009a11f9fe0096d05cdb7"  # noqa
+
+    def __init__(
+            self,
+            collection_address: Optional[Address] = None,
+            owner_address: Optional[Address] = None,
+            content: Optional[NFTOffchainContent] = None,
+    ) -> None:
+        super().__init__(
+            index=None, # Index is automatically assigned by the collection contract for Sweet NFTs
             collection_address=collection_address,
             owner_address=owner_address,
             content=content,

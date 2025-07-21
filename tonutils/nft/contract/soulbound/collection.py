@@ -5,7 +5,7 @@ from typing import List, Tuple, Optional, Union
 from pytoniq_core import Address, Cell, begin_cell, HashMap
 
 from .nft import NFTSoulbound
-from ..base.collection import Collection
+from ..base.collection import Collection, get_gas_fee
 from ...content import (
     CollectionOffchainContent,
     CollectionModifiedOnchainContent,
@@ -275,3 +275,69 @@ class CollectionSoulboundModified(CollectionSoulboundBase):
             .store_uint(query_id, 64)
             .end_cell()
         )
+
+
+class SweetCollectionSoulbound(CollectionSoulboundBase):
+    # https://github.com/sweet-io-org/miniapp-nft-contracts/blob/master/contracts/nft/soulbound_nft_collection.fc
+
+    CODE_HEX = "b5ee9c72410211010001cd000114ff00f4a413f4bcf2c80b01020162020c0202cc030b020120040803f5d10638048adf000e8698180b8d848adf07d201800e98fe99f98f6a2687d20699fea6a1828b1e382f970c8b8a9285d471e1a2a38005d104cbd29185d49f960c7ef6f026a10e86ba4c185ddf970cb7d00181381780401470880d22001e42802678b09659fe66664f6aa492f8271703929285d71813a0add71812f82c05060700b4347003d4308e418040f4966fa5208e3306a45304a07aba93f2c18fde81019321a05325bbf2f402d421d0d749830bbbf2e196fa003022544a03f00823ba9302a402de04926c21e2b3e630325023c85004cf1612cb3fccccc9ed54004e03d0d431d4d102d43020d0d749830bbbf2e196c8cc12ccc95003c85004cf1612cb3fccccc9ed540008840ff2f0020158090a002d007232cffe0a33c5b25c083232c044fd003d0032c03260001b3e401d3232c084b281f2fff27420003ddad78033810f803bbc00c646582ac678b28027d0109e5b589666664b8fd8040201200d100201200e0f003fb8b5d31ed44d0fa40d33fd4d430135f03d0d431d430d071c8cb0701cf16ccc980029ba7a3ed44d0fa40d33fd4d4306c31f0067001f00780023bc82df6a2687d20699fea6a1818686a182c496828576"
+
+    def __init__(
+            self,
+            owner_address: Address,
+            next_item_index: int,
+            content: CollectionOffchainContent,
+            royalty_params: RoyaltyParams,
+    ) -> None:
+        super().__init__(
+            owner_address=owner_address,
+            next_item_index=next_item_index,
+            content=content,
+            royalty_params=royalty_params,
+        )
+
+    @classmethod
+    def build_mint_body(
+            cls,
+            owner_address: Address,
+            content: NFTOffchainContent,
+            amount: int = get_gas_fee(),
+            query_id: int = 0,
+    ) -> Cell:
+        """
+        Builds the body of the mint transaction.
+
+        :param content: The content of the nft to be minted.
+        :param owner_address: The address of the owner.
+        :param amount: The amount of coins in nanoton. Defaults to 20000000.
+        :param query_id: The query ID. Defaults to 0.
+        :return: The cell representing the body of the mint transaction.
+        """
+        return (
+            begin_cell()
+            .store_uint(NFT_MINT_OPCODE, 32)
+            .store_uint(query_id, 64)
+            .store_coins(amount)
+            .store_ref(
+                begin_cell()
+                .store_address(owner_address)
+                .store_ref(content.serialize())
+                .end_cell()
+            )
+            .end_cell()
+        )
+
+    @classmethod
+    def build_batch_mint_body(
+            cls,
+            data: List[Tuple[Union[
+                NFTOffchainContent,
+                NFTModifiedOnchainContent,
+                NFTModifiedOffchainContent,
+            ], Address, Optional[Address], Optional[int]]],
+            from_index: int,
+            amount_per_one: int = get_gas_fee(),
+            query_id: int = 0,
+    ) -> Cell:
+        # We are not supporting batch minting for SweetCollectionSoulbound for the moment.
+        raise NotImplementedError

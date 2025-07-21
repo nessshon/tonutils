@@ -10,6 +10,11 @@ from ....contract import Contract
 from ....exceptions import UnknownClientError
 
 
+def get_gas_fee():
+    # https://github.com/sweet-io-org/miniapp-nft-contracts/blob/c32e737066291ec6a7c7e64ce4bf42a7c64fe4ce/contracts/standard_nft_purchase.fc#L46
+    return 200000000  # 0.015 TON for messages and mint
+
+
 class Collection(Contract):
 
     @classmethod
@@ -59,3 +64,4 @@ class Collection(Contract):
             raise UnknownClientError(client.__class__.__name__)
 
         return RoyaltyParams(base, factor, royalty_address)
+
