@@ -1,7 +1,7 @@
 from pytoniq_core import Address
 
 from tonutils.client import TonapiClient
-from tonutils.nft.content import NFTOffchainContent
+from tonutils.nft.content import SweetOffchainContent
 from tonutils.nft.contract.standard.collection import SweetCollectionStandard
 from tonutils.nft.contract.standard.nft import SweetNFTStandard
 from tonutils.wallet import WalletV5R1
@@ -16,14 +16,11 @@ IS_TESTNET = True
 MNEMONIC: list[str] = []
 
 # Address of the owner of the NFT and the NFT collection contract
-OWNER_ADDRESS = "UQ..."
-COLLECTION_ADDRESS = "EQ..."
-
-# Index of the NFT to be minted
-NFT_INDEX = 0
+OWNER_ADDRESS = ""
+COLLECTION_ADDRESS = ""
 
 # Suffix URI of the NFT metadata
-SUFFIX_URI = f"{NFT_INDEX}.json"
+METADATA_URI = f""
 
 
 async def main() -> None:
@@ -35,25 +32,9 @@ async def main() -> None:
     )
     body = SweetCollectionStandard.build_mint_body(
         owner_address=Address(OWNER_ADDRESS),
-        content=NFTOffchainContent(suffix_uri=SUFFIX_URI),
+        content=SweetOffchainContent(base_uri=METADATA_URI),
     )
 
-    """ If you deployed the collection using the Modified variant, replace the above code with:
-        Replace `CollectionStandard` and `NFTStandard` with their modified versions,
-        and use `NFTModifiedOffchainContent` to specify the full `URI` for the NFT metadata.
-
-    Example:
-
-    nft = NFTStandardModified(
-        index=NFT_INDEX,
-        collection_address=Address(COLLECTION_ADDRESS),
-    )
-    body = CollectionStandardModified.build_mint_body(
-        index=NFT_INDEX,
-        owner_address=Address(OWNER_ADDRESS),
-        content=NFTModifiedOffchainContent(uri=URI),  # URI example: `https://example.com/nft/0.json`.
-    )
-    """
 
     tx_hash = await wallet.transfer(
         destination=COLLECTION_ADDRESS,
@@ -61,7 +42,7 @@ async def main() -> None:
         body=body,
     )
 
-    print(f"Successfully minted NFT with index {NFT_INDEX}: {nft.address.to_str()}")
+    print(f"Successfully minted NFT from collection {nft.address.to_str()}")
     print(f"Transaction hash: {tx_hash}")
 
 

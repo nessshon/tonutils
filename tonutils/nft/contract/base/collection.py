@@ -1,3 +1,5 @@
+import os
+
 from __future__ import annotations
 
 from typing import Union
@@ -10,9 +12,12 @@ from ....contract import Contract
 from ....exceptions import UnknownClientError
 
 
+# https://github.com/sweet-io-org/miniapp-nft-contracts/blob/c32e737066291ec6a7c7e64ce4bf42a7c64fe4ce/contracts/standard_nft_purchase.fc#L46
+SWEET_NFT_GAS = os.getenv("SWEET_NFT_GAS", 200000000)
+
 def get_gas_fee():
     # https://github.com/sweet-io-org/miniapp-nft-contracts/blob/c32e737066291ec6a7c7e64ce4bf42a7c64fe4ce/contracts/standard_nft_purchase.fc#L46
-    return 200000000  # 0.015 TON for messages and mint
+    return int(SWEET_NFT_GAS)
 
 
 class Collection(Contract):

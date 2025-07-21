@@ -32,7 +32,7 @@ class SweetOffchainContent(BaseOffchainContent):
 
     def serialize(self) -> Cell:
         return (
-            begin_cell().store_snake_string(self.base_uri).end_cell()
+            begin_cell().store_snake_string(self.uri).end_cell()
         )
 
 

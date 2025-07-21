@@ -30,8 +30,8 @@ class NFTSoulboundBase(NFT):
     @classmethod
     def create_data(
             cls,
-            index: int,
-            collection_address: Address,
+            index: Optional[int] = None,
+            collection_address: Optional[Address] = None,
             owner_address: Optional[Address] = None,
             content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent, SweetOffchainContent]] = None,
     ) -> NFTData:
