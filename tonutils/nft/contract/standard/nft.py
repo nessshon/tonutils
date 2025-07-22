@@ -9,6 +9,7 @@ from ...content import (
     NFTOffchainContent,
     NFTModifiedOnchainContent,
     NFTModifiedOffchainContent,
+    SweetOffchainContent,
 )
 from ...data import NFTData
 
@@ -17,10 +18,10 @@ class NFTStandardBase(NFT):
 
     def __init__(
             self,
-            index: int,
+            index: Optional[int] = None,
             collection_address: Optional[Address] = None,
             owner_address: Optional[Address] = None,
-            content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent]] = None,
+            content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent, SweetOffchainContent]] = None,
     ) -> None:
         self._data = self.create_data(index, collection_address, owner_address, content).serialize()
         self._code = Cell.one_from_boc(self.CODE_HEX)
@@ -28,10 +29,10 @@ class NFTStandardBase(NFT):
     @classmethod
     def create_data(
             cls,
-            index: int,
-            collection_address: Address,
+            index: Optional[int] = None,
+            collection_address: Optional[Address] = None,
             owner_address: Optional[Address] = None,
-            content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent]] = None,
+            content: Optional[Union[NFTOffchainContent, NFTModifiedOnchainContent, NFTModifiedOffchainContent, SweetOffchainContent]] = None,
     ) -> NFTData:
         return NFTData(
             index=index,
@@ -72,6 +73,23 @@ class NFTStandardModified(NFTStandardBase):
     ) -> None:
         super().__init__(
             index=index,
+            collection_address=collection_address,
+            owner_address=owner_address,
+            content=content,
+        )
+
+class SweetNFTStandard(NFTStandardBase):
+    # https://github.com/sweet-io-org/miniapp-nft-contracts/blob/master/contracts/nft/standard_nft_item.fc
+    CODE_HEX = "b5ee9c7241021001000299000114ff00f4a413f4bcf2c80b01020162020f0202cd030c020120040b03f743221c700925f03e0d0d3030171b0925f03e0fa40fa4031fa003171d721fa0031fa003073a9b400f00404b38eb8306c22345232c705f2e19501d42220c00097308030c8cb07c9e30ed0c801cf1602d012cf16c920d0d749830bbbf2e19601fa40304300f005e006d31fd33f82105fcc3d145230bae3023034343535805070a01fac87022820186a0a90420c2009f31a63001cb077102820186a0a908029130e222812710a90420c20022b19e31a63001cb077102812710a908029130e2228103e8a90420c20022b19e31a63001cb0771028103e8a908029130e2228064a90420c20022b19d31a63001cb0771028064a908029130e2227aa90420c20058b106002a9aa63001cb07017aa908019130e201a63001cb07c902ac3210375e3240135135c705f2e191fa4021f003fa40d20031fa0020d749c200f2e2c4820afaf0801ba121945315a0a1de22d70b01c300209206a19136e220c2fff2e1922194102a375be30d0293303234e30d5502f0050809007c821005138d91c85009cf16500bcf16712449145446a0708010c8cb055007cf165005fa0215cb6a12cb1fcb3f226eb39458cf17019132e201c901fb001047006a26f0038210d53276db103744006d71708010c8cb055007cf165005fa0215cb6a12cb1fcb3f226eb39458cf17019132e201c901fb00009482102fcb26a212ba8e397082108b77173505c8cbff5004cf1610248040708010c8cb055007cf165005fa0215cb6a12cb1fcb3f226eb39458cf17019132e201c901fb00e05f04840ff2f000115fa443070baf2e14d80201480d0e003b3b513434cffe900835d27080269fc07e90350c04090408f80c1c165b5b60001d00f232cfd633c58073c5b3327b55200009a11f9fe009d926ab9e"  # noqa
+
+    def __init__(
+            self,
+            collection_address: Optional[Address] = None,
+            owner_address: Optional[Address] = None,
+            content: Optional[SweetOffchainContent] = None,
+    ) -> None:
+        super().__init__(
+            index=None,  # Index is automatically assigned by the collection contract for Sweet NFTs
             collection_address=collection_address,
             owner_address=owner_address,
             content=content,

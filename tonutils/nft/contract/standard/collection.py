@@ -5,7 +5,7 @@ from typing import List, Tuple, Union
 from pytoniq_core import Address, Cell, HashMap, begin_cell
 
 from .nft import NFTStandard
-from ..base.collection import Collection
+from ..base.collection import Collection, get_gas_fee
 from ...content import (
     CollectionOffchainContent,
     CollectionModifiedOnchainContent,
@@ -13,6 +13,7 @@ from ...content import (
     NFTOffchainContent,
     NFTModifiedOnchainContent,
     NFTModifiedOffchainContent,
+    SweetOffchainContent,
 )
 from ...data import CollectionData
 from ...op_codes import *
@@ -29,6 +30,7 @@ class CollectionStandardBase(Collection):
                 CollectionOffchainContent,
                 CollectionModifiedOnchainContent,
                 CollectionModifiedOffchainContent,
+                SweetOffchainContent,
             ],
             royalty_params: RoyaltyParams,
     ) -> None:
@@ -255,3 +257,68 @@ class CollectionStandardModified(CollectionStandardBase):
             .store_uint(query_id, 64)
             .end_cell()
         )
+
+
+class SweetCollectionStandard(CollectionStandardBase):
+    # https://github.com/sweet-io-org/miniapp-nft-contracts/blob/master/contracts/nft/standard_nft_collection.fc
+    CODE_HEX = "b5ee9c7241021401000255000114ff00f4a413f4bcf2c80b01020162020d0202cc030c020120040904edd10638048adf000e8698180b8d848adf07d201800e98fe99ff6a2687d20699fea6a6a184108349e9ca829405d47141baf8280e8410854658056b84008646582a802e78b127d010a65b509e58fe59f80e78b64c0207d80701b28b9e382f970c8b8a9305d71813929305d718139a9305d7181181aba0a5d405060708006635547000ba20997a5230ba93f2c18fdede04fa00d4302859f008028e1201a44343c85005cf1613cb3fccccccc9ed54925f05e200a6357003d4308e378040f4966fa5208e2906a45304a07aba93f2c18fde81019321a05325bbf2f402fa00d43022544b30f00823ba9302a402de04926c21e2b3e6303250444313c85005cf1613cb3fccccccc9ed540052323401fa40302020d749c10292307095d30130c300e2f2e1954144c85005cf1613cb3fccccccc9ed5400628e28d421d0d749830bbbf2e25bd43020d0d749830cbbf2e25d103458c85005cf1613cb3fccccccc9ed54e05f04840ff2f00201580a0b002d007232cffe0a33c5b25c083232c044fd003d0032c03260001b3e401d3232c084b281f2fff274200051d90686ba4c185ddf9712cad78033810f803bbc00c646582ac678b28027d0109e5b589666664b8fd8040201200e130201200f100043b8b5d31ed44d0fa40d33fd4d4d43010245f04d0d431d430d071c8cb0701cf16ccc980201201112002fb5dafda89a1f481a67fa9a9a860d883a1a61fa61ff480610002db4f47da89a1f481a67fa9a9a86028be09e00ce003e00f00025bc82df6a2687d20699fea6a6a182de86a182c49d2cb760"
+
+    def __init__(
+            self,
+            owner_address: Address,
+            next_item_index: int,
+            content: SweetOffchainContent,
+            royalty_params: RoyaltyParams,
+    ) -> None:
+        super().__init__(
+            owner_address=owner_address,
+            next_item_index=next_item_index,
+            content=content,
+            royalty_params=royalty_params,
+        )
+
+    @classmethod
+    def build_mint_body(
+            cls,
+            owner_address: Address,
+            content: SweetOffchainContent,
+            amount: int = get_gas_fee(),
+            query_id: int = 0,
+    ) -> Cell:
+        """
+        Builds the body of the mint transaction.
+
+        :param content: The content of the nft to be minted.
+        :param owner_address: The address of the owner.
+        :param amount: The amount of coins in nanoton. Defaults to 20000000.
+        :param query_id: The query ID. Defaults to 0.
+        :return: The cell representing the body of the mint transaction.
+        """
+        return (
+            begin_cell()
+            .store_uint(NFT_MINT_OPCODE, 32)
+            .store_uint(query_id, 64)
+            .store_coins(amount)
+            .store_ref(
+                begin_cell()
+                .store_address(owner_address)
+                .store_ref(content.serialize())
+                .end_cell()
+            )
+            .end_cell()
+        )
+
+    @classmethod
+    def build_batch_mint_body(
+            cls,
+            data: List[Tuple[Union[
+                NFTOffchainContent,
+                NFTModifiedOnchainContent,
+                NFTModifiedOffchainContent,
+            ], Address]],
+            from_index: int,
+            amount_per_one: int = 20000000,
+            query_id: int = 0,
+    ) -> Cell:
+        # We are not supporting batch minting for SweetCollectionNFT for the moment.
+        raise NotImplementedError

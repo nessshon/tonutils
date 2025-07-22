@@ -76,11 +76,12 @@ class NFTData(TlbScheme):
         self.content = content
 
     def serialize(self) -> Cell:
-        cell = (
-            begin_cell()
-            .store_uint(self.index, 64)
-            .store_address(self.collection_address)
-        )
+        cell = begin_cell()
+        if self.index is not None:
+            cell.store_uint(self.index, 64)
+
+        cell.store_address(self.collection_address)
+
 
         if self.owner_address is not None:
             cell = cell.store_address(self.owner_address)
