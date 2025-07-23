@@ -86,3 +86,21 @@ class ToncenterClient(Client):
         raw_account = await self.get_raw_account(address)
 
         return raw_account.balance
+
+    async def get_transaction(self, address: str, hash: str) -> int:
+        """
+        Retrieve the transaction details for a given address and hash.
+        """
+        raise NotImplementedError
+
+    async def get_collection(self, collection: str) -> dict:
+        """
+        Retrieve collection from the blockchain.
+        """
+        raise NotImplementedError
+
+    async def get_collections(self, collections: List[str]) -> dict:
+        """
+        Retrieve collections from the blockchain.
+        """
+        raise NotImplementedError
