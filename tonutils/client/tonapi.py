@@ -116,10 +116,7 @@ class TonapiClient(Client):
         Retrieve collection from the blockchain.
         """
         method = f"/v2/nfts/collections/{collection}"
-        result = await self._get(method=method)
-        return result["nft_collections"]
-
-
+        return await self._get(method=method)
 
     async def get_collections(self, collections: List[str]) -> dict:
         """
@@ -127,4 +124,4 @@ class TonapiClient(Client):
         """
         method = "/v2/nfts/collections/_bulk"
         result = await self._post(method=method, body={"account_ids": collections})
-        return result
+        return result["nft_collections"]
