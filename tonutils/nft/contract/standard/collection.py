@@ -296,7 +296,7 @@ class SweetCollectionStandard(CollectionStandardBase):
         """
         return (
             begin_cell()
-            .store_uint(NFT_MINT_OPCODE, 32)
+            .store_uint(ADMIN_NFT_MINT_OPCODE, 32)
             .store_uint(query_id, 64)
             .store_coins(amount)
             .store_ref(
