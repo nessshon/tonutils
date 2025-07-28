@@ -2,8 +2,8 @@ from typing import Any, List, Optional
 
 from pytoniq_core import Cell
 
-from ._base import Client, TransactionReceipt
-from ..account import AccountStatus, RawAccount
+from tonutils.client._base import Client, TransactionReceipt
+from tonutils.account import AccountStatus, RawAccount
 
 
 class TonapiClient(Client):
@@ -110,3 +110,18 @@ class TonapiClient(Client):
             success=txn.get("success"),
             raw_transaction=txn.get("in_msg"),
         )
+
+    async def get_collection(self, collection: str) -> dict:
+        """
+        Retrieve collection from the blockchain.
+        """
+        method = f"/v2/nfts/collections/{collection}"
+        return await self._get(method=method)
+
+    async def get_collections(self, collections: List[str]) -> dict:
+        """
+        Retrieve collections from the blockchain.
+        """
+        method = "/v2/nfts/collections/_bulk"
+        result = await self._post(method=method, body={"account_ids": collections})
+        return result["nft_collections"]

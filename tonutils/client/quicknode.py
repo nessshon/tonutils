@@ -74,3 +74,16 @@ class QuickNodeClient(Client):
         method = "/getTransactions"
         await self.run_get_method(self, address, method, ["hash", hash])
 
+
+    async def get_collection(self, collection: str) -> dict:
+        """
+        Retrieve collection from the blockchain.
+        """
+        raise NotImplementedError
+
+    async def get_collections(self, collections: List[str]) -> dict:
+        """
+        Retrieve collections from the blockchain.
+        """
+        raise NotImplementedError
+

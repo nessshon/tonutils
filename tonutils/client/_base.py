@@ -184,6 +184,21 @@ class Client:
         raise NotImplementedError
 
 
+    async def get_collection(self, collection: str) -> dict:
+        """
+        Retrieve collection from the blockchain.
+        """
+        raise NotImplementedError
+
+
+    async def get_collections(self, collections: List[str]) -> dict:
+        """
+        Retrieve collections from the blockchain.
+        """
+        raise NotImplementedError
+
+
+
 class LiteBalancer:
     """
     Placeholder class for LiteBalancer when pytoniq is not available.
