@@ -335,6 +335,7 @@ class SendConnectRequest:
     """
     Represents a request to establish a connection with the wallet.
     """
+
     manifest_url: str
     items: List[ConnectItem] = field(default_factory=list)
 
@@ -445,6 +446,7 @@ class SignDataResult:
     timestamp: int
     domain: str
     payload: SignDataPayload
+    public_key: Union[str, bytes]
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> SignDataResult:
@@ -475,6 +477,7 @@ class SignDataResult:
             timestamp=data["timestamp"],
             domain=data["domain"],
             payload=payload,
+            public_key=bytes.fromhex(data["public_key"]),
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -487,6 +490,7 @@ class SignDataResult:
             "timestamp": self.timestamp,
             "domain": self.domain,
             "payload": self.payload.to_dict(),
+            "public_key": self.public_key.hex(),
         }
 
 
@@ -500,14 +504,6 @@ class SignDataResponse:
         return SignDataResponse(
             id=data["id"],
             result=SignDataResult.from_dict(data["result"]),
-        )
-
-    def verify_sign_data(self, public_key: Union[str, bytes]) -> bool:
-        from ..utils.verifiers import verify_sign_data
-
-        return verify_sign_data(
-            public_key=public_key,
-            params=self.result,
         )
 
 

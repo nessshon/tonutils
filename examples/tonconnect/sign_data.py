@@ -1,9 +1,10 @@
 from pytoniq_core import begin_cell
-from storage import FileStorage
 
+from storage import FileStorage
 from tonutils.tonconnect import TonConnect
 from tonutils.tonconnect.models import *
 from tonutils.tonconnect.utils.exceptions import *
+from tonutils.tonconnect.utils.verifiers import verify_sign_data
 
 # Public URL to the application manifest.
 # The manifest defines app metadata (name, icon, URL, permissions).
@@ -143,8 +144,10 @@ async def main() -> None:
                 if isinstance(response, TonConnectError):
                     print(f"Error sending sign data: {response.message}")
                 else:
-                    key = connector.wallet.account.public_key
-                    if response.verify_sign_data(key):
+                    if await verify_sign_data(
+                            payload=response.result,
+                            wallet_state_init_b64=connector.wallet.account.wallet_state_init,
+                    ):
                         print("Verified sign data.")
                     else:
                         print("Failed to verify sign data.")

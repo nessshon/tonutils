@@ -311,6 +311,7 @@ class Connector:
             logger.debug(f"Request error for user_id={self.user_id}: {error}")
         elif is_sign_data:
             event = Event.SIGN_DATA
+            response["result"]["public_key"] = self.account.public_key.hex()
             sign_data = SignDataResponse.from_dict(response)
             result = sign_data
             data["sign_data"] = sign_data

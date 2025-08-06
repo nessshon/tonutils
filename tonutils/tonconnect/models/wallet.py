@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse, parse_qs, urlencode
 
 from ..models import Account, DeviceInfo, TonProof
 from ..utils.exceptions import TonConnectError
-from ..utils.logger import logger
-from ..utils.verifiers import verify_ton_proof
 
 
 @dataclass
@@ -120,58 +117,11 @@ class WalletInfo:
     Represents detailed information about a connected wallet, including device info,
     account details, provider, and TON proof.
     """
+
     device: Optional[DeviceInfo] = None
     provider: str = field(default="http")
     account: Optional[Account] = None
     ton_proof: Optional[TonProof] = None
-
-    def verify_proof_payload(self, src_payload: Optional[str] = None) -> bool:
-        """
-        Verifies the TON proof against the wallet's account and device information.
-
-        :param src_payload: Optional payload to include in the verification message.
-                            If not provided, the payload from the TON proof is used.
-        :return: True if the proof is valid and unexpired, False otherwise.
-        """
-        if self.ton_proof is None or self.account is None:
-            logger.debug("Account or TON proof is missing.")
-            return False
-
-        if self.account.public_key is None:
-            raise ValueError("Public key is missing and required for proof verification.")
-
-        payload = src_payload or self.ton_proof.payload
-        if not isinstance(payload, str) or len(payload) < 32:
-            logger.debug("Payload is invalid or too short.")
-            return False
-
-        is_valid = verify_ton_proof(
-            public_key=self.account.public_key,
-            ton_proof=self.ton_proof,
-            address=self.account.address,
-            payload=payload,
-        )
-
-        if not is_valid:
-            logger.debug("Proof is invalid!")
-            return False
-
-        logger.debug("Proof is ok!")
-
-        # Parse expiration time (last 8 bytes of the second 16-byte segment)
-        try:
-            expire_hex = payload[16:32]
-            expire_time = int(expire_hex, 16)
-        except ValueError:
-            logger.debug("Invalid proof format: unable to parse expiration timestamp.")
-            return False
-
-        current_time = int(time.time())
-        if current_time > expire_time:
-            logger.debug("Proof has expired.")
-            return False
-
-        return True
 
     @classmethod
     def from_payload(cls, payload: Dict[str, Any]) -> WalletInfo:
@@ -187,11 +137,16 @@ class WalletInfo:
             raise TonConnectError("items not contains in payload")
 
         wallet = cls()
+        public_key: Optional[bytes] = None
+
         for item in items:
-            item_name = item.pop("name")
-            if item_name == "ton_addr":
+            if item.get("name") == "ton_addr":
                 wallet.account = Account.from_dict(item)
-            elif item_name == "ton_proof":
+                public_key = wallet.account.public_key
+
+        for item in items:
+            if item.get("name") == "ton_proof":
+                item["public_key"] = public_key.hex()
                 wallet.ton_proof = TonProof.from_dict(item)
 
         if not wallet.account:

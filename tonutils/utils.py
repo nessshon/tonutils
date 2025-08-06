@@ -122,6 +122,66 @@ def create_encrypted_comment_cell(
     return root.end_cell()
 
 
+def decrypt_comment(
+        encrypted_comment: str,
+        sender_address: str,
+        our_private_key: bytes,
+        our_public_key: bytes,
+) -> str:
+    salt = (
+        Address(sender_address)
+        .to_str(
+            is_user_friendly=True,
+            is_url_safe=True,
+            is_bounceable=True,
+            is_test_only=False,
+        )
+        .encode()
+    )
+    decoded_message = bytes.fromhex(encrypted_comment)
+    pub_xor = decoded_message[0:32]
+    msg_key = decoded_message[32:48]
+    encrypted_data = decoded_message[48:]
+
+    _their_public_key = bytes([a ^ b for a, b in zip(pub_xor, our_public_key)])
+
+    our_private_key = crypto_sign_ed25519_sk_to_curve25519(
+        our_private_key + our_public_key
+    )
+    their_public_key = crypto_sign_ed25519_pk_to_curve25519(_their_public_key)
+
+    shared_key = crypto_scalarmult(
+        our_private_key,
+        their_public_key,
+    )
+
+    # Generate encryption key using HMAC with shared key
+    h = hmac.new(shared_key, msg_key, hashlib.sha512)
+    x = h.digest()
+
+    # Encrypt data using AES in CBC mode
+    c = AES.new(key=x[0:32], mode=AES.MODE_CBC, iv=x[32:48])
+    decrypted = c.decrypt(encrypted_data)
+
+    # Validate message key
+    got_msg_key = hmac.new(
+        salt,
+        decrypted,
+        hashlib.sha512,
+    ).digest()[:16]
+    if got_msg_key != msg_key:
+        raise ValueError("Message key does not match")
+
+    # Validate and strip prefix
+    prefix_len = decrypted[0]
+    if prefix_len < 16 or prefix_len > 31:
+        raise ValueError("Invalid prefix length")
+
+    message = decrypted[prefix_len:]
+    message = message.decode("utf-8")
+
+    return message
+
 def to_amount(value: int, decimals: int = 9, precision: int = 2) -> Union[float, int]:
     """
     Converts a value from nanoton to TON and rounds it to the specified precision.

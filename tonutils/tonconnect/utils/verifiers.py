@@ -1,12 +1,21 @@
-import base64
 import hashlib
+import time
 import zlib
-from typing import Union
+from typing import Union, Optional, List, Callable, Awaitable
 
+from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
-from pytoniq_core import Address, begin_cell
+from pytoniq_core import Address, begin_cell, StateInit, Cell
 
-from ..models import TonProof, SignDataResult, SignDataPayloadCell, SignDataPayloadText, SignDataPayloadBinary
+from .wallets_data import KNOWN_WALLETS
+from ..models import (
+    TonProof,
+    SignDataResult,
+    SignDataPayloadCell,
+    SignDataPayloadText,
+    SignDataPayloadBinary,
+    Account,
+)
 
 
 def encode_dns_name(name: str) -> bytes:
@@ -47,9 +56,25 @@ def encode_dns_name(name: str) -> bytes:
         result.append(0x00)
 
     if len(result) > 127:
-        raise ValueError("Resulting byte array does not fit into a Cell (must be ≤127 bytes).")
+        raise ValueError(
+            "Resulting byte array does not fit into a Cell (must be ≤127 bytes)."
+        )
 
     return bytes(result)
+
+
+def try_parse_pubkey(state_init: StateInit) -> Optional[bytes]:
+    if not state_init.code or not state_init.data:
+        return None
+
+    for wallet in KNOWN_WALLETS:
+        try:
+            code = Cell.one_from_boc(wallet["code"])
+            if code.hash == state_init.code.hash:
+                return wallet["load_data"](state_init.data.begin_parse())
+        except (Exception,):
+            continue
+    return None
 
 
 def create_cell_sign_message(
@@ -174,9 +199,12 @@ def create_proof_sign_message(
     return hashlib.sha256(message).digest()
 
 
-def verify_sign_data(
-        public_key: Union[str, bytes],
-        params: SignDataResult,
+async def verify_sign_data(
+        payload: SignDataResult,
+        wallet_state_init_b64: str,
+        allowed_domains: Optional[List[str]] = None,
+        valid_auth_time: int = 15 * 60,
+        get_wallet_pubkey: Optional[Callable[[str], Awaitable[Optional[bytes]]]] = None,
 ) -> bool:
     """
     Verifies the signature of a signed payload (cell, text, or binary).
@@ -184,42 +212,51 @@ def verify_sign_data(
     Depending on the payload type, constructs the appropriate message and verifies
     the signature using the provided public key.
 
-    :param public_key: Public key used to verify the signature.
-    :param params: The signed result including payload, signature, domain, and timestamp.
     :return: True if signature is valid, False otherwise.
     """
-    if isinstance(public_key, str):
-        public_key = bytes.fromhex(public_key)
-    if isinstance(params.signature, str):
-        signature = base64.b64decode(params.signature)
-    else:
-        signature = params.signature
+    if allowed_domains and payload.domain not in allowed_domains:
+        return False
+    if int(time.time()) - valid_auth_time > payload.timestamp:
+        return False
 
-    address = Address(params.address)
+    parsed_addr = Address(payload.address)
+    state_init_cell = Cell.one_from_boc(wallet_state_init_b64)
+    state_init = StateInit.deserialize(state_init_cell.begin_parse())
 
-    if isinstance(params.payload, SignDataPayloadCell):
+    public_key = try_parse_pubkey(state_init)
+    if public_key is None and get_wallet_pubkey is not None:
+        public_key = await get_wallet_pubkey(payload.address)
+    if not public_key:
+        return False
+
+    wanted_pubkey = payload.public_key
+    if public_key != wanted_pubkey:
+        return False
+
+    if isinstance(payload.payload, SignDataPayloadCell):
         sign_message = create_cell_sign_message(
-            params.payload, address, params.domain, params.timestamp
+            payload.payload, parsed_addr, payload.domain, payload.timestamp
         )
-    elif isinstance(params.payload, (SignDataPayloadText, SignDataPayloadBinary)):
+    elif isinstance(payload.payload, (SignDataPayloadText, SignDataPayloadBinary)):
         sign_message = create_text_binary_sign_message(
-            params.payload, address, params.domain, params.timestamp
+            payload.payload, parsed_addr, payload.domain, payload.timestamp
         )
     else:
         raise TypeError("Unsupported payload type")
 
     try:
-        VerifyKey(public_key).verify(sign_message, signature)
+        VerifyKey(public_key).verify(sign_message, payload.signature)
         return True
-    except (Exception,):
+    except (Exception, BadSignatureError):
         return False
 
 
-def verify_ton_proof(
-        public_key: Union[str, bytes],
+async def verify_ton_proof(
+        account: Account,
         ton_proof: TonProof,
-        address: Address,
-        payload: str,
+        allowed_domains: Optional[List[str]] = None,
+        valid_auth_time: int = 15 * 60,
+        get_wallet_pubkey: Optional[Callable[[str], Awaitable[Optional[bytes]]]] = None,
 ) -> bool:
     """
     Verifies the TON proof signature, typically used for authentication purposes.
@@ -227,29 +264,41 @@ def verify_ton_proof(
     Uses domain, timestamp, payload, and wallet address to reconstruct the original
     message and verify it with the given public key.
 
-    :param public_key: Public key used to verify the signature.
-    :param ton_proof: The TON proof object containing domain info and signature.
-    :param address: TON wallet address of the signer.
-    :param payload: Arbitrary string originally signed (usually a session string).
     :return: True if the signature is valid, False otherwise.
     """
-    if isinstance(public_key, str):
-        public_key = bytes.fromhex(public_key)
-    if isinstance(ton_proof.signature, str):
-        signature = base64.b64decode(ton_proof.signature)
-    else:
-        signature = ton_proof.signature
+    if allowed_domains and ton_proof.domain_val not in allowed_domains:
+        return False
+    if int(time.time()) - valid_auth_time > ton_proof.timestamp:
+        return False
+
+    state_init_cell = Cell.one_from_boc(account.wallet_state_init)
+    state_init = StateInit.deserialize(state_init_cell.begin_parse())
+
+    wanted_address = account.address
+    address = Address((wanted_address.wc, state_init.serialize().hash))
+    if address != wanted_address:
+        return False
+
+    public_key = try_parse_pubkey(state_init)
+    if public_key is None and get_wallet_pubkey is not None:
+        public_key = await get_wallet_pubkey(wanted_address.to_str())
+    if not public_key:
+        return False
+
+    wanted_public_key = account.public_key
+    if public_key != wanted_public_key:
+        return False
 
     sign_message = create_proof_sign_message(
-        payload,
-        address,
+        ton_proof.payload,
+        wanted_address,
         ton_proof.domain_len,
         ton_proof.domain_val,
-        ton_proof.timestamp
+        ton_proof.timestamp,
     )
 
     try:
-        VerifyKey(public_key).verify(sign_message, signature)
+        VerifyKey(public_key).verify(sign_message, ton_proof.signature)
         return True
-    except (Exception,):
+    except (Exception, BadSignatureError):
         return False

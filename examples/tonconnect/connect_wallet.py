@@ -4,6 +4,7 @@ from tonutils.tonconnect import TonConnect
 from tonutils.tonconnect.models import *
 from tonutils.tonconnect.utils import generate_proof_payload
 from tonutils.tonconnect.utils.exceptions import *
+from tonutils.tonconnect.utils.verifiers import verify_ton_proof
 
 # Public URL to the application manifest.
 # The manifest defines app metadata (name, icon, URL, permissions).
@@ -131,8 +132,12 @@ async def main() -> None:
             if isinstance(response, TonConnectError):
                 print(f"Connection error: {response.message}")
             else:
-                if connector.wallet.verify_proof_payload(ton_proof):
-                    wallet_address = response.account.address.to_str(is_bounceable=False)
+                if await verify_ton_proof(
+                        connector.account, connector.wallet.ton_proof
+                ):
+                    wallet_address = response.account.address.to_str(
+                        is_bounceable=False
+                    )
                     print(f"Connected wallet: {wallet_address}")
                 else:
                     await connector.disconnect_wallet()

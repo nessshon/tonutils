@@ -18,6 +18,7 @@ class TonProof:
     domain_val: str
     payload: str
     signature: Union[str, bytes]
+    public_key: Union[str, bytes]
 
     def __repr__(self) -> str:
         return (
@@ -51,6 +52,7 @@ class TonProof:
             raise TonConnectError("domain value not contains in ton_proof")
         payload = proof.get("payload")
         signature = base64.b64decode(proof.get("signature"))
+        public_key = bytes.fromhex(data["public_key"])
 
         return cls(
             timestamp=timestamp,
@@ -58,6 +60,7 @@ class TonProof:
             domain_val=domain_val,
             payload=payload,
             signature=signature,
+            public_key=public_key,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -77,4 +80,5 @@ class TonProof:
             },
             "payload": self.payload,
             "signature": self.signature,
+            "public_key": self.public_key.hex(),
         }
