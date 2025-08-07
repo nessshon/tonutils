@@ -144,10 +144,12 @@ async def main() -> None:
                 if isinstance(response, TonConnectError):
                     print(f"Error sending sign data: {response.message}")
                 else:
-                    if await verify_sign_data(
-                            payload=response.result,
-                            wallet_state_init_b64=connector.wallet.account.wallet_state_init,
-                    ):
+                    payload = CheckSignDataRequestDto(
+                        state_init=connector.account.state_init,
+                        public_key=connector.account.public_key,
+                        result=response.result,
+                    )
+                    if await verify_sign_data(payload):
                         print("Verified sign data.")
                     else:
                         print("Failed to verify sign data.")

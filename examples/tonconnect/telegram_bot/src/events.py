@@ -4,9 +4,10 @@ from tonutils.tonconnect.models import (
     EventError,
     SendTransactionResponse,
     SignDataResponse,
-    WalletInfo,
+    WalletInfo, CheckProofRequestDto,
 )
 from tonutils.tonconnect.utils.exceptions import *
+from tonutils.tonconnect.utils.verifiers import verify_ton_proof
 
 from .utils import Context, windows
 
@@ -19,10 +20,13 @@ async def connect_event(user_id: int, wallet: WalletInfo, context: Context) -> N
     :param wallet: Connected wallet information.
     :param context: Execution context.
     """
-    state_data = await context.state.get_data()
-    stored_proof = state_data.get("ton_proof")
-
-    if wallet.verify_proof_payload(stored_proof):
+    payload = CheckProofRequestDto(
+        address=wallet.account.address,
+        public_key=wallet.account.public_key,
+        state_init=wallet.account.state_init,
+        proof=wallet.ton_proof,
+    )
+    if await verify_ton_proof(payload):
         await windows.wallet_connected(context, user_id)
     else:
         context.connector.add_event_kwargs(Event.DISCONNECT, failed_proof=True)

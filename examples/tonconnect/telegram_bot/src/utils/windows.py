@@ -4,9 +4,10 @@ import json
 from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.utils.markdown import hide_link, hblockquote, hbold
-from tonutils.tonconnect.models import Event, SendTransactionResponse, SignDataResponse
-from tonutils.tonconnect.utils import generate_proof_payload
 
+from tonutils.tonconnect.models import Event, SendTransactionResponse, SignDataResponse, CheckSignDataRequestDto
+from tonutils.tonconnect.utils import generate_proof_payload
+from tonutils.tonconnect.utils.verifiers import verify_sign_data
 from ..utils import Context, delete_last_message
 from ..utils import keyboards
 
@@ -24,15 +25,15 @@ async def connect_wallet(context: Context, user_id: int) -> None:
 
     selected_wallet = next((w for w in wallets if w.app_name == selected_wallet_name), wallets[0])
     redirect_url = "https://t.me/tonconnect_demo_bot"
-    ton_proof = generate_proof_payload()
+    payload_hex, payload_hash = generate_proof_payload()
 
-    await context.state.update_data(ton_proof=ton_proof)
+    await context.state.update_data(ton_proof=payload_hex)
     context.connector.add_event_kwargs(Event.CONNECT, state=context.state)
 
     connect_url = await context.connector.connect_wallet(
         wallet_app=selected_wallet,
         redirect_url=redirect_url,
-        ton_proof=ton_proof,
+        ton_proof=payload_hex,
     )
 
     qrcode_url = (
@@ -122,9 +123,12 @@ async def sign_data_sent(context: Context, user_id: int, sign_data: SignDataResp
     :param user_id: Telegram user ID.
     :param sign_data: Sign data result.
     """
-    is_signed = sign_data.verify_sign_data(context.connector.account.public_key)
-
-    if is_signed:
+    payload = CheckSignDataRequestDto(
+        state_init=context.connector.account.state_init,
+        public_key=context.connector.account.public_key,
+        result=sign_data.result,
+    )
+    if await verify_sign_data(payload):
         text = (
             "<b>Data successfully signed!</b>\n\n"
             f"Payload:\n{hblockquote(json.dumps(sign_data.result.payload.to_dict(), indent=4))}"

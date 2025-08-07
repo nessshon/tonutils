@@ -108,7 +108,7 @@ async def main() -> None:
     connector = await tc.init_connector(user_id)
 
     # Generate a TON Connect proof payload for authentication
-    ton_proof = generate_proof_payload()
+    payload_hex, payload_hash = generate_proof_payload()
 
     # Check wallet connection
     if not connector.connected:
@@ -119,7 +119,7 @@ async def main() -> None:
 
         # As an example, we will select the wallet with index 1 (Tonkeeper)
         selected_wallet = wallets[1]
-        connect_url = await connector.connect_wallet(selected_wallet, ton_proof=ton_proof)
+        connect_url = await connector.connect_wallet(selected_wallet, ton_proof=payload_hex)
 
         print(f"Please connect your wallet by visiting the following URL:\n{connect_url}")
         print("Waiting for wallet connection...")
@@ -132,9 +132,13 @@ async def main() -> None:
             if isinstance(response, TonConnectError):
                 print(f"Connection error: {response.message}")
             else:
-                if await verify_ton_proof(
-                        connector.account, connector.wallet.ton_proof
-                ):
+                payload = CheckProofRequestDto(
+                    address=connector.account.address,
+                    public_key=connector.account.public_key,
+                    state_init=connector.account.state_init,
+                    proof=connector.proof,
+                )
+                if await verify_ton_proof(payload):
                     wallet_address = response.account.address.to_str(
                         is_bounceable=False
                     )
