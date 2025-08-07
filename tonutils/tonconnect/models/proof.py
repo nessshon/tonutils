@@ -4,6 +4,8 @@ import base64
 from dataclasses import dataclass
 from typing import Any, Dict, Union
 
+from pytoniq_core import Address, Cell, StateInit
+
 from ..utils.exceptions import TonConnectError
 
 
@@ -18,7 +20,6 @@ class TonProof:
     domain_val: str
     payload: str
     signature: Union[str, bytes]
-    public_key: Union[str, bytes]
 
     def __repr__(self) -> str:
         return (
@@ -52,7 +53,6 @@ class TonProof:
             raise TonConnectError("domain value not contains in ton_proof")
         payload = proof.get("payload")
         signature = base64.b64decode(proof.get("signature"))
-        public_key = bytes.fromhex(data["public_key"])
 
         return cls(
             timestamp=timestamp,
@@ -60,7 +60,6 @@ class TonProof:
             domain_val=domain_val,
             payload=payload,
             signature=signature,
-            public_key=public_key,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -80,5 +79,30 @@ class TonProof:
             },
             "payload": self.payload,
             "signature": self.signature,
+        }
+
+
+@dataclass
+class CheckProofRequestDto:
+    address: Union[Address, str]
+    public_key: Union[bytes, str]
+    state_init: Union[StateInit, str]
+    proof: TonProof
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> CheckProofRequestDto:
+        state_init_cell = Cell.one_from_boc(data.get("state_init"))
+        return cls(
+            address=Address(data.get("address")),
+            public_key=bytes.fromhex(data.get("public_key")),
+            state_init=StateInit.deserialize(state_init_cell.begin_parse()),
+            proof=TonProof.from_dict(data),
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "address": self.address.to_str(is_bounceable=False),
             "public_key": self.public_key.hex(),
+            "state_init": base64.b64decode(self.state_init.serialize().to_boc()).decode(),
+            "proof": self.proof.to_dict(),
         }

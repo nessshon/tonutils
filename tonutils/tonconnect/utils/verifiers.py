@@ -5,16 +5,15 @@ from typing import Union, Optional, List, Callable, Awaitable
 
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
-from pytoniq_core import Address, begin_cell, StateInit, Cell
+from pytoniq_core import Address, StateInit, Cell, begin_cell
 
 from .wallets_data import KNOWN_WALLETS
 from ..models import (
-    TonProof,
-    SignDataResult,
     SignDataPayloadCell,
     SignDataPayloadText,
     SignDataPayloadBinary,
-    Account,
+    CheckProofRequestDto,
+    CheckSignDataRequestDto,
 )
 
 
@@ -200,8 +199,7 @@ def create_proof_sign_message(
 
 
 async def verify_sign_data(
-        payload: SignDataResult,
-        wallet_state_init_b64: str,
+        payload: CheckSignDataRequestDto,
         allowed_domains: Optional[List[str]] = None,
         valid_auth_time: int = 15 * 60,
         get_wallet_pubkey: Optional[Callable[[str], Awaitable[Optional[bytes]]]] = None,
@@ -214,46 +212,45 @@ async def verify_sign_data(
 
     :return: True if signature is valid, False otherwise.
     """
-    if allowed_domains and payload.domain not in allowed_domains:
-        return False
-    if int(time.time()) - valid_auth_time > payload.timestamp:
-        return False
+    state_init = payload.state_init
+    sign_data_payload = payload.result
+    wanted_pubkey = payload.public_key
+    waneted_address = sign_data_payload.address
 
-    parsed_addr = Address(payload.address)
-    state_init_cell = Cell.one_from_boc(wallet_state_init_b64)
-    state_init = StateInit.deserialize(state_init_cell.begin_parse())
+    if allowed_domains and payload.result.domain not in allowed_domains:
+        return False
+    if int(time.time()) - valid_auth_time > sign_data_payload.timestamp:
+        return False
 
     public_key = try_parse_pubkey(state_init)
     if public_key is None and get_wallet_pubkey is not None:
-        public_key = await get_wallet_pubkey(payload.address)
+        public_key = await get_wallet_pubkey(sign_data_payload.address)
     if not public_key:
         return False
 
-    wanted_pubkey = payload.public_key
     if public_key != wanted_pubkey:
         return False
 
-    if isinstance(payload.payload, SignDataPayloadCell):
+    if isinstance(sign_data_payload.payload, SignDataPayloadCell):
         sign_message = create_cell_sign_message(
-            payload.payload, parsed_addr, payload.domain, payload.timestamp
+            sign_data_payload.payload, waneted_address, sign_data_payload.domain, sign_data_payload.timestamp,
         )
-    elif isinstance(payload.payload, (SignDataPayloadText, SignDataPayloadBinary)):
+    elif isinstance(sign_data_payload.payload, (SignDataPayloadText, SignDataPayloadBinary)):
         sign_message = create_text_binary_sign_message(
-            payload.payload, parsed_addr, payload.domain, payload.timestamp
+            sign_data_payload.payload, waneted_address, sign_data_payload.domain, sign_data_payload.timestamp,
         )
     else:
         raise TypeError("Unsupported payload type")
 
     try:
-        VerifyKey(public_key).verify(sign_message, payload.signature)
+        VerifyKey(public_key).verify(sign_message, sign_data_payload.signature)
         return True
     except (Exception, BadSignatureError):
         return False
 
 
 async def verify_ton_proof(
-        account: Account,
-        ton_proof: TonProof,
+        payload: CheckProofRequestDto,
         allowed_domains: Optional[List[str]] = None,
         valid_auth_time: int = 15 * 60,
         get_wallet_pubkey: Optional[Callable[[str], Awaitable[Optional[bytes]]]] = None,
@@ -266,39 +263,37 @@ async def verify_ton_proof(
 
     :return: True if the signature is valid, False otherwise.
     """
-    if allowed_domains and ton_proof.domain_val not in allowed_domains:
+    wanted_public_key = payload.public_key
+    wanted_address = payload.address
+
+    if allowed_domains and payload.proof.domain_val not in allowed_domains:
         return False
-    if int(time.time()) - valid_auth_time > ton_proof.timestamp:
+    if int(time.time()) - valid_auth_time > payload.proof.timestamp:
         return False
 
-    state_init_cell = Cell.one_from_boc(account.wallet_state_init)
-    state_init = StateInit.deserialize(state_init_cell.begin_parse())
-
-    wanted_address = account.address
-    address = Address((wanted_address.wc, state_init.serialize().hash))
+    address = Address((wanted_address.wc, payload.state_init.serialize().hash))
     if address != wanted_address:
         return False
 
-    public_key = try_parse_pubkey(state_init)
+    public_key = try_parse_pubkey(payload.state_init)
     if public_key is None and get_wallet_pubkey is not None:
         public_key = await get_wallet_pubkey(wanted_address.to_str())
     if not public_key:
         return False
 
-    wanted_public_key = account.public_key
     if public_key != wanted_public_key:
         return False
 
     sign_message = create_proof_sign_message(
-        ton_proof.payload,
+        payload.proof.payload,
         wanted_address,
-        ton_proof.domain_len,
-        ton_proof.domain_val,
-        ton_proof.timestamp,
+        payload.proof.domain_len,
+        payload.proof.domain_val,
+        payload.proof.timestamp,
     )
 
     try:
-        VerifyKey(public_key).verify(sign_message, ton_proof.signature)
+        VerifyKey(public_key).verify(sign_message, payload.proof.signature)
         return True
     except (Exception, BadSignatureError):
         return False

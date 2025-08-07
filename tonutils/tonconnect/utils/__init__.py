@@ -1,25 +1,23 @@
+import hashlib
 import time
 from secrets import token_bytes
-from typing import Optional
+from typing import Tuple
 
 
-def generate_proof_payload(ttl: Optional[int] = None) -> str:
+def generate_proof_payload(ttl: int = 15 * 60) -> Tuple[str, str]:
     """
-    Generates a proof payload by combining random bytes and an expiration timestamp.
+    Generates a hex-encoded payload for TON Proof and its SHA256 hash.
 
-    :param ttl: Time-to-live in seconds for the proof. If None, uses Connector.DISCONNECT_TIMEOUT.
-    :return: The payload as a hex-encoded string.
+    :param ttl: Time-to-live in seconds (default: 15 minutes).
+    :return: Tuple (payload_token, payload_token_hash)
     """
-    # Local import to avoid circular dependency if needed.
-    if ttl is None:
-        from ..connector import Connector
-        ttl = Connector.DISCONNECT_TIMEOUT
-
     random_bytes = token_bytes(8)
     expire_time = int(time.time()) + ttl
+    expire_bytes = expire_time.to_bytes(8, "big")
 
-    # Create a bytearray combining random bytes and the expiration time.
-    payload = bytearray(random_bytes)
-    payload.extend(expire_time.to_bytes(8, "big"))
+    payload = random_bytes + expire_bytes
 
-    return payload.hex()
+    payload_token = payload.hex()
+    payload_token_hash = hashlib.sha256(payload_token.encode()).hexdigest()
+
+    return payload_token, payload_token_hash

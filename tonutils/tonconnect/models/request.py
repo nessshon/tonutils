@@ -442,11 +442,10 @@ SignDataPayload = Union[
 @dataclass
 class SignDataResult:
     signature: Union[str, bytes]
-    address: str
+    address: Union[Address, str]
     timestamp: int
     domain: str
     payload: SignDataPayload
-    public_key: Union[str, bytes]
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> SignDataResult:
@@ -473,11 +472,10 @@ class SignDataResult:
 
         return cls(
             signature=base64.b64decode(signature),
-            address=data["address"],
+            address=Address(data["address"]),
             timestamp=data["timestamp"],
             domain=data["domain"],
             payload=payload,
-            public_key=bytes.fromhex(data["public_key"]),
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -486,11 +484,10 @@ class SignDataResult:
 
         return {
             "signature": self.signature,
-            "address": self.address,
+            "address": self.address.to_str(is_bounceable=False),
             "timestamp": self.timestamp,
             "domain": self.domain,
             "payload": self.payload.to_dict(),
-            "public_key": self.public_key.hex(),
         }
 
 
@@ -526,4 +523,28 @@ class SignDataRequest(Request):
             "id": str(self.id) if self.id is not None else None,
             "method": self.method,
             "params": [json.dumps(payload.to_dict()) for payload in self.params],
+        }
+
+
+@dataclass
+class CheckSignDataRequestDto:
+    state_init: Union[StateInit, str]
+    public_key: Union[bytes, str]
+    result: SignDataResult
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> CheckSignDataRequestDto:
+        state_init_cell = Cell.one_from_boc(data.get("state_init"))
+
+        return cls(
+            state_init=StateInit.deserialize(state_init_cell.begin_parse()),
+            public_key=bytes.fromhex(data.get("public_key")),
+            result=SignDataResult.from_dict(data.get("result")),
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "state_init": base64.b64decode(self.state_init.serialize().to_boc()).decode(),
+            "public_key": self.public_key.hex(),
+            "result": self.result.to_dict(),
         }

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Union
 
-from pytoniq_core import Address
+from pytoniq_core import Address, Cell, StateInit
 
 from .chain import CHAIN
 from ..utils.exceptions import TonConnectError
@@ -19,6 +19,11 @@ class Account:
     chain: CHAIN
     wallet_state_init: Optional[str] = None
     public_key: Optional[Union[str, bytes]] = None
+
+    @property
+    def state_init(self) -> StateInit:
+        cell = Cell.one_from_boc(self.wallet_state_init)
+        return StateInit.deserialize(cell.begin_parse())
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> Account:
