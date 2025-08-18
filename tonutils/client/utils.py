@@ -163,7 +163,7 @@ class RunGetMethodStack:
                 str: lambda x: x,
                 Cell: lambda x: x.to_boc().hex(),
                 Slice: lambda x: x.to_cell().to_boc().hex(),
-                Address: lambda x: x.to_str()
+                Address: lambda x: x.to_str(is_user_friendly=False)
             },
             "lite": {
                 Cell: lambda x: x.begin_parse(),

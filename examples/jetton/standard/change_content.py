@@ -31,7 +31,7 @@ async def main() -> None:
         body=body,
     )
 
-    print(f"Successfully updated Jetton content!")
+    print("Successfully updated Jetton content!")
     print(f"Transaction hash: {tx_hash}")
 
 

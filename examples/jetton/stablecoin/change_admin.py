@@ -31,7 +31,7 @@ async def main() -> None:
         body=body,
     )
 
-    print(f"Successfully changed the admin of the Jetton Master!")
+    print("Successfully changed the admin of the Jetton Master!")
     print(f"Transaction hash: {tx_hash}")
 
 

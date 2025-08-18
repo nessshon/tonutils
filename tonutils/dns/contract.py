@@ -35,7 +35,7 @@ class DNS:
             category = hex(category)  # type: ignore
 
         method_result = await client.run_get_method(
-            address=address.to_str(),
+            address=address.to_str(is_user_friendly=False),
             method_name="dnsresolve",
             stack=[domain, category],
         )

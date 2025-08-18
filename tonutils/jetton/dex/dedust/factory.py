@@ -109,7 +109,7 @@ class Factory:
     @async_cache()
     async def get_vault_address(self, factory_address: Address, asset: Asset) -> Address:
         method_result = await self.client.run_get_method(
-            address=factory_address.to_str(),
+            address=factory_address.to_str(is_user_friendly=False),
             method_name="get_vault_address",
             stack=[asset.to_cell()],
         )
@@ -118,7 +118,7 @@ class Factory:
     @async_cache()
     async def get_pool_address(self, factory_address: Address, pool_type: PoolType, assets: List[Asset]) -> Address:
         method_result = await self.client.run_get_method(
-            address=factory_address.to_str(),
+            address=factory_address.to_str(is_user_friendly=False),
             method_name="get_pool_address",
             stack=[
                 pool_type.value,

@@ -32,7 +32,7 @@ async def main() -> None:
         body=body,
     )
 
-    print(f"Successfully registered subdomain and set the next resolver!")
+    print("Successfully registered subdomain and set the next resolver!")
     print(f"Transaction hash: {tx_hash}")
 
 

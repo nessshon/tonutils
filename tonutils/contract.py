@@ -8,7 +8,6 @@ from pytoniq_core import (
     ExternalMsgInfo,
     InternalMsgInfo,
     MessageAny,
-    begin_cell,
 )
 
 from .account import RawAccount
@@ -33,14 +32,14 @@ class Contract:
         """
         Retrieve the code of the contract.
         """
-        return self.state_init.code
+        return self._code
 
     @property
     def data(self) -> Cell:
         """
         Retrieve the data of the contract.
         """
-        return self.state_init.data
+        return self._data
 
     @property
     def address(self) -> Address:
@@ -54,15 +53,7 @@ class Contract:
         """
         Retrieve the state init of the contract.
         """
-        return StateInit.deserialize(
-            begin_cell()
-            .store_uint(0, 2)
-            .store_dict(self._code)
-            .store_dict(self._data)
-            .store_uint(0, 1)
-            .end_cell()
-            .to_slice()
-        )
+        return StateInit(code=self.code, data=self.data)
 
     @classmethod
     async def get_raw_account(
@@ -74,7 +65,7 @@ class Contract:
         Fetch the raw account data from the blockchain for the given address.
         """
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
         raw_account = await client.get_raw_account(address)
         return raw_account
@@ -180,5 +171,5 @@ class Contract:
         :return: Wallet balance in TON.
         """
         address = await resolve_wallet_address(client, address)
-        balance = await client.get_account_balance(address.to_str())
+        balance = await client.get_account_balance(address.to_str(is_user_friendly=False))
         return to_amount(balance, precision=9)

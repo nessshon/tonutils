@@ -13,7 +13,7 @@ MNEMONIC = "word1 word2 word3 ..."
 NFT_ADDRESS = "EQ..."
 
 # Suffix URI of the NFT metadata
-SUFFIX_URI = f"new-content.json"
+SUFFIX_URI = "new-content.json"
 
 
 async def main() -> None:

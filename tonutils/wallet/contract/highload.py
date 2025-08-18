@@ -162,7 +162,7 @@ class HighloadWalletV3(Wallet):
         """
         address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
-            address=address.to_str(),
+            address=address.to_str(is_user_friendly=False),
             method_name="get_timeout",
         )
         return method_result[0]
@@ -186,7 +186,7 @@ class HighloadWalletV3(Wallet):
         """
         address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
-            address=address.to_str(),
+            address=address.to_str(is_user_friendly=False),
             method_name="processed?",
             stack=[query_id, -1 if need_clean else 0],
         )
@@ -203,7 +203,7 @@ class HighloadWalletV3(Wallet):
         """
         address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
-            address=address.to_str(),
+            address=address.to_str(is_user_friendly=False),
             method_name="get_last_clean_time",
         )
         return method_result[0]

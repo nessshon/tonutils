@@ -27,7 +27,7 @@ class JettonMaster(Contract):
             jetton_master_address = Address(jetton_master_address)
 
         method_result = await client.run_get_method(
-            address=jetton_master_address.to_str(),
+            address=jetton_master_address.to_str(is_user_friendly=False),
             method_name="get_jetton_data",
         )
 
@@ -68,7 +68,7 @@ class JettonMaster(Contract):
             jetton_master_address = Address(jetton_master_address)
 
         method_result = await client.run_get_method(
-            address=jetton_master_address.to_str(),
+            address=jetton_master_address.to_str(is_user_friendly=False),
             method_name="get_wallet_address",
             stack=[owner_address],
         )

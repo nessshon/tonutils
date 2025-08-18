@@ -182,7 +182,7 @@ class TransferJettonMessage(TransferMessageBase):
         if self.jetton_wallet_address is None:
             self.jetton_wallet_address = await JettonMasterStandard.get_wallet_address(
                 client=wallet.client,
-                owner_address=wallet.address.to_str(),
+                owner_address=wallet.address.to_str(is_user_friendly=False),
                 jetton_master_address=self.jetton_master_address,
             )
 
@@ -302,7 +302,7 @@ class StonfiSwapTONToJettonMessage(TransferMessageBase):
         if self.dex_version is None and None in (self.router_address, self.pton_address):
             self.dex_version, self.router_address, self.pton_address = await get_stonfi_router_details(
                 offer_address="ton",
-                ask_address=self.jetton_master_address.to_str(),
+                ask_address=self.jetton_master_address.to_str(is_user_friendly=False),
                 amount=self.ton_amount,
                 decimals=9,
                 is_testnet=wallet.client.is_testnet,
@@ -432,7 +432,7 @@ class StonfiSwapJettonToTONMessage(TransferMessageBase):
     async def build(self, wallet: Wallet) -> WalletMessage:
         if self.dex_version is None and None in (self.router_address, self.pton_address):
             self.dex_version, self.router_address, self.pton_address = await get_stonfi_router_details(
-                offer_address=self.jetton_master_address.to_str(),
+                offer_address=self.jetton_master_address.to_str(is_user_friendly=False),
                 ask_address="ton",
                 amount=self.jetton_amount,
                 decimals=self.jetton_decimals,
@@ -580,8 +580,8 @@ class StonfiSwapJettonToJettonMessage(TransferMessageBase):
     async def build(self, wallet: Wallet) -> WalletMessage:
         if self.dex_version is None and None in (self.router_address, self.pton_address):
             self.dex_version, self.router_address, _ = await get_stonfi_router_details(
-                offer_address=self.from_jetton_master_address.to_str(),
-                ask_address=self.to_jetton_master_address.to_str(),
+                offer_address=self.from_jetton_master_address.to_str(is_user_friendly=False),
+                ask_address=self.to_jetton_master_address.to_str(is_user_friendly=False),
                 amount=self.jetton_amount,
                 decimals=self.from_jetton_decimals,
                 is_testnet=wallet.client.is_testnet,

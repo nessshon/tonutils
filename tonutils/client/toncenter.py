@@ -57,10 +57,10 @@ class ToncenterV2Client(Client):
             stack: Optional[List[Any]] = None,
     ) -> Any:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
         stack = RunGetMethodStack(self, stack).pack_to_toncenter()
-        method = f"/runGetMethod"
+        method = "/runGetMethod"
 
         body = {
             "address": address,
@@ -83,9 +83,9 @@ class ToncenterV2Client(Client):
 
     async def get_raw_account(self, address: Union[str, Address]) -> RawAccount:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
-        method = f"/getAddressInformation"
+        method = "/getAddressInformation"
         params = {"address": address}
         result = await self._get(method=method, params=params)
 
@@ -142,9 +142,9 @@ class ToncenterV2Client(Client):
             to_lt: int = 0,
     ) -> List[Transaction]:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
-        method = f"/getTransactions"
+        method = "/getTransactions"
 
         params = {"address": address, "limit": limit}
         if from_lt is not None:
@@ -213,10 +213,10 @@ class ToncenterV3Client(Client):
             stack: Optional[List[Any]] = None,
     ) -> Any:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
         stack = RunGetMethodStack(self, stack).pack_to_toncenter()
-        method = f"/runGetMethod"
+        method = "/runGetMethod"
 
         body = {
             "address": address,
@@ -239,9 +239,9 @@ class ToncenterV3Client(Client):
 
     async def get_raw_account(self, address: Union[str, Address]) -> RawAccount:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
-        method = f"/account"
+        method = "/account"
         params = {"address": address}
         result = await self._get(method=method, params=params)
 
@@ -285,7 +285,7 @@ class ToncenterV3Client(Client):
             to_lt: int = 0,
     ) -> List[Transaction]:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
         client = ToncenterV2Client(
             is_testnet=self.is_testnet,
