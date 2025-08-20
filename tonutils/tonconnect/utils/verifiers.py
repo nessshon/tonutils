@@ -200,7 +200,7 @@ def create_proof_sign_message(
 
 async def verify_sign_data(
         payload: CheckSignDataRequestDto,
-        allowed_domains: Optional[List[str]] = None,
+        allowed_domains: List[str],
         valid_auth_time: int = 15 * 60,
         get_wallet_pubkey: Optional[Callable[[str], Awaitable[Optional[bytes]]]] = None,
 ) -> bool:
@@ -217,7 +217,7 @@ async def verify_sign_data(
     wanted_pubkey = payload.public_key
     waneted_address = sign_data_payload.address
 
-    if allowed_domains and payload.result.domain not in allowed_domains:
+    if payload.result.domain not in allowed_domains:
         return False
     if int(time.time()) - valid_auth_time > sign_data_payload.timestamp:
         return False
@@ -251,7 +251,7 @@ async def verify_sign_data(
 
 async def verify_ton_proof(
         payload: CheckProofRequestDto,
-        allowed_domains: Optional[List[str]] = None,
+        allowed_domains: List[str],
         valid_auth_time: int = 15 * 60,
         get_wallet_pubkey: Optional[Callable[[str], Awaitable[Optional[bytes]]]] = None,
 ) -> bool:
@@ -266,7 +266,7 @@ async def verify_ton_proof(
     wanted_public_key = payload.public_key
     wanted_address = payload.address
 
-    if allowed_domains and payload.proof.domain_val not in allowed_domains:
+    if payload.proof.domain_val not in allowed_domains:
         return False
     if int(time.time()) - valid_auth_time > payload.proof.timestamp:
         return False
