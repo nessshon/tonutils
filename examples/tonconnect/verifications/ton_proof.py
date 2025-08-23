@@ -54,7 +54,7 @@ async def main() -> None:
 
     is_valid = await verify_ton_proof(
         payload=payload,
-        allowed_domains=["github.com", "localhost:5173"],  # Optional domain check
+        allowed_domains=["github.com", "localhost:5173"],
         valid_auth_time=15 * 60,  # Signature expiration window (in seconds)
         # get_wallet_pubkey=get_wallet_pubkey  # Uncomment to provide custom pubkey resolver
     )
