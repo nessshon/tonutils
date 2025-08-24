@@ -5,8 +5,8 @@ from tonutils.utils import to_nano
 
 @dataclass
 class PTONAddresses:
-    MAINNET = "EQCM3B12QK1e4yZSf8GtBRT0aLMNyEsBc_DhVfRRtOEffLez"  # noqa
-    TESTNET = "kQAcOvXSnnOhCdLYc6up2ECYwtNNTzlmOlidBeCs5cFPV7AM"  # noqa
+    MAINNET = "0:8cdc1d7640ad5ee326527fc1ad0514f468b30dc84b0173f0e155f451b4e11f7c"  # noqa
+    TESTNET = "0:1c3af5d29e73a109d2d873aba9d84098c2d34d4f39663a589d05e0ace5c14f57"  # noqa
 
 
 @dataclass

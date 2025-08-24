@@ -5,8 +5,8 @@ from tonutils.utils import to_nano
 
 @dataclass
 class RouterAddresses:
-    MAINNET = "EQB3ncyBUTjZUA5EnFKR5_EnOMI9V1tTEAAPaiU71gc4TiUt"  # noqa
-    TESTNET = "kQBsGx9ArADUrREB34W-ghgsCgBShvfUr4Jvlu-0KGc33a1n"  # noqa
+    MAINNET = "0:779dcc815138d9500e449c5291e7f12738c23d575b5310000f6a253bd607384e"  # noqa
+    TESTNET = "0:6c1b1f40ac00d4ad1101df85be82182c0a005286f7d4af826f96efb4286737dd"  # noqa
 
 
 @dataclass

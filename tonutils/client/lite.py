@@ -153,7 +153,7 @@ class LiteserverClient(Client):
             to_lt: int = 0,
     ) -> List[Transaction]:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
         return await self.client.get_transactions(
             address=address,

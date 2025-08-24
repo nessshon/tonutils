@@ -24,7 +24,7 @@ async def main() -> None:
         body=body,
     )
 
-    print(f"Jetton Master admin has been successfully dropped!")
+    print("Jetton Master admin has been successfully dropped!")
     print(f"Transaction hash: {tx_hash}")
 
 

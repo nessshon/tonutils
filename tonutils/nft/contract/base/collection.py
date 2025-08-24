@@ -29,7 +29,7 @@ class Collection(Contract):
             collection_address = Address(collection_address)
 
         method_result = await client.run_get_method(
-            address=collection_address.to_str(),
+            address=collection_address.to_str(is_user_friendly=False),
             method_name="royalty_params",
         )
         base = method_result[0]
@@ -47,7 +47,7 @@ class Collection(Contract):
             collection_address: Union[Address, str],
     ) -> Address:
         if isinstance(collection_address, Address):
-            collection_address = collection_address.to_str()
+            collection_address = collection_address.to_str(is_user_friendly=False)
 
         method_result = await client.run_get_method(
             address=collection_address,
@@ -67,7 +67,7 @@ class Collection(Contract):
             is_telemint_token: bool = False,
     ) -> Address:
         if isinstance(collection_address, Address):
-            collection_address = collection_address.to_str()
+            collection_address = collection_address.to_str(is_user_friendly=False)
 
         code = Cell.one_from_boc(nft_item_code)
         if is_telemint_token:

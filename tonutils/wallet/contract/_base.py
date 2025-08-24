@@ -298,7 +298,7 @@ class Wallet(Contract):
         """
         address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
-            address=address.to_str(),
+            address=address.to_str(is_user_friendly=False),
             method_name="seqno",
         )
         return method_result[0]
@@ -318,7 +318,7 @@ class Wallet(Contract):
         """
         address = await resolve_wallet_address(client, address)
         method_result = await client.run_get_method(
-            address=address.to_str(),
+            address=address.to_str(is_user_friendly=False),
             method_name="get_public_key",
         )
         return method_result[0]

@@ -56,7 +56,7 @@ class TonapiClient(Client):
             stack: Optional[List[Any]] = None,
     ) -> List[Any]:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
         stack = RunGetMethodStack(self, stack or []).pack_to_tonapi()
         method = f"/blockchain/accounts/{address}/methods/{method_name}"
@@ -75,7 +75,7 @@ class TonapiClient(Client):
 
     async def get_raw_account(self, address: Union[str, Address]) -> RawAccount:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
         method = f"/blockchain/accounts/{address}"
         result = await self._get(method=method)
@@ -126,7 +126,7 @@ class TonapiClient(Client):
             to_lt: int = 0,
     ) -> List[Transaction]:
         if isinstance(address, Address):
-            address = address.to_str()
+            address = address.to_str(is_user_friendly=False)
 
         method = f"/blockchain/accounts/{address}/transactions"
 

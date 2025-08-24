@@ -40,7 +40,7 @@ async def main() -> None:
         body=body,
     )
 
-    print(f"Successfully updated the price for NFT sale.")
+    print("Successfully updated the price for NFT sale.")
     print(f"Transaction hash: {tx_hash}")
 
 

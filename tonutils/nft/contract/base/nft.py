@@ -22,7 +22,7 @@ class NFT(Contract):
             nft_address = Address(nft_address)
 
         method_result = await client.run_get_method(
-            address=nft_address.to_str(),
+            address=nft_address.to_str(is_user_friendly=False),
             method_name="get_nft_data",
         )
 

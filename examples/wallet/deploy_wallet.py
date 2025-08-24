@@ -39,7 +39,7 @@ async def main() -> None:
 
     tx_hash = await wallet.deploy()
 
-    print(f"Wallet deployed successfully!")
+    print("Wallet deployed successfully!")
     print(f"Wallet address: {wallet.address.to_str()}")
     print(f"Transaction hash: {tx_hash}")
 

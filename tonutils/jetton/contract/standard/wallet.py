@@ -53,7 +53,7 @@ class JettonWalletStandard(Contract):
             jetton_wallet_address = Address(jetton_wallet_address)
 
         method_result = await client.run_get_method(
-            address=jetton_wallet_address.to_str(),
+            address=jetton_wallet_address.to_str(is_user_friendly=False),
             method_name="get_wallet_data",
         )
         balance = method_result[0]

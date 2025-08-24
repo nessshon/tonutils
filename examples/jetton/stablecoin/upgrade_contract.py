@@ -35,7 +35,7 @@ async def main() -> None:
         body=body,
     )
 
-    print(f"Successfully upgraded the contract!")
+    print("Successfully upgraded the contract!")
     print(f"Transaction hash: {tx_hash}")
 
 

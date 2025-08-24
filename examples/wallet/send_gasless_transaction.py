@@ -94,7 +94,7 @@ async def main() -> None:
         }
     )
 
-    print(f"A gasless transfer sent!")
+    print("A gasless transfer sent!")
 
 
 if __name__ == "__main__":
