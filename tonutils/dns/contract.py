@@ -15,8 +15,8 @@ from ..utils import string_hash
 
 
 class DNS:
-    ROOT_DNS_ADDRESS = "Ef_lZ1T4NCb2mwkme9h2rJfESCE0W34ma9lWp7-_uY3zXDvq"  # noqa
-    TESTNET_ROOT_DNS_ADDRESS = "Ef_v5x0Thgr6pq6ur2NvkWhIf4DxAxsL-Nk5rknT6n99oPKX"  # noqa
+    ROOT_DNS_ADDRESS = "-1:e56754f83426f69b09267bd876ac97c44821345b7e266bd956a7bfbfb98df35c"  # noqa
+    TESTNET_ROOT_DNS_ADDRESS = "-1:efe71d13860afaa6aeaeaf636f9168487f80f1031b0bf8d939ae49d3ea7f7da0"  # noqa
 
     @classmethod
     @async_cache(ttl=30)

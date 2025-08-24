@@ -14,14 +14,14 @@ class OpCodes:
 
 @dataclass
 class FactoryAddresses:
-    MAINNET = "EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67"  # noqa
-    TESTNET = "kQDHcPxlCOSN_s-Vlw53bFpibNyKpZHV6xHhxGAAT_21nJre"  # noqa
+    MAINNET = "0:5f0564fb5f604783db57031ce1cf668a88d4d4d6da6de4db222b4b920d6fd800"  # noqa
+    TESTNET = "0:c770fc6508e48dfecf95970e776c5a626cdc8aa591d5eb11e1c460004ffdb59c"  # noqa
 
 
 @dataclass
 class NativeVaultAddresses:
-    MAINNET = "EQDa4VOnTYlLvDJ0gZjNYm5PXfSmmtL6Vs6A_CZEtXCNICq_"  # noqa
-    TESTNET = "kQDshQ2nyhezZleRdlZT12pvrj_cYp9XGmcRgYirA71DWlOb"  # noqa
+    MAINNET = "0:dae153a74d894bbc32748198cd626e4f5df4a69ad2fa56ce80fc2644b5708d20"  # noqa
+    TESTNET = "0:ec850da7ca17b3665791765653d76a6fae3fdc629f571a67118188ab03bd435a"  # noqa
 
 
 @dataclass
