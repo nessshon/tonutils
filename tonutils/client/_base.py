@@ -27,6 +27,12 @@ class Client:
         self.rps = kwargs.get("rps", 1)
         self.max_retries = kwargs.get("max_retries", 0)
 
+        self.session = kwargs.get("session", None) \
+            or aiohttp.ClientSession(
+                headers=self.headers,
+                timeout=aiohttp.ClientTimeout(total=self.timeout)
+            )
+
         self._limiter = AsyncLimiter(
             max_rate=self.rps,
             time_period=1,
@@ -114,27 +120,23 @@ class Client:
                 await self._limiter.acquire()
 
             try:
-                async with aiohttp.ClientSession(
-                        headers=self.headers,
-                        timeout=aiohttp.ClientTimeout(total=self.timeout)
-                ) as session:
-                    async with session.request(
-                            method=method,
-                            url=url,
-                            params=params,
-                            json=body,
-                    ) as response:
-                        content = await self._parse_response(response)
+                async with self.session.request(
+                        method=method,
+                        url=url,
+                        params=params,
+                        json=body,
+                ) as response:
+                    content = await self._parse_response(response)
 
-                        if response.status == 429 or (isinstance(content, dict) and content.get("code") == 429):
-                            await self._apply_retry_delay(response)
-                            continue
-                        if response.status == 401:
-                            raise UnauthorizedError(url)
-                        if not response.ok:
-                            raise HTTPClientResponseError(url, response.status, str(content))
+                    if response.status == 429 or (isinstance(content, dict) and content.get("code") == 429):
+                        await self._apply_retry_delay(response)
+                        continue
+                    if response.status == 401:
+                        raise UnauthorizedError(url)
+                    if not response.ok:
+                        raise HTTPClientResponseError(url, response.status, str(content))
 
-                        return content
+                    return content
 
             except (aiohttp.ClientError, asyncio.TimeoutError):
                 raise
@@ -237,6 +239,12 @@ class Client:
         :return: A list of Transaction objects representing the account's transactions.
         """
         raise NotImplementedError
+    
+    async def close(self):
+        """
+        Close the client session.
+        """
+        await self.session.close()
 
 
 class LiteBalancer:
