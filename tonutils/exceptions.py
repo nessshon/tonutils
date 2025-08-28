@@ -1,43 +1,92 @@
-class TonutilsException(Exception):
-    pass
+import typing as t
 
 
-class APIClientError(TonutilsException):
-    """Base class for all API client errors."""
-    pass
+class TonutilsException(Exception): ...
 
 
-class RateLimitExceeded(APIClientError):
-    """Raised when the request fails due to exceeding rate limits."""
-
-    def __init__(self, url: str, attempts: int):
-        super().__init__(f"Request to {url} failed after {attempts} attempts due to rate limiting (HTTP 429).")
+class ClientError(TonutilsException): ...
 
 
-class UnauthorizedError(APIClientError):
-    """Raised when unauthorized (401)."""
-
-    def __init__(self, url: str):
-        super().__init__(f"Unauthorized (HTTP 401). Check your API key or permissions for {url}.")
+class KeyValidationError(TonutilsException): ...
 
 
-class HTTPClientResponseError(APIClientError):
-    """Raised when a non-OK HTTP response is received."""
+class TextCipherError(TonutilsException): ...
 
-    def __init__(self, url: str, status: int, message: str):
-        super().__init__(f"HTTP {status} Error for {url}: {message}")
+
+class ContractError(TonutilsException):
+
+    def __init__(
+        self,
+        obj: t.Union[object, type, str],
+        message: str,
+    ) -> None:
+        if isinstance(obj, type):
+            name = obj.__name__
+        elif isinstance(obj, str):
+            name = obj
+        else:
+            name = obj.__class__.__name__
+        super().__init__(f"{name}: {message}")
+
+
+class NotRefreshedError(TonutilsException):
+
+    def __init__(
+        self,
+        obj: t.Union[object, type, str],
+        attr: str,
+    ) -> None:
+        if isinstance(obj, type):
+            name = obj.__name__
+        elif isinstance(obj, str):
+            name = obj
+        else:
+            name = obj.__class__.__name__
+        super().__init__(
+            f"Access to `{attr}` is not allowed. "
+            f"Call `await {name}.refresh()` before accessing `{attr}`."
+        )
 
 
 class PytoniqDependencyError(TonutilsException):
-    """
-    Exception raised when pytoniq dependency is missing.
-
-    This exception informs the user that the pytoniq library is required
-    and provides guidance on how to install it.
-    """
 
     def __init__(self) -> None:
         super().__init__(
-            "The 'pytoniq' library is required to use LiteserverClient functionality. "
-            "Please install it with 'pip install tonutils[pytoniq]'."
+            "The `pytoniq` library is required to use `LiteserverClient` functionality. "
+            "Please install it with `pip install pytonutils[pytoniq]`."
         )
+
+
+class UnexpectedOpCodeError(TonutilsException):
+
+    def __init__(
+        self,
+        obj: t.Union[object, type, str],
+        expected: int,
+        got: int,
+    ) -> None:
+        if isinstance(obj, type):
+            name = obj.__name__
+        elif isinstance(obj, str):
+            name = obj
+        else:
+            name = obj.__class__.__name__
+        ctx = f" while parsing {name}"
+        super().__init__(
+            f"Unexpected op code{ctx}: expected 0x{expected:08x}, "
+            f"but received 0x{got:08x}."
+        )
+
+
+class UnsupportedStackItemError(TonutilsException):
+
+    def __init__(self, item: t.Any) -> None:
+        super().__init__(
+            f"Unsupported item type for stack packing: got `{type(item).__name__}`."
+        )
+
+
+class UnsupportedStackSourceError(TonutilsException):
+
+    def __init__(self, source: t.Any) -> None:
+        super().__init__(f"Unsupported stack source: {source!r}.")

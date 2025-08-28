@@ -1,4 +1,4 @@
-# 📦 Tonutils
+# 📦 Tonutils [ALPHA]
 
 [![TON](https://img.shields.io/badge/TON-grey?logo=TON&logoColor=40AEF0)](https://ton.org)
 [![PyPI](https://img.shields.io/pypi/v/tonutils.svg?color=FFE873&labelColor=3776AB)](https://pypi.python.org/pypi/tonutils)
@@ -29,20 +29,15 @@ on top of the TON ecosystem.
 ## Installation
 
 ```bash
-pip install tonutils
+pip install --pre tonutils
 ```
 
 To use `pytoniq` with Native ADNL connection, install it with the optional dependencies, including
 the [pytoniq](https://github.com/yungwine/pytoniq) library:
 
 ```bash
-pip install 'tonutils[pytoniq]'
+pip install --pre 'tonutils[pytoniq]'
 ```
-
-## Documentation
-
-Find all guides and references here:  
-[nessshon.github.io/tonutils](https://nessshon.github.io/tonutils/)
 
 ## Contribution
 

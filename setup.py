@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="tonutils",
-    version="0.5.2",
+    version="0.6.0a1",
     author="nessshon",
     description=(
         "Tonutils is a high-level, object-oriented Python library "
@@ -24,7 +24,7 @@ setuptools.setup(
     package_data={"tonutils": ["py.typed"]},
     python_requires=">=3.10",
     install_requires=[
-        "aiohttp>=3.7.0,<=3.12.2",
+        "aiohttp>=3.7.0",
         "aiolimiter~=1.2.1",
         "cachetools~=5.5.0",
         "pycryptodomex~=3.20.0",
