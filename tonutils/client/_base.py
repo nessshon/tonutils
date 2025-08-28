@@ -128,7 +128,9 @@ class Client:
                 ) as response:
                     content = await self._parse_response(response)
 
-                    if response.status == 429 or (isinstance(content, dict) and content.get("code") == 429):
+                    if response.status == 429 \
+                            or (isinstance(content, dict) and content.get("code") == 429) \
+                            or response.status in range(500, 600):
                         await self._apply_retry_delay(response)
                         continue
                     if response.status == 401:
