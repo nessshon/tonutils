@@ -27,7 +27,7 @@ def encode_dns_name(name: str) -> bytes:
         - Characters with byte values in the range 0x00–0x20 are forbidden.
         - The domain is split by ".", labels are reversed, and each label is
           followed by a 0x00 byte (null terminator).
-        - The resulting byte sequence must be ≤ 127 bytes.
+        - The resulting byte sequence must be ≤ 126 bytes.
 
     :param name: A human-readable domain name (e.g. "example.ton").
     :return: Encoded domain name as bytes, suitable for use in TON DNS records.
@@ -146,7 +146,7 @@ def create_text_binary_sign_message(
     message = bytearray()
     message.extend(b"\xff\xff")
     message.extend(b"ton-connect/sign-data/")
-    message.extend(address.wc.to_bytes(4, "little"))
+    message.extend(address.wc.to_bytes(4, "big", signed=True))
     message.extend(address.hash_part)
     message.extend(domain_len)
     message.extend(domain_bytes)
@@ -183,7 +183,7 @@ def create_proof_sign_message(
 
     proof = bytearray()
     proof.extend(b"ton-proof-item-v2/")
-    proof.extend(address.wc.to_bytes(4, "little"))
+    proof.extend(address.wc.to_bytes(4, "big", signed=True))
     proof.extend(address.hash_part)
     proof.extend(domain_len_bytes)
     proof.extend(domain_val_bytes)
@@ -215,7 +215,7 @@ async def verify_sign_data(
     state_init = payload.state_init
     sign_data_payload = payload.result
     wanted_pubkey = payload.public_key
-    waneted_address = sign_data_payload.address
+    wanted_address = sign_data_payload.address
 
     if payload.result.domain not in allowed_domains:
         return False
@@ -231,13 +231,17 @@ async def verify_sign_data(
     if public_key != wanted_pubkey:
         return False
 
+    address = Address((wanted_address.wc, state_init.serialize().hash))
+    if address != wanted_address:
+        return False
+
     if isinstance(sign_data_payload.payload, SignDataPayloadCell):
         sign_message = create_cell_sign_message(
-            sign_data_payload.payload, waneted_address, sign_data_payload.domain, sign_data_payload.timestamp,
+            sign_data_payload.payload, wanted_address, sign_data_payload.domain, sign_data_payload.timestamp,
         )
     elif isinstance(sign_data_payload.payload, (SignDataPayloadText, SignDataPayloadBinary)):
         sign_message = create_text_binary_sign_message(
-            sign_data_payload.payload, waneted_address, sign_data_payload.domain, sign_data_payload.timestamp,
+            sign_data_payload.payload, wanted_address, sign_data_payload.domain, sign_data_payload.timestamp,
         )
     else:
         raise TypeError("Unsupported payload type")
