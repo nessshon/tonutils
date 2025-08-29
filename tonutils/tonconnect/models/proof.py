@@ -87,6 +87,7 @@ class CheckProofRequestDto:
     address: Union[Address, str]
     public_key: Union[bytes, str]
     state_init: Union[StateInit, str]
+    network: str
     proof: TonProof
 
     @classmethod
@@ -96,6 +97,7 @@ class CheckProofRequestDto:
             address=Address(data.get("address")),
             public_key=bytes.fromhex(data.get("public_key")),
             state_init=StateInit.deserialize(state_init_cell.begin_parse()),
+            network=data["network"],
             proof=TonProof.from_dict(data),
         )
 
@@ -104,5 +106,6 @@ class CheckProofRequestDto:
             "address": self.address.to_str(is_bounceable=False),
             "public_key": self.public_key.hex(),
             "state_init": base64.b64decode(self.state_init.serialize().to_boc()).decode(),
+            "network": self.network,
             "proof": self.proof.to_dict(),
         }

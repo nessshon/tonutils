@@ -379,17 +379,23 @@ class SendConnectRequest:
 class SignDataPayloadText:
     text: str
     type: str = "text"
+    network: Optional[str] = None
+    from_: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> SignDataPayloadText:
         return cls(
             text=data["text"],
+            network=data.get("network"),
+            from_=data.get("from"),
         )
 
     def to_dict(self):
         return {
             "type": self.type,
-            "text": self.text
+            "text": self.text,
+            "network": self.network,
+            "from": self.from_,
         }
 
 
@@ -397,17 +403,23 @@ class SignDataPayloadText:
 class SignDataPayloadBinary:
     bytes: bytes
     type: str = "binary"
+    network: Optional[str] = None
+    from_: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> SignDataPayloadBinary:
         return cls(
             bytes=base64.b64decode(data["bytes"]),
+            network=data.get("network"),
+            from_=data.get("from"),
         )
 
     def to_dict(self):
         return {
             "type": self.type,
             "bytes": base64.b64encode(self.bytes).decode(),
+            "network": self.network,
+            "from": self.from_,
         }
 
 
@@ -416,12 +428,16 @@ class SignDataPayloadCell:
     schema: str
     cell: Cell
     type: str = "cell"
+    network: Optional[str] = None
+    from_: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> SignDataPayloadCell:
         return cls(
             schema=data["schema"],
             cell=Cell.one_from_boc(base64.b64decode(data["cell"])),
+            network=data.get("network"),
+            from_=data.get("from"),
         )
 
     def to_dict(self):
@@ -429,6 +445,8 @@ class SignDataPayloadCell:
             "type": self.type,
             "schema": self.schema,
             "cell": boc_to_base64_string(self.cell.to_boc()),
+            "network": self.network,
+            "from": self.from_,
         }
 
 
@@ -530,6 +548,7 @@ class SignDataRequest(Request):
 class CheckSignDataRequestDto:
     state_init: Union[StateInit, str]
     public_key: Union[bytes, str]
+    network: str
     result: SignDataResult
 
     @classmethod
@@ -539,6 +558,7 @@ class CheckSignDataRequestDto:
         return cls(
             state_init=StateInit.deserialize(state_init_cell.begin_parse()),
             public_key=bytes.fromhex(data.get("public_key")),
+            network=data["network"],
             result=SignDataResult.from_dict(data.get("result")),
         )
 
@@ -546,5 +566,6 @@ class CheckSignDataRequestDto:
         return {
             "state_init": base64.b64decode(self.state_init.serialize().to_boc()).decode(),
             "public_key": self.public_key.hex(),
+            "network": self.network,
             "result": self.result.to_dict(),
         }
