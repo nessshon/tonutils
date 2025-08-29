@@ -21,7 +21,8 @@ EXAMPLE_DATA = {
         "payload": {"text": "Hello from tonutils!", "type": "text"},
         "signature": "D802ocFTDfQsBtG8RDOI7jiBAfhr9J0GJxArXmbspB6WfzcyVsX/+iTjdCPObLEX9fAT/QE9EkeFusUvwAnoDA==",
         "timestamp": 1754503448,
-    }
+    },
+    "network": "-239"
 }
 
 

@@ -8,6 +8,7 @@ By default, `verify_ton_proof` will try to extract the public key from the provi
 If that fails (e.g. for custom wallets), you can supply a fallback resolver via
 `get_wallet_pubkey(address: str) -> bytes`.
 """
+
 from tonutils.tonconnect.models import CheckProofRequestDto
 from tonutils.tonconnect.utils.verifiers import verify_ton_proof
 
@@ -24,7 +25,8 @@ EXAMPLE_DATA = {
         "payload": "f85774c9762007d20000000068941ae3",
         "signature": "d8GGkzgRbyPCiAt4a2EN+xiNK6fLHo/ptQdDT3YQcUD4cg3TUnE2Airf37y+xRkEP/aiQq38ytS4Ho4ZDHM5CQ==",
         "timestamp": 1754535788,
-    }
+    },
+    "network": "-239"
 }
 
 
