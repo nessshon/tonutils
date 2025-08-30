@@ -140,7 +140,7 @@ class HighloadWalletV3(Wallet):
             **kwargs,
     ) -> None:
         self.timeout = timeout
-        super().__init__(client, public_key, private_key, wallet_id, **kwargs)
+        super().__init__(client, public_key, private_key, wallet_id, timeout=timeout, **kwargs)
 
     @classmethod
     def create_data(
