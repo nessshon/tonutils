@@ -127,8 +127,9 @@ async def sign_data_sent(context: Context, user_id: int, sign_data: SignDataResp
         state_init=context.connector.account.state_init,
         public_key=context.connector.account.public_key,
         result=sign_data.result,
+        network=context.connector.account.chain,
     )
-    if await verify_sign_data(payload):
+    if await verify_sign_data(payload, allowed_domains=["github.com", "localhost:5173"]):
         text = (
             "<b>Data successfully signed!</b>\n\n"
             f"Payload:\n{hblockquote(json.dumps(sign_data.result.payload.to_dict(), indent=4))}"

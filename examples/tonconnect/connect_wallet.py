@@ -137,8 +137,9 @@ async def main() -> None:
                     public_key=connector.account.public_key,
                     state_init=connector.account.state_init,
                     proof=connector.proof,
+                    network=connector.account.chain,
                 )
-                if await verify_ton_proof(payload):
+                if await verify_ton_proof(payload, allowed_domains=["github.com", "localhost:5173"]):
                     wallet_address = response.account.address.to_str(
                         is_bounceable=False
                     )

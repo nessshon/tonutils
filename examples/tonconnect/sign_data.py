@@ -148,8 +148,9 @@ async def main() -> None:
                         state_init=connector.account.state_init,
                         public_key=connector.account.public_key,
                         result=response.result,
+                        network=connector.account.chain,
                     )
-                    if await verify_sign_data(payload):
+                    if await verify_sign_data(payload, allowed_domains=["github.com", "localhost:5173"]):
                         print("Verified sign data.")
                     else:
                         print("Failed to verify sign data.")
