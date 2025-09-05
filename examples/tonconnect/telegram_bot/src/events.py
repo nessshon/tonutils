@@ -27,7 +27,7 @@ async def connect_event(user_id: int, wallet: WalletInfo, context: Context) -> N
         proof=wallet.ton_proof,
         network=wallet.account.chain,
     )
-    if await verify_ton_proof(payload, allowed_domains=["github.com", "localhost:5173"]):
+    if await verify_ton_proof(payload, allowed_domains=["t.me", "github.com", "localhost:5173"]):
         await windows.wallet_connected(context, user_id)
     else:
         context.connector.add_event_kwargs(Event.DISCONNECT, failed_proof=True)
