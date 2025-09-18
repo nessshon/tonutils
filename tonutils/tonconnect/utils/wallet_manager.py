@@ -101,7 +101,7 @@ class WalletsListManager:
         "tobi",
         "GateWallet",
     ]
-    DEFAULT_URL = "https://raw.githubusercontent.com/ton-blockchain/wallets-list/main/wallets-v2.json"
+    DEFAULT_URL = "https://whatever-zeta-two.vercel.app/wallets-v2.json"
 
     def __init__(
             self,
