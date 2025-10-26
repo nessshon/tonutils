@@ -335,7 +335,7 @@ class Factory:
             reject_payload: Optional[Cell] = None,
             deadline: Optional[int] = None,
             forward_gas_amount: Optional[int] = None,
-            dex_query_id: int = 0,
+            query_id: int = 0,
     ) -> tuple[Address, int, Cell]:
         pool_address = await self.get_pool_address(
             factory_address=self.factory_address,
@@ -356,7 +356,7 @@ class Factory:
             referral_address=referral_address,
             fulfill_payload=fulfill_payload,
             reject_payload=reject_payload,
-            query_id=dex_query_id,
+            query_id=query_id,
         )
 
         forward_ton_amount = forward_gas_amount or GasConstants.swap_ton_to_jetton.FORWARD_GAS_AMOUNT
