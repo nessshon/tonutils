@@ -159,6 +159,7 @@ class Factory:
             referral_address: Optional[Union[Address, str]] = None,
             fulfill_payload: Optional[Cell] = None,
             reject_payload: Optional[Cell] = None,
+            query_id: Optional[int] = None,
     ) -> Cell:
         swap_params = (
             begin_cell()
@@ -174,7 +175,7 @@ class Factory:
             return (
                 begin_cell()
                 .store_uint(OpCodes.SWAP_NATIVE, 32)
-                .store_uint(0, 64)
+                .store_uint(query_id or 0, 64)
                 .store_coins(amount)
                 .store_address(pool_address)
                 .store_uint(0, 1)
