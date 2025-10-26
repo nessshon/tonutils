@@ -159,7 +159,7 @@ class Factory:
             referral_address: Optional[Union[Address, str]] = None,
             fulfill_payload: Optional[Cell] = None,
             reject_payload: Optional[Cell] = None,
-            query_id: Optional[int] = None,
+            query_id: int = 0,
     ) -> Cell:
         swap_params = (
             begin_cell()
@@ -175,7 +175,7 @@ class Factory:
             return (
                 begin_cell()
                 .store_uint(OpCodes.SWAP_NATIVE, 32)
-                .store_uint(query_id or 0, 64)
+                .store_uint(query_id, 64)
                 .store_coins(amount)
                 .store_address(pool_address)
                 .store_uint(0, 1)
@@ -335,6 +335,7 @@ class Factory:
             reject_payload: Optional[Cell] = None,
             deadline: Optional[int] = None,
             forward_gas_amount: Optional[int] = None,
+            dex_query_id: int = 0,
     ) -> tuple[Address, int, Cell]:
         pool_address = await self.get_pool_address(
             factory_address=self.factory_address,
@@ -355,6 +356,7 @@ class Factory:
             referral_address=referral_address,
             fulfill_payload=fulfill_payload,
             reject_payload=reject_payload,
+            query_id=dex_query_id,
         )
 
         forward_ton_amount = forward_gas_amount or GasConstants.swap_ton_to_jetton.FORWARD_GAS_AMOUNT
