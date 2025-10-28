@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tonutils"
-version = "0.5.3"
+version = "0.5.4"
 authors = [
     { name = "nessshon" },
 ]
