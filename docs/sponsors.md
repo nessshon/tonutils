@@ -26,6 +26,7 @@ I sincerely thank everyone who supports this project. ❤️
 
 Thank you to everyone who has supported this project at any time!
 
+- `dreamwalkers.ton`
 - `svatoshscammer.ton`
 - `vtonsdk.t.me`
 

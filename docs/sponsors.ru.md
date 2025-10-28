@@ -26,6 +26,7 @@
 
 Спасибо всем, кто когда-либо поддерживал этот проект!
 
+- `dreamwalkers.ton`
 - `svatoshscammer.ton`  
 - `vtonsdk.t.me`
 
