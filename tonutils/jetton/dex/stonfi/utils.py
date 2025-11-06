@@ -32,7 +32,7 @@ async def get_stonfi_router_details(
             decimals=decimals,
         )
 
-    except ValueError:
+    except:
         version = 1
         pton = pton_v1
         offer = resolve_pton_address(offer_address, pton)
