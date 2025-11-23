@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import json
 import random
-from typing import Any, Optional, List, Dict, Union
+from typing import Any, Optional, List, Dict, Union, AsyncGenerator
+from contextlib import asynccontextmanager
 
 import aiohttp
 from aiolimiter import AsyncLimiter
@@ -27,6 +28,7 @@ class Client:
         self.rps = kwargs.get("rps", 1)
         self.max_retries = kwargs.get("max_retries", 0)
 
+        self._session: aiohttp.ClientSession = kwargs.get("session", None)
         self._limiter = AsyncLimiter(
             max_rate=self.rps,
             time_period=1,
@@ -86,6 +88,24 @@ class Client:
         seconds = retry_after + random.uniform(0.2, 0.5)
         await asyncio.sleep(seconds)
 
+    @asynccontextmanager
+    async def _get_session(self) -> AsyncGenerator[aiohttp.ClientSession, None]:
+        if self._session:
+            yield self._session
+        else:
+            async with aiohttp.ClientSession(
+                    timeout=aiohttp.ClientTimeout(total=self.timeout)
+            ) as session:
+                yield session
+
+    async def close_session(self) -> None:
+        """
+        Close the aiohttp session if it was created by the client.
+        """
+        if self._session:
+            await self._session.close()
+            self._session = None
+
     async def _request(
             self,
             method: str,
@@ -114,14 +134,12 @@ class Client:
                 await self._limiter.acquire()
 
             try:
-                async with aiohttp.ClientSession(
-                        headers=self.headers,
-                        timeout=aiohttp.ClientTimeout(total=self.timeout)
-                ) as session:
+                async with self._get_session() as session:
                     async with session.request(
                             method=method,
                             url=url,
                             params=params,
+                            headers=self.headers,
                             json=body,
                     ) as response:
                         content = await self._parse_response(response)
