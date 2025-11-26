@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from pytoniq_core import Address, Builder, Cell, HashMap, Transaction, Slice
+from aiohttp import ClientSession
 
 from ._base import Client
 from .utils import RunGetMethodStack, RunGetMethodResult, unpack_config
@@ -24,6 +25,8 @@ class TonapiClient(Client):
             base_url: Optional[str] = None,
             rps: Optional[int] = None,
             max_retries: int = 1,
+            timeout: Optional[int] = 10,
+            session: Optional[ClientSession] = None,
     ) -> None:
         """
         Initialize the TonapiClient.
@@ -33,6 +36,8 @@ class TonapiClient(Client):
         :param base_url: Optional custom base URL. If not provided, uses the official endpoint.
         :param rps: Optional requests per second (RPS) limit.
         :param max_retries: Number of retries for rate-limited requests. Defaults to 1.
+        :param timeout: Response timeout in seconds. Not used if session is specified. Defaults to 10.
+        :param session: Aiohttp session to avoid creating new ones every time. By default, a new one is created for each request. If specified, remember to call session_close when finished.
         """
         if not api_key:
             raise ValueError("`api_key` is required to initialize TonapiClient.")
@@ -47,6 +52,8 @@ class TonapiClient(Client):
             is_testnet=is_testnet,
             rps=rps,
             max_retries=max_retries,
+            timeout=timeout,
+            session=session,
         )
 
     async def run_get_method(
