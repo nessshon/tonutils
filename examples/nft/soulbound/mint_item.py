@@ -1,46 +1,63 @@
 from pytoniq_core import Address
 
-from tonutils.client import TonapiClient
-from tonutils.nft import CollectionSoulbound, ItemSoulbound
-from tonutils.nft.content import OffchainCommonContent
-from tonutils.wallet import WalletV4R2
+from tonutils.clients import ToncenterHttpClient
+from tonutils.contracts import (
+    NFTCollectionMintItemBody,
+    NFTCollectionStandard,
+    NFTItemSoulbound,
+    NFTItemSoulboundMintRef,
+    OffchainItemContent,
+    WalletV4R2,
+)
+from tonutils.types import NetworkGlobalID
+from tonutils.utils import to_nano
 
-API_KEY = ""
-IS_TESTNET = True
+MNEMONIC = "word1 word2 word3 ..."
 
-MNEMONIC = []
+OWNER_ADDRESS = Address("UQ...")
+AUTHORITY_ADDRESS = Address("UQ...")
+NFT_COLLECTION_ADDRESS = Address("EQ...")
 
-OWNER_ADDRESS = Address("EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess")  # noqa
-COLLECTION_ADDRESS = Address("EQC5FNhcIyExh-fmu6EZSpd4L63M6B3JuMgeVhPnlZDNBhD_")  # noqa
+NFT_ITEM_INDEX = 0
+NFT_ITEM_PREFIX_URI = f"0.json"
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
-    wallet, _, _, _ = WalletV4R2.from_mnemonic(MNEMONIC, client)
+    client = ToncenterHttpClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
 
-    index = 0
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    item = ItemSoulbound(
-        index=index,
-        collection_address=COLLECTION_ADDRESS,
-    )
+    nft_item_code = NFTItemSoulbound.get_default_code()
+    nft_item_content = OffchainItemContent(prefix_uri=NFT_ITEM_PREFIX_URI)
 
-    body = CollectionSoulbound.build_mint_body(
-        index=index,
+    nft_item_ref = NFTItemSoulboundMintRef(
         owner_address=OWNER_ADDRESS,
-        content=OffchainCommonContent(
-            uri=f"{index}.json"
-        ),
+        authority_address=AUTHORITY_ADDRESS,
+        content=nft_item_content,
+    )
+    body = NFTCollectionMintItemBody(
+        item_index=NFT_ITEM_INDEX,
+        item_ref=nft_item_ref.serialize(),
+        forward_amount=to_nano(0.01),
     )
 
-    tx_hash = await wallet.transfer(
-        destination=COLLECTION_ADDRESS,
-        amount=0.02,
-        body=body,
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        amount=to_nano(0.025),
+        body=body.serialize(),
     )
 
-    print(f"Minted item: {item.address.to_str()}")
-    print(f"Transaction hash: {tx_hash}")
+    nft_item_address = NFTCollectionStandard.calculate_nft_item_address(
+        index=NFT_ITEM_INDEX,
+        nft_item_code=nft_item_code,
+        collection_address=NFT_COLLECTION_ADDRESS,
+    )
+
+    print(f"NFT item address: {nft_item_address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
 
 
 if __name__ == "__main__":

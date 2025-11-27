@@ -44,8 +44,10 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.examples
 nosetests.xml
 coverage.xml
+test.py
 *.cover
 *.py,cover
 .hypothesis/
@@ -126,8 +128,12 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# uv
+uv.lock
+
 # Pyre type checker
 .pyre/
 
 # Ignore .idea files
 .idea/
+.DS_Store

@@ -1,45 +1,69 @@
 from pytoniq_core import Address
 
-from tonutils.client import TonapiClient
-from tonutils.nft import CollectionStandard
-from tonutils.nft.content import OffchainContent
-from tonutils.nft.royalty_params import RoyaltyParams
-from tonutils.wallet import WalletV4R2
+from tonutils.clients import ToncenterHttpClient
+from tonutils.contracts import (
+    NFTCollectionStandard,
+    NFTCollectionData,
+    NFTItemStandard,
+    NFTCollectionContent,
+    OffchainContent,
+    OffchainCommonContent,
+    RoyaltyParams,
+    WalletV4R2,
+)
+from tonutils.types import NetworkGlobalID
+from tonutils.utils import to_nano
 
-API_KEY = ""
-IS_TESTNET = True
+MNEMONIC = "word1 word2 word3 ..."
 
-MNEMONIC = []
+OWNER_ADDRESS = Address("UQ...")
 
-OWNER_ADDRESS = Address("EQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNess")  # noqa
+COLLECTION_URI = "https://example.com/collection.json"
+ITEMS_SUFFIX_URI = "https://example.com/items/"
+
+ROYALTY = 50  # 5% royalty
+ROYALTY_DENOMINATOR = 1000
+ROYALTY_ADDRESS = Address("UQ...")
 
 
 async def main() -> None:
-    client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET)
-    wallet, _, _, _ = WalletV4R2.from_mnemonic(MNEMONIC, client)
+    client = ToncenterHttpClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
 
-    collection = CollectionStandard(
-            owner_address=OWNER_ADDRESS,
-            next_item_index=0,
-            content=OffchainContent(
-                uri="https://nft.tonplanets.com/nft/colonizer/collection.json",
-                suffix_uri="https://nft.tonplanets.com/nft/colonizer/",
-            ),
-            royalty_params=RoyaltyParams(
-                base=1000,
-                factor=55,  # 5.5% royalty
-                address=OWNER_ADDRESS,
-            ),
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    nft_item_code = NFTItemStandard.get_default_code()
+
+    royalty_params = RoyaltyParams(
+        royalty=ROYALTY,
+        denominator=ROYALTY_DENOMINATOR,
+        address=ROYALTY_ADDRESS,
+    )
+    nft_collection_content = NFTCollectionContent(
+        content=OffchainContent(uri=COLLECTION_URI),
+        common_content=OffchainCommonContent(suffix_uri=ITEMS_SUFFIX_URI),
+    )
+    nft_collection_data = NFTCollectionData(
+        owner_address=OWNER_ADDRESS,
+        content=nft_collection_content,
+        royalty_params=royalty_params,
+        nft_item_code=nft_item_code,
+    )
+    nft_collection = NFTCollectionStandard.from_data(
+        client=client,
+        data=nft_collection_data.serialize(),
     )
 
-    tx_hash = await wallet.transfer(
-        destination=collection.address,
-        amount=0.05,
-        state_init=collection.state_init,
+    msg = await wallet.transfer(
+        destination=nft_collection.address,
+        amount=to_nano(0.05),
+        state_init=nft_collection.state_init,
     )
 
-    print(f"Deployed collection: {collection.address.to_str()}")
-    print(f"Transaction hash: {tx_hash}")
+    print(f"NFT collection address: {nft_collection.address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
 
 
 if __name__ == "__main__":

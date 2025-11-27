@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tonutils"
+description = "Tonutils is a high-level, object-oriented Python library designed to facilitate seamless interactions with the TON blockchain."
+requires-python = ">=3.10,<3.15"
+authors = [
+    { name = "nessshon" },
+]
+maintainers = [
+    { name = "nessshon" },
+]
+dependencies = [
+    "aiohttp>=3.7.0",
+    "pyapiq>=0.2.1",
+    "pycryptodomex~=3.23.0",
+    "pydantic>=2.0,<3.0",
+    "pynacl~=1.6.0",
+    "pytoniq-core~=0.1.45",
+]
+keywords = [
+    "AsyncIO",
+    "TON",
+    "TON blockchain",
+    "The Open Network",
+    "blockchain",
+    "crypto",
+    "smart contracts",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dynamic = ["version"]
+readme = "README.md"
+license = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/nessshon/tonutils/"
+Documentation = "https://nessshon.github.io/tonutils/"
+Repository = "https://github.com/nessshon/tonutils/"
+Examples = "https://github.com/nessshon/tonutils/tree/main/examples/"
+
+[tool.setuptools.packages.find]
+include = ["tonutils", "tonutils.*"]
+
+[tool.setuptools.package-data]
+tonutils = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = { attr = "tonutils.__meta__.__version__" }

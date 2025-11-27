@@ -1,0 +1,40 @@
+from pytoniq_core import Address
+
+from tonutils.clients import ToncenterHttpClient
+from tonutils.contracts import (
+    NFTCollectionChangeOwnerBody,
+    WalletV4R2,
+)
+from tonutils.types import NetworkGlobalID
+from tonutils.utils import to_nano
+
+MNEMONIC = "word1 word2 word3 ..."
+
+OWNER_ADDRESS = Address("UQ...")
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterHttpClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    body = NFTCollectionChangeOwnerBody(owner_address=OWNER_ADDRESS)
+
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"NFT collection address: {NFT_COLLECTION_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
