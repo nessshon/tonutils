@@ -1,39 +1,88 @@
-from tonutils.client import ToncenterV3Client
-from tonutils.jetton import JettonMasterStablecoin
-from tonutils.jetton.content import JettonStablecoinContent
-from tonutils.wallet import WalletV4R2
+from pytoniq_core import Address
 
-# Set to True for test network, False for main network
-IS_TESTNET = True
+from tonutils.clients import ToncenterHttpClient
+from tonutils.contracts import (
+    JettonMasterStablecoinData,
+    JettonMasterStablecoinV2,
+    JettonTopUpBody,
+    JettonWalletStablecoinV2,
+    OffchainContent,
+    WalletV4R2,
+)
+from tonutils.types import NetworkGlobalID
+from tonutils.utils import to_nano
 
-# Mnemonic phrase
+# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
-# The address of the administrator for managing the Jetton Master
-ADMIN_ADDRESS = "UQ..."
+# Jetton admin address (controls minting and metadata)
+ADMIN_ADDRESS = Address("UQ...")
 
-# URI for the off-chain content of the Jetton
-# https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md#jetton-metadata-example-offchain
-URI = "https://example.com/jetton.json"
+# Jetton metadata URI (TEP-64 off-chain format)
+# Points to JSON with jetton metadata (name, symbol, decimals, image)
+JETTON_MASTER_URI = "https://example.com/jetton.json"
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
+    # Initialize HTTP client for TON blockchain interaction
+    # NetworkGlobalID.MAINNET (-239) for production
+    # NetworkGlobalID.TESTNET (-3) for testing
+    client = ToncenterHttpClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Create wallet instance from mnemonic (full access mode)
+    # Returns: (wallet, public_key, private_key, mnemonic)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    jetton_master = JettonMasterStablecoin(
-        content=JettonStablecoinContent(URI),
+    # Get stablecoin jetton wallet code
+    jetton_wallet_code = JettonWalletStablecoinV2.get_default_code()
+
+    # Configure jetton metadata (off-chain format)
+    jetton_master_content = OffchainContent(uri=JETTON_MASTER_URI)
+
+    # Compose stablecoin jetton master initial data
+    # admin_address: jetton admin (can mint tokens, change metadata)
+    # content: jetton metadata configuration
+    # jetton_wallet_code: code cell used to deploy each holder's jetton wallet
+    jetton_master_data = JettonMasterStablecoinData(
         admin_address=ADMIN_ADDRESS,
+        content=jetton_master_content,
+        jetton_wallet_code=jetton_wallet_code,
     )
 
-    tx_hash = await wallet.transfer(
+    # Create stablecoin jetton master contract instance from initial data
+    # Generates master address deterministically from code + data hash
+    # Address is predictable before deployment (same data = same address)
+    jetton_master = JettonMasterStablecoinV2.from_data(
+        client=client,
+        data=jetton_master_data.serialize(),
+    )
+
+    # Create top-up message body
+    # Empty body used for jetton master deployment
+    body = JettonTopUpBody()
+
+    # Deploy stablecoin jetton master contract via state_init message
+    # destination: jetton master address (derived from code + data)
+    # amount: TON attached for deployment gas fees (0.05 TON typical)
+    # body: top-up message (funds master contract storage)
+    # state_init: initial code and data for contract deployment
+    msg = await wallet.transfer(
         destination=jetton_master.address,
-        amount=0.05,
+        amount=to_nano(0.05),
+        body=body.serialize(),
         state_init=jetton_master.state_init,
     )
 
-    print(f"Successfully deployed Jetton Master at address: {jetton_master.address.to_str()}")
-    print(f"Transaction hash: {tx_hash}")
+    # Display deployed stablecoin jetton master address
+    print(f"Jetton master address: {jetton_master.address.to_str()}")
+
+    # Transaction hash for tracking on blockchain explorers
+    # Use tonviewer.com or tonscan.org to view transaction
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
 
 
 if __name__ == "__main__":

@@ -1,47 +1,39 @@
-from tonutils.client import ToncenterV3Client
-from tonutils.wallet import (
-    # Uncomment the following lines to use different wallet versions:
-    # WalletV2R1,
-    # WalletV2R2,
-    # WalletV3R1,
-    # WalletV3R2,
-    # WalletV4R1,
-    WalletV4R2,
-    # WalletV5R1,
-    # HighloadWalletV2,
-    # HighloadWalletV3,
-    # PreprocessedWalletV2,
-    # PreprocessedWalletV2R1,
-)
+from tonutils.clients import ToncenterHttpClient
+from tonutils.contracts import WalletV4R2
+from tonutils.types import NetworkGlobalID
+from tonutils.utils import to_nano
 
-# Set to True for test network, False for main network
-IS_TESTNET = True
-
-# Mnemonic phrase
+# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
-    wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
+    # Initialize HTTP client for TON blockchain interaction
+    # NetworkGlobalID.MAINNET (-239) for production
+    # NetworkGlobalID.TESTNET (-3) for testing
+    client = ToncenterHttpClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
 
-    # Uncomment and use the following lines to create different wallet versions from mnemonic:
-    # wallet, public_key, private_key, mnemonic = WalletV2R1.from_mnemonic(client, MNEMONIC)
-    # wallet, public_key, private_key, mnemonic = WalletV2R2.from_mnemonic(client, MNEMONIC)
-    # wallet, public_key, private_key, mnemonic = WalletV3R2.from_mnemonic(client, MNEMONIC)
-    # wallet, public_key, private_key, mnemonic = WalletV4R1.from_mnemonic(client, MNEMONIC)
-    # wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
-    # wallet, public_key, private_key, mnemonic = WalletV5R1.from_mnemonic(client, MNEMONIC)
-    # wallet, public_key, private_key, mnemonic = HighloadWalletV2.from_mnemonic(client, MNEMONIC)
-    # wallet, public_key, private_key, mnemonic = HighloadWalletV3.from_mnemonic(client, MNEMONIC)
-    # wallet, public_key, private_key, mnemonic = PreprocessedWalletV2.from_mnemonic(client, MNEMONIC)
-    # wallet, public_key, private_key, mnemonic = PreprocessedWalletV2R1.from_mnemonic(client, MNEMONIC)
+    # Create wallet instance from mnemonic
+    # Returns: (wallet, public_key, private_key, mnemonic)
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    tx_hash = await wallet.deploy()
+    # Deploy wallet by sending any transaction
+    # Sending 0.05 TON to self deploys the wallet contract
+    # Wallet auto-deploys on first outgoing transaction if in uninit status
+    # After deployment, wallet transitions from uninit to active status
+    msg = await wallet.transfer(destination=wallet.address, amount=to_nano(0.05))
 
-    print(f"Wallet deployed successfully!")
-    print(f"Wallet address: {wallet.address.to_str()}")
-    print(f"Transaction hash: {tx_hash}")
+    # Get wallet address in user-friendly format
+    # is_bounceable=False: standard for wallet contracts (UQ...)
+    print(f"Wallet address: {wallet.address.to_str(is_bounceable=False)}")
+
+    # Transaction hash for tracking on blockchain explorers
+    # Use tonviewer.com or tonscan.org to view transaction
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
 
 
 if __name__ == "__main__":

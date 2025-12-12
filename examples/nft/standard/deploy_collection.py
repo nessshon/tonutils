@@ -1,71 +1,115 @@
 from pytoniq_core import Address
 
-from tonutils.client import ToncenterV3Client
-from tonutils.nft import CollectionStandard
-from tonutils.nft.content import CollectionOffchainContent
-from tonutils.nft.royalty_params import RoyaltyParams
-from tonutils.wallet import WalletV4R2
+from tonutils.clients import ToncenterHttpClient
+from tonutils.contracts import (
+    NFTCollectionStandard,
+    NFTCollectionData,
+    NFTItemStandard,
+    NFTCollectionContent,
+    OffchainContent,
+    OffchainCommonContent,
+    RoyaltyParams,
+    WalletV4R2,
+)
+from tonutils.types import NetworkGlobalID
+from tonutils.utils import to_nano
 
-# Set to True for test network, False for main network
-IS_TESTNET = True
-
-# Mnemonic phrase
+# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
-# Address of the owner of the NFT collection
-OWNER_ADDRESS = "UQ..."
+# Collection owner address (controls collection)
+OWNER_ADDRESS = Address("UQ...")
 
-# URI of the collection's metadata
-# https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md#nft-collection-metadata-example-offchain
-URI = "https://example.com/nft/collection.json"
-PREFIX_URI = "https://example.com/nft/"
+# Collection metadata URI (TEP-64 off-chain format)
+# Points to JSON with collection-level metadata (name, description, image)
+COLLECTION_URI = "https://example.com/collection.json"
 
-# Royalty parameters: base and factor for calculating the royalty
-ROYALTY_BASE = 1000
-ROYALTY_FACTOR = 55  # 5.5% royalty
+# Common prefix for individual NFT item metadata URIs
+# Collection appends item-specific suffix (e.g., "0.json", "1.json")
+# Full item URI = ITEMS_PREFIX_URI + item_index + ".json"
+ITEMS_PREFIX_URI = "https://example.com/items/"
+
+# Royalty percentage in basis points (1/1000)
+# 50 = 5% royalty (50/1000 = 0.05)
+ROYALTY = 50
+ROYALTY_DENOMINATOR = 1000
+
+# Address to receive royalty payments on secondary sales
+ROYALTY_ADDRESS = Address("UQ...")
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
+    # Initialize HTTP client for TON blockchain interaction
+    # NetworkGlobalID.MAINNET (-239) for production
+    # NetworkGlobalID.TESTNET (-3) for testing
+    client = ToncenterHttpClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Create wallet instance from mnemonic (full access mode)
+    # Returns: (wallet, public_key, private_key, mnemonic)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    collection = CollectionStandard(
-        owner_address=Address(OWNER_ADDRESS),
-        next_item_index=0,
-        content=CollectionOffchainContent(uri=URI, prefix_uri=PREFIX_URI),
-        royalty_params=RoyaltyParams(
-            base=ROYALTY_BASE,
-            factor=ROYALTY_FACTOR,
-            address=Address(OWNER_ADDRESS),
-        ),
+    # Get default NFT item code
+    nft_item_code = NFTItemStandard.get_default_code()
+
+    # Configure royalty parameters
+    # royalty: numerator for royalty calculation
+    # denominator: denominator for royalty calculation
+    #   Royalty share = royalty / denominator (e.g., 50/1000 = 5%)
+    # address: destination for royalty payments on secondary sales
+    royalty_params = RoyaltyParams(
+        royalty=ROYALTY,
+        denominator=ROYALTY_DENOMINATOR,
+        address=ROYALTY_ADDRESS,
     )
 
-    """ If you want the option to withdraw extra balance in the future and store collection and NFT data on-chain,
-        you can use `CollectionStandardModified`. It removes the need for `prefix_uri` because NFTs minted in this
-        format include a direct link to the metadata for each item, rather than using a shared prefix for all items.
-
-    Example:
-
-    collection = CollectionStandardModified(
-        owner_address=Address(OWNER_ADDRESS),
-        next_item_index=0,
-        content=CollectionModifiedOffchainContent(uri=URI),  # URI example: `https://example.com/nft/collection.json`.
-        royalty_params=RoyaltyParams(
-            base=ROYALTY_BASE,
-            factor=ROYALTY_FACTOR,
-            address=Address(OWNER_ADDRESS),
-        ),
-    )
-    """
-
-    tx_hash = await wallet.transfer(
-        destination=collection.address,
-        amount=0.05,
-        state_init=collection.state_init,
+    # Configure collection metadata
+    # content: collection-level metadata URI (name, description, image)
+    # common_content: prefix for individual item metadata URIs
+    nft_collection_content = NFTCollectionContent(
+        content=OffchainContent(uri=COLLECTION_URI),
+        common_content=OffchainCommonContent(prefix_uri=ITEMS_PREFIX_URI),
     )
 
-    print(f"Successfully deployed NFT Collection at address: {collection.address.to_str()}")
-    print(f"Transaction hash: {tx_hash}")
+    # Compose collection initial data
+    # owner_address: collection owner (can mint items)
+    # content: collection and item metadata configuration
+    # royalty_params: royalty configuration for secondary sales
+    # nft_item_code: code cell used to deploy each NFT item
+    nft_collection_data = NFTCollectionData(
+        owner_address=OWNER_ADDRESS,
+        content=nft_collection_content,
+        royalty_params=royalty_params,
+        nft_item_code=nft_item_code,
+    )
+
+    # Create collection contract instance from initial data
+    # Generates collection address deterministically from code + data hash
+    # Address is predictable before deployment (same data = same address)
+    nft_collection = NFTCollectionStandard.from_data(
+        client=client,
+        data=nft_collection_data.serialize(),
+    )
+
+    # Deploy collection contract via state_init message
+    # destination: collection address (derived from code + data)
+    # amount: TON attached for deployment gas fees (0.05 TON typical)
+    # state_init: initial code and data for contract deployment
+    msg = await wallet.transfer(
+        destination=nft_collection.address,
+        amount=to_nano(0.05),
+        state_init=nft_collection.state_init,
+    )
+
+    # Display deployed collection address
+    print(f"NFT collection address: {nft_collection.address.to_str()}")
+
+    # Transaction hash for tracking on blockchain explorers
+    # Use tonviewer.com or tonscan.org to view transaction
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
 
 
 if __name__ == "__main__":

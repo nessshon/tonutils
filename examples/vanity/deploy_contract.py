@@ -1,48 +1,111 @@
-from tonutils.client import ToncenterV3Client
-from tonutils.jetton import JettonMasterStandard
-from tonutils.jetton.content import JettonOnchainContent
-from tonutils.vanity import Vanity
-from tonutils.wallet import WalletV4R2
+from pytoniq_core import Address
 
-# Set to True for test network, False for main network
-IS_TESTNET = True
+from tonutils.clients import ToncenterHttpClient
+from tonutils.contracts import (
+    JettonMasterStablecoinData,
+    JettonMasterStablecoinV2,
+    JettonWalletStablecoinV2,
+    OffchainContent,
+    Vanity,
+    VanityDeployBody,
+    VanityResult,
+    WalletV4R2,
+)
+from tonutils.types import NetworkGlobalID
+from tonutils.utils import to_nano
 
-# Mnemonic phrase
+# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
-# The salt for the vanity address
-SALT = ""
+# Jetton admin address (controls minting and metadata)
+ADMIN_ADDRESS = Address("UQ...")
+
+# Jetton metadata URI (TEP-64 off-chain format)
+# Points to JSON with jetton metadata (name, symbol, decimals, image)
+JETTON_MASTER_URI = "https://example.com/jetton.json"
+
+# Vanity contract result JSON from the generator
+# Clone: git clone https://github.com/ton-org/vanity
+# Run: python3 src/generator.py --owner {OWNER_ADDRESS} --end {SUFFIX} --case-sensitive
+# Generator results saved to: addresses.jsonl
+VANITY_RESULT = '{"address":"EQ...","init":{"code":"te6cc...","fixedPrefixLength":...}'
 
 
 async def main() -> None:
-    client = ToncenterV3Client(is_testnet=IS_TESTNET, rps=1, max_retries=1)
+    # Initialize HTTP client for TON blockchain interaction
+    # NetworkGlobalID.MAINNET (-239) for production
+    # NetworkGlobalID.TESTNET (-3) for testing
+    client = ToncenterHttpClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Create wallet instance from mnemonic (full access mode)
+    # Returns: (wallet, public_key, private_key, mnemonic)
     wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    jetton_master = JettonMasterStandard(
-        content=JettonOnchainContent(
-            name="Ness Jetton",
-            symbol="NESS",
-            description="Probably nothing",
-            decimals=9,
-            image="https://ton.org/download/ton_symbol.png",
-        ),
-        admin_address=wallet.address,
-    )
-    vanity = Vanity(
-        owner_address=wallet.address,
-        salt=SALT,
-    )
-    body = vanity.build_deploy_body(jetton_master)
+    # Get stablecoin jetton wallet code
+    jetton_wallet_code = JettonWalletStablecoinV2.get_default_code()
 
-    tx_hash = await wallet.transfer(
+    # Configure jetton metadata
+    jetton_master_content = OffchainContent(uri=JETTON_MASTER_URI)
+
+    # Compose stablecoin jetton master initial data
+    # admin_address: jetton admin (can mint tokens, change metadata)
+    # content: jetton metadata configuration
+    # jetton_wallet_code: code cell used to deploy each holder's jetton wallet
+    jetton_master_data = JettonMasterStablecoinData(
+        admin_address=ADMIN_ADDRESS,
+        content=jetton_master_content,
+        jetton_wallet_code=jetton_wallet_code,
+    )
+
+    # Create stablecoin jetton master contract instance from initial data
+    # This is the contract we want to deploy via vanity
+    # Note: jetton_master.address here is NOT the final vanity address
+    jetton_master = JettonMasterStablecoinV2.from_data(
+        client=client,
+        data=jetton_master_data.serialize(),
+    )
+
+    # Parse vanity generator output JSON
+    vanity_result = VanityResult.model_validate_json(VANITY_RESULT)
+
+    # Create vanity contract wrapper from generator result
+    # Vanity contract validates owner, then replaces its code with payload
+    vanity = Vanity.from_result(
+        client=client,
+        result=vanity_result,
+    )
+
+    # Create vanity deploy message body
+    # code: jetton master initial code cell
+    # data: jetton master initial data cell
+    # After deployment, vanity contract becomes the actual jetton master
+    body = VanityDeployBody(
+        code=jetton_master.state_init.code,
+        data=jetton_master.state_init.data,
+    )
+
+    # Deploy jetton master via vanity contract
+    # destination: vanity contract address
+    # amount: TON attached for deployment gas fees (0.05 TON typical)
+    # body: contains new code and data for the contract
+    # state_init: vanity contract initial state
+    msg = await wallet.transfer(
         destination=vanity.address,
-        amount=0.05,
-        body=body,
+        amount=to_nano(0.05),
+        body=body.serialize(),
         state_init=vanity.state_init,
     )
 
-    print(f"Successfully deployed contract at address: {vanity.address.to_str()}")
-    print(f"Transaction hash: {tx_hash}")
+    # Display deployed jetton master address
+    print(f"Jetton master address: {vanity_result.address}")
+
+    # Transaction hash for tracking on blockchain explorers
+    # Use tonviewer.com or tonscan.org to view transaction
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
 
 
 if __name__ == "__main__":

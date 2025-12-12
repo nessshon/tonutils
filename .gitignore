@@ -44,8 +44,10 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.examples
 nosetests.xml
 coverage.xml
+test.py
 *.cover
 *.py,cover
 .hypothesis/
@@ -134,3 +136,4 @@ uv.lock
 
 # Ignore .idea files
 .idea/
+.DS_Store

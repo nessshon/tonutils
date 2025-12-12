@@ -1,11 +1,11 @@
-# 📦 Tonutils
+# 📦 Tonutils 2.0 [BETA]
 
 [![TON](https://img.shields.io/badge/TON-grey?logo=TON&logoColor=40AEF0)](https://ton.org)
-[![PyPI](https://img.shields.io/pypi/v/tonutils.svg?color=FFE873&labelColor=3776AB)](https://pypi.python.org/pypi/tonutils)
-![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.12-black?color=FFE873&labelColor=3776AB)
+![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.14-black?color=FFE873&labelColor=3776AB)
+[![PyPI](https://img.shields.io/badge/pypi-2.0.1b2-FFE873?labelColor=3776AB)](https://pypi.org/project/tonutils/2.0.1b2/)
 [![License](https://img.shields.io/github/license/nessshon/tonutils)](LICENSE)
 
-![Image](https://telegra.ph//file/068ea06087c9ce8c6bfed.jpg)
+![Image](assets/banner.png)
 
 ![Downloads](https://pepy.tech/badge/tonutils)
 ![Downloads](https://pepy.tech/badge/tonutils/month)
@@ -14,35 +14,31 @@
 **Tonutils** is a high-level, object-oriented Python library designed to simplify interactions with the TON blockchain.
 It seamlessly integrates several prominent services for working with TON:
 
-* **RPC API**
-    * [tonapi.io](https://tonapi.io) – REST API to the TON blockchain explorer.
-    * [toncenter.com](https://toncenter.com) – fast and reliable HTTP API for The Open Network.
-    * [quicknode.com](https://www.quicknode.com/) – low-latency HTTP API access to TON via global infrastructure.
-    * [tatum.io](https://tatum.io) – RPCs and APIs powering Web3. Fast, reliable, affordable.
+**Native ADNL:**
 
-* **Native ADNL**
-    * [pytoniq](https://github.com/yungwine/pytoniq) – library for direct interaction with Lite servers.
+* Built-in ADNL-TCP lite-server client.
 
-By combining these services, Tonutils provides a powerful and flexible toolset for developers, making it easier to build
-on top of the TON ecosystem.
+**HTTP API:**
+
+* [toncenter.com](https://toncenter.com/) – Fast and reliable HTTP API for The Open Network.
+* [tonapi.io](https://tonapi.io/) – REST API to the TON blockchain explorer.
+* [chainstack](https://chainstack.com/) – Fast and Reliable Blockchain Infrastructure Provider.
+* [tatum.io](https://tatum.io/) – RPCs and APIs powering Web3. Fast, reliable, affordable.
+* [quicknode.com](https://www.quicknode.com/) – Low-latency HTTP API access to TON via global infrastructure.
+
+By combining these services, `tonutils` provides a powerful and flexible toolset for developers, making it easier to
+build on top of the TON ecosystem.
 
 ## Installation
 
 ```bash
-pip install tonutils
+pip install --pre tonutils
 ```
 
-To use `pytoniq` with Native ADNL connection, install it with the optional dependencies, including
-the [pytoniq](https://github.com/yungwine/pytoniq) library:
+## Usage
 
-```bash
-pip install 'tonutils[pytoniq]'
-```
-
-## Documentation
-
-Find all guides and references here:  
-[nessshon.github.io/tonutils](https://nessshon.github.io/tonutils/)
+Practical feature examples can be found in the **[examples](examples)** directory.\
+Each script demonstrates real-world usage and can be used as a reference when integrating `tonutils` into your project.
 
 ## Contribution
 
@@ -51,27 +47,17 @@ submit a pull request.
 
 ## Donations
 
-Your donation supports the future of this project. Every contribution helps stimulate innovation and sustain
-development!
+Your contributions help me continue developing and improving this project!
 
-- **TON**  
-  `UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness`
+- **TON**: `UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness`
 
-- **BTC**  
-  `1FKJDBSxdtsMad84iYY96zLJBVEChehbx1`
+- **BTC**: `1JXHbB5kE1DfkHdv5dsNygRkNC3unJdU8M`
 
-- **USDT (TRC-20)**  
-  `TDHMG7JRkmJBDD1qd4bNhdfoy2uzVd8ixA`
+- **USDT** (TRC-20): `TU4fCFdWufKb4rd25ihksiNDZZdyEYqro6`
 
-#### Donate via Bots
+- **Crypto Bot**: [Donate through Crypto Bot](https://t.me/send?start=IVW1cyG3DYqG)
 
-You can also donate conveniently using these bots:
-
-- **Crypto Bot**  
-  [Donate through Crypto Bot](https://t.me/send?start=IVW1cyG3DYqG)
-
-- **xRocket Bot**  
-  [Donate through xRocket](https://t.me/xrocket?start=inv_R4llrClZtPjovVe)
+- **xRocket Bot**: [Donate through xRocket](https://t.me/xrocket?start=inv_R4llrClZtPjovVe)
 
 ## Support
 
