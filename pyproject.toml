@@ -14,11 +14,11 @@ maintainers = [
 ]
 dependencies = [
     "aiohttp>=3.7.0",
-    "pyapiq>=0.2.1",
     "pycryptodomex~=3.23.0",
     "pydantic>=2.0,<3.0",
     "pynacl~=1.6.0",
     "pytoniq-core~=0.1.45",
+    "requests>=2.31.0",
 ]
 keywords = [
     "AsyncIO",
