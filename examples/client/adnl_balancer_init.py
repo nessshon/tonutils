@@ -15,19 +15,34 @@ Common parameters:
 - network:
     NetworkGlobalID.MAINNET (-239) for production
     NetworkGlobalID.TESTNET (-3) for testing
-- rps_limit: requests per second limit
-- connect_timeout: timeout for connect/reconnect attempts
+- connect_timeout:
+    Timeout in seconds for a single connect/reconnect attempt
+    performed by the balancer during failover.
+- request_timeout:
+    Maximum total time in seconds for a single balancer operation,
+    including all failover attempts across clients.
+- client_connect_timeout:
+    Timeout in seconds for connect/handshake performed by an
+    individual ADNL client.
+- client_request_timeout:
+    Timeout in seconds for a single request executed by an
+    individual ADNL client.
 - rps_limit: shared or per-provider requests per second limit
 - rps_period: time window for rate limiting
-- rps_per_provider:
-    False -> one shared limiter for all providers
-    True  -> separate limiter per lite-server
+- rps_per_client:
+    False -> one shared limiter for all clients
+    True  -> separate limiter per client
+- retry_policy:
+    Optional RetryPolicy defining retry behavior for specific ADNL error codes.
+    For better stability, using DEFAULT_ADNL_RETRY_POLICY is recommended.
 
-Note: Avoid rps_limit=1, parallel background queries run for masterchain updates.
+Notes:
+- Avoid rps_limit=1, as parallel background queries are used
+  to track masterchain updates.
 """
 
 from tonutils.clients import AdnlClient, AdnlBalancer
-from tonutils.types import NetworkGlobalID
+from tonutils.types import NetworkGlobalID, DEFAULT_ADNL_RETRY_POLICY
 
 
 async def main() -> None:
@@ -41,6 +56,7 @@ async def main() -> None:
         port=12345,
         public_key="Abc123...",
         rps_limit=50,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     )
     client_b = AdnlClient(
         network=NetworkGlobalID.MAINNET,
@@ -48,11 +64,13 @@ async def main() -> None:
         port=54321,
         public_key="Zyx987...",
         rps_limit=50,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     )
     balancer = AdnlBalancer(
         network=NetworkGlobalID.MAINNET,
         clients=[client_a, client_b],
         connect_timeout=2,
+        request_timeout=12,
     )
     async with balancer:
         # Example request:
@@ -67,6 +85,7 @@ async def main() -> None:
         network=NetworkGlobalID.MAINNET,
         config={},
         rps_limit=100,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     )
     async with private_balancer:
         # Example request:
@@ -77,10 +96,12 @@ async def main() -> None:
 
     # Initialize from public TON network config
     # Fetches config automatically from TON global config
-    public_balancer = await AdnlBalancer.from_network_config(
+    public_balancer = AdnlBalancer.from_network_config(
         network=NetworkGlobalID.MAINNET,
         rps_limit=50,
-        rps_retries=3,
+        connect_timeout=1,
+        request_timeout=10,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     )
     async with public_balancer:
         # Example request:

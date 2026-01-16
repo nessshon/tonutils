@@ -15,16 +15,24 @@ Common parameters:
 - network:
     NetworkGlobalID.MAINNET (-239) for production
     NetworkGlobalID.TESTNET (-3) for testing
-- timeout: request timeout in seconds
+- connect_timeout:
+    Timeout in seconds for connect/handshake performed
+    by this client.
+- request_timeout:
+    Timeout in seconds for a single request executed by this client (one provider attempt).
 - rps_limit: requests per second limit
 - rps_period: time window for rate limiting
-- rps_retries: retry attempts on rate limit errors
+- retry_policy:
+    Optional RetryPolicy defining retry behavior for specific ADNL error codes.
+    For better stability, using DEFAULT_HTTP_RETRY_POLICY is recommended.
 
-Note: Avoid rps_limit=1, parallel background queries run for masterchain updates.
+Notes:
+- Avoid rps_limit=1, as parallel background queries are used
+  to track masterchain updates.
 """
 
 from tonutils.clients import AdnlClient
-from tonutils.types import NetworkGlobalID
+from tonutils.types import NetworkGlobalID, DEFAULT_HTTP_RETRY_POLICY
 
 
 async def main() -> None:
@@ -38,6 +46,7 @@ async def main() -> None:
         port=12345,
         public_key="ABCdef0123=...",
         rps_limit=100,
+        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
     )
     async with client:
         # Example request:
@@ -54,6 +63,7 @@ async def main() -> None:
         config={},
         index=0,
         rps_limit=50,
+        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
     )
     async with client_private:
         # Example request:
@@ -65,10 +75,11 @@ async def main() -> None:
     # Initialize from public TON network config
     # Fetches config automatically from TON global config
     # index: lite-server index in config's "liteservers" array
-    client_public = await AdnlClient.from_network_config(
+    client_public = AdnlClient.from_network_config(
         network=NetworkGlobalID.MAINNET,
         index=0,
         rps_limit=50,
+        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
     )
     async with client_public:
         # Example request:

@@ -11,16 +11,20 @@ Available providers:
 - QuickNode: High-performance RPC (mainnet only)
 - Tatum: Multi-chain API platform
 
-Common parameters (all clients):
+Common parameters:
 - network:
     NetworkGlobalID.MAINNET (-239) for production
     NetworkGlobalID.TESTNET (-3) for testing
-    note: QuickNode does not accept `network` (mainnet only)
-- timeout: HTTP request timeout in seconds
-- session: optional externally managed aiohttp.ClientSession
-- rps_limit: requests per second limit
-- rps_period: time window for rate limiting
-- rps_retries: retry attempts on rate limit errors
+    note: QuickNode does not accept `network` (mainnet
+- request_timeout: Maximum total time in seconds for a balancer operation,
+    including all failover attempts across providers
+- timeout: Total request timeout in seconds per client.
+- session: Optional external aiohttp session.
+- headers: Default headers for owned session.
+- cookies: Default cookies for owned session.
+- rps_limit: Optional requests-per-period limit.
+- rps_period: Rate limit period in seconds.
+- retry_policy: Optional retry policy that defines per-error-code retry rules
 """
 
 from tonutils.clients import (
@@ -31,7 +35,7 @@ from tonutils.clients import (
     TatumHttpClient,
     HttpBalancer,
 )
-from tonutils.types import NetworkGlobalID
+from tonutils.types import NetworkGlobalID, DEFAULT_HTTP_RETRY_POLICY
 
 
 async def main() -> None:
@@ -44,6 +48,7 @@ async def main() -> None:
         network=NetworkGlobalID.MAINNET,
         api_key="<your api key>",
         rps_limit=1,
+        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
     )
 
     # Tonapi HTTP Client
@@ -52,6 +57,7 @@ async def main() -> None:
         network=NetworkGlobalID.MAINNET,
         api_key="<your api key>",
         rps_limit=10,
+        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
     )
 
     # Chainstack HTTP Client
@@ -60,6 +66,7 @@ async def main() -> None:
         network=NetworkGlobalID.MAINNET,
         http_provider_url="https://your-endpoint",
         rps_limit=50,
+        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
     )
 
     # QuickNode HTTP Client
@@ -68,6 +75,7 @@ async def main() -> None:
     quicknode = QuicknodeHttpClient(
         http_provider_url="https://your-endpoint",
         rps_limit=50,
+        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
     )
 
     # Tatum HTTP Client
@@ -76,6 +84,7 @@ async def main() -> None:
         network=NetworkGlobalID.MAINNET,
         api_key="<your api key>",
         rps_limit=20,
+        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
     )
 
     # HTTP Balancer
@@ -83,6 +92,7 @@ async def main() -> None:
     # Selects best available client based on limiter readiness and error rates
     balancer = HttpBalancer(
         network=NetworkGlobalID.MAINNET,
+        request_timeout=12.0,
         clients=[toncenter, tonapi, chainstack, quicknode, tatum],
     )
     async with balancer:

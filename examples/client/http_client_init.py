@@ -16,11 +16,13 @@ Common parameters (all clients):
     NetworkGlobalID.MAINNET (-239) for production
     NetworkGlobalID.TESTNET (-3) for testing
     note: QuickNode does not accept `network` (mainnet only)
-- timeout: HTTP request timeout in seconds
-- session: optional externally managed aiohttp.ClientSession
-- rps_limit: requests per second limit
-- rps_period: time window for rate limiting
-- rps_retries: retry attempts on rate limit errors
+- timeout: Total request timeout in seconds.
+- session: Optional external aiohttp session.
+- headers: Default headers for owned session.
+- cookies: Default cookies for owned session.
+- rps_limit: Optional requests-per-period limit.
+- rps_period: Rate limit period in seconds.
+- retry_policy: Optional retry policy that defines per-error-code retry rules
 """
 
 from tonutils.clients import (
