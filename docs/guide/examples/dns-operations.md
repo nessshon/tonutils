@@ -13,25 +13,25 @@ see [Cookbook: Minting TON Subdomains](../../cookbook/subdomains.md).
 #### Set Site
 
 ```python
---8 < -- "examples/dns/set_site.py"
+--8<-- "examples/dns/set_site.py"
 ```
 
 #### Set Wallet
 
 ```python
---8 < -- "examples/dns/set_wallet.py"
+--8<-- "examples/dns/set_wallet.py"
 ```
 
 #### Set Storage
 
 ```python
---8 < -- "examples/dns/set_storage.py"
+--8<-- "examples/dns/set_storage.py"
 ```
 
 #### Set Next Resolver
 
 ```python
---8 < -- "examples/dns/set_next_resolver.py"
+--8<-- "examples/dns/set_next_resolver.py"
 ```
 
 ---
@@ -41,29 +41,29 @@ see [Cookbook: Minting TON Subdomains](../../cookbook/subdomains.md).
 #### Deploy Manager
 
 ```python
---8 < -- "examples/dns/simple_manager/deploy_manager.py"
+--8<-- "examples/dns/simple_manager/deploy_manager.py"
 ```
 
 #### Set Site Record
 
 ```python
---8 < -- "examples/dns/simple_manager/set_site.py"
+--8<-- "examples/dns/simple_manager/set_site.py"
 ```
 
 #### Set Wallet Record
 
 ```python
---8 < -- "examples/dns/simple_manager/set_wallet.py"
+--8<-- "examples/dns/simple_manager/set_wallet.py"
 ```
 
 #### Set Storage Record
 
 ```python
---8 < -- "examples/dns/simple_manager/set_storage.py"
+--8<-- "examples/dns/simple_manager/set_storage.py"
 ```
 
 #### Set Next Resolver Record
 
 ```python
---8 < -- "examples/dns/simple_manager/set_next_resolver.py"
+--8<-- "examples/dns/simple_manager/set_next_resolver.py"
 ```
