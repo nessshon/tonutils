@@ -63,8 +63,6 @@ class BaseWorker(ABC):
             await self._run()
         except asyncio.CancelledError:
             pass
-        except (Exception,):
-            pass
         finally:
             self._running = False
 

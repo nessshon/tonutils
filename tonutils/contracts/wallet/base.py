@@ -7,6 +7,7 @@ from pytoniq_core import Address, Cell, StateInit, WalletMessage, begin_cell
 from pytoniq_core.crypto.keys import mnemonic_new, mnemonic_to_private_key, words
 from pytoniq_core.crypto.signature import sign_message
 
+from tonutils.clients.protocol import ClientProtocol
 from tonutils.contracts.base import BaseContract
 from tonutils.contracts.codes import CONTRACT_CODES
 from tonutils.contracts.wallet.configs import BaseWalletConfig
@@ -16,10 +17,9 @@ from tonutils.contracts.wallet.messages import (
     TONTransferBuilder,
 )
 from tonutils.contracts.wallet.params import BaseWalletParams
+from tonutils.contracts.wallet.protocol import WalletProtocol
 from tonutils.contracts.wallet.tlb import BaseWalletData
 from tonutils.exceptions import ContractError
-from tonutils.protocols.client import ClientProtocol
-from tonutils.protocols.wallet import WalletProtocol
 from tonutils.types import (
     AddressLike,
     ContractStateInfo,
@@ -330,7 +330,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         :param body: Optional message body (Cell or text comment)
         :param state_init: Optional StateInit for contract deployment
         :param send_mode: Message send mode (default: pay fees separately)
-        :param bounce: Whether message should bounce on error (default: auto)
+        :param bounce: Whether message should bounce on error
         :param params: Optional transaction parameters
         :return: Signed external message that was sent
         """

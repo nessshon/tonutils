@@ -18,12 +18,6 @@ from pytoniq_core import (
 from pytoniq_core.crypto.ciphers import get_random
 from pytoniq_core.crypto.crc import crc16
 
-from tonutils.clients.adnl.provider.builder import (
-    build_contract_state_info,
-    build_shard_account,
-    build_config_all,
-)
-from tonutils.clients.adnl.provider.limiter import PriorityLimiter
 from tonutils.clients.adnl.provider.models import LiteServer, MasterchainInfo
 from tonutils.clients.adnl.provider.transport import AdnlTcpTransport
 from tonutils.clients.adnl.provider.workers import (
@@ -31,35 +25,38 @@ from tonutils.clients.adnl.provider.workers import (
     ReaderWorker,
     UpdaterWorker,
 )
-from tonutils.exceptions import (
-    AdnlHandshakeError,
-    AdnlProviderConnectError,
-    AdnlServerError,
-    AdnlProviderMissingBlockError,
-    AdnlProviderResponseError,
-    AdnlProviderClosedError,
-    ClientError,
-    ClientNotConnectedError,
-    RateLimitExceededError,
-    RunGetMethodError,
+from tonutils.clients.adnl.utils import (
+    build_contract_state_info,
+    build_shard_account,
+    build_config_all,
 )
-from tonutils.types import ContractStateInfo, WorkchainID
+from tonutils.clients.limiter import RateLimiter
+from tonutils.exceptions import (
+    ClientError,
+    NotConnectedError,
+    ProviderError,
+    RunGetMethodError,
+    ProviderTimeoutError,
+    RetryLimitError,
+    ProviderResponseError,
+)
+from tonutils.types import (
+    ContractStateInfo,
+    RetryPolicy,
+    WorkchainID,
+)
 
 
 class AdnlProvider:
-    """
-    ADNL-based provider for TON lite-servers.
-
-    Handles encrypted TCP transport, ping and masterchain updates, and exposes
-    a high-level API for lite-server queries.
-    """
+    """ADNL-based provider for TON lite-servers."""
 
     def __init__(
         self,
         node: LiteServer,
-        timeout: int = 10,
-        rps_retries: t.Optional[int] = None,
-        limiter: t.Optional[PriorityLimiter] = None,
+        connect_timeout: float = 2.0,
+        request_timeout: float = 10.0,
+        limiter: t.Optional[RateLimiter] = None,
+        retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
         """
         Initialize ADNL provider for a specific lite-server.
@@ -71,14 +68,15 @@ class AdnlProvider:
             - dTON telegram bot: https://t.me/dtontech_bot (https://dton.io/)
 
         :param node: LiteServer configuration (host, port, public key)
-        :param timeout: Timeout in seconds for queries
-        :param rps_retries: Number of retries on rate limiting
+        :param connect_timeout: Timeout in seconds for connect/reconnect
+        :param request_timeout: Timeout in seconds for queries
         :param limiter: Optional priority-aware rate limiter
+        :param retry_policy: Optional retry policy that defines per-error-code retry rules
         """
         self.node = node
-        self.timeout = timeout
-        self.rps_retries = rps_retries
-        self.transport = AdnlTcpTransport(self.node, self.timeout)
+        self.connect_timeout = connect_timeout
+        self.request_timeout = request_timeout
+        self.transport = AdnlTcpTransport(self.node, self.connect_timeout)
         self.loop: t.Optional[asyncio.AbstractEventLoop] = None
 
         self.tl_schemas = TlGenerator.with_default_schemas().generate()
@@ -92,16 +90,13 @@ class AdnlProvider:
 
         self.pending: t.Dict[str, asyncio.Future] = {}
 
+        self._limiter: t.Optional[RateLimiter] = limiter
+        self._retry_policy: t.Optional[RetryPolicy] = retry_policy
         self._connect_lock: asyncio.Lock = asyncio.Lock()
-        self._limiter: t.Optional[PriorityLimiter] = limiter
 
     @property
     def is_connected(self) -> bool:
-        """
-        Check whether the underlying transport is connected.
-
-        :return: True if ADNL transport is connected, False otherwise
-        """
+        """Check whether the underlying transport is connected."""
         return self.transport.is_connected
 
     @property
@@ -172,18 +167,8 @@ class AdnlProvider:
         self.loop = asyncio.get_running_loop()
         try:
             await self.transport.connect()
-        except AdnlHandshakeError as exc:
-            raise AdnlProviderConnectError(
-                host=self.node.host,
-                port=self.node.port,
-                message=str(exc),
-            ) from exc
-        except OSError as exc:
-            raise AdnlProviderConnectError(
-                host=self.node.host,
-                port=self.node.port,
-                message=str(exc),
-            ) from exc
+        except Exception as exc:
+            raise ProviderError(f"adnl connect failed ({self.node.endpoint})") from exc
 
         tasks = [self.reader.start(), self.pinger.start(), self.updater.start()]
         await asyncio.gather(*tasks, return_exceptions=True)
@@ -221,124 +206,99 @@ class AdnlProvider:
         async with self._connect_lock:
             await self._do_close()
 
+    async def _send_once_adnl_query(self, query: bytes, *, priority: bool) -> dict:
+        """
+        Send a single ADNL query.
+
+        :param query: Encoded ADNL TL-query bytes
+        :param priority: Whether to use priority slot in the limiter
+        :return: Lite-server response payload as a decoded dictionary
+        """
+        if not self.is_connected or self.loop is None:
+            raise NotConnectedError()
+
+        if self._limiter is not None:
+            await self._limiter.acquire(priority=priority)
+
+        query_id = get_random(32)
+        packet = self.tl_schemas.serialize(
+            self.adnl_query_tl_schema,
+            {"query_id": query_id, "query": query},
+        )
+
+        query_id_key = query_id[::-1].hex()
+        fut: asyncio.Future[t.Any] = self.loop.create_future()
+        self.pending[query_id_key] = fut
+
+        try:
+            await self.transport.send_adnl_packet(packet)
+
+            try:
+                resp = await asyncio.wait_for(fut, timeout=self.request_timeout)
+            except asyncio.TimeoutError as exc:
+                raise ProviderTimeoutError(
+                    timeout=self.request_timeout,
+                    endpoint=self.node.endpoint,
+                    operation="adnl query",
+                ) from exc
+            except asyncio.CancelledError as exc:
+                raise ProviderError(
+                    f"adnl provider closed ({self.node.endpoint})"
+                ) from exc
+
+            if not isinstance(resp, dict):
+                raise ProviderError(
+                    f"adnl invalid response type ({self.node.endpoint})"
+                )
+
+            return resp
+        finally:
+            if query_id_key in self.pending:
+                del self.pending[query_id_key]
+
     async def send_adnl_query(
         self,
         query: bytes,
         priority: bool = False,
     ) -> dict:
         """
-        Send a raw ADNL query with retry support for rate-limit and missing-block conditions.
+        Send a raw ADNL query with retry handling based on retry policy.
 
-        Retries temporary overload errors (228, 5556) and missing-block errors (651)
-        before returning a response or raising an exception.
+        On server error, retries the request according to the rule associated
+        with the received error code. If no rule matches, or retry attempts are
+        exhausted, the error is raised.
 
         :param query: Encoded ADNL TL-query bytes
         :param priority: Whether to use priority slot in the limiter
         :return: Lite-server response payload as a decoded dictionary
         """
-        return await self._send_with_missing_block_retries(query, priority)
+        attempts: t.Dict[int, int] = {}
 
-    async def _send_with_missing_block_retries(
-        self,
-        query: bytes,
-        priority: bool = False,
-    ) -> dict:
-        """
-        Internal wrapper adding retry handling for missing-block errors (code 651).
-
-        Performs a fixed number of attempts with exponential backoff on 651 and
-        delegates transport-level and rate-limit handling to `_send_with_rps_retries`.
-
-        :param query: Encoded ADNL TL-query bytes
-        :param priority: Whether to use priority slot in the limiter
-        :return: Lite-server response payload as a dictionary
-        """
-        max_651_retries = 5
-        error_message = "unknown lite-server error"
-
-        for attempt in range(max_651_retries):
+        while True:
             try:
-                return await self._send_with_rps_retries(query, priority=priority)
-            except AdnlServerError as e:
-                if e.code != 651:
+                return await self._send_once_adnl_query(query, priority=priority)
+
+            except ProviderResponseError as e:
+                policy = self._retry_policy
+                if policy is None:
                     raise
-                error_message = e.message
-                if attempt < max_651_retries - 1:
-                    await asyncio.sleep(0.3 * (2**attempt))
-                    continue
-                break
 
-        raise AdnlProviderMissingBlockError(
-            attempts=max_651_retries,
-            host=self.node.host,
-            port=self.node.port,
-            message=error_message,
-        )
-
-    async def _send_with_rps_retries(
-        self,
-        query: bytes,
-        priority: bool = False,
-    ) -> dict:
-        """
-        Internal ADNL request executor with retry handling for rate-limit errors.
-
-        Performs a bounded number of attempts on lite-server overload conditions
-        (error codes 228 and 5556) using exponential backoff before failing.
-
-        :param query: Encoded ADNL TL-query bytes
-        :param priority: Whether to use priority slot in the limiter
-        :return: Lite-server response payload as a dictionary
-        """
-        if not self.is_connected or self.loop is None:
-            raise ClientNotConnectedError(self)
-
-        attempts = max(self.rps_retries or 0, 1)
-        for attempt in range(attempts):
-            if self._limiter is not None:
-                await self._limiter.acquire(priority=priority)
-
-            query_id = get_random(32)
-            packet = self.tl_schemas.serialize(
-                self.adnl_query_tl_schema,
-                {
-                    "query_id": query_id,
-                    "query": query,
-                },
-            )
-            query_id_key = query_id[::-1].hex()
-            fut: asyncio.Future = self.loop.create_future()
-            self.pending[query_id_key] = fut
-
-            try:
-                await self.transport.send_adnl_packet(packet)
-                try:
-                    resp = await asyncio.wait_for(fut, timeout=self.timeout)
-                except asyncio.TimeoutError:
+                rule = policy.rule_for(e.code, e.message)
+                if rule is None:
                     raise
-                except asyncio.CancelledError as exc:
-                    raise AdnlProviderClosedError(
-                        host=self.node.host,
-                        port=self.node.port,
-                    ) from exc
-                except AdnlServerError as e:
-                    if e.code in (228, 5556):
-                        if attempt < attempts - 1:
-                            await asyncio.sleep(0.3 * (2**attempt))
-                            continue
-                        break
-                    raise
-                if not isinstance(resp, dict):
-                    raise AdnlProviderResponseError(
-                        host=self.node.host,
-                        port=self.node.port,
-                    )
-                return resp
-            finally:
-                if query_id_key in self.pending:
-                    del self.pending[query_id_key]
 
-        raise RateLimitExceededError(attempts)
+                key = id(rule)
+                n = attempts.get(key, 0) + 1
+                attempts[key] = n
+
+                if n >= rule.attempts:
+                    raise RetryLimitError(
+                        attempts=n,
+                        max_attempts=rule.attempts,
+                        last_error=e,
+                    ) from e
+
+                await asyncio.sleep(rule.delay(n - 1))
 
     async def send_liteserver_query(
         self,
@@ -507,6 +467,92 @@ class AdnlProvider:
             Block.deserialize(cell[0].begin_parse()),
         )
 
+    async def get_block_header(
+        self,
+        block: BlockIdExt,
+        *,
+        priority: bool = False,
+    ) -> t.Tuple[BlockIdExt, Block]:
+        """
+        Fetch and deserialize block header by BlockIdExt.
+
+        :param block: BlockIdExt to query
+        :param priority: Whether to use priority slot in the limiter
+        :return: Tuple of BlockIdExt and deserialized Block
+        """
+        result = await self.send_liteserver_query(
+            method="getBlockHeader",
+            data={"id": block.to_dict(), "mode": 0},
+            priority=priority,
+        )
+
+        cell = Cell.one_from_boc(result["header_proof"])
+        return (
+            BlockIdExt.from_dict(result["id"]),
+            Block.deserialize(cell[0].begin_parse()),
+        )
+
+    async def get_block_transactions_ext(
+        self,
+        block: BlockIdExt,
+        *,
+        count: int = 1024,
+        priority: bool = False,
+    ) -> t.List[Transaction]:
+        """
+        Fetch extended block transactions list.
+
+        :param block: Target block identifier
+        :param count: Maximum number of transactions per request
+        :param priority: Whether to use priority slot in the limiter
+        :return: List of deserialized Transaction objects
+        """
+        mode = 39
+
+        result = await self.send_liteserver_query(
+            method="listBlockTransactionsExt",
+            data={
+                "id": block.to_dict(),
+                "mode": mode,
+                "count": count,
+                "want_proof": b"",
+            },
+            priority=priority,
+        )
+
+        transactions: t.List[Transaction] = []
+
+        def _append(result_data: dict) -> None:
+            if not result_data.get("transactions"):
+                return
+            for cell in Cell.from_boc(result_data["transactions"]):
+                transactions.append(Transaction.deserialize(cell.begin_parse()))
+
+        _append(result)
+
+        while result.get("incomplete"):
+            mode = 167
+            after = {
+                "account": transactions[-1].account_addr_hex,
+                "lt": transactions[-1].lt,
+            }
+
+            result = await self.send_liteserver_query(
+                method="listBlockTransactionsExt",
+                data={
+                    "id": block.to_dict(),
+                    "mode": mode,
+                    "count": count,
+                    "want_proof": b"",
+                    "after": after,
+                },
+                priority=priority,
+            )
+
+            _append(result)
+
+        return transactions
+
     async def get_all_shards_info(
         self,
         block: t.Optional[BlockIdExt] = None,
@@ -586,13 +632,13 @@ class AdnlProvider:
 
         exit_code = result.get("exit_code")
         if exit_code is None:
-            raise AdnlServerError(
-                code=-1,
-                message="RunGetMethod: missing `exit_code` in response",
+            raise ProviderError(
+                f"runSmcMethod: missing `exit_code` in response ({self.node.endpoint})"
             )
+
         if exit_code != 0:
             raise RunGetMethodError(
-                address=address,
+                address=address.to_str(),
                 method_name=method_name,
                 exit_code=exit_code,
             )
@@ -676,7 +722,7 @@ class AdnlProvider:
         from_hash: str,
         *,
         priority: bool = False,
-    ) -> list[Transaction]:
+    ) -> t.List[Transaction]:
         """
         Fetch a chain of transactions for an account.
 
@@ -707,7 +753,7 @@ class AdnlProvider:
         cells = Cell.from_boc(result["transactions"])
 
         prev_tr_hash = from_hash
-        transactions: list[Transaction] = []
+        transactions: t.List[Transaction] = []
 
         for i, cell in enumerate(cells):
             curr_hash = cell.get_hash(0).hex()

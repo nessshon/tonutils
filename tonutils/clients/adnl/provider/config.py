@@ -1,34 +1,28 @@
-from pyapiq import AsyncClientAPI, async_endpoint
-from pyapiq.types import HTTPMethod
+import requests
 
 from tonutils.clients.adnl.provider.models import GlobalConfig
 
 
-class TONClient(AsyncClientAPI):
-    """Minimal HTTP client for fetching TON global configuration files."""
+def _get_global_config(path: str) -> GlobalConfig:
+    url = f"https://ton.org/{path}"
+    resp = requests.get(url)
+    resp.raise_for_status()
+    return GlobalConfig.model_validate(resp.json())
 
-    base_url = "https://ton.org/"
 
-    @async_endpoint(
-        HTTPMethod.GET,
-        path="global-config.json",
-        return_as=GlobalConfig,
-    )
-    async def mainnet_global_config(self) -> GlobalConfig:  # type: ignore[empty-body]
-        """
-        Fetch mainnet global configuration.
+def get_mainnet_global_config() -> GlobalConfig:
+    """
+    Fetch mainnet global configuration.
 
-        :return: Parsed GlobalConfig instance
-        """
+    :return: Parsed GlobalConfig instance
+    """
+    return _get_global_config("global-config.json")
 
-    @async_endpoint(
-        HTTPMethod.GET,
-        path="testnet-global-config.json",
-        return_as=GlobalConfig,
-    )
-    async def testnet_global_config(self) -> GlobalConfig:  # type: ignore[empty-body]
-        """
-        Fetch testnet global configuration.
 
-        :return: Parsed GlobalConfig instance
-        """
+def get_testnet_global_config() -> GlobalConfig:
+    """
+    Fetch testnet global configuration.
+
+    :return: Parsed GlobalConfig instance
+    """
+    return _get_global_config("testnet-global-config.json")

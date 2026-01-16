@@ -91,6 +91,7 @@ from .nft import (
     royalty_params_get_method,
 )
 from .opcodes import OpCode
+from .protocol import ContractProtocol
 from .telegram import (
     TeleCollectionData,
     TeleItemAuction,
@@ -142,6 +143,7 @@ from .wallet import (
     WalletHighloadV3Data,
     WalletHighloadV3Params,
     WalletHighloadV3R1,
+    WalletProtocol,
     WalletPreprocessedV2,
     WalletPreprocessedV2Config,
     WalletPreprocessedV2Data,
@@ -194,6 +196,7 @@ __all__ = [
     "BaseMessageBuilder",
     "ChangeDNSRecordBody",
     "CONTRACT_CODES",
+    "ContractProtocol",
     "ContractVersion",
     "DNSBalanceReleaseBody",
     "DNSRecordDNSNextResolver",
@@ -297,6 +300,7 @@ __all__ = [
     "WalletHighloadV3Data",
     "WalletHighloadV3Params",
     "WalletHighloadV3R1",
+    "WalletProtocol",
     "WalletPreprocessedV2",
     "WalletPreprocessedV2Config",
     "WalletPreprocessedV2Data",

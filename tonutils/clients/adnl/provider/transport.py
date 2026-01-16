@@ -16,13 +16,7 @@ from pytoniq_core.crypto.ciphers import (
 )
 
 from tonutils.clients.adnl.provider.models import LiteServer
-from tonutils.exceptions import (
-    AdnlHandshakeError,
-    AdnlTransportCipherError,
-    AdnlTransportFrameError,
-    AdnlTransportStateError,
-    AdnlTransportError,
-)
+from tonutils.exceptions import TransportError
 
 
 class AdnlTcpTransport:
@@ -40,12 +34,12 @@ class AdnlTcpTransport:
     for incoming frames.
     """
 
-    def __init__(self, node: LiteServer, timeout: int) -> None:
+    def __init__(self, node: LiteServer, connect_timeout: float) -> None:
         """
         Initialize ADNL TCP transport for a liteserver connection.
 
         :param node: Liteserver configuration with host, port, and public key
-        :param timeout: Timeout in seconds for connection and I/O operations
+        :param connect_timeout: Timeout in seconds for connection
         """
         self.server = Server(
             host=node.host,
@@ -54,7 +48,7 @@ class AdnlTcpTransport:
         )
         self.client = Client(Client.generate_ed25519_private_key())
 
-        self.timeout = timeout
+        self.connect_timeout = connect_timeout
         self.enc_cipher = None
         self.dec_cipher = None
 
@@ -131,12 +125,12 @@ class AdnlTcpTransport:
     async def _flush(self) -> None:
         """Flush the TCP write buffer."""
         if self.writer is None:
-            raise AdnlTransportStateError("`writer` is not initialized")
+            raise TransportError("transport state: writer is not initialized")
         try:
             await self.writer.drain()
-        except ConnectionError:
+        except ConnectionError as exc:
             await self.close()
-            raise
+            raise TransportError(f"transport io: drain failed") from exc
 
     def encrypt_frame(self, data: bytes) -> bytes:
         """
@@ -145,7 +139,9 @@ class AdnlTcpTransport:
         :param data: Plaintext frame bytes
         """
         if self.enc_cipher is None:
-            raise AdnlTransportCipherError("`encryption`")
+            raise TransportError(
+                "transport cipher: encryption cipher is not initialized"
+            )
         return aes_ctr_encrypt(self.enc_cipher, data)
 
     def decrypt_frame(self, data: bytes) -> bytes:
@@ -155,22 +151,32 @@ class AdnlTcpTransport:
         :param data: Encrypted frame bytes
         """
         if self.dec_cipher is None:
-            raise AdnlTransportCipherError("`decryption`")
+            raise TransportError(
+                "transport cipher: decryption cipher is not initialized"
+            )
         return aes_ctr_decrypt(self.dec_cipher, data)
 
     async def connect(self) -> None:
         """Establish encrypted connection to the liteserver."""
         if self._connected:
-            raise AdnlTransportStateError("already connected")
+            raise TransportError("transport state: already connected")
 
         self.loop = asyncio.get_running_loop()
 
-        self.reader, self.writer = await asyncio.wait_for(
-            asyncio.open_connection(self.server.host, self.server.port),
-            timeout=self.timeout,
-        )
+        try:
+            self.reader, self.writer = await asyncio.wait_for(
+                asyncio.open_connection(self.server.host, self.server.port),
+                timeout=self.connect_timeout,
+            )
+        except asyncio.TimeoutError as exc:
+            raise TransportError(
+                f"transport connect: timeout {self.connect_timeout}s"
+            ) from exc
+        except OSError as exc:
+            raise TransportError(f"transport connect: failed") from exc
+
         if self.writer is None or self.reader is None:
-            raise AdnlTransportError("failed to initialize TCP streams")
+            raise TransportError(f"transport connect: failed to initialize streams")
 
         try:
             handshake = self._build_handshake()
@@ -180,15 +186,15 @@ class AdnlTcpTransport:
             try:
                 await asyncio.wait_for(
                     self.read_frame(discard=True),
-                    timeout=self.timeout,
+                    timeout=self.connect_timeout,
                 )
             except asyncio.IncompleteReadError as exc:
-                raise AdnlHandshakeError(
-                    "ADNL handshake failed: remote closed connection"
+                raise TransportError(
+                    f"transport handshake: remote closed connection"
                 ) from exc
             except asyncio.TimeoutError as exc:
-                raise AdnlHandshakeError(
-                    f"Timed out waiting for initial ADNL handshake ({self.timeout}s)"
+                raise TransportError(
+                    f"transport handshake: timeout {self.connect_timeout}s"
                 ) from exc
             self._connected = True
             self._reader_task = asyncio.create_task(
@@ -208,7 +214,7 @@ class AdnlTcpTransport:
         :param payload: Raw ADNL packet bytes
         """
         if not self._connected or self.writer is None:
-            raise AdnlTransportStateError("transport is not connected")
+            raise TransportError("transport state: not connected")
 
         packet = self._build_frame(payload)
         encrypted = self.encrypt_frame(packet)
@@ -223,7 +229,7 @@ class AdnlTcpTransport:
         Blocks until a complete packet is available from the background reader.
         """
         if not self._connected:
-            raise AdnlTransportStateError("transport is not connected")
+            raise TransportError("transport state: not connected")
         return await self._incoming.get()
 
     async def read_frame(self, discard: bool = False) -> t.Optional[bytes]:
@@ -238,24 +244,24 @@ class AdnlTcpTransport:
         :param discard: If True, validates but returns None (used for handshake ack)
         """
         if self.reader is None:
-            raise AdnlTransportStateError("`reader` is not initialized")
+            raise TransportError("transport state: reader is not initialized")
 
         length_enc = await self.reader.readexactly(4)
         length_dec = self.decrypt_frame(length_enc)
         data_len = int.from_bytes(length_dec, "little")
 
         if data_len <= 0:
-            raise AdnlTransportFrameError(f"non-positive length `{data_len}`")
+            raise TransportError(f"transport frame: non-positive length {data_len}")
 
         data_enc = await self.reader.readexactly(data_len)
         data = self.decrypt_frame(data_enc)
 
         if len(data) < 32:
-            raise AdnlTransportFrameError("frame is too short")
+            raise TransportError("transport frame: frame is too short")
 
         payload, checksum = data[:-32], data[-32:]
         if hashlib.sha256(payload).digest() != checksum:
-            raise AdnlTransportFrameError("checksum mismatch")
+            raise TransportError("transport frame: checksum mismatch")
 
         if discard:
             return None

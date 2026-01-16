@@ -44,3 +44,4 @@ class BlockchainAccountMethodResult(BaseModel):
     """Result model for /blockchain/accounts/{address}/methods/{method_name}."""
 
     stack: t.Optional[t.List[t.Any]] = None
+    exit_code: int

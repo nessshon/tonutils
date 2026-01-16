@@ -66,6 +66,10 @@ class LiteServer(BaseModel):
             return socket.inet_ntoa(packed_id)
         return str(self.ip)
 
+    @property
+    def endpoint(self) -> str:
+        return f"{self.host}:{self.port}"
+
 
 class Block(BaseModel):
     """

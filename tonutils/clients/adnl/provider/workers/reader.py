@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tonutils.clients.adnl.provider.workers.base import BaseWorker
-from tonutils.exceptions import AdnlServerError
+from tonutils.exceptions import ProviderResponseError
 
 
 class ReaderWorker(BaseWorker):
@@ -35,9 +35,10 @@ class ReaderWorker(BaseWorker):
         payload = root.get("answer", root)
 
         if "code" in payload and "message" in payload:
-            exception = AdnlServerError(
+            exception = ProviderResponseError(
                 code=payload["code"],
                 message=payload["message"],
+                endpoint=self.provider.node.endpoint,
             )
             fut.set_exception(exception)
         else:

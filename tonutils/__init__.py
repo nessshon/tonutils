@@ -1,7 +1,6 @@
 from . import (
     clients,
     contracts,
-    protocols,
     exceptions,
     types,
     utils,
@@ -12,7 +11,6 @@ __all__ = [
     "__version__",
     "clients",
     "contracts",
-    "protocols",
     "exceptions",
     "types",
     "utils",

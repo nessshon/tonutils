@@ -2,8 +2,8 @@ import typing as t
 
 from pytoniq_core import Cell, begin_cell
 
-from tonutils.protocols.client import ClientProtocol
-from tonutils.protocols.contract import ContractProtocol
+from tonutils.clients.protocol import ClientProtocol
+from tonutils.contracts.protocol import ContractProtocol
 from tonutils.types import AddressLike, DNSCategory
 
 

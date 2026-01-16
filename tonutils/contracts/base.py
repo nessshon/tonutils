@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import typing as t
 
-from pyapiq.exceptions import APIQException, RateLimitExceeded
 from pytoniq_core import Address, Cell, StateInit, TlbScheme
 
+from tonutils.clients.protocol import ClientProtocol
 from tonutils.contracts.codes import CONTRACT_CODES
+from tonutils.contracts.protocol import ContractProtocol
 from tonutils.contracts.versions import ContractVersion
-from tonutils.exceptions import ContractError, NotRefreshedError
-from tonutils.protocols.client import ClientProtocol
-from tonutils.protocols.contract import ContractProtocol
+from tonutils.exceptions import (
+    ContractError,
+    StateNotLoadedError,
+    ProviderResponseError,
+)
 from tonutils.types import AddressLike, ContractState, ContractStateInfo, WorkchainID
 from tonutils.utils import to_cell
 
@@ -49,7 +52,7 @@ class BaseContract(ContractProtocol[_D]):
             default_code = to_cell(CONTRACT_CODES[cls.VERSION])
         except KeyError:
             raise ContractError(
-                cls, f"No contract code defined for `VERSION` {cls.VERSION!r}."
+                cls, f"No contract code defined for `version` {cls.VERSION!r}."
             )
         return default_code
 
@@ -96,7 +99,7 @@ class BaseContract(ContractProtocol[_D]):
         :return: Contract state information
         """
         if self._state_info is None:
-            raise NotRefreshedError(self, "state_info")
+            raise StateNotLoadedError(self, missing="state_info")
         return t.cast(ContractStateInfo, self._state_info)
 
     @property
@@ -111,7 +114,7 @@ class BaseContract(ContractProtocol[_D]):
         if not hasattr(self, "_data_model") or self._data_model is None:
             raise ContractError(self, "No `_data_model` defined for contract class.")
         if not (self._state_info and self._state_info.data):
-            raise NotRefreshedError(self, "state_data")
+            raise StateNotLoadedError(self, missing="state_data")
         cs = self._state_info.data.begin_parse()
         return self._data_model.deserialize(cs)
 
@@ -205,6 +208,26 @@ class BaseContract(ContractProtocol[_D]):
         """
         return self.state_info.data
 
+    @classmethod
+    async def _load_state_info(
+        cls,
+        client: ClientProtocol,
+        address: Address,
+    ) -> ContractStateInfo:
+        """
+        Fetch contract state from the blockchain.
+
+        If the request fails (except rate limits), sets state to default empty state.
+        """
+        try:
+            return await client.get_contract_info(address)
+        except ProviderResponseError as e:
+            if e.code in {429, 228, 5556}:  # rate limit exceed
+                raise
+            return ContractStateInfo()
+        except (Exception,):
+            return ContractStateInfo()
+
     async def refresh(self) -> None:
         """
         Refresh contract state from the blockchain.
@@ -212,13 +235,7 @@ class BaseContract(ContractProtocol[_D]):
         Fetches current contract information and updates the cached state_info.
         If the request fails (except rate limits), sets state to default empty state.
         """
-        try:
-            state_info = await self.client.get_contract_info(self.address)
-        except RateLimitExceeded:
-            raise
-        except APIQException:
-            state_info = ContractStateInfo()
-        self._state_info = state_info
+        self._state_info = await self._load_state_info(self.client, self.address)
 
     @classmethod
     def from_state_init(
@@ -305,12 +322,8 @@ class BaseContract(ContractProtocol[_D]):
             address = Address(address)
         if not load_state:
             return cls(client, address)
-        try:
-            state_info = await client.get_contract_info(address)
-        except RateLimitExceeded:
-            raise
-        except APIQException:
-            state_info = ContractStateInfo()
+
+        state_info = await cls._load_state_info(client, address)
         return cls(client, address, state_info=state_info)
 
     def __repr__(self) -> str:

@@ -34,7 +34,7 @@ from tonutils.types import (
 )
 
 if t.TYPE_CHECKING:
-    from tonutils.protocols import ClientProtocol
+    from tonutils.clients.protocol import ClientProtocol
 
 
 __all__ = [
@@ -229,7 +229,7 @@ def norm_stack_cell(
     return maybe_stack_addr(cell)
 
 
-def parse_stack_config(config_slice: Slice) -> dict[int, t.Any]:
+def parse_stack_config(config_slice: Slice) -> t.Dict[int, t.Any]:
     """
     Parse blockchain configuration parameters from a config cell.
 
@@ -514,7 +514,7 @@ class TextCipher:
         """
         Decrypt an encrypted text message.
 
-        Decrypts a message that was encrypted with the encrypt() method.
+        Decrypts a message that was encrypted with the encrypt() method
         Verifies message integrity using HMAC authentication.
 
         :param payload: Encrypted message as Cell, hex string, base64 string, or bytes

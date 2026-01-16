@@ -66,7 +66,7 @@ class PingerWorker(BaseWorker):
         await self.provider.transport.send_adnl_packet(payload)
 
         start = self.provider.loop.time()
-        await asyncio.wait_for(fut, timeout=self.provider.timeout)
+        await asyncio.wait_for(fut, timeout=self.provider.request_timeout)
         end = self.provider.loop.time()
 
         self._last_time = end

@@ -822,7 +822,7 @@ class NFTCollectionBatchMintItemBody(TlbScheme):
         :return: Sorted list of (index, amount, item_ref) tuples
         """
         hashmap = cs.load_dict(key_length=64)
-        out: list[tuple[int, int, Cell]] = []
+        out: t.List[tuple[int, int, Cell]] = []
         for key, val in hashmap.items():
             amount = val.load_coins()
             item_ref = val.load_ref()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import typing as t
+from dataclasses import dataclass
 from enum import Enum
 
 from nacl.signing import SigningKey
@@ -16,6 +17,8 @@ __all__ = [
     "ClientType",
     "ContractState",
     "ContractStateInfo",
+    "DEFAULT_ADNL_RETRY_POLICY",
+    "DEFAULT_HTTP_RETRY_POLICY",
     "DEFAULT_SENDMODE",
     "DEFAULT_SUBWALLET_ID",
     "DNSCategory",
@@ -24,12 +27,16 @@ __all__ = [
     "NetworkGlobalID",
     "PrivateKey",
     "PublicKey",
+    "RetryPolicy",
+    "RetryRule",
     "SendMode",
     "StackItem",
     "StackItems",
     "StackTag",
     "WorkchainID",
 ]
+
+from tonutils.exceptions import CDN_CHALLENGE_MARKERS
 
 AddressLike = t.Union[Address, str]
 """Type alias for TON address inputs. Accepts either an Address object or string representation."""
@@ -374,6 +381,114 @@ class ADNL(Binary):
 class BagID(ADNL):
     """TON Storage bag identifier (32 bytes)."""
 
+
+@dataclass(slots=True, frozen=True)
+class RetryRule:
+    """
+    Retry rule matched by numeric code and/or message substrings.
+
+    Matching:
+    - if codes is set: code must be in codes
+    - if markers is set: any marker must be present in message (case-insensitive)
+    - if both are set: both conditions must match
+
+    Attributes:
+        attempts: Maximum number of retry attempts
+        base_delay: Initial delay before first retry (seconds)
+        cap_delay: Maximum delay between retries (seconds)
+        codes: Error or status codes this rule applies to
+        markers: Case-insensitive substrings matched against error message
+    """
+
+    attempts: int = 3
+    base_delay: float = 0.3
+    cap_delay: float = 3.0
+
+    codes: t.Optional[t.Tuple[int, ...]] = None
+    markers: t.Optional[t.Tuple[str, ...]] = None
+
+    def __post_init__(self) -> None:
+        if self.attempts < 1:
+            raise ValueError("attempts must be >= 1")
+        if self.base_delay < 0:
+            raise ValueError("base_delay must be >= 0")
+        if self.cap_delay < 0:
+            raise ValueError("cap_delay must be >= 0")
+        if self.cap_delay < self.base_delay:
+            raise ValueError("cap_delay must be >= base_delay")
+        if self.markers:
+            norm = tuple(m.strip().lower() for m in self.markers if m and m.strip())
+            object.__setattr__(self, "markers", norm or None)
+
+    def matches(self, code: int, message: t.Any) -> bool:
+        if self.codes is not None and code not in self.codes:
+            return False
+
+        if self.markers:
+            msg = str(message or "").lower()
+            if not any(m in msg for m in self.markers):
+                return False
+
+        return True
+
+    def delay(self, attempt_index: int) -> float:
+        if attempt_index < 0:
+            raise ValueError("attempt_index must be >= 0")
+        d = self.base_delay * (2**attempt_index)
+        return d if d < self.cap_delay else self.cap_delay
+
+
+@dataclass(slots=True, frozen=True)
+class RetryPolicy:
+    """Ordered collection of retry rules (first match wins)."""
+
+    rules: t.Tuple[RetryRule, ...]
+
+    def rule_for(self, code: int, message: t.Any) -> t.Optional[RetryRule]:
+        for r in self.rules:
+            if r.matches(code, message):
+                return r
+        return None
+
+
+DEFAULT_HTTP_RETRY_POLICY = RetryPolicy(
+    rules=(
+        # rate limit exceed
+        RetryRule(
+            codes=(429,),
+            attempts=3,
+            base_delay=0.3,
+            cap_delay=3.0,
+        ),
+        # transient gateway/service failures
+        RetryRule(
+            codes=(502, 503, 504),
+            attempts=3,
+            base_delay=0.5,
+            cap_delay=5.0,
+        ),
+        # CDN/protection/challenge pages (сloudflare, etc.)
+        RetryRule(
+            attempts=3,
+            base_delay=1.0,
+            cap_delay=8.0,
+            markers=tuple(CDN_CHALLENGE_MARKERS.keys()),
+        ),
+    )
+)
+"""Default retry policy for HTTP queries."""
+
+DEFAULT_ADNL_RETRY_POLICY = RetryPolicy(
+    rules=(
+        # rate limit exceed
+        RetryRule(codes=(228, 5556), attempts=3),
+        # block (...) is not in db
+        RetryRule(codes=(651,), attempts=4),
+        # backend node timeout
+        RetryRule(codes=(502,), attempts=5),
+    )
+)
+"""Default retry policy for ADNL queries."""
 
 DEFAULT_SUBWALLET_ID = 698983191
 """Default subwallet ID for wallet contracts."""

@@ -3,6 +3,7 @@ import typing as t
 
 from pytoniq_core import Cell, WalletMessage, begin_cell
 
+from tonutils.clients.protocol import ClientProtocol
 from tonutils.contracts.versions import ContractVersion
 from tonutils.contracts.wallet.base import BaseWallet
 from tonutils.contracts.wallet.configs import (
@@ -19,8 +20,7 @@ from tonutils.contracts.wallet.methods import (
 from tonutils.contracts.wallet.params import WalletV5BetaParams, WalletV5Params
 from tonutils.contracts.wallet.tlb import OutActionSendMsg, WalletV5SubwalletID
 from tonutils.contracts.wallet.tlb import WalletV5BetaData, WalletV5Data
-from tonutils.exceptions import NotRefreshedError
-from tonutils.protocols.client import ClientProtocol
+from tonutils.exceptions import StateNotLoadedError
 from tonutils.types import NetworkGlobalID, PrivateKey, WorkchainID
 from tonutils.utils import calc_valid_until
 
@@ -220,7 +220,7 @@ class WalletV5R1(
         :return: Typed wallet data
         """
         if not (self._state_info and self._state_info.data):
-            raise NotRefreshedError(self, "state_data")
+            raise StateNotLoadedError(self, missing="state_data")
 
         network_global_id = (
             NetworkGlobalID.TESTNET if self.client.network else NetworkGlobalID.MAINNET

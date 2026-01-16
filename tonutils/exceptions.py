@@ -1,294 +1,202 @@
+import asyncio
 import typing as t
 
-from pytoniq_core import Address
-
 __all__ = [
-    "TonutilsException",
-    "ClientNotConnectedError",
-    "NotRefreshedError",
-    "ContractError",
+    "TonutilsError",
+    "TransportError",
+    "ProviderError",
     "ClientError",
-    "AdnlServerError",
-    "AdnlProviderError",
-    "AdnlProviderConnectError",
-    "AdnlProviderClosedError",
-    "AdnlProviderResponseError",
-    "AdnlProviderMissingBlockError",
-    "AdnlBalancerConnectionError",
-    "RateLimitExceededError",
+    "ContractError",
+    "BalancerError",
+    "NotConnectedError",
+    "ProviderTimeoutError",
+    "ProviderResponseError",
+    "RetryLimitError",
     "RunGetMethodError",
-    "AdnlHandshakeError",
-    "AdnlTransportError",
-    "AdnlTransportStateError",
-    "AdnlTransportCipherError",
-    "AdnlTransportFrameError",
+    "StateNotLoadedError",
+    "CDN_CHALLENGE_MARKERS",
 ]
 
 
-class TonutilsException(Exception):
-    """Base exception for all tonutils-specific errors."""
-
-    @classmethod
-    def _obj_name(cls, obj: t.Union[object, type, str]) -> str:
-        """
-        Resolve a human-readable class name from an object or type.
-
-        :param obj: Instance, class or string name
-        :return: Resolved name used in error messages
-        """
-        if isinstance(obj, type):
-            return obj.__name__
-        if isinstance(obj, str):
-            return obj
-        return obj.__class__.__name__
+class TonutilsError(Exception):
+    """Base exception for tonutils."""
 
 
-class ClientNotConnectedError(TonutilsException):
-    """
-    Raised when a client method is called without an active connection.
-
-    This usually indicates that connect() or an async context manager
-    was not used before making network requests.
-    """
-
-    def __init__(self, obj: t.Union[object, type, str]) -> None:
-        name = self._obj_name(obj)
-        super().__init__(
-            f"`{name}` is not connected.\n"
-            f"Use `async with {name}(...) as client:` "
-            f"or call `await {name}(...).connect()` before making requests."
-        )
+class TransportError(TonutilsError):
+    """Raise on transport-level failures (I/O, handshake, crypto, socket)."""
 
 
-class NotRefreshedError(TonutilsException):
-    """
-    Raised when accessing derived state before an explicit refresh.
+class ProviderError(TonutilsError):
+    """Raise on provider-level failures (protocol, parsing, session/state)."""
 
-    Typical usage is for contract wrappers that require refresh()
-    to be called before accessing state_info or derived properties.
+
+class ClientError(TonutilsError):
+    """Raise on client misuse, validation errors, or unsupported operations."""
+
+
+class BalancerError(TonutilsError):
+    """Raise on balancer failures (no alive backends, failover exhausted)."""
+
+
+class NotConnectedError(TonutilsError, RuntimeError):
+    """Raise when an operation requires an active connection.
+
+    Typically means the underlying client/provider is not connected yet or was closed.
     """
 
-    def __init__(self, obj: t.Union[object, type, str], attr: str) -> None:
-        name = self._obj_name(obj)
-        super().__init__(
-            f"Access to `{attr}` is not allowed.\n"
-            f"Call `await {name}.refresh()` before accessing `{attr}`."
-        )
+    def __init__(self) -> None:
+        super().__init__("not connected. Use `await connect()` or `async with ...`.")
 
 
-class ContractError(TonutilsException):
-    """
-    Generic error related to smart contract helpers.
+class ProviderTimeoutError(ProviderError, asyncio.TimeoutError):
+    """Raise when a provider operation exceeds its timeout.
 
-    Used for configuration issues, invalid versions and similar
-    contract wrapper problems.
+    Used for both ADNL and HTTP providers.
+
+    :param timeout: Timeout in seconds.
+    :param endpoint: Endpoint identifier (URL or host:port).
+    :param operation: Operation label (e.g. "adnl query", "http request").
     """
 
-    def __init__(self, obj: t.Union[object, type, str], message: str) -> None:
-        super().__init__(f"{self._obj_name(obj)}: {message}.")
+    timeout: float
+    endpoint: str
+    operation: str
+
+    def __init__(self, *, timeout: float, endpoint: str, operation: str) -> None:
+        self.timeout = float(timeout)
+        self.endpoint = endpoint
+        self.operation = operation
+        super().__init__(f"{operation} timed out after {timeout}s: {endpoint}")
 
 
-class ClientError(TonutilsException):
+class ProviderResponseError(ProviderError):
+    """Raise when a backend returns an error response.
+
+    This is a normalized provider error for:
+    - HTTP status codes (e.g. 429/5xx)
+    - lite-server numeric error codes
+
+    :param code: Backend code (HTTP status or lite-server code).
+    :param message: Backend error description.
+    :param endpoint: Endpoint identifier (URL or host:port).
     """
-    Base error for client-side failures.
 
-    Used for issues related to specific client implementations
-    (HTTP, ADNL, balancers, etc.).
-    """
+    code: int
+    message: str
+    endpoint: str
 
-
-class AdnlServerError(ClientError):
-    """
-    Lite-server reported an internal error while processing a request.
-
-    Wraps lite-server error code and message as returned by ADNL.
-    """
-
-    def __init__(self, code: int, message: str) -> None:
-        """
-        :param code: Lite-server error code
-        :param message: Lite-server error message
-        """
-        super().__init__(f"Lite-server crashed with `{code}` code. Message: {message}.")
+    def __init__(self, *, code: int, message: str, endpoint: str) -> None:
+        self.code = int(code)
         self.message = message
-        self.code = code
+        self.endpoint = endpoint
+        super().__init__(f"request failed with code {code} at {endpoint}: {message}")
 
 
-class AdnlProviderError(ClientError):
-    """
-    Base error for ADNL provider failures.
+class RetryLimitError(ProviderError):
+    """Raise when retry policy is exhausted for a matched rule.
 
-    Includes additional context about the lite-server host and port.
-    """
-
-    def __init__(self, message: str, host: str, port: int) -> None:
-        """
-        :param message: Error description
-        :param host: Lite-server host
-        :param port: Lite-server port
-        """
-        full_message = f"{message} ({host}:{port})."
-        super().__init__(full_message)
-        self.host = host
-        self.port = port
-
-
-class AdnlProviderConnectError(AdnlProviderError):
-    """
-    Failed to establish an ADNL connection to the lite-server.
-
-    Wraps network or handshake errors that occur during connect().
+    :param attempts: Attempts already performed for the matched rule.
+    :param max_attempts: Maximum attempts allowed by the matched rule.
+    :param last_error: Last provider error that triggered a retry.
     """
 
-    def __init__(self, host: str, port: int, message: str) -> None:
+    attempts: int
+    max_attempts: int
+    last_error: ProviderError
+
+    def __init__(
+        self,
+        *,
+        attempts: int,
+        max_attempts: int,
+        last_error: ProviderError,
+    ) -> None:
+        self.attempts = int(attempts)
+        self.max_attempts = int(max_attempts)
+        self.last_error = last_error
         super().__init__(
-            f"Failed to connect: {message}.",
-            host=host,
-            port=port,
+            f"retry exhausted ({self.attempts}/{self.max_attempts}). "
+            f"Last error: {last_error}"
         )
 
 
-class AdnlProviderClosedError(AdnlProviderError):
-    """
-    ADNL provider was closed while waiting for a response.
+class ContractError(ClientError):
+    """Raise when a contract wrapper operation fails.
 
-    Typically raised when transport is torn down during an in-flight
-    request or when the remote peer closes connection unexpectedly.
+    :param target: Contract instance or contract class related to the failure.
+    :param message: Human-readable error message.
     """
 
-    def __init__(self, host: str, port: int) -> None:
-        super().__init__(
-            "Provider closed while waiting response.",
-            host=host,
-            port=port,
+    target: t.Any
+    message: str
+
+    def __init__(self, target: t.Any, message: str) -> None:
+        self.target = target
+        self.message = message
+
+        name = (
+            target.__name__ if isinstance(target, type) else target.__class__.__name__
         )
+        super().__init__(f"{name}: {message}")
 
 
-class AdnlProviderResponseError(AdnlProviderError):
-    """
-    Received an invalid or malformed response from lite-server.
+class StateNotLoadedError(ContractError):
+    """Raise when a contract wrapper requires state that is not loaded.
 
-    Raised when the ADNL response payload does not match the expected
-    structure or type.
-    """
+    Typical cases:
+    - state_info not fetched
+    - state_data not decoded/available
 
-    def __init__(self, host: str, port: int) -> None:
-        super().__init__(
-            "Invalid response from provider.",
-            host=host,
-            port=port,
-        )
-
-
-class AdnlProviderMissingBlockError(AdnlProviderError):
-    """
-    Lite-server reported that a requested block is missing.
-
-    Used for specific lite-server error codes that indicate
-    absence of the requested block.
+    :param contract: Contract instance related to the failure.
+    :param missing: Missing field name (e.g. "state_info", "state_data").
     """
 
-    def __init__(self, attempts: int, host: str, port: int, message: str) -> None:
-        super().__init__(
-            f"Cannot load block after {attempts} attempts: {message}.",
-            host=host,
-            port=port,
-        )
-        self.attempts = attempts
+    missing: str
 
-
-class AdnlBalancerConnectionError(ClientError):
-    """
-    All ADNL lite-server providers failed to connect or process a request.
-
-    Raised by AdnlBalancer when no healthy providers remain.
-    """
-
-
-class RateLimitExceededError(ClientError):
-    """
-    Request was retried multiple times but rate limits could not be bypassed.
-
-    Raised after exhausting configured retry attempts.
-    """
-
-    def __init__(self, attempts: int) -> None:
-        """
-        :param attempts: Number of attempts performed before giving up
-        """
-        super().__init__(f"Rate limit exceeded after `{attempts}` attempts.")
-        self.attempts = attempts
+    def __init__(self, contract: t.Any, *, missing: str) -> None:
+        self.missing = missing
+        name = contract.__class__.__name__
+        super().__init__(contract, f"{missing} is not loaded. Call {name}.refresh().")
 
 
 class RunGetMethodError(ClientError):
-    """
-    get-method execution failed with a non-zero exit code.
+    """Raise when a contract get-method returns a non-zero TVM exit code.
 
-    Raised when lite-server returns exit_code != 0 for a runSmcMethod call.
+    :param address: Contract address (string form).
+    :param method_name: Get-method name.
+    :param exit_code: TVM exit code.
     """
 
-    def __init__(self, address: Address, method_name: str, exit_code: int) -> None:
-        """
-        :param address: Contract address on which get-method was executed
-        :param method_name: Name of the get-method
-        :param exit_code: Non-zero TVM exit code returned by the method
-        """
-        super().__init__(
-            f"Get method `{method_name}` on `{address.to_str()}` "
-            f"failed with `{exit_code}` exit code."
-        )
-        self.method_name = method_name
-        self.exit_code = exit_code
+    address: str
+    method_name: str
+    exit_code: int
+
+    def __init__(self, *, address: str, method_name: str, exit_code: int) -> None:
         self.address = address
+        self.method_name = method_name
+        self.exit_code = int(exit_code)
+        super().__init__(
+            f"get-method `{method_name}` failed for {address} (exit code {self.exit_code})."
+        )
 
 
-class AdnlTransportError(TonutilsException):
-    """
-    Base error for raw ADNL transport failures.
-
-    Covers handshake, cipher initialization, framing and state issues.
-    """
-
-
-class AdnlHandshakeError(AdnlTransportError):
-    """
-    ADNL handshake failed during initial connection.
-
-    Raised when the remote side closes the connection or does not
-    respond within the expected timeout.
-    """
-
-
-class AdnlTransportStateError(AdnlTransportError):
-    """
-    Invalid internal state of the ADNL transport.
-
-    Raised when required transport components (reader, writer, cipher, etc.)
-    are not initialized or used incorrectly.
-    """
-
-    def __init__(self, message: str) -> None:
-        super().__init__(f"ADNL transport state error: {message}.")
-
-
-class AdnlTransportCipherError(AdnlTransportError):
-    """
-    ADNL cipher was used before being initialized.
-
-    Raised when trying to encrypt or decrypt frames without
-    a valid session cipher.
-    """
-
-    def __init__(self, direction: str) -> None:
-        super().__init__(f"ADNL {direction} cipher is not initialized.")
-
-
-class AdnlTransportFrameError(AdnlTransportError):
-    """
-    Malformed or invalid ADNL frame was received.
-
-    Raised when frame length, structure or checksum validation fails.
-    """
-
-    def __init__(self, reason: str) -> None:
-        super().__init__(f"Invalid ADNL frame: {reason}.")
+CDN_CHALLENGE_MARKERS: t.Dict[str, str] = {
+    # Cloudflare
+    "cloudflare": "Cloudflare protection triggered or blocked the request.",
+    "cf-ray": "Cloudflare intermediate error (cf-ray header detected).",
+    "just a moment": "Cloudflare browser verification page.",
+    "checking your browser": "Cloudflare browser verification page.",
+    "attention required": "Cloudflare challenge page.",
+    "captcha": "Cloudflare CAPTCHA challenge.",
+    # Other CDNs / proxies
+    "akamai": "Akamai CDN blocked or intercepted the request.",
+    "fastly": "Fastly CDN error response detected.",
+    "varnish": "Varnish cache/CDN interference.",
+    "nginx": "Reverse proxy (nginx) error response.",
+    # Upstream failures
+    "502 bad gateway": "Bad gateway from upstream or proxy.",
+    "503 service unavailable": "Service temporarily unavailable (proxy or CDN).",
+    "ddos": "Possible DDoS protection or mitigation page.",
+}
+"""Markers for detecting CDN / proxy challenge and anti-DDoS responses, 
+used for error normalization and default retry policies."""

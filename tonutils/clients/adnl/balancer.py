@@ -7,22 +7,34 @@ from contextlib import suppress
 from dataclasses import dataclass
 from itertools import cycle
 
-from pytoniq_core import Address, Transaction
+from pytoniq_core import Address, BlockIdExt, Block, Transaction
 
 from tonutils.clients.adnl.client import AdnlClient
 from tonutils.clients.adnl.provider import AdnlProvider
-from tonutils.clients.adnl.provider.config import TONClient
-from tonutils.clients.adnl.provider.limiter import PriorityLimiter
-from tonutils.clients.adnl.provider.models import GlobalConfig
-from tonutils.clients.adnl.stack import decode_stack, encode_stack
-from tonutils.clients.base import BaseClient
-from tonutils.exceptions import (
-    AdnlBalancerConnectionError,
-    ClientNotConnectedError,
-    RateLimitExceededError,
-    ClientError,
+from tonutils.clients.adnl.provider.config import (
+    get_mainnet_global_config,
+    get_testnet_global_config,
 )
-from tonutils.types import ClientType, ContractStateInfo, NetworkGlobalID
+from tonutils.clients.adnl.provider.models import GlobalConfig, MasterchainInfo
+from tonutils.clients.adnl.utils import decode_stack, encode_stack
+from tonutils.clients.base import BaseClient
+from tonutils.clients.limiter import RateLimiter
+from tonutils.exceptions import (
+    ClientError,
+    BalancerError,
+    RunGetMethodError,
+    ProviderResponseError,
+    TransportError,
+    ProviderError,
+    ProviderTimeoutError,
+)
+from tonutils.types import (
+    ClientType,
+    ContractStateInfo,
+    NetworkGlobalID,
+    RetryPolicy,
+    WorkchainID,
+)
 
 _T = t.TypeVar("_T")
 
@@ -55,7 +67,8 @@ class AdnlBalancer(BaseClient):
         *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
         clients: t.List[AdnlClient],
-        connect_timeout: int = 2,
+        connect_timeout: float = 2.0,
+        request_timeout: float = 12.0,
     ) -> None:
         """
         Initialize ADNL balancer.
@@ -70,7 +83,9 @@ class AdnlBalancer(BaseClient):
 
         :param network: Target TON network (mainnet or testnet)
         :param clients: List of AdnlClient instances to balance between
-        :param connect_timeout: Timeout in seconds for connect/reconnect
+        :param connect_timeout: Timeout in seconds for connect/reconnect attempts
+        :param request_timeout: Maximum total time in seconds for a balancer operation,
+            including all failover attempts across providers
         """
         self.network: NetworkGlobalID = network
 
@@ -79,7 +94,9 @@ class AdnlBalancer(BaseClient):
         self.__init_clients(clients)
 
         self._rr = cycle(self._clients)
+
         self._connect_timeout = connect_timeout
+        self._request_timeout = request_timeout
 
         self._health_interval = 5.5
         self._health_task: t.Optional[asyncio.Task] = None
@@ -108,6 +125,25 @@ class AdnlBalancer(BaseClient):
             state = AdnlClientState(client=client)
             self._clients.append(client)
             self._states.append(state)
+
+    @property
+    def provider(self) -> AdnlProvider:
+        """
+        Provider of the currently selected ADNL client.
+
+        :return: AdnlProvider instance of chosen client
+        """
+        c = self._pick_client()
+        return c.provider
+
+    @property
+    def is_connected(self) -> bool:
+        """
+        Check whether at least one underlying ADNL client is connected.
+
+        :return: True if any client is connected, otherwise False
+        """
+        return any(c.is_connected for c in self._clients)
 
     @property
     def clients(self) -> t.Tuple[AdnlClient, ...]:
@@ -148,28 +184,6 @@ class AdnlBalancer(BaseClient):
             or (state.retry_after is not None and state.retry_after > now)
         )
 
-    @property
-    def provider(self) -> AdnlProvider:
-        """
-        Provider of the currently selected ADNL client.
-
-        :return: AdnlProvider instance of chosen client
-        :raises ClientNotConnectedError: If no clients are connected
-        """
-        if not self.is_connected:
-            raise ClientNotConnectedError(self)
-        c = self._pick_client()
-        return c.provider
-
-    @property
-    def is_connected(self) -> bool:
-        """
-        Check whether at least one underlying ADNL client is connected.
-
-        :return: True if any client is connected, otherwise False
-        """
-        return any(c.is_connected for c in self._clients)
-
     async def __aenter__(self) -> AdnlBalancer:
         """
         Enter async context manager and connect underlying clients.
@@ -195,12 +209,14 @@ class AdnlBalancer(BaseClient):
         *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
         config: t.Union[GlobalConfig, t.Dict[str, t.Any]],
-        timeout: int = 10,
-        connect_timeout: int = 2,
+        connect_timeout: float = 2.0,
+        request_timeout: float = 12.0,
+        client_connect_timeout: float = 1.5,
+        client_request_timeout: float = 5.0,
         rps_limit: t.Optional[int] = None,
         rps_period: float = 1.0,
-        rps_retries: int = 2,
-        rps_per_provider: bool = False,
+        rps_per_client: bool = False,
+        retry_policy: t.Optional[RetryPolicy] = None,
     ) -> AdnlBalancer:
         """
         Build ADNL balancer from a lite-server config.
@@ -214,64 +230,71 @@ class AdnlBalancer(BaseClient):
 
         :param network: Target TON network
         :param config: GlobalConfig instance or raw dict
-        :param timeout: Lite-server request timeout in seconds
-        :param connect_timeout: Timeout in seconds for connect/reconnect attempts
-        :param rps_limit: Optional shared requests-per-second limit
+        :param connect_timeout: Timeout in seconds for a single connect/reconnect attempt
+            performed by the balancer during failover.
+        :param request_timeout: Maximum total time in seconds for a single balancer operation,
+            including all failover attempts across clients.
+        :param client_connect_timeout: Timeout in seconds for connect/handshake performed by an
+            individual ADNL client.
+        :param client_request_timeout: Timeout in seconds for a single request executed by an
+            individual ADNL client.
+        :param rps_limit: Optional requests-per-second limit
         :param rps_period: Time window in seconds for RPS limit
-        :param rps_retries: Number of retries on rate limiting
-        :param rps_per_provider: Whether to create per-provider limiters
+        :param rps_per_client: Whether to create per-client limiters
+        :param retry_policy: Optional retry policy that defines per-error-code retry rules
         :return: Configured AdnlBalancer instance
         """
         if isinstance(config, dict):
             config = GlobalConfig(**config)
 
-        shared_limiter: t.Optional[PriorityLimiter] = None
-        if rps_limit is not None and not rps_per_provider:
-            shared_limiter = PriorityLimiter(rps_limit, rps_period)
+        shared_limiter: t.Optional[RateLimiter] = None
+        if rps_limit is not None and not rps_per_client:
+            shared_limiter = RateLimiter(rps_limit, rps_period)
 
         clients: t.List[AdnlClient] = []
         for node in config.liteservers:
-            if rps_per_provider:
-                _limiter = (
-                    PriorityLimiter(rps_limit, rps_period)
-                    if rps_limit is not None
-                    else None
-                )
-                _rps_limit = rps_limit
-            else:
-                _limiter = shared_limiter
-                _rps_limit = None
-
-            client = AdnlClient(
-                network=network,
-                ip=node.host,
-                port=node.port,
-                public_key=node.id,
-                timeout=timeout,
-                rps_limit=_rps_limit,
-                rps_retries=rps_retries,
-                rps_period=rps_period,
-                limiter=_limiter,
+            limiter = (
+                RateLimiter(rps_limit, rps_period)
+                if rps_per_client and rps_limit is not None
+                else shared_limiter
             )
-            clients.append(client)
+            client_rps_limit = rps_limit if rps_per_client else None
+
+            clients.append(
+                AdnlClient(
+                    network=network,
+                    ip=node.host,
+                    port=node.port,
+                    public_key=node.id,
+                    connect_timeout=client_connect_timeout,
+                    request_timeout=client_request_timeout,
+                    rps_limit=client_rps_limit,
+                    rps_period=rps_period,
+                    limiter=limiter,
+                    retry_policy=retry_policy,
+                )
+            )
 
         return cls(
             network=network,
             clients=clients,
             connect_timeout=connect_timeout,
+            request_timeout=request_timeout,
         )
 
     @classmethod
-    async def from_network_config(
+    def from_network_config(
         cls,
         *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
-        timeout: int = 10,
-        connect_timeout: int = 2,
+        connect_timeout: float = 2.0,
+        request_timeout: float = 12.0,
+        client_connect_timeout: float = 1.5,
+        client_request_timeout: float = 5.0,
         rps_limit: t.Optional[int] = None,
         rps_period: float = 1.0,
-        rps_retries: int = 2,
-        rps_per_provider: bool = False,
+        rps_per_client: bool = False,
+        retry_policy: t.Optional[RetryPolicy] = None,
     ) -> AdnlBalancer:
         """
         Build ADNL balancer using global config fetched from ton.org.
@@ -284,30 +307,36 @@ class AdnlBalancer(BaseClient):
             - dTON telegram bot: https://t.me/dtontech_bot (https://dton.io/)
 
         :param network: Target TON network
-        :param timeout: Lite-server request timeout in seconds
-        :param connect_timeout: Timeout in seconds for connect/reconnect attempts
-        :param rps_limit: Optional shared requests-per-second limit
+        :param connect_timeout: Timeout in seconds for a single connect/reconnect attempt
+            performed by the balancer during failover.
+        :param request_timeout: Maximum total time in seconds for a single balancer operation,
+            including all failover attempts across clients.
+        :param client_connect_timeout: Timeout in seconds for connect/handshake performed by an
+            individual ADNL client.
+        :param client_request_timeout: Timeout in seconds for a single request executed by an
+            individual ADNL client.
+        :param rps_limit: Optional requests-per-second limit
         :param rps_period: Time window in seconds for RPS limit
-        :param rps_retries: Number of retries on rate limiting
-        :param rps_per_provider: Whether to create per-provider limiters
+        :param rps_per_client: Whether to create per-client limiters
+        :param retry_policy: Optional retry policy that defines per-error-code retry rules
         :return: Configured AdnlBalancer instance
         """
-        ton_client = TONClient()
         config_getters = {
-            NetworkGlobalID.MAINNET: ton_client.mainnet_global_config,
-            NetworkGlobalID.TESTNET: ton_client.testnet_global_config,
+            NetworkGlobalID.MAINNET: get_mainnet_global_config,
+            NetworkGlobalID.TESTNET: get_testnet_global_config,
         }
-        async with ton_client:
-            config = await config_getters[network]()
+        config = config_getters[network]()
         return cls.from_config(
             network=network,
             config=config,
-            timeout=timeout,
+            connect_timeout=connect_timeout,
+            request_timeout=request_timeout,
+            client_connect_timeout=client_connect_timeout,
+            client_request_timeout=client_request_timeout,
             rps_limit=rps_limit,
             rps_period=rps_period,
-            rps_retries=rps_retries,
-            rps_per_provider=rps_per_provider,
-            connect_timeout=connect_timeout,
+            rps_per_client=rps_per_client,
+            retry_policy=retry_policy,
         )
 
     def _pick_client(self) -> AdnlClient:
@@ -319,10 +348,10 @@ class AdnlBalancer(BaseClient):
         - minimal ping RTT and age among same-height clients
         - round-robin fallback if no height information
         """
-        alive_clients = list(self.alive_clients)
+        alive = list(self.alive_clients)
 
-        if not alive_clients:
-            raise AdnlBalancerConnectionError("No alive lite-server clients available.")
+        if not alive:
+            raise BalancerError("no alive lite-server clients available")
 
         height_candidates: t.List[
             t.Tuple[
@@ -333,7 +362,7 @@ class AdnlBalancer(BaseClient):
             ]
         ] = []
 
-        for client in alive_clients:
+        for client in alive:
             mc_block = client.provider.last_mc_block
             if mc_block is None:
                 continue
@@ -357,10 +386,10 @@ class AdnlBalancer(BaseClient):
 
         for _ in range(len(self._clients)):
             candidate = next(self._rr)
-            if candidate in alive_clients and candidate.is_connected:
+            if candidate in alive and candidate.is_connected:
                 return candidate
 
-        return alive_clients[0]
+        return alive[0]
 
     def _mark_success(self, client: AdnlClient) -> None:
         """
@@ -413,45 +442,58 @@ class AdnlBalancer(BaseClient):
         :param func: Callable performing an operation using an AdnlProvider
         :return: Result of the successful invocation
         """
-        last_exc: t.Optional[BaseException] = None
 
-        for _ in range(len(self._clients)):
-            if not self.alive_clients:
-                break
+        async def _run() -> _T:
+            last_exc: t.Optional[BaseException] = None
 
-            client = self._pick_client()
+            for _ in range(len(self._clients)):
+                if not self.alive_clients:
+                    break
 
-            if not client.provider.is_connected:
+                client = self._pick_client()
+
+                if not client.provider.is_connected:
+                    try:
+                        await asyncio.wait_for(
+                            client.provider.reconnect(),
+                            timeout=self._connect_timeout,
+                        )
+                    except Exception as e:
+                        self._mark_error(client, is_rate_limit=False)
+                        last_exc = e
+                        continue
+
                 try:
-                    await asyncio.wait_for(
-                        client.provider.reconnect(),
-                        timeout=self._connect_timeout,
-                    )
-                except Exception as e:
+                    result = await func(client.provider)
+
+                except RunGetMethodError:
+                    raise
+                except ProviderResponseError as e:
+                    is_rate_limit = e.code in {228, 5556}
+                    self._mark_error(client, is_rate_limit=is_rate_limit)
+                    last_exc = e
+                    continue
+                except (TransportError, ProviderError) as e:
                     self._mark_error(client, is_rate_limit=False)
                     last_exc = e
                     continue
 
-            try:
-                result = await func(client.provider)
-            except RateLimitExceededError as e:
-                self._mark_error(client, is_rate_limit=True)
-                last_exc = e
-                continue
-            except Exception as e:
-                self._mark_error(client, is_rate_limit=False)
-                last_exc = e
-                continue
+                self._mark_success(client)
+                return result
 
-            self._mark_success(client)
-            return result
+            if last_exc is not None:
+                raise last_exc
 
-        if last_exc is not None:
-            raise last_exc
+            raise BalancerError("all lite-server providers failed to process request")
 
-        raise AdnlBalancerConnectionError(
-            "All lite-server providers failed to process request"
-        )
+        try:
+            return await asyncio.wait_for(_run(), timeout=self._request_timeout)
+        except asyncio.TimeoutError as exc:
+            raise ProviderTimeoutError(
+                timeout=self._request_timeout,
+                endpoint="adnl balancer",
+                operation="failover request",
+            ) from exc
 
     async def _send_boc(self, boc: str) -> None:
         async def _call(provider: AdnlProvider) -> None:
@@ -486,12 +528,12 @@ class AdnlBalancer(BaseClient):
 
         curr_lt = state.last_transaction_lt
         curr_hash = state.last_transaction_hash
-        transactions: list[Transaction] = []
+        transactions: t.List[Transaction] = []
 
         while len(transactions) < limit and curr_lt != 0:
             batch_size = min(16, limit - len(transactions))
 
-            async def _call(provider: AdnlProvider) -> list[Transaction]:
+            async def _call(provider: AdnlProvider) -> t.List[Transaction]:
                 return await provider.get_transactions(
                     account=account,
                     count=batch_size,
@@ -504,7 +546,7 @@ class AdnlBalancer(BaseClient):
                 break
 
             if to_lt > 0 and txs[-1].lt <= to_lt:
-                trimmed: list[Transaction] = []
+                trimmed: t.List[Transaction] = []
                 for tx in txs:
                     if tx.lt <= to_lt:
                         break
@@ -541,6 +583,12 @@ class AdnlBalancer(BaseClient):
         return await self._with_failover(_call)
 
     def _ensure_health_task(self) -> None:
+        """
+        Ensure background health check task is running.
+
+        Starts a periodic reconnect loop for unavailable clients
+        if it is not already active.
+        """
         if self._health_task is not None and not self._health_task.done():
             return
 
@@ -551,6 +599,11 @@ class AdnlBalancer(BaseClient):
         )
 
     async def _health_loop(self) -> None:
+        """
+        Periodically attempt to reconnect dead ADNL clients.
+
+        Runs until cancelled.
+        """
 
         async def _recon(c: AdnlClient) -> None:
             with suppress(Exception):
@@ -590,9 +643,7 @@ class AdnlBalancer(BaseClient):
             self._ensure_health_task()
             return
 
-        raise AdnlBalancerConnectionError(
-            "All lite-servers failed to establish connection."
-        )
+        raise BalancerError("all lite-servers failed to establish connection")
 
     async def close(self) -> None:
         task, self._health_task = self._health_task, None
@@ -604,3 +655,146 @@ class AdnlBalancer(BaseClient):
 
         tasks = [client.close() for client in self._clients]
         await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def get_time(self) -> int:
+        """
+        Fetch current network time from lite-server.
+
+        :return: Current UNIX timestamp
+        """
+
+        async def _call(provider: AdnlProvider) -> int:
+            return await provider.get_time()
+
+        return await self._with_failover(_call)
+
+    async def get_version(self) -> int:
+        """
+        Fetch lite-server protocol version.
+
+        :return: Version number
+        """
+
+        async def _call(provider: AdnlProvider) -> int:
+            return await provider.get_version()
+
+        return await self._with_failover(_call)
+
+    async def wait_masterchain_seqno(
+        self,
+        seqno: int,
+        timeout_ms: int,
+        schema_name: str,
+        data: t.Optional[dict] = None,
+    ) -> dict:
+        """
+        Combine waitMasterchainSeqno with another lite-server query.
+
+        :param seqno: Masterchain seqno to wait for
+        :param timeout_ms: Wait timeout in milliseconds
+        :param schema_name: Lite-server TL method name without prefix
+        :param data: Additional method arguments
+        :return: Lite-server response as dictionary
+        """
+
+        async def _call(provider: AdnlProvider) -> dict:
+            return await provider.wait_masterchain_seqno(
+                seqno=seqno,
+                timeout_ms=timeout_ms,
+                schema_name=schema_name,
+                data=data,
+            )
+
+        return await self._with_failover(_call)
+
+    async def get_masterchain_info(self) -> MasterchainInfo:
+        """
+        Fetch basic masterchain information.
+
+        :return: MasterchainInfo instance
+        """
+
+        async def _call(provider: AdnlProvider) -> MasterchainInfo:
+            return await provider.get_masterchain_info()
+
+        return await self._with_failover(_call)
+
+    async def lookup_block(
+        self,
+        workchain: WorkchainID,
+        shard: int,
+        seqno: int = -1,
+        lt: t.Optional[int] = None,
+        utime: t.Optional[int] = None,
+    ) -> t.Tuple[BlockIdExt, Block]:
+        """
+        Locate a block by workchain/shard and one of seqno/lt/utime.
+
+        :param workchain: Workchain identifier
+        :param shard: Shard identifier
+        :param seqno: Block seqno or -1 to ignore
+        :param lt: Logical time filter
+        :param utime: UNIX time filter
+        :return: Tuple of BlockIdExt and deserialized Block
+        """
+
+        async def _call(provider: AdnlProvider) -> t.Tuple[BlockIdExt, Block]:
+            return await provider.lookup_block(
+                workchain=workchain,
+                shard=shard,
+                seqno=seqno,
+                lt=lt,
+                utime=utime,
+            )
+
+        return await self._with_failover(_call)
+
+    async def get_block_header(
+        self,
+        block: BlockIdExt,
+    ) -> t.Tuple[BlockIdExt, Block]:
+        """
+        Fetch and deserialize block header by BlockIdExt.
+
+        :param block: BlockIdExt to query
+        :return: Tuple of BlockIdExt and deserialized Block
+        """
+
+        async def _call(provider: AdnlProvider) -> t.Tuple[BlockIdExt, Block]:
+            return await provider.get_block_header(block)
+
+        return await self._with_failover(_call)
+
+    async def get_block_transactions_ext(
+        self,
+        block: BlockIdExt,
+        count: int = 1024,
+    ) -> t.List[Transaction]:
+        """
+        Fetch extended block transactions list.
+
+        :param block: Target block identifier
+        :param count: Maximum number of transactions per request
+        :return: List of deserialized Transaction objects
+        """
+
+        async def _call(provider: AdnlProvider) -> t.List[Transaction]:
+            return await provider.get_block_transactions_ext(block, count=count)
+
+        return await self._with_failover(_call)
+
+    async def get_all_shards_info(
+        self,
+        block: t.Optional[BlockIdExt] = None,
+    ) -> t.List[BlockIdExt]:
+        """
+        Fetch shard info for all workchains at a given masterchain block.
+
+        :param block: Masterchain block ID or None to use latest
+        :return: List of shard BlockIdExt objects
+        """
+
+        async def _call(provider: AdnlProvider) -> t.List[BlockIdExt]:
+            return await provider.get_all_shards_info(block)
+
+        return await self._with_failover(_call)

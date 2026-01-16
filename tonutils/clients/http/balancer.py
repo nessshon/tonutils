@@ -7,18 +7,19 @@ from contextlib import suppress
 from dataclasses import dataclass
 from itertools import cycle
 
-from pyapiq.exceptions import (
-    APIQException,
-    APIClientResponseError,
-    APIClientServerError,
-    APIClientTooManyRequestsError,
-    RateLimitExceeded,
-)
 from pytoniq_core import Transaction
 
 from tonutils.clients.base import BaseClient
-from tonutils.clients.http.quicknode import QuicknodeHttpClient
-from tonutils.exceptions import ClientError, ClientNotConnectedError
+from tonutils.clients.http.clients.quicknode import QuicknodeHttpClient
+from tonutils.exceptions import (
+    BalancerError,
+    ClientError,
+    TransportError,
+    ProviderError,
+    ProviderResponseError,
+    RunGetMethodError,
+    ProviderTimeoutError,
+)
 from tonutils.types import ClientType, ContractStateInfo, NetworkGlobalID
 
 _T = t.TypeVar("_T")
@@ -52,6 +53,7 @@ class HttpBalancer(BaseClient):
         *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
         clients: t.List[BaseClient],
+        request_timeout: float = 12.0,
     ) -> None:
         """
         Initialize HTTP balancer.
@@ -71,6 +73,8 @@ class HttpBalancer(BaseClient):
 
         :param network: Target TON network (mainnet or testnet)
         :param clients: List of HTTP BaseClient instances to balance between
+        :param request_timeout: Maximum total time in seconds for a balancer operation,
+            including all failover attempts across providers
         """
         self.network = network
 
@@ -82,6 +86,8 @@ class HttpBalancer(BaseClient):
 
         self._retry_after_base = 1.0
         self._retry_after_max = 10.0
+
+        self._request_timeout = request_timeout
 
     def __init_clients(
         self,
@@ -108,6 +114,25 @@ class HttpBalancer(BaseClient):
 
             self._clients.append(client)
             self._states.append(state)
+
+    @property
+    def provider(self) -> t.Any:
+        """
+        Provider of the currently selected client.
+
+        :return: Provider instance of chosen HTTP client
+        """
+        c = self._pick_client()
+        return c.provider
+
+    @property
+    def is_connected(self) -> bool:
+        """
+        Check whether at least one underlying client is connected.
+
+        :return: True if any client is connected, otherwise False
+        """
+        return any(c.is_connected for c in self._clients)
 
     @property
     def clients(self) -> t.Tuple[BaseClient, ...]:
@@ -145,27 +170,6 @@ class HttpBalancer(BaseClient):
             for state in self._states
             if state.retry_after is not None and state.retry_after > now
         )
-
-    @property
-    def provider(self) -> t.Any:
-        """
-        Provider of the currently selected client.
-
-        :return: Provider instance of chosen HTTP client
-        """
-        if not self.is_connected:
-            raise ClientNotConnectedError(self)
-        client = self._pick_client()
-        return client.provider
-
-    @property
-    def is_connected(self) -> bool:
-        """
-        Check whether at least one underlying client is connected.
-
-        :return: True if any client is connected, otherwise False
-        """
-        return any(c.is_connected for c in self._clients)
 
     async def __aenter__(self) -> HttpBalancer:
         """
@@ -219,7 +223,7 @@ class HttpBalancer(BaseClient):
             height_candidates.append((wait, state.error_count, state))
 
         if not height_candidates:
-            raise ClientError("No available HTTP clients in HttpBalancer.")
+            raise BalancerError("no available HTTP clients")
 
         height_candidates.sort(key=lambda x: (x[0], x[1]))
         best_wait, best_err, _ = height_candidates[0]
@@ -292,39 +296,47 @@ class HttpBalancer(BaseClient):
         :param func: Callable performing an operation using a client
         :return: Result of the successful invocation
         """
-        last_exc: t.Optional[BaseException] = None
 
-        for _ in range(len(self._clients)):
-            if not self.alive_clients:
-                break
+        async def _run() -> _T:
+            last_exc: t.Optional[BaseException] = None
 
-            client = self._pick_client()
+            for _ in range(len(self._clients)):
+                if not self.alive_clients:
+                    break
 
-            try:
-                result = await func(client)
-            except (APIClientTooManyRequestsError, RateLimitExceeded) as e:
-                self._mark_error(client, is_rate_limit=True)
-                last_exc = e
-                continue
-            except APIClientResponseError as e:
-                last_exc = e
-                break
-            except (APIClientServerError, APIQException) as e:
-                self._mark_error(client, is_rate_limit=False)
-                last_exc = e
-                continue
-            except Exception as e:
-                self._mark_error(client, is_rate_limit=False)
-                last_exc = e
-                continue
+                client = self._pick_client()
 
-            self._mark_success(client)
-            return result
+                try:
+                    result = await func(client)
 
-        if last_exc is not None:
-            raise last_exc
+                except RunGetMethodError:
+                    raise
+                except ProviderResponseError as e:
+                    is_rate_limit = e.code == 429
+                    self._mark_error(client, is_rate_limit=is_rate_limit)
+                    last_exc = e
+                    continue
+                except (TransportError, ProviderError) as e:
+                    self._mark_error(client, is_rate_limit=False)
+                    last_exc = e
+                    continue
 
-        raise ClientError("All HTTP clients failed to process request.")
+                self._mark_success(client)
+                return result
+
+            if last_exc is not None:
+                raise last_exc
+
+            raise ClientError("all HTTP clients failed to process request.")
+
+        try:
+            return await asyncio.wait_for(_run(), timeout=self._request_timeout)
+        except asyncio.TimeoutError as exc:
+            raise ProviderTimeoutError(
+                timeout=self._request_timeout,
+                endpoint="http balancer",
+                operation="failover request",
+            ) from exc
 
     async def _send_boc(self, boc: str) -> None:
         async def _call(client: BaseClient) -> None:

@@ -4,8 +4,8 @@ import typing as t
 
 from pytoniq_core import Cell, StateInit, WalletMessage
 
-from tonutils.protocols.client import ClientProtocol
-from tonutils.protocols.contract import ContractProtocol
+from tonutils.clients.protocol import ClientProtocol
+from tonutils.contracts.protocol import ContractProtocol
 from tonutils.types import (
     AddressLike,
     PublicKey,
@@ -71,11 +71,11 @@ class WalletProtocol(ContractProtocol, t.Protocol[_D, _C, _P]):
         """
         Create wallet instance from a private key.
 
-        :param client: TON client for blockchain interactions
-        :param private_key: Ed25519 PrivateKey instance
-        :param workchain: Target workchain (default: BASECHAIN)
-        :param config: Optional wallet configuration
-        :return: New wallet instance
+        :param client: TON client for blockchain interactions.
+        :param private_key: Ed25519 PrivateKey instance.
+        :param workchain: Target workchain (default: BASECHAIN).
+        :param config: Optional wallet configuration.
+        :return: New wallet instance.
         """
 
     @classmethod
@@ -90,12 +90,12 @@ class WalletProtocol(ContractProtocol, t.Protocol[_D, _C, _P]):
         """
         Create wallet instance from a mnemonic phrase.
 
-        :param client: TON client for blockchain interactions
-        :param mnemonic: BIP39 mnemonic phrase (list or space-separated string)
-        :param validate: Whether to validate mnemonic checksum (default: True)
-        :param workchain: Target workchain (default: BASECHAIN)
-        :param config: Optional wallet configuration
-        :return: Tuple of (wallet, public_key, private_key, mnemonic_list)
+        :param client: TON client for blockchain interactions.
+        :param mnemonic: BIP39 mnemonic phrase (list or space-separated string).
+        :param validate: Whether to validate mnemonic checksum (default: True).
+        :param workchain: Target workchain (default: BASECHAIN).
+        :param config: Optional wallet configuration.
+        :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         """
 
     @classmethod
@@ -109,11 +109,11 @@ class WalletProtocol(ContractProtocol, t.Protocol[_D, _C, _P]):
         """
         Create a new wallet with a randomly generated mnemonic.
 
-        :param client: TON client for blockchain interactions
-        :param mnemonic_length: Number of words in mnemonic (12, 18, or 24; default: 24)
-        :param workchain: Target workchain (default: BASECHAIN)
-        :param config: Optional wallet configuration
-        :return: Tuple of (wallet, public_key, private_key, mnemonic_list)
+        :param client: TON client for blockchain interactions.
+        :param mnemonic_length: Number of words in mnemonic (12, 18, or 24; default: 24).
+        :param workchain: Target workchain (default: BASECHAIN).
+        :param config: Optional wallet configuration.
+        :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         """
 
     async def build_external_message(
@@ -126,9 +126,9 @@ class WalletProtocol(ContractProtocol, t.Protocol[_D, _C, _P]):
 
         Constructs a signed external message but does not send it.
 
-        :param messages: List of internal messages or message builders
-        :param params: Optional transaction parameters (seqno, timeout, etc.)
-        :return: Signed external message ready for sending
+        :param messages: List of internal messages or message builders.
+        :param params: Optional transaction parameters (seqno, timeout, etc.).
+        :return: Signed external message ready for sending.
         """
 
     async def batch_transfer_message(
@@ -139,9 +139,9 @@ class WalletProtocol(ContractProtocol, t.Protocol[_D, _C, _P]):
         """
         Build and send a batch transfer message with multiple recipients.
 
-        :param messages: List of internal messages or message builders
-        :param params: Optional transaction parameters
-        :return: Signed external message that was sent
+        :param messages: List of internal messages or message builders.
+        :param params: Optional transaction parameters.
+        :return: Signed external message that was sent.
         """
 
     async def transfer_message(
@@ -152,9 +152,9 @@ class WalletProtocol(ContractProtocol, t.Protocol[_D, _C, _P]):
         """
         Build and send a transfer message for a single recipient.
 
-        :param message: Internal message or message builder
-        :param params: Optional transaction parameters
-        :return: Signed external message that was sent
+        :param message: Internal message or message builder.
+        :param params: Optional transaction parameters.
+        :return: Signed external message that was sent.
         """
 
     async def transfer(
@@ -170,12 +170,12 @@ class WalletProtocol(ContractProtocol, t.Protocol[_D, _C, _P]):
         """
         Build and send a transfer to a single destination.
 
-        :param destination: Recipient address (Address, string, or domain)
-        :param amount: Amount to send in nanotons
-        :param body: Optional message body (Cell or text comment)
-        :param state_init: Optional StateInit for contract deployment
-        :param send_mode: Message send mode (default: pay fees separately)
-        :param bounce: Whether message should bounce on error (default: auto)
-        :param params: Optional transaction parameters
-        :return: Signed external message that was sent
+        :param destination: Recipient address (Address, string, or domain).
+        :param amount: Amount to send in nanotons.
+        :param body: Optional message body (Cell or text comment).
+        :param state_init: Optional StateInit for contract deployment.
+        :param send_mode: Message send mode (default: pay fees separately).
+        :param bounce: Whether message should bounce on error.
+        :param params: Optional transaction parameters.
+        :return: Signed external message that was sent.
         """

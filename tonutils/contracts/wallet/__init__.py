@@ -44,6 +44,7 @@ from .params import (
     WalletV5BetaParams,
     WalletV5Params,
 )
+from .protocol import WalletProtocol
 from .tlb import (
     EncryptedTextCommentBody,
     OutActionSendMsg,
@@ -96,6 +97,7 @@ __all__ = [
     "WalletHighloadV3Data",
     "WalletHighloadV3Params",
     "WalletHighloadV3R1",
+    "WalletProtocol",
     "WalletPreprocessedV2",
     "WalletPreprocessedV2Config",
     "WalletPreprocessedV2Data",

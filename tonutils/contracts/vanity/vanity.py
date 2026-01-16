@@ -3,9 +3,9 @@ from __future__ import annotations
 from pytoniq_core import StateInit, Address
 from pytoniq_core.tlb.account import TickTock
 
+from tonutils.clients.protocol import ClientProtocol
 from tonutils.contracts.base import BaseContract
 from tonutils.contracts.vanity.models import VanityResult
-from tonutils.protocols.client import ClientProtocol
 
 
 class Vanity(BaseContract):

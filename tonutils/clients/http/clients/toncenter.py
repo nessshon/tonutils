@@ -7,11 +7,20 @@ from aiohttp import ClientSession
 from pytoniq_core import Cell, Slice, Transaction
 
 from tonutils.clients.base import BaseClient
-from tonutils.clients.http.toncenter.models import SendBocPayload, RunGetMethodPayload
-from tonutils.clients.http.toncenter.provider import ToncenterHttpProvider
-from tonutils.clients.http.toncenter.stack import decode_stack, encode_stack
-from tonutils.exceptions import ClientError, ClientNotConnectedError
-from tonutils.types import ClientType, ContractState, ContractStateInfo, NetworkGlobalID
+from tonutils.clients.http.providers.toncenter.models import (
+    SendBocPayload,
+    RunGetMethodPayload,
+)
+from tonutils.clients.http.providers.toncenter.provider import ToncenterHttpProvider
+from tonutils.clients.http.utils import decode_toncenter_stack, encode_toncenter_stack
+from tonutils.exceptions import ClientError, RunGetMethodError
+from tonutils.types import (
+    ClientType,
+    ContractState,
+    ContractStateInfo,
+    NetworkGlobalID,
+    RetryPolicy,
+)
 from tonutils.utils import cell_to_hex, parse_stack_config
 
 
@@ -26,11 +35,13 @@ class ToncenterHttpClient(BaseClient):
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
         api_key: t.Optional[str] = None,
         base_url: t.Optional[str] = None,
-        timeout: int = 10,
+        timeout: float = 10.0,
         session: t.Optional[ClientSession] = None,
+        headers: t.Optional[t.Dict[str, str]] = None,
+        cookies: t.Optional[t.Dict[str, str]] = None,
         rps_limit: t.Optional[int] = None,
         rps_period: float = 1.0,
-        rps_retries: int = 2,
+        retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
         """
         Initialize Toncenter HTTP client.
@@ -39,11 +50,13 @@ class ToncenterHttpClient(BaseClient):
         :param api_key: Optional Toncenter API key
             You can get an API key on the Toncenter telegram bot: https://t.me/toncenter
         :param base_url: Custom Toncenter endpoint base URL
-        :param timeout: HTTP request timeout in seconds
-        :param session: Optional externally managed aiohttp.ClientSession
-        :param rps_limit: Optional requests-per-second limit for rate limiting
-        :param rps_period: Time window in seconds for RPS limit
-        :param rps_retries: Number of retries on rate limiting
+        :param timeout: Total request timeout in seconds.
+        :param session: Optional external aiohttp session.
+        :param headers: Default headers for owned session.
+        :param cookies: Default cookies for owned session.
+        :param rps_limit: Optional requests-per-period limit.
+        :param rps_period: Rate limit period in seconds.
+        :param retry_policy: Optional retry policy that defines per-error-code retry rules
         """
         self.network: NetworkGlobalID = network
         self._provider: ToncenterHttpProvider = ToncenterHttpProvider(
@@ -52,34 +65,24 @@ class ToncenterHttpClient(BaseClient):
             base_url=base_url,
             timeout=timeout,
             session=session,
+            headers=headers,
+            cookies=cookies,
             rps_limit=rps_limit,
             rps_period=rps_period,
-            rps_retries=rps_retries,
+            retry_policy=retry_policy,
         )
 
     @property
     def provider(self) -> ToncenterHttpProvider:
-        """
-        Underlying Toncenter HTTP provider.
-
-        :return: ToncenterHttpProvider instance used for all HTTP requests
-        """
-        if not self.is_connected:
-            raise ClientNotConnectedError(self)
         return self._provider
 
     @property
     def is_connected(self) -> bool:
-        """
-        Check whether HTTP session is initialized and open.
-
-        :return: True if session exists and is not closed, False otherwise
-        """
         session = self._provider.session
         return session is not None and not session.closed
 
     async def __aenter__(self) -> ToncenterHttpClient:
-        await self._provider.__aenter__()
+        await self._provider.connect()
         return self
 
     async def __aexit__(
@@ -88,7 +91,7 @@ class ToncenterHttpClient(BaseClient):
         exc_value: t.Optional[BaseException],
         traceback: t.Optional[t.Any],
     ) -> None:
-        await self._provider.__aexit__(exc_type, exc_value, traceback)
+        await self._provider.close()
 
     async def _send_boc(self, boc: str) -> None:
         payload = SendBocPayload(boc=boc)
@@ -131,19 +134,25 @@ class ToncenterHttpClient(BaseClient):
 
         last_transaction_lt = last_transaction_hash = None
 
-        if request.result.last_transaction_id:
+        tx_id = request.result.last_transaction_id
+        if tx_id is not None:
             try:
-                lt = int(request.result.last_transaction_id.lt)
-                last_transaction_lt = lt if lt > 0 else None
-            except (TypeError, ValueError):
-                last_transaction_lt = None
-            try:
-                raw = request.result.last_transaction_id.hash
-                decoded = base64.b64decode(raw)
-                h = decoded.hex()
-                last_transaction_hash = None if h == "00" * 32 else h
-            except (Exception,):
-                last_transaction_hash = None
+                lt = int(tx_id.lt) if tx_id.lt is not None else 0
+            except (ValueError,):
+                pass
+            else:
+                if lt > 0:
+                    last_transaction_lt = lt
+
+            raw = tx_id.hash
+            if raw is not None:
+                try:
+                    h = base64.b64decode(raw).hex()
+                except (Exception,):
+                    pass
+                else:
+                    if h != "00" * 32:
+                        last_transaction_hash = h
 
         contract_info.last_transaction_lt = last_transaction_lt
         contract_info.last_transaction_hash = last_transaction_hash
@@ -191,21 +200,23 @@ class ToncenterHttpClient(BaseClient):
         payload = RunGetMethodPayload(
             address=address,
             method=method_name,
-            stack=encode_stack(stack or []),
+            stack=encode_toncenter_stack(stack or []),
         )
         request = await self.provider.run_get_method(payload=payload)
         if request.result is None:
             return []
-        return decode_stack(request.result.stack or [])
+
+        if request.result.exit_code != 0:
+            raise RunGetMethodError(
+                address=address,
+                method_name=method_name,
+                exit_code=request.result.exit_code,
+            )
+
+        return decode_toncenter_stack(request.result.stack or [])
 
     async def connect(self) -> None:
-        """
-        Ensure that HTTP session is initialized.
-
-        Safe to call multiple times; underlying provider will reuse the session.
-        """
-        await self._provider.ensure_session()
+        await self._provider.connect()
 
     async def close(self) -> None:
-        """Close HTTP session if it is owned by the provider."""
         await self._provider.close()

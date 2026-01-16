@@ -15,8 +15,8 @@ from pytoniq_core import (
 from tonutils.contracts.jetton.methods import get_wallet_address_get_method
 from tonutils.contracts.jetton.tlb import JettonTransferBody
 from tonutils.contracts.nft.tlb import NFTTransferBody
+from tonutils.contracts.wallet.protocol import WalletProtocol
 from tonutils.contracts.wallet.tlb import TextCommentBody
-from tonutils.protocols.wallet import WalletProtocol
 from tonutils.types import AddressLike, SendMode, DEFAULT_SENDMODE
 from tonutils.utils import (
     cell_to_hex,

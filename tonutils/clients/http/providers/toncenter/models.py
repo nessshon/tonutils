@@ -87,6 +87,7 @@ class _GetMethod(BaseModel):
     """Container for TVM stack array."""
 
     stack: t.List[t.Any]
+    exit_code: int
 
 
 class RunGetMethodPayload(BaseModel):

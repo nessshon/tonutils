@@ -6,15 +6,16 @@ from aiohttp import ClientSession
 from pytoniq_core import Cell, Slice, Transaction
 
 from tonutils.clients.base import BaseClient
-from tonutils.clients.http.tonapi.models import BlockchainMessagePayload
-from tonutils.clients.http.tonapi.provider import TonapiHttpProvider
-from tonutils.clients.http.tonapi.stack import decode_stack, encode_stack
-from tonutils.exceptions import ClientError, ClientNotConnectedError
+from tonutils.clients.http.providers.tonapi.models import BlockchainMessagePayload
+from tonutils.clients.http.providers.tonapi.provider import TonapiHttpProvider
+from tonutils.clients.http.utils import encode_tonapi_stack, decode_tonapi_stack
+from tonutils.exceptions import ClientError, RunGetMethodError
 from tonutils.types import (
     ClientType,
     ContractState,
     ContractStateInfo,
     NetworkGlobalID,
+    RetryPolicy,
 )
 from tonutils.utils import (
     cell_to_hex,
@@ -33,11 +34,13 @@ class TonapiHttpClient(BaseClient):
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
         api_key: str,
         base_url: t.Optional[str] = None,
-        timeout: int = 10,
+        timeout: float = 10.0,
         session: t.Optional[ClientSession] = None,
+        headers: t.Optional[t.Dict[str, str]] = None,
+        cookies: t.Optional[t.Dict[str, str]] = None,
         rps_limit: t.Optional[int] = None,
         rps_period: float = 1.0,
-        rps_retries: int = 2,
+        retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
         """
         Initialize Tonapi HTTP client.
@@ -46,11 +49,13 @@ class TonapiHttpClient(BaseClient):
         :param api_key: Tonapi API key
             You can get an API key on the Tonconsole website: https://tonconsole.com/
         :param base_url: Optional custom Tonapi base URL
-        :param timeout: HTTP request timeout in seconds
-        :param session: Optional externally managed aiohttp.ClientSession
-        :param rps_limit: Optional requests-per-second limit
-        :param rps_period: Time window in seconds for rate limiting
-        :param rps_retries: Number of retries on rate limiting
+        :param timeout: Total request timeout in seconds.
+        :param session: Optional external aiohttp session.
+        :param headers: Default headers for owned session.
+        :param cookies: Default cookies for owned session.
+        :param rps_limit: Optional requests-per-period limit.
+        :param rps_period: Rate limit period in seconds.
+        :param retry_policy: Optional retry policy that defines per-error-code retry rules
         """
         self.network: NetworkGlobalID = network
         self._provider: TonapiHttpProvider = TonapiHttpProvider(
@@ -59,34 +64,24 @@ class TonapiHttpClient(BaseClient):
             base_url=base_url,
             timeout=timeout,
             session=session,
+            headers=headers,
+            cookies=cookies,
             rps_limit=rps_limit,
             rps_period=rps_period,
-            rps_retries=rps_retries,
+            retry_policy=retry_policy,
         )
 
     @property
     def provider(self) -> TonapiHttpProvider:
-        """
-        Underlying Tonapi HTTP provider.
-
-        :return: TonapiHttpProvider instance used for HTTP requests
-        """
-        if not self.is_connected:
-            raise ClientNotConnectedError(self)
         return self._provider
 
     @property
     def is_connected(self) -> bool:
-        """
-        Check whether HTTP session is initialized and open.
-
-        :return: True if session exists and is not closed, False otherwise
-        """
         session = self._provider.session
         return session is not None and not session.closed
 
     async def __aenter__(self) -> TonapiHttpClient:
-        await self._provider.__aenter__()
+        await self._provider.connect()
         return self
 
     async def __aexit__(
@@ -95,7 +90,7 @@ class TonapiHttpClient(BaseClient):
         exc_value: t.Optional[BaseException],
         traceback: t.Optional[t.Any],
     ) -> None:
-        await self._provider.__aexit__(exc_type, exc_value, traceback)
+        await self._provider.close()
 
     async def _send_boc(self, boc: str) -> None:
         payload = BlockchainMessagePayload(boc=boc)
@@ -161,14 +156,19 @@ class TonapiHttpClient(BaseClient):
         result = await self.provider.blockchain_account_method(
             address=address,
             method_name=method_name,
-            args=encode_stack(stack or []),
+            args=encode_tonapi_stack(stack or []),
         )
-        return decode_stack(result.stack or [])
+        if result.exit_code != 0:
+            raise RunGetMethodError(
+                address=address,
+                method_name=method_name,
+                exit_code=result.exit_code,
+            )
+
+        return decode_tonapi_stack(result.stack or [])
 
     async def connect(self) -> None:
-        """Ensure that HTTP session is initialized."""
-        await self._provider.ensure_session()
+        await self._provider.connect()
 
     async def close(self) -> None:
-        """Close HTTP session if it is owned by the provider."""
         await self._provider.close()
