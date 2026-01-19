@@ -1,8 +1,8 @@
 """
-ADNL Client Example
+Lite Client Example
 
-Demonstrates direct connection to TON lite-servers via ADNL protocol.
-ADNL provides the fastest and most direct access to TON blockchain data.
+Demonstrates direct connection to TON lite-servers.
+Provides fast and direct access to TON blockchain data.
 
 Where to obtain lite-server configs:
 - Private (recommended):
@@ -23,16 +23,16 @@ Common parameters:
 - rps_limit: requests per second limit
 - rps_period: time window for rate limiting
 - retry_policy:
-    Optional RetryPolicy defining retry behavior for specific ADNL error codes.
-    For better stability, using DEFAULT_HTTP_RETRY_POLICY is recommended.
+    Optional RetryPolicy defining retry behavior for specific error codes.
+    For better stability, using DEFAULT_ADNL_RETRY_POLICY is recommended.
 
 Notes:
 - Avoid rps_limit=1, as parallel background queries are used
   to track masterchain updates.
 """
 
-from tonutils.clients import AdnlClient
-from tonutils.types import NetworkGlobalID, DEFAULT_HTTP_RETRY_POLICY
+from tonutils.clients import LiteClient
+from tonutils.types import NetworkGlobalID, DEFAULT_ADNL_RETRY_POLICY
 
 
 async def main() -> None:
@@ -40,13 +40,13 @@ async def main() -> None:
     # ip: signed 32-bit integer or IPv4 string
     # port: lite-server port
     # public_key: hex, base64, or bytes
-    client = AdnlClient(
+    client = LiteClient(
         network=NetworkGlobalID.MAINNET,
         ip=-1234567890,
         port=12345,
         public_key="ABCdef0123=...",
         rps_limit=100,
-        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     )
     async with client:
         # Example request:
@@ -58,12 +58,12 @@ async def main() -> None:
     # Initialize from private GlobalConfig
     # config: full lite-server config dict from provider
     # index: lite-server index in config's "liteservers" array
-    client_private = AdnlClient.from_config(
+    client_private = LiteClient.from_config(
         network=NetworkGlobalID.MAINNET,
         config={},
         index=0,
         rps_limit=50,
-        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     )
     async with client_private:
         # Example request:
@@ -75,11 +75,11 @@ async def main() -> None:
     # Initialize from public TON network config
     # Fetches config automatically from TON global config
     # index: lite-server index in config's "liteservers" array
-    client_public = AdnlClient.from_network_config(
+    client_public = LiteClient.from_network_config(
         network=NetworkGlobalID.MAINNET,
         index=0,
         rps_limit=50,
-        retry_policy=DEFAULT_HTTP_RETRY_POLICY,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     )
     async with client_public:
         # Example request:

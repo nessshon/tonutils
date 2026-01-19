@@ -1,7 +1,7 @@
 """
-ADNL Balancer Example
+Lite Balancer Example
 
-Demonstrates load balancing across multiple TON lite-servers via ADNL protocol
+Demonstrates load balancing across multiple TON lite-servers
 with automatic failover based on masterchain height, ping RTT, and round-robin fallback.
 
 Where to obtain lite-server configs:
@@ -20,20 +20,20 @@ Common parameters:
     performed by the balancer during failover.
 - request_timeout:
     Maximum total time in seconds for a single balancer operation,
-    including all failover attempts across clients.
+    including all failover attempts across lite-servers.
 - client_connect_timeout:
     Timeout in seconds for connect/handshake performed by an
-    individual ADNL client.
+    individual lite-server client.
 - client_request_timeout:
     Timeout in seconds for a single request executed by an
-    individual ADNL client.
-- rps_limit: shared or per-provider requests per second limit
+    individual lite-server client.
+- rps_limit: shared or per-client requests per second limit
 - rps_period: time window for rate limiting
 - rps_per_client:
     False -> one shared limiter for all clients
     True  -> separate limiter per client
 - retry_policy:
-    Optional RetryPolicy defining retry behavior for specific ADNL error codes.
+    Optional RetryPolicy defining retry behavior for specific error codes.
     For better stability, using DEFAULT_ADNL_RETRY_POLICY is recommended.
 
 Notes:
@@ -41,7 +41,7 @@ Notes:
   to track masterchain updates.
 """
 
-from tonutils.clients import AdnlClient, AdnlBalancer
+from tonutils.clients import LiteClient, LiteBalancer
 from tonutils.types import NetworkGlobalID, DEFAULT_ADNL_RETRY_POLICY
 
 
@@ -50,7 +50,7 @@ async def main() -> None:
     # ip: signed 32-bit integer or IPv4 string
     # port: lite-server port
     # public_key: hex, base64, or bytes
-    client_a = AdnlClient(
+    client_a = LiteClient(
         network=NetworkGlobalID.MAINNET,
         ip=-1234567890,
         port=12345,
@@ -58,7 +58,7 @@ async def main() -> None:
         rps_limit=50,
         retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     )
-    client_b = AdnlClient(
+    client_b = LiteClient(
         network=NetworkGlobalID.MAINNET,
         ip=-987654321,
         port=54321,
@@ -66,7 +66,7 @@ async def main() -> None:
         rps_limit=50,
         retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     )
-    balancer = AdnlBalancer(
+    balancer = LiteBalancer(
         network=NetworkGlobalID.MAINNET,
         clients=[client_a, client_b],
         connect_timeout=2,
@@ -81,7 +81,7 @@ async def main() -> None:
 
     # Initialize from private GlobalConfig
     # config: full lite-server config dict from provider
-    private_balancer = AdnlBalancer.from_config(
+    private_balancer = LiteBalancer.from_config(
         network=NetworkGlobalID.MAINNET,
         config={},
         rps_limit=100,
@@ -96,7 +96,7 @@ async def main() -> None:
 
     # Initialize from public TON network config
     # Fetches config automatically from TON global config
-    public_balancer = AdnlBalancer.from_network_config(
+    public_balancer = LiteBalancer.from_network_config(
         network=NetworkGlobalID.MAINNET,
         rps_limit=50,
         connect_timeout=1,

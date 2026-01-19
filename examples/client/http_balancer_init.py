@@ -15,7 +15,7 @@ Common parameters:
 - network:
     NetworkGlobalID.MAINNET (-239) for production
     NetworkGlobalID.TESTNET (-3) for testing
-    note: QuickNode does not accept `network` (mainnet
+    note: QuickNode does not accept `network` (mainnet only)
 - request_timeout: Maximum total time in seconds for a balancer operation,
     including all failover attempts across providers
 - timeout: Total request timeout in seconds per client.
