@@ -17,10 +17,6 @@ __all__ = [
     "ClientType",
     "ContractState",
     "ContractStateInfo",
-    "DEFAULT_ADNL_RETRY_POLICY",
-    "DEFAULT_HTTP_RETRY_POLICY",
-    "DEFAULT_SENDMODE",
-    "DEFAULT_SUBWALLET_ID",
     "DNSCategory",
     "DNSPrefix",
     "MetadataPrefix",
@@ -34,6 +30,12 @@ __all__ = [
     "StackItems",
     "StackTag",
     "WorkchainID",
+    "DEFAULT_ADNL_RETRY_POLICY",
+    "DEFAULT_HTTP_RETRY_POLICY",
+    "DEFAULT_SENDMODE",
+    "DEFAULT_SUBWALLET_ID",
+    "MAINNET_GENESIS_UTIME",
+    "MASTERCHAIN_SHARD",
 ]
 
 from tonutils.exceptions import CDN_CHALLENGE_MARKERS
@@ -495,3 +497,9 @@ DEFAULT_SUBWALLET_ID = 698983191
 
 DEFAULT_SENDMODE = SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS
 """Default send mode: pay fees separately and ignore errors."""
+
+MASTERCHAIN_SHARD = -9223372036854775808
+"""Shard identifier for the masterchain (-2^63)."""
+
+MAINNET_GENESIS_UTIME = 1573822385
+"""Unix timestamp of the TON mainnet genesis block (November 15, 2019)."""

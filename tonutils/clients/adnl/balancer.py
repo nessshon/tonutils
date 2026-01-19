@@ -9,7 +9,7 @@ from itertools import cycle
 
 from pytoniq_core import Address, BlockIdExt, Block, Transaction
 
-from tonutils.clients.adnl.client import AdnlClient
+from tonutils.clients.adnl.client import LiteClient
 from tonutils.clients.adnl.provider import AdnlProvider
 from tonutils.clients.adnl.provider.config import (
     get_mainnet_global_config,
@@ -40,21 +40,21 @@ _T = t.TypeVar("_T")
 
 
 @dataclass
-class AdnlClientState:
+class LiteClientState:
     """
-    Internal state container for an ADNL client.
+    Internal state container for a lite-server client.
 
     Tracks error count and cooldown timeout for retry scheduling.
     """
 
-    client: AdnlClient
+    client: LiteClient
     retry_after: t.Optional[float] = None
     error_count: int = 0
 
 
-class AdnlBalancer(BaseClient):
+class LiteBalancer(BaseClient):
     """
-    Multi-provider ADNL client with automatic failover and load balancing.
+    Multi-client lite-server balancer with automatic failover and load balancing.
 
     Selects the best available lite-server using height, ping metrics and
     round-robin tie-breaking.
@@ -66,14 +66,14 @@ class AdnlBalancer(BaseClient):
         self,
         *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
-        clients: t.List[AdnlClient],
+        clients: t.List[LiteClient],
         connect_timeout: float = 2.0,
         request_timeout: float = 12.0,
     ) -> None:
         """
-        Initialize ADNL balancer.
+        Initialize lite-server balancer.
 
-        It is recommended to build underlying AdnlClient instances from
+        It is recommended to build underlying LiteClient instances from
         private lite-server configurations for better stability and performance.
         You can obtain private lite-server configs from:
             - Tonconsole website: https://tonconsole.com/
@@ -82,15 +82,15 @@ class AdnlBalancer(BaseClient):
         Public free lite-server data may also be used via `from_network_config()`.
 
         :param network: Target TON network (mainnet or testnet)
-        :param clients: List of AdnlClient instances to balance between
+        :param clients: List of LiteClient instances to balance between
         :param connect_timeout: Timeout in seconds for connect/reconnect attempts
         :param request_timeout: Maximum total time in seconds for a balancer operation,
-            including all failover attempts across providers
+            including all failover attempts across lite-servers
         """
         self.network: NetworkGlobalID = network
 
-        self._clients: t.List[AdnlClient] = []
-        self._states: t.List[AdnlClientState] = []
+        self._clients: t.List[LiteClient] = []
+        self._states: t.List[LiteClientState] = []
         self.__init_clients(clients)
 
         self._rr = cycle(self._clients)
@@ -106,30 +106,30 @@ class AdnlBalancer(BaseClient):
 
     def __init_clients(
         self,
-        clients: t.List[AdnlClient],
+        clients: t.List[LiteClient],
     ) -> None:
         """
-        Validate and register input ADNL clients.
+        Validate and register input lite-server clients.
 
         Ensures correct client type and network assignment.
         """
         for client in clients:
             if client.TYPE != ClientType.ADNL:
                 raise ClientError(
-                    "AdnlBalancer can work only with ADNL clients, "
+                    "LiteBalancer can work only with LiteClient instances, "
                     f"got {client.__class__.__name__}."
                 )
 
             client.network = self.network
 
-            state = AdnlClientState(client=client)
+            state = LiteClientState(client=client)
             self._clients.append(client)
             self._states.append(state)
 
     @property
     def provider(self) -> AdnlProvider:
         """
-        Provider of the currently selected ADNL client.
+        Provider of the currently selected lite-server client.
 
         :return: AdnlProvider instance of chosen client
         """
@@ -139,27 +139,27 @@ class AdnlBalancer(BaseClient):
     @property
     def is_connected(self) -> bool:
         """
-        Check whether at least one underlying ADNL client is connected.
+        Check whether at least one underlying lite-server client is connected.
 
         :return: True if any client is connected, otherwise False
         """
         return any(c.is_connected for c in self._clients)
 
     @property
-    def clients(self) -> t.Tuple[AdnlClient, ...]:
+    def clients(self) -> t.Tuple[LiteClient, ...]:
         """
-        List of all registered ADNL clients.
+        List of all registered lite-server clients.
 
-        :return: Tuple of AdnlClient objects
+        :return: Tuple of LiteClient objects
         """
         return tuple(self._clients)
 
     @property
-    def alive_clients(self) -> t.Tuple[AdnlClient, ...]:
+    def alive_clients(self) -> t.Tuple[LiteClient, ...]:
         """
-        ADNL clients that are allowed to send requests now.
+        Lite-server clients that are allowed to send requests now.
 
-        :return: Tuple of available AdnlClient instances
+        :return: Tuple of available LiteClient instances
         """
         now = time.monotonic()
         return tuple(
@@ -170,11 +170,11 @@ class AdnlBalancer(BaseClient):
         )
 
     @property
-    def dead_clients(self) -> t.Tuple[AdnlClient, ...]:
+    def dead_clients(self) -> t.Tuple[LiteClient, ...]:
         """
-        ADNL clients currently in cooldown or disconnected.
+        Lite-server clients currently in cooldown or disconnected.
 
-        :return: Tuple of unavailable AdnlClient instances
+        :return: Tuple of unavailable LiteClient instances
         """
         now = time.monotonic()
         return tuple(
@@ -184,7 +184,7 @@ class AdnlBalancer(BaseClient):
             or (state.retry_after is not None and state.retry_after > now)
         )
 
-    async def __aenter__(self) -> AdnlBalancer:
+    async def __aenter__(self) -> LiteBalancer:
         """
         Enter async context manager and connect underlying clients.
 
@@ -217,9 +217,9 @@ class AdnlBalancer(BaseClient):
         rps_period: float = 1.0,
         rps_per_client: bool = False,
         retry_policy: t.Optional[RetryPolicy] = None,
-    ) -> AdnlBalancer:
+    ) -> LiteBalancer:
         """
-        Build ADNL balancer from a lite-server config.
+        Build lite-server balancer from a configuration.
 
         For best performance, it is recommended to use a private lite-server
         configuration. You can obtain private configs from:
@@ -235,14 +235,14 @@ class AdnlBalancer(BaseClient):
         :param request_timeout: Maximum total time in seconds for a single balancer operation,
             including all failover attempts across clients.
         :param client_connect_timeout: Timeout in seconds for connect/handshake performed by an
-            individual ADNL client.
+            individual lite-server client.
         :param client_request_timeout: Timeout in seconds for a single request executed by an
-            individual ADNL client.
+            individual lite-server client.
         :param rps_limit: Optional requests-per-second limit
         :param rps_period: Time window in seconds for RPS limit
         :param rps_per_client: Whether to create per-client limiters
         :param retry_policy: Optional retry policy that defines per-error-code retry rules
-        :return: Configured AdnlBalancer instance
+        :return: Configured LiteBalancer instance
         """
         if isinstance(config, dict):
             config = GlobalConfig(**config)
@@ -251,8 +251,8 @@ class AdnlBalancer(BaseClient):
         if rps_limit is not None and not rps_per_client:
             shared_limiter = RateLimiter(rps_limit, rps_period)
 
-        clients: t.List[AdnlClient] = []
-        for node in config.liteservers:
+        clients: t.List[LiteClient] = []
+        for ls in config.liteservers:
             limiter = (
                 RateLimiter(rps_limit, rps_period)
                 if rps_per_client and rps_limit is not None
@@ -261,11 +261,11 @@ class AdnlBalancer(BaseClient):
             client_rps_limit = rps_limit if rps_per_client else None
 
             clients.append(
-                AdnlClient(
+                LiteClient(
                     network=network,
-                    ip=node.host,
-                    port=node.port,
-                    public_key=node.id,
+                    ip=ls.host,
+                    port=ls.port,
+                    public_key=ls.id,
                     connect_timeout=client_connect_timeout,
                     request_timeout=client_request_timeout,
                     rps_limit=client_rps_limit,
@@ -295,9 +295,9 @@ class AdnlBalancer(BaseClient):
         rps_period: float = 1.0,
         rps_per_client: bool = False,
         retry_policy: t.Optional[RetryPolicy] = None,
-    ) -> AdnlBalancer:
+    ) -> LiteBalancer:
         """
-        Build ADNL balancer using global config fetched from ton.org.
+        Build lite-server balancer using global config fetched from ton.org.
 
         Public lite-servers available in the global network configuration are
         free to use but may be unstable under load. For higher reliability and
@@ -312,14 +312,14 @@ class AdnlBalancer(BaseClient):
         :param request_timeout: Maximum total time in seconds for a single balancer operation,
             including all failover attempts across clients.
         :param client_connect_timeout: Timeout in seconds for connect/handshake performed by an
-            individual ADNL client.
+            individual lite-server client.
         :param client_request_timeout: Timeout in seconds for a single request executed by an
-            individual ADNL client.
+            individual lite-server client.
         :param rps_limit: Optional requests-per-second limit
         :param rps_period: Time window in seconds for RPS limit
         :param rps_per_client: Whether to create per-client limiters
         :param retry_policy: Optional retry policy that defines per-error-code retry rules
-        :return: Configured AdnlBalancer instance
+        :return: Configured LiteBalancer instance
         """
         config_getters = {
             NetworkGlobalID.MAINNET: get_mainnet_global_config,
@@ -339,9 +339,9 @@ class AdnlBalancer(BaseClient):
             retry_policy=retry_policy,
         )
 
-    def _pick_client(self) -> AdnlClient:
+    def _pick_client(self) -> LiteClient:
         """
-        Select the best available ADNL client.
+        Select the best available lite-server client.
 
         Selection criteria:
         - highest known masterchain seqno
@@ -358,7 +358,7 @@ class AdnlBalancer(BaseClient):
                 int,
                 t.Optional[float],
                 t.Optional[float],
-                AdnlClient,
+                LiteClient,
             ]
         ] = []
 
@@ -391,7 +391,7 @@ class AdnlBalancer(BaseClient):
 
         return alive[0]
 
-    def _mark_success(self, client: AdnlClient) -> None:
+    def _mark_success(self, client: LiteClient) -> None:
         """
         Reset error state for a successful client.
 
@@ -403,7 +403,7 @@ class AdnlBalancer(BaseClient):
                 state.retry_after = None
                 break
 
-    def _mark_error(self, client: AdnlClient, is_rate_limit: bool) -> None:
+    def _mark_error(self, client: LiteClient, is_rate_limit: bool) -> None:
         """
         Update error state and schedule retry cooldown.
 
@@ -437,7 +437,7 @@ class AdnlBalancer(BaseClient):
         Execute a provider operation with automatic failover.
 
         Iterates through available lite-servers until one succeeds
-        or all providers fail.
+        or all fail.
 
         :param func: Callable performing an operation using an AdnlProvider
         :return: Result of the successful invocation
@@ -484,14 +484,14 @@ class AdnlBalancer(BaseClient):
             if last_exc is not None:
                 raise last_exc
 
-            raise BalancerError("all lite-server providers failed to process request")
+            raise BalancerError("all lite-servers failed to process request")
 
         try:
             return await asyncio.wait_for(_run(), timeout=self._request_timeout)
         except asyncio.TimeoutError as exc:
             raise ProviderTimeoutError(
                 timeout=self._request_timeout,
-                endpoint="adnl balancer",
+                endpoint="lite balancer",
                 operation="failover request",
             ) from exc
 
@@ -600,12 +600,12 @@ class AdnlBalancer(BaseClient):
 
     async def _health_loop(self) -> None:
         """
-        Periodically attempt to reconnect dead ADNL clients.
+        Periodically attempt to reconnect dead lite-server clients.
 
         Runs until cancelled.
         """
 
-        async def _recon(c: AdnlClient) -> None:
+        async def _recon(c: LiteClient) -> None:
             with suppress(Exception):
                 await asyncio.wait_for(
                     c.reconnect(),
@@ -629,7 +629,7 @@ class AdnlBalancer(BaseClient):
             self._ensure_health_task()
             return
 
-        async def _con(client: AdnlClient) -> None:
+        async def _con(client: LiteClient) -> None:
             with suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(
                     client.connect(),
@@ -723,7 +723,7 @@ class AdnlBalancer(BaseClient):
         self,
         workchain: WorkchainID,
         shard: int,
-        seqno: int = -1,
+        seqno: t.Optional[int] = None,
         lt: t.Optional[int] = None,
         utime: t.Optional[int] = None,
     ) -> t.Tuple[BlockIdExt, Block]:
@@ -732,7 +732,7 @@ class AdnlBalancer(BaseClient):
 
         :param workchain: Workchain identifier
         :param shard: Shard identifier
-        :param seqno: Block seqno or -1 to ignore
+        :param seqno: Block sequence number
         :param lt: Logical time filter
         :param utime: UNIX time filter
         :return: Tuple of BlockIdExt and deserialized Block

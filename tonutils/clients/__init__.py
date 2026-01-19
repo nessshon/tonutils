@@ -1,6 +1,6 @@
 from .adnl import (
-    AdnlBalancer,
-    AdnlClient,
+    LiteBalancer,
+    LiteClient,
     AdnlProvider,
 )
 from .http import (
@@ -15,8 +15,8 @@ from .http import (
 )
 
 __all__ = [
-    "AdnlBalancer",
-    "AdnlClient",
+    "LiteBalancer",
+    "LiteClient",
     "AdnlProvider",
     "HttpBalancer",
     "ChainstackHttpClient",

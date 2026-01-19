@@ -27,8 +27,8 @@ from tonutils.types import (
 )
 
 
-class AdnlClient(BaseClient):
-    """TON blockchain client using ADNL lite-server as transport."""
+class LiteClient(BaseClient):
+    """TON blockchain client for lite-server communication over ADNL provider."""
 
     TYPE = ClientType.ADNL
 
@@ -47,7 +47,7 @@ class AdnlClient(BaseClient):
         limiter: t.Optional[RateLimiter] = None,
     ) -> None:
         """
-        Initialize ADNL client.
+        Initialize lite-server client.
 
         To obtain lite-server connection parameters (ip, port, public_key),
         it is recommended to use a private configuration for better stability
@@ -91,20 +91,20 @@ class AdnlClient(BaseClient):
         """
         Underlying ADNL provider.
 
-        :return: AdnlProvider instance used for all ADNL requests
+        :return: AdnlProvider instance used for all lite-server requests
         """
         return self._provider
 
     @property
     def is_connected(self) -> bool:
         """
-        Check whether ADNL transport is connected.
+        Check whether the lite-server connection is established.
 
         :return: True if connected, False otherwise
         """
         return self._provider.is_connected
 
-    async def __aenter__(self) -> AdnlClient:
+    async def __aenter__(self) -> LiteClient:
         await self.connect()
         return self
 
@@ -128,9 +128,9 @@ class AdnlClient(BaseClient):
         rps_limit: t.Optional[int] = None,
         rps_period: float = 1.0,
         retry_policy: t.Optional[RetryPolicy] = None,
-    ) -> AdnlClient:
+    ) -> LiteClient:
         """
-        Create ADNL client from a lite-server configuration.
+        Create lite-server client from a configuration.
 
         To obtain lite-server connection parameters, it is recommended to use
         a private lite-server configuration for better stability and performance.
@@ -150,16 +150,16 @@ class AdnlClient(BaseClient):
         :param rps_limit: Optional requests-per-second limit for this client
         :param rps_period: Time window in seconds for RPS limit
         :param retry_policy: Optional retry policy that defines per-error-code retry rules
-        :return: Configured AdnlClient instance
+        :return: Configured LiteClient instance
         """
         if isinstance(config, dict):
             config = GlobalConfig(**config)
-        node = config.liteservers[index]
+        ls = config.liteservers[index]
         return cls(
             network=network,
-            ip=node.host,
-            port=node.port,
-            public_key=node.id,
+            ip=ls.host,
+            port=ls.port,
+            public_key=ls.id,
             connect_timeout=connect_timeout,
             request_timeout=request_timeout,
             rps_limit=rps_limit,
@@ -178,9 +178,9 @@ class AdnlClient(BaseClient):
         rps_limit: t.Optional[int] = None,
         rps_period: float = 1.0,
         retry_policy: t.Optional[RetryPolicy] = None,
-    ) -> AdnlClient:
+    ) -> LiteClient:
         """
-        Create ADNL client using global network configuration fetched from ton.org.
+        Create lite-server client using global network configuration fetched from ton.org.
 
         Public lite-servers available in the global network configuration are
         free to use but may be unstable under load. For higher reliability and
@@ -198,7 +198,7 @@ class AdnlClient(BaseClient):
         :param rps_limit: Optional requests-per-second limit for this client
         :param rps_period: Time window in seconds for RPS limit
         :param retry_policy: Optional retry policy that defines per-error-code retry rules
-        :return: Configured AdnlClient instance
+        :return: Configured LiteClient instance
         """
         config_getters = {
             NetworkGlobalID.MAINNET: get_mainnet_global_config,
@@ -289,7 +289,7 @@ class AdnlClient(BaseClient):
         return decode_stack(result or [])
 
     async def connect(self) -> None:
-        """Ensure that ADNL connection is established."""
+        """Establish connection to the lite-server."""
         await self.provider.connect()
 
     async def reconnect(self) -> None:
@@ -297,7 +297,7 @@ class AdnlClient(BaseClient):
         await self.provider.reconnect()
 
     async def close(self) -> None:
-        """Close ADNL connection."""
+        """Close the lite-server connection."""
         await self.provider.close()
 
     async def get_time(self) -> int:
@@ -351,7 +351,7 @@ class AdnlClient(BaseClient):
         self,
         workchain: WorkchainID,
         shard: int,
-        seqno: int = -1,
+        seqno: t.Optional[int] = None,
         lt: t.Optional[int] = None,
         utime: t.Optional[int] = None,
     ) -> t.Tuple[BlockIdExt, Block]:
@@ -360,7 +360,7 @@ class AdnlClient(BaseClient):
 
         :param workchain: Workchain identifier
         :param shard: Shard identifier
-        :param seqno: Block seqno or -1 to ignore
+        :param seqno: Block sequence number
         :param lt: Logical time filter
         :param utime: UNIX time filter
         :return: Tuple of BlockIdExt and deserialized Block

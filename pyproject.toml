@@ -14,11 +14,8 @@ maintainers = [
 ]
 dependencies = [
     "aiohttp>=3.7.0",
-    "pycryptodomex~=3.23.0",
     "pydantic>=2.0,<3.0",
-    "pynacl~=1.6.0",
-    "pytoniq-core~=0.1.45",
-    "requests>=2.31.0",
+    "pytoniq-core~=0.1.46",
 ]
 keywords = [
     "AsyncIO",
@@ -58,6 +55,9 @@ include = ["tonutils", "tonutils.*"]
 
 [tool.setuptools.package-data]
 tonutils = ["py.typed"]
+
+[project.scripts]
+tonutils = "tonutils.cli:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "tonutils.__meta__.__version__" }

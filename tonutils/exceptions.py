@@ -23,7 +23,30 @@ class TonutilsError(Exception):
 
 
 class TransportError(TonutilsError):
-    """Raise on transport-level failures (I/O, handshake, crypto, socket)."""
+    """Transport-level failure with structured context.
+
+    Covers: TCP connect, ADNL handshake, send/recv, crypto failures.
+
+    :param endpoint: Server address as "host:port"
+    :param operation: What was attempted ("connect", "handshake", "send", "recv")
+    :param reason: Why it failed ("timeout 2.0s", "connection refused", etc.)
+    """
+
+    endpoint: str
+    operation: str
+    reason: str
+
+    def __init__(
+        self,
+        *,
+        endpoint: str,
+        operation: str,
+        reason: str,
+    ) -> None:
+        self.endpoint = endpoint
+        self.operation = operation
+        self.reason = reason
+        super().__init__(f"{operation} failed at {endpoint}: {reason}")
 
 
 class ProviderError(TonutilsError):
@@ -39,23 +62,24 @@ class BalancerError(TonutilsError):
 
 
 class NotConnectedError(TonutilsError, RuntimeError):
-    """Raise when an operation requires an active connection.
+    """Raise when an operation requires an active connection."""
 
-    Typically means the underlying client/provider is not connected yet or was closed.
-    """
+    endpoint: t.Optional[str]
 
-    def __init__(self) -> None:
-        super().__init__("not connected. Use `await connect()` or `async with ...`.")
+    def __init__(self, endpoint: t.Optional[str] = None) -> None:
+        self.endpoint = endpoint
+        if endpoint:
+            super().__init__(f"not connected to {endpoint}")
+        else:
+            super().__init__("not connected")
 
 
 class ProviderTimeoutError(ProviderError, asyncio.TimeoutError):
     """Raise when a provider operation exceeds its timeout.
 
-    Used for both ADNL and HTTP providers.
-
     :param timeout: Timeout in seconds.
     :param endpoint: Endpoint identifier (URL or host:port).
-    :param operation: Operation label (e.g. "adnl query", "http request").
+    :param operation: Operation label (e.g. "request", "connect").
     """
 
     timeout: float
@@ -63,18 +87,14 @@ class ProviderTimeoutError(ProviderError, asyncio.TimeoutError):
     operation: str
 
     def __init__(self, *, timeout: float, endpoint: str, operation: str) -> None:
-        self.timeout = float(timeout)
+        self.timeout = timeout
         self.endpoint = endpoint
         self.operation = operation
-        super().__init__(f"{operation} timed out after {timeout}s: {endpoint}")
+        super().__init__(f"{operation} timed out after {timeout}s at {endpoint}")
 
 
 class ProviderResponseError(ProviderError):
     """Raise when a backend returns an error response.
-
-    This is a normalized provider error for:
-    - HTTP status codes (e.g. 429/5xx)
-    - lite-server numeric error codes
 
     :param code: Backend code (HTTP status or lite-server code).
     :param message: Backend error description.
@@ -86,7 +106,7 @@ class ProviderResponseError(ProviderError):
     endpoint: str
 
     def __init__(self, *, code: int, message: str, endpoint: str) -> None:
-        self.code = int(code)
+        self.code = code
         self.message = message
         self.endpoint = endpoint
         super().__init__(f"request failed with code {code} at {endpoint}: {message}")
@@ -111,13 +131,10 @@ class RetryLimitError(ProviderError):
         max_attempts: int,
         last_error: ProviderError,
     ) -> None:
-        self.attempts = int(attempts)
-        self.max_attempts = int(max_attempts)
+        self.attempts = attempts
+        self.max_attempts = max_attempts
         self.last_error = last_error
-        super().__init__(
-            f"retry exhausted ({self.attempts}/{self.max_attempts}). "
-            f"Last error: {last_error}"
-        )
+        super().__init__(f"retry exhausted ({attempts}/{max_attempts}): {last_error}")
 
 
 class ContractError(ClientError):
@@ -133,7 +150,6 @@ class ContractError(ClientError):
     def __init__(self, target: t.Any, message: str) -> None:
         self.target = target
         self.message = message
-
         name = (
             target.__name__ if isinstance(target, type) else target.__class__.__name__
         )
@@ -142,10 +158,6 @@ class ContractError(ClientError):
 
 class StateNotLoadedError(ContractError):
     """Raise when a contract wrapper requires state that is not loaded.
-
-    Typical cases:
-    - state_info not fetched
-    - state_data not decoded/available
 
     :param contract: Contract instance related to the failure.
     :param missing: Missing field name (e.g. "state_info", "state_data").
@@ -174,9 +186,9 @@ class RunGetMethodError(ClientError):
     def __init__(self, *, address: str, method_name: str, exit_code: int) -> None:
         self.address = address
         self.method_name = method_name
-        self.exit_code = int(exit_code)
+        self.exit_code = exit_code
         super().__init__(
-            f"get-method `{method_name}` failed for {address} (exit code {self.exit_code})."
+            f"get-method '{method_name}' failed for {address} with exit code {exit_code}"
         )
 
 
@@ -198,5 +210,3 @@ CDN_CHALLENGE_MARKERS: t.Dict[str, str] = {
     "503 service unavailable": "Service temporarily unavailable (proxy or CDN).",
     "ddos": "Possible DDoS protection or mitigation page.",
 }
-"""Markers for detecting CDN / proxy challenge and anti-DDoS responses, 
-used for error normalization and default retry policies."""

@@ -96,7 +96,11 @@ class AdnlProvider:
 
     @property
     def is_connected(self) -> bool:
-        """Check whether the underlying transport is connected."""
+        """
+        Whether the underlying transport is currently connected.
+
+        :return: True if connected, False otherwise
+        """
         return self.transport.is_connected
 
     @property
@@ -129,9 +133,9 @@ class AdnlProvider:
     @property
     def last_ping_ms(self) -> t.Optional[int]:
         """
-        Round-trip time of the last ping in milliseconds.
+        Round-trip time of the last successful ping.
 
-        :return: Ping RTT in milliseconds or None if unknown
+        :return: Ping RTT in milliseconds, or None if unknown
         """
         if self.last_ping_rtt is None:
             return None
@@ -165,10 +169,7 @@ class AdnlProvider:
             return
 
         self.loop = asyncio.get_running_loop()
-        try:
-            await self.transport.connect()
-        except Exception as exc:
-            raise ProviderError(f"adnl connect failed ({self.node.endpoint})") from exc
+        await self.transport.connect()
 
         tasks = [self.reader.start(), self.pinger.start(), self.updater.start()]
         await asyncio.gather(*tasks, return_exceptions=True)
@@ -239,19 +240,13 @@ class AdnlProvider:
                 raise ProviderTimeoutError(
                     timeout=self.request_timeout,
                     endpoint=self.node.endpoint,
-                    operation="adnl query",
-                ) from exc
-            except asyncio.CancelledError as exc:
-                raise ProviderError(
-                    f"adnl provider closed ({self.node.endpoint})"
+                    operation="request",
                 ) from exc
 
             if not isinstance(resp, dict):
-                raise ProviderError(
-                    f"adnl invalid response type ({self.node.endpoint})"
-                )
-
+                raise ProviderError(f"invalid response type: {type(resp).__name__}")
             return resp
+
         finally:
             if query_id_key in self.pending:
                 del self.pending[query_id_key]
@@ -419,7 +414,7 @@ class AdnlProvider:
         self,
         workchain: WorkchainID,
         shard: int,
-        seqno: int = -1,
+        seqno: t.Optional[int] = None,
         lt: t.Optional[int] = None,
         utime: t.Optional[int] = None,
         *,
@@ -430,42 +425,45 @@ class AdnlProvider:
 
         :param workchain: Workchain identifier
         :param shard: Shard identifier
-        :param seqno: Block seqno or -1 to ignore
+        :param seqno: Block sequence number
         :param lt: Logical time filter
         :param utime: UNIX time filter
         :param priority: Whether to use priority slot in the limiter
         :return: Tuple of BlockIdExt and deserialized Block
         """
         mode = 0
-        if seqno != -1:
+        block_seqno = 0
+
+        if seqno is not None:
             mode = 1
+            block_seqno = seqno
         if lt is not None:
             mode = 2
         if utime is not None:
             mode = 4
 
         data = {
+            "mode": mode,
             "id": {
-                "workchain": workchain.value,
+                "workchain": workchain,
                 "shard": shard,
-                "seqno": seqno,
+                "seqno": block_seqno,
             },
             "lt": lt,
-            "mode": mode,
             "utime": utime,
         }
+
         result = await self.send_liteserver_query(
-            method="lookupBlock",
+            "lookupBlock",
             data=data,
             priority=priority,
         )
 
-        cell = Cell.one_from_boc(result["header_proof"])
+        block_id = BlockIdExt.from_dict(result["id"])
+        header_proof = Cell.one_from_boc(result["header_proof"])
+        block = Block.deserialize(header_proof[0].begin_parse())
 
-        return (
-            BlockIdExt.from_dict(result["id"]),
-            Block.deserialize(cell[0].begin_parse()),
-        )
+        return block_id, block
 
     async def get_block_header(
         self,
@@ -480,23 +478,25 @@ class AdnlProvider:
         :param priority: Whether to use priority slot in the limiter
         :return: Tuple of BlockIdExt and deserialized Block
         """
+        data = {"id": block.to_dict(), "mode": 0}
+
         result = await self.send_liteserver_query(
-            method="getBlockHeader",
-            data={"id": block.to_dict(), "mode": 0},
+            "getBlockHeader",
+            data=data,
             priority=priority,
         )
 
-        cell = Cell.one_from_boc(result["header_proof"])
-        return (
-            BlockIdExt.from_dict(result["id"]),
-            Block.deserialize(cell[0].begin_parse()),
-        )
+        block_id = BlockIdExt.from_dict(result["id"])
+        header_proof = Cell.one_from_boc(result["header_proof"])
+        block_obj = Block.deserialize(header_proof[0].begin_parse())
+
+        return block_id, block_obj
 
     async def get_block_transactions_ext(
         self,
         block: BlockIdExt,
-        *,
         count: int = 1024,
+        *,
         priority: bool = False,
     ) -> t.List[Transaction]:
         """
@@ -508,7 +508,6 @@ class AdnlProvider:
         :return: List of deserialized Transaction objects
         """
         mode = 39
-
         result = await self.send_liteserver_query(
             method="listBlockTransactionsExt",
             data={
@@ -632,9 +631,7 @@ class AdnlProvider:
 
         exit_code = result.get("exit_code")
         if exit_code is None:
-            raise ProviderError(
-                f"runSmcMethod: missing `exit_code` in response ({self.node.endpoint})"
-            )
+            raise ProviderError("runSmcMethod: missing exit_code in response")
 
         if exit_code != 0:
             raise RunGetMethodError(
@@ -735,7 +732,7 @@ class AdnlProvider:
         """
         if count > 16:
             raise ClientError(
-                "`get_raw_transactions` supports up to 16 transactions per request"
+                "get_transactions supports up to 16 transactions per request"
             )
 
         data = {
@@ -759,7 +756,7 @@ class AdnlProvider:
             curr_hash = cell.get_hash(0).hex()
             if curr_hash != prev_tr_hash:
                 raise ClientError(
-                    "Transaction hash mismatch in `raw_get_transactions`: "
+                    f"transaction hash mismatch: "
                     f"expected {prev_tr_hash}, got {curr_hash}"
                 )
 

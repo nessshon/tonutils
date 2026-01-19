@@ -1,13 +1,18 @@
-import requests
+import json
+import urllib.request
+from pathlib import Path
 
 from tonutils.clients.adnl.provider.models import GlobalConfig
 
 
-def _get_global_config(path: str) -> GlobalConfig:
-    url = f"https://ton.org/{path}"
-    resp = requests.get(url)
-    resp.raise_for_status()
-    return GlobalConfig.model_validate(resp.json())
+def load_global_config(source: str) -> GlobalConfig:
+    if source.startswith(("http://", "https://")):
+        with urllib.request.urlopen(source) as response:
+            data = json.loads(response.read().decode())
+    else:
+        data = json.loads(Path(source).read_text())
+
+    return GlobalConfig.model_validate(data)
 
 
 def get_mainnet_global_config() -> GlobalConfig:
@@ -16,7 +21,7 @@ def get_mainnet_global_config() -> GlobalConfig:
 
     :return: Parsed GlobalConfig instance
     """
-    return _get_global_config("global-config.json")
+    return load_global_config("https://ton.org/global-config.json")
 
 
 def get_testnet_global_config() -> GlobalConfig:
@@ -25,4 +30,4 @@ def get_testnet_global_config() -> GlobalConfig:
 
     :return: Parsed GlobalConfig instance
     """
-    return _get_global_config("testnet-global-config.json")
+    return load_global_config("https://ton.org/testnet-global-config.json")

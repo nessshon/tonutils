@@ -1,9 +1,9 @@
-from .balancer import AdnlBalancer
-from .client import AdnlClient
+from .balancer import LiteBalancer
+from .client import LiteClient
 from .provider import AdnlProvider
 
 __all__ = [
-    "AdnlBalancer",
-    "AdnlClient",
+    "LiteBalancer",
+    "LiteClient",
     "AdnlProvider",
 ]
