@@ -186,8 +186,9 @@ class BlockScanner:
                     get_header=self._client.get_block_header,
                 )
             )
+            # Update seen_seqno after collecting blocks for this shard
+            shards_seqno[self._traversal.shard_key(shard_tip)] = shard_tip.seqno
 
-        blocks.sort(key=lambda b: (b.workchain, b.shard, b.seqno))
         return blocks
 
     def _emit_block(self, mc_block: BlockIdExt, block: BlockIdExt) -> None:
@@ -239,12 +240,9 @@ class BlockScanner:
         self,
         mc_block: BlockIdExt,
         block: BlockIdExt,
-        shards_seqno: t.Dict[t.Tuple[int, int], int],
     ) -> None:
         """Process shard block and emit events for block + transactions."""
         self._ensure_running()
-
-        shards_seqno[self._traversal.shard_key(block)] = block.seqno
         self._emit_block(mc_block, block)
 
         if not self._include_transactions:
@@ -304,7 +302,7 @@ class BlockScanner:
                     shards_seqno=state.shards_seqno,
                 )
                 for block in blocks:
-                    await self._handle_block(state.mc_block, block, state.shards_seqno)
+                    await self._handle_block(state.mc_block, block)
                 state.mc_block = await self._wait_next_mc_block(state.mc_block)
         finally:
             await self._dispatcher.aclose()

@@ -4,13 +4,7 @@ from .events import (
     TransactionsEvent,
 )
 from .scanner import BlockScanner
-from .where import (
-    Where,
-    comment,
-    destination,
-    opcode,
-    sender,
-)
+from .where import Where
 
 
 __all__ = [
@@ -19,8 +13,4 @@ __all__ = [
     "TransactionEvent",
     "TransactionsEvent",
     "Where",
-    "comment",
-    "destination",
-    "opcode",
-    "sender",
 ]

@@ -272,7 +272,11 @@ class BaseClient(abc.ABC):
 
         blen = len(domain) * 8
         rlen = t.cast(int, res[0])
-        cell = t.cast(Cell, res[1])
+
+        cell = res[1]
+
+        if cell is None:
+            return None
 
         if rlen % 8 != 0 or rlen > blen:
             raise ValueError(f"Invalid resolved length: result {rlen}, bytes {blen}.")
