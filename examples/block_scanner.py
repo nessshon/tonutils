@@ -9,17 +9,6 @@ Event types:
 - TransactionEvent: emitted for each transaction individually
 - TransactionsEvent: emitted once per block with all transactions
 
-Built-in filters:
-- sender(*addresses): match by sender address(es)
-- destination(*addresses): match by destination address(es)
-- opcode(*ops): match by operation code(s)
-- comment(*texts): match by text comment(s)
-
-Filter composition:
-- filter_a & filter_b: AND
-- filter_a | filter_b: OR
-- ~filter_a: NOT
-
 Notes:
 - Always call balancer.connect() before scanner.start()
 - Use try/finally for proper cleanup with scanner.stop() and balancer.close()
@@ -31,16 +20,11 @@ from tonutils.tools.block_scanner import (
     BlockEvent,
     TransactionEvent,
     TransactionsEvent,
-    sender,
-    destination,
-    opcode,
-    comment,
 )
 from tonutils.types import (
     NetworkGlobalID,
     DEFAULT_ADNL_RETRY_POLICY,
 )
-from tonutils.utils import normalize_hash
 
 balancer = LiteBalancer.from_network_config(
     network=NetworkGlobalID.MAINNET,
@@ -71,36 +55,8 @@ async def handle_transaction(event: TransactionEvent) -> None:
     pass
 
 
-@scanner.on_transaction(sender("UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0"))
-async def handle_from_address(event: TransactionEvent) -> None:
-    """Filter by sender address."""
-    tx_hash = normalize_hash(event.transaction.in_msg)
-    print(f"From monitored address:", tx_hash)
-
-
-@scanner.on_transaction(destination("UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0"))
-async def handle_to_address(event: TransactionEvent) -> None:
-    """Filter by destination address."""
-    tx_hash = normalize_hash(event.transaction.in_msg)
-    print("To monitored address:", tx_hash)
-
-
-@scanner.on_transaction(comment("test"))
-async def handle_test_comment(event: TransactionEvent) -> None:
-    """Filter by text comment."""
-    tx_hash = normalize_hash(event.transaction.in_msg)
-    print("Test comment received:", tx_hash)
-
-
-@scanner.on_transaction(opcode(0x5FCC3D14))
-async def handle_nft_transfer(event: TransactionEvent) -> None:
-    """Filter by opcode (NFT Transfer)."""
-    tx_hash = normalize_hash(event.transaction.in_msg)
-    print("NFT Transfer detected:", tx_hash)
-
-
 @scanner.on_transactions()
-async def handle_batch_transactions(event: TransactionsEvent) -> None:
+async def handle_transactions(event: TransactionsEvent) -> None:
     """Batch handler for all transactions in a block."""
     print(f"Block {event.block.seqno}: {len(event.transactions)} transactions")
 
