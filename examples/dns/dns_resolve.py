@@ -1,4 +1,4 @@
-from tonutils.clients import ToncenterHttpClient
+from tonutils.clients import ToncenterClient
 from tonutils.types import NetworkGlobalID, DNSCategory
 
 # Domain name to resolve (TON DNS format)
@@ -10,7 +10,7 @@ async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
     # NetworkGlobalID.TESTNET (-3) for testing
-    client = ToncenterHttpClient(network=NetworkGlobalID.MAINNET)
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
     await client.connect()
 
     # Resolve DNS record for specified domain and category

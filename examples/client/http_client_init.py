@@ -26,11 +26,11 @@ Common parameters (all clients):
 """
 
 from tonutils.clients import (
-    ToncenterHttpClient,
-    TonapiHttpClient,
-    ChainstackHttpClient,
-    QuicknodeHttpClient,
-    TatumHttpClient,
+    ToncenterClient,
+    TonapiClient,
+    ChainstackClient,
+    QuicknodeClient,
+    TatumClient,
 )
 from tonutils.types import NetworkGlobalID
 
@@ -41,7 +41,7 @@ async def main() -> None:
     #   1 rps without API key
     #   10 rps with free API key
     #   paid plans offer higher RPS
-    toncenter_client = ToncenterHttpClient(
+    toncenter_client = ToncenterClient(
         network=NetworkGlobalID.MAINNET,
         api_key="<your api key>",
         rps_limit=1,
@@ -55,7 +55,7 @@ async def main() -> None:
 
     # Tonapi HTTP Client
     # API key required, obtain via: https://tonconsole.com/
-    tonapi_client = TonapiHttpClient(
+    tonapi_client = TonapiClient(
         network=NetworkGlobalID.MAINNET,
         api_key="<your api key>",
         rps_limit=10,
@@ -69,7 +69,7 @@ async def main() -> None:
 
     # Chainstack HTTP Client
     # Personal endpoint URL required, obtain via: https://chainstack.com/
-    chainstack_client = ChainstackHttpClient(
+    chainstack_client = ChainstackClient(
         network=NetworkGlobalID.MAINNET,
         http_provider_url="https://your-endpoint",
         rps_limit=50,
@@ -84,7 +84,7 @@ async def main() -> None:
     # QuickNode HTTP Client
     # Mainnet only (testnet not supported)
     # Personal endpoint URL required, obtain via: https://www.quicknode.com/
-    quicknode_client = QuicknodeHttpClient(
+    quicknode_client = QuicknodeClient(
         http_provider_url="https://your-endpoint",
         rps_limit=50,
     )
@@ -97,7 +97,7 @@ async def main() -> None:
 
     # Tatum HTTP Client
     # API key required, obtain via: https://tatum.io/
-    tatum_client = TatumHttpClient(
+    tatum_client = TatumClient(
         network=NetworkGlobalID.MAINNET,
         api_key="<your api key>",
         rps_limit=20,

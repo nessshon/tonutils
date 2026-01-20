@@ -1,6 +1,6 @@
 from pytoniq_core import Address
 
-from tonutils.clients import ToncenterHttpClient
+from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2
 from tonutils.types import NetworkGlobalID
 from tonutils.utils import to_nano
@@ -17,7 +17,7 @@ async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
     # NetworkGlobalID.TESTNET (-3) for testing
-    client = ToncenterHttpClient(network=NetworkGlobalID.MAINNET)
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
     await client.connect()
 
     # Create wallet instance from mnemonic (full access mode)
