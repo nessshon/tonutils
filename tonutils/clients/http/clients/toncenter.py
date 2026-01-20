@@ -7,11 +7,8 @@ from aiohttp import ClientSession
 from pytoniq_core import Cell, Slice, Transaction
 
 from tonutils.clients.base import BaseClient
-from tonutils.clients.http.providers.toncenter.models import (
-    SendBocPayload,
-    RunGetMethodPayload,
-)
-from tonutils.clients.http.providers.toncenter.provider import ToncenterHttpProvider
+from tonutils.clients.http.provider.models import SendBocPayload, RunGetMethodPayload
+from tonutils.clients.http.provider.toncenter import ToncenterHttpProvider
 from tonutils.clients.http.utils import decode_toncenter_stack, encode_toncenter_stack
 from tonutils.exceptions import ClientError, RunGetMethodError
 from tonutils.types import (
@@ -24,15 +21,15 @@ from tonutils.types import (
 from tonutils.utils import cell_to_hex, parse_stack_config
 
 
-class ToncenterHttpClient(BaseClient):
+class ToncenterClient(BaseClient):
     """TON blockchain client using Toncenter HTTP API as transport."""
 
     TYPE = ClientType.HTTP
 
     def __init__(
         self,
-        *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        *,
         api_key: t.Optional[str] = None,
         base_url: t.Optional[str] = None,
         timeout: float = 10.0,
@@ -81,7 +78,7 @@ class ToncenterHttpClient(BaseClient):
         session = self._provider.session
         return session is not None and not session.closed
 
-    async def __aenter__(self) -> ToncenterHttpClient:
+    async def __aenter__(self) -> ToncenterClient:
         await self._provider.connect()
         return self
 
@@ -166,28 +163,58 @@ class ToncenterHttpClient(BaseClient):
 
         return contract_info
 
-    async def _get_contract_transactions(
+    async def _get_transactions(
         self,
         address: str,
         limit: int = 100,
         from_lt: t.Optional[int] = None,
-        to_lt: int = 0,
+        to_lt: t.Optional[int] = None,
     ) -> t.List[Transaction]:
-        if from_lt is not None:
-            from_lt += 1
+        to_lt = 0 if to_lt is None else to_lt
+        transactions: t.List[Transaction] = []
 
-        request = await self.provider.get_transaction(
-            address=address,
-            limit=limit,
-            from_lt=from_lt,
-            to_lt=to_lt,
-        )
+        curr_lt: t.Optional[int] = None
+        curr_hash: t.Optional[str] = None
 
-        transactions = []
-        for tx in request.result or []:
-            if tx.data is not None:
-                tx_slice = Slice.one_from_boc(tx.data)
-                transactions.append(Transaction.deserialize(tx_slice))
+        while len(transactions) < limit:
+            request = await self.provider.get_transactions(
+                address=address,
+                limit=100,
+                lt=curr_lt,
+                from_hash=curr_hash,
+                to_lt=to_lt if to_lt > 0 else None,
+            )
+
+            batch = []
+            for tx in request.result or []:
+                if tx.data is not None:
+                    tx_slice = Slice.one_from_boc(tx.data)
+                    batch.append(Transaction.deserialize(tx_slice))
+
+            if not batch:
+                break
+
+            for tx in batch:
+                # Skip transactions above from_lt (if specified)
+                if from_lt is not None and tx.lt > from_lt:
+                    continue
+
+                # Stop if we've reached the lower bound
+                if to_lt > 0 and tx.lt <= to_lt:
+                    return transactions[:limit]
+
+                transactions.append(tx)
+
+                if len(transactions) >= limit:
+                    return transactions
+
+            # Setup for next iteration
+            last_tx = batch[-1]
+            if last_tx.prev_trans_lt == 0:
+                break
+
+            curr_lt = last_tx.prev_trans_lt
+            curr_hash = last_tx.prev_trans_hash.hex()
 
         return transactions
 

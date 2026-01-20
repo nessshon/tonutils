@@ -1,13 +1,13 @@
-from .chainstack import ChainstackHttpClient
-from .quicknode import QuicknodeHttpClient
-from .tatum import TatumHttpClient
-from .tonapi import TonapiHttpClient
-from .toncenter import ToncenterHttpClient
+from .chainstack import ChainstackClient
+from .quicknode import QuicknodeClient
+from .tatum import TatumClient
+from .tonapi import TonapiClient
+from .toncenter import ToncenterClient
 
 __all__ = [
-    "ChainstackHttpClient",
-    "QuicknodeHttpClient",
-    "TatumHttpClient",
-    "TonapiHttpClient",
-    "ToncenterHttpClient",
+    "ChainstackClient",
+    "QuicknodeClient",
+    "TatumClient",
+    "TonapiClient",
+    "ToncenterClient",
 ]

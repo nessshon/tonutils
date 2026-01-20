@@ -98,20 +98,23 @@ class BaseClient(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def _get_contract_transactions(
+    async def _get_transactions(
         self,
         address: str,
         limit: int = 100,
         from_lt: t.Optional[int] = None,
-        to_lt: int = 0,
+        to_lt: t.Optional[int] = None,
     ) -> t.List[Transaction]:
         """
-        Fetch a list of recent contract transactions from the provider.
+        Fetch transaction history for a contract.
+        Returns transactions in the range (to_lt, from_lt), ordered from newest to oldest.
 
-        :param address: Contract address in raw
+        :param address: Contract address as string
         :param limit: Maximum number of transactions to return
-        :param from_lt: Optional lower bound (exclusive) logical time
-        :param to_lt: Upper bound (inclusive) logical time, 0 means latest
+        :param from_lt: Upper bound logical time (inclusive).
+            If None, starts from the most recent transaction.
+        :param to_lt: Lower bound logical time (exclusive).
+            If None or 0, no lower bound is applied.
         :return: List of Transaction objects ordered from newest to oldest
         """
         raise NotImplementedError
@@ -180,25 +183,28 @@ class BaseClient(abc.ABC):
             address = Address(address).to_str(is_user_friendly=False)
         return await self._get_contract_info(address=address)
 
-    async def get_contract_transactions(
+    async def get_transactions(
         self,
         address: AddressLike,
         limit: int = 100,
         from_lt: t.Optional[int] = None,
-        to_lt: int = 0,
+        to_lt: t.Optional[int] = None,
     ) -> t.List[Transaction]:
         """
         Fetch transaction history for a contract.
+        Returns transactions in the range (to_lt, from_lt), ordered from newest to oldest.
 
         :param address: Contract address as Address object or string
         :param limit: Maximum number of transactions to return
-        :param from_lt: Optional lower bound (exclusive) logical time
-        :param to_lt: Upper bound (inclusive) logical time, 0 means latest
+        :param from_lt: Upper bound logical time (inclusive).
+            If None, starts from the most recent transaction.
+        :param to_lt: Lower bound logical time (exclusive).
+            If None or 0, no lower bound is applied.
         :return: List of Transaction objects ordered from newest to oldest
         """
         if isinstance(address, Address):
             address = Address(address).to_str(is_user_friendly=False)
-        return await self._get_contract_transactions(
+        return await self._get_transactions(
             address=address,
             limit=limit,
             from_lt=from_lt,

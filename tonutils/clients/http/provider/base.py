@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import typing as t
 
 import aiohttp
 
-from tonutils.clients.http.providers.response import HttpResponse
 from tonutils.clients.limiter import RateLimiter
 from tonutils.exceptions import (
     NotConnectedError,
     ProviderResponseError,
     ProviderTimeoutError,
     RetryLimitError,
+    CDN_CHALLENGE_MARKERS,
 )
 from tonutils.types import RetryPolicy
 
@@ -90,6 +91,34 @@ class HttpProvider:
                 await self._session.close()
             self._session = None
 
+    @classmethod
+    async def _read_response(cls, resp: aiohttp.ClientResponse) -> t.Any:
+        body = await resp.read()
+        if not body:
+            return ""
+
+        data = body.decode("utf-8", errors="replace").strip()
+        if not data:
+            return ""
+
+        try:
+            return json.loads(data)
+        except (Exception,):
+            return data
+
+    @classmethod
+    def _raise_error(cls, status: int, url: str, data: t.Any) -> None:
+        exc = cls._detect_proxy_error(data, status=status, url=url)
+        if exc is not None:
+            raise exc
+
+        message = cls._extract_error_message(data)
+        raise ProviderResponseError(
+            code=status,
+            message=message,
+            endpoint=url,
+        )
+
     async def _send_once(
         self,
         method: str,
@@ -126,13 +155,9 @@ class HttpProvider:
                 params=params,
                 json=json_data,
             ) as resp:
-                data = await HttpResponse.read(resp)
+                data = await self._read_response(resp)
                 if resp.status >= 400:
-                    HttpResponse.raise_error(
-                        status=int(resp.status),
-                        url=url,
-                        data=data,
-                    )
+                    self._raise_error(int(resp.status), url, data)
                 return data
 
         except asyncio.TimeoutError as exc:
@@ -199,3 +224,42 @@ class HttpProvider:
                     ) from e
 
                 await asyncio.sleep(rule.delay(attempts[key] - 1))
+
+    @classmethod
+    def _detect_proxy_error(
+        cls,
+        data: t.Any,
+        status: int,
+        url: str,
+    ) -> t.Optional[ProviderResponseError]:
+        body = (
+            " ".join(str(v) for v in data.values())
+            if isinstance(data, dict)
+            else str(data)
+        ).lower()
+
+        for marker, message in CDN_CHALLENGE_MARKERS.items():
+            if marker in body:
+                return ProviderResponseError(
+                    code=status,
+                    message=message,
+                    endpoint=url,
+                )
+
+        return None
+
+    @staticmethod
+    def _extract_error_message(data: t.Any) -> str:
+        if isinstance(data, dict):
+            lowered = {k.lower(): v for k, v in data.items()}
+            for key in ("error", "message", "detail", "description"):
+                if key in lowered and isinstance(lowered[key], str):
+                    return lowered[key]
+            string_values = [str(v) for v in data.values() if isinstance(v, str)]
+            return "; ".join(string_values) if string_values else str(data)
+
+        if isinstance(data, list):
+            return "; ".join(map(str, data))
+        if isinstance(data, str):
+            return data
+        return repr(data)

@@ -55,12 +55,12 @@ class ClientProtocol(t.Protocol):
     ) -> ContractStateInfo:
         """Fetch basic contract state information."""
 
-    async def get_contract_transactions(
+    async def get_transactions(
         self,
         address: AddressLike,
         limit: int = 100,
         from_lt: t.Optional[int] = None,
-        to_lt: int = 0,
+        to_lt: t.Optional[int] = None,
     ) -> t.List[Transaction]:
         """Fetch contract transactions."""
 

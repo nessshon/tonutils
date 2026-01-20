@@ -2,16 +2,16 @@ import typing as t
 
 from aiohttp import ClientSession
 
-from tonutils.clients.http.clients.toncenter import ToncenterHttpClient
+from tonutils.clients.http.clients.toncenter import ToncenterClient
 from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
-class ChainstackHttpClient(ToncenterHttpClient):
+class ChainstackClient(ToncenterClient):
 
     def __init__(
         self,
-        *,
         network: NetworkGlobalID,
+        *,
         http_provider_url: str,
         timeout: float = 10.0,
         session: t.Optional[ClientSession] = None,

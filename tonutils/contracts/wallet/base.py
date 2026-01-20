@@ -29,7 +29,7 @@ from tonutils.types import (
     WorkchainID,
     DEFAULT_SENDMODE,
 )
-from tonutils.utils import resolve_wallet_address, to_cell
+from tonutils.utils import to_cell
 
 _D = t.TypeVar("_D", bound=BaseWalletData)
 _C = t.TypeVar("_C", bound=BaseWalletConfig)
@@ -325,7 +325,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         """
         Build and send a transfer to a single destination.
 
-        :param destination: Recipient address (Address, string, or domain)
+        :param destination: Recipient address
         :param amount: Amount to send in nanotons
         :param body: Optional message body (Cell or text comment)
         :param state_init: Optional StateInit for contract deployment
@@ -334,7 +334,6 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         :param params: Optional transaction parameters
         :return: Signed external message that was sent
         """
-        destination = await resolve_wallet_address(self.client, destination)
         message = TONTransferBuilder(
             destination=destination,
             amount=amount,

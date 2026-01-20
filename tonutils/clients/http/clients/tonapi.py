@@ -6,8 +6,8 @@ from aiohttp import ClientSession
 from pytoniq_core import Cell, Slice, Transaction
 
 from tonutils.clients.base import BaseClient
-from tonutils.clients.http.providers.tonapi.models import BlockchainMessagePayload
-from tonutils.clients.http.providers.tonapi.provider import TonapiHttpProvider
+from tonutils.clients.http.provider.models import BlockchainMessagePayload
+from tonutils.clients.http.provider.tonapi import TonapiHttpProvider
 from tonutils.clients.http.utils import encode_tonapi_stack, decode_tonapi_stack
 from tonutils.exceptions import ClientError, RunGetMethodError
 from tonutils.types import (
@@ -23,15 +23,15 @@ from tonutils.utils import (
 )
 
 
-class TonapiHttpClient(BaseClient):
+class TonapiClient(BaseClient):
     """TON blockchain client using Tonapi HTTP API as transport."""
 
     TYPE = ClientType.HTTP
 
     def __init__(
         self,
-        *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        *,
         api_key: str,
         base_url: t.Optional[str] = None,
         timeout: float = 10.0,
@@ -80,7 +80,7 @@ class TonapiHttpClient(BaseClient):
         session = self._provider.session
         return session is not None and not session.closed
 
-    async def __aenter__(self) -> TonapiHttpClient:
+    async def __aenter__(self) -> TonapiClient:
         await self._provider.connect()
         return self
 
@@ -122,21 +122,20 @@ class TonapiHttpClient(BaseClient):
 
         return contract_info
 
-    async def _get_contract_transactions(
+    async def _get_transactions(
         self,
         address: str,
         limit: int = 100,
         from_lt: t.Optional[int] = None,
-        to_lt: int = 0,
+        to_lt: t.Optional[int] = None,
     ) -> t.List[Transaction]:
-        if from_lt is not None:
-            from_lt += 1
+        before_lt = from_lt + 1 if from_lt is not None else None
 
         result = await self.provider.blockchain_account_transactions(
             address=address,
             limit=limit,
             after_lt=to_lt,
-            before_lt=from_lt,
+            before_lt=before_lt,
         )
 
         transactions = []

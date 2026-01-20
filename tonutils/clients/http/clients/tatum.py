@@ -2,16 +2,16 @@ import typing as t
 
 from aiohttp import ClientSession
 
-from tonutils.clients.http.clients.toncenter import ToncenterHttpClient
+from tonutils.clients.http.clients.toncenter import ToncenterClient
 from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
-class TatumHttpClient(ToncenterHttpClient):
+class TatumClient(ToncenterClient):
 
     def __init__(
         self,
-        *,
         network: NetworkGlobalID,
+        *,
         api_key: str,
         base_url: t.Optional[str] = None,
         timeout: float = 10.0,

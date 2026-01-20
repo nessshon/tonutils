@@ -30,12 +30,7 @@ from tonutils.types import (
     AddressLike,
     PrivateKey,
     PublicKey,
-    DNSCategory,
 )
-
-if t.TYPE_CHECKING:
-    from tonutils.clients.protocol import ClientProtocol
-
 
 __all__ = [
     "TextCipher",
@@ -50,7 +45,6 @@ __all__ = [
     "norm_stack_num",
     "normalize_hash",
     "parse_stack_config",
-    "resolve_wallet_address",
     "slice_hash",
     "string_hash",
     "to_amount",
@@ -308,48 +302,6 @@ def calc_valid_until(seqno: int, ttl: int = 60) -> int:
     """Calculate message expiration timestamp for wallet transactions."""
     now = int(time.time())
     return 0xFFFFFFFF if seqno == 0 else now + ttl
-
-
-async def resolve_wallet_address(
-    client: ClientProtocol,
-    domain: AddressLike,
-) -> Address:
-    """
-    Resolve a TON address from domain name or address string.
-
-    Supports:
-    - Direct Address objects (returned as-is)
-    - Address strings in any format (EQ..., UQ..., 0:...)
-    - TON DNS domains (.ton, .t.me) - queries wallet record
-
-    :param client: TON client for DNS resolution
-    :param domain: Address object, address string, or DNS domain
-    """
-    from tonutils.contracts.dns.tlb import ALLOWED_DNS_ZONES
-
-    if isinstance(domain, Address):
-        return domain
-
-    if isinstance(domain, str):
-        try:
-            return Address(domain)
-        except (Exception,):
-            if not domain.endswith(ALLOWED_DNS_ZONES):
-                allowed = ", ".join(ALLOWED_DNS_ZONES)
-                raise ValueError(
-                    f"Invalid DNS domain: {domain}. Supported zones: {allowed}."
-                )
-
-            record = await client.dnsresolve(
-                domain=domain,
-                category=DNSCategory.WALLET,
-            )
-            if record is None:
-                raise ValueError(f"DNS record not found for: {domain}.")
-
-            return record.value
-
-    raise TypeError(f"Invalid domain type: {type(domain)!r}. Expected Address or str.")
 
 
 class TextCipher:

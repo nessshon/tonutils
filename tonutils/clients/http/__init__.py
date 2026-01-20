@@ -1,23 +1,23 @@
 from .balancer import HttpBalancer
 from .clients import (
-    ChainstackHttpClient,
-    QuicknodeHttpClient,
-    TatumHttpClient,
-    TonapiHttpClient,
-    ToncenterHttpClient,
+    ChainstackClient,
+    QuicknodeClient,
+    TatumClient,
+    TonapiClient,
+    ToncenterClient,
 )
-from .providers import (
+from .provider import (
     TonapiHttpProvider,
     ToncenterHttpProvider,
 )
 
 __all__ = [
     "HttpBalancer",
-    "ChainstackHttpClient",
-    "QuicknodeHttpClient",
-    "TatumHttpClient",
-    "TonapiHttpClient",
+    "ChainstackClient",
+    "QuicknodeClient",
+    "TatumClient",
+    "TonapiClient",
     "TonapiHttpProvider",
-    "ToncenterHttpClient",
+    "ToncenterClient",
     "ToncenterHttpProvider",
 ]

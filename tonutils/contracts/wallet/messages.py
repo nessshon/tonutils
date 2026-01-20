@@ -23,7 +23,6 @@ from tonutils.utils import (
     cell_to_b64,
     normalize_hash,
     to_nano,
-    resolve_wallet_address,
 )
 
 
@@ -191,7 +190,7 @@ class TONTransferBuilder(BaseMessageBuilder):
         """
         Initialize TON transfer builder.
 
-        :param destination: Recipient address (Address, string, or domain)
+        :param destination: Recipient address
         :param amount: Amount to send in nanotons
         :param body: Optional message body (Cell or text comment string)
         :param state_init: Optional StateInit for contract deployment
@@ -214,11 +213,10 @@ class TONTransferBuilder(BaseMessageBuilder):
         :param wallet: Wallet instance to build message for
         :return: WalletMessage with TON transfer
         """
-        destination = await resolve_wallet_address(wallet.client, self.destination)
         return WalletMessage(
             send_mode=self.send_mode,
             message=InternalMessage(
-                dest=destination,
+                dest=self.destination,
                 value=self.amount,
                 body=self.body,
                 state_init=self.state_init,
@@ -277,9 +275,8 @@ class NFTTransferBuilder(BaseMessageBuilder):
         :param wallet: Wallet instance to build message for
         :return: WalletMessage with NFT transfer
         """
-        destination = await resolve_wallet_address(wallet.client, self.destination)
         body = NFTTransferBody(
-            destination=destination,
+            destination=self.destination,
             response_address=self.response_address or wallet.address,
             custom_payload=self.custom_payload,
             forward_payload=self.forward_payload,
@@ -358,7 +355,6 @@ class JettonTransferBuilder(BaseMessageBuilder):
         :param wallet: Wallet instance to build message for
         :return: WalletMessage with jetton transfer
         """
-        destination = await resolve_wallet_address(wallet.client, self.destination)
         jetton_wallet_address = self.jetton_wallet_address
         if self.jetton_wallet_address is None:
             jetton_wallet_address = await get_wallet_address_get_method(
@@ -367,7 +363,7 @@ class JettonTransferBuilder(BaseMessageBuilder):
                 owner_address=wallet.address,
             )
         body = JettonTransferBody(
-            destination=destination,
+            destination=self.destination,
             jetton_amount=self.jetton_amount,
             response_address=self.response_address or wallet.address,
             custom_payload=self.custom_payload,

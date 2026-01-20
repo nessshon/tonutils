@@ -2,11 +2,11 @@ import typing as t
 
 from aiohttp import ClientSession
 
-from tonutils.clients.http.clients.toncenter import ToncenterHttpClient
+from tonutils.clients.http.clients.toncenter import ToncenterClient
 from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
-class QuicknodeHttpClient(ToncenterHttpClient):
+class QuicknodeClient(ToncenterClient):
 
     def __init__(
         self,
@@ -33,7 +33,6 @@ class QuicknodeHttpClient(ToncenterHttpClient):
         :param rps_period: Rate limit period in seconds.
         :param retry_policy: Optional retry policy that defines per-error-code retry rules
         """
-
         super().__init__(
             network=NetworkGlobalID.MAINNET,
             base_url=http_provider_url,

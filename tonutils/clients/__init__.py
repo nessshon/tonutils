@@ -5,12 +5,12 @@ from .adnl import (
 )
 from .http import (
     HttpBalancer,
-    ChainstackHttpClient,
-    QuicknodeHttpClient,
-    TatumHttpClient,
-    TonapiHttpClient,
+    ChainstackClient,
+    QuicknodeClient,
+    TatumClient,
+    TonapiClient,
     TonapiHttpProvider,
-    ToncenterHttpClient,
+    ToncenterClient,
     ToncenterHttpProvider,
 )
 
@@ -19,11 +19,11 @@ __all__ = [
     "LiteClient",
     "AdnlProvider",
     "HttpBalancer",
-    "ChainstackHttpClient",
-    "QuicknodeHttpClient",
-    "TatumHttpClient",
-    "TonapiHttpClient",
+    "ChainstackClient",
+    "QuicknodeClient",
+    "TatumClient",
+    "TonapiClient",
     "TonapiHttpProvider",
-    "ToncenterHttpClient",
+    "ToncenterClient",
     "ToncenterHttpProvider",
 ]

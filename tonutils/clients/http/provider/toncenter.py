@@ -3,14 +3,14 @@ import typing as t
 import aiohttp
 from pydantic import BaseModel
 
-from tonutils.clients.http.providers.base import HttpProvider
-from tonutils.clients.http.providers.toncenter.models import (
-    GetAddressInformationResult,
-    GetConfigAllResult,
-    GetTransactionResult,
-    RunGetMethodResul,
+from tonutils.clients.http.provider.base import HttpProvider
+from tonutils.clients.http.provider.models import (
     SendBocPayload,
+    GetConfigAllResult,
+    GetAddressInformationResult,
+    GetTransactionsResult,
     RunGetMethodPayload,
+    RunGetMethodResul,
 )
 from tonutils.types import NetworkGlobalID, RetryPolicy
 
@@ -20,6 +20,7 @@ class ToncenterHttpProvider(HttpProvider):
     def __init__(
         self,
         network: NetworkGlobalID,
+        *,
         api_key: t.Optional[str] = None,
         base_url: t.Optional[str] = None,
         timeout: float = 10.0,
@@ -85,19 +86,26 @@ class ToncenterHttpProvider(HttpProvider):
             ),
         )
 
-    async def get_transaction(
+    async def get_transactions(
         self,
         address: str,
         limit: int = 100,
-        from_lt: t.Optional[int] = None,
-        to_lt: int = 0,
-    ) -> GetTransactionResult:
-        params = {"address": address, "limit": limit, "to_lt": to_lt}
-        if from_lt is not None:
-            params["from_lt"] = from_lt
+        lt: t.Optional[int] = None,
+        from_hash: t.Optional[str] = None,
+        to_lt: t.Optional[int] = None,
+    ) -> GetTransactionsResult:
+        params = {"address": address, "limit": limit, "archival": "true"}
+
+        # lt and hash must be used together
+        if lt is not None and from_hash is not None:
+            params["lt"] = lt
+            params["hash"] = from_hash
+
+        if to_lt is not None:
+            params["to_lt"] = to_lt
 
         return self._model(
-            GetTransactionResult,
+            GetTransactionsResult,
             await self.send_http_request(
                 "GET",
                 "/getTransactions",

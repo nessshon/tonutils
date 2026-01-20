@@ -10,7 +10,7 @@ from itertools import cycle
 from pytoniq_core import Transaction
 
 from tonutils.clients.base import BaseClient
-from tonutils.clients.http.clients.quicknode import QuicknodeHttpClient
+from tonutils.clients.http.clients.quicknode import QuicknodeClient
 from tonutils.exceptions import (
     BalancerError,
     ClientError,
@@ -50,8 +50,8 @@ class HttpBalancer(BaseClient):
 
     def __init__(
         self,
-        *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        *,
         clients: t.List[BaseClient],
         request_timeout: float = 12.0,
     ) -> None:
@@ -60,15 +60,15 @@ class HttpBalancer(BaseClient):
 
         Each supported HTTP client requires its own credentials or endpoint
         configuration. You can obtain them from the corresponding provider:
-            - ToncenterHttpClient:
+            - ToncenterClient:
                 API key available via Telegram bot: https://t.me/toncenter
-            - TonapiHttpClient:
+            - TonapiClient:
                 API key available on the Tonconsole website: https://tonconsole.com/
-            - ChainstackHttpClient:
+            - ChainstackClient:
                 Personal endpoint available on: https://chainstack.com/
-            - QuicknodeHttpClient:
+            - QuicknodeClient:
                 Personal endpoint available on: https://www.quicknode.com/
-            - TatumHttpClient:
+            - TatumClient:
                 API key available on: https://tatum.io/
 
         :param network: Target TON network (mainnet or testnet)
@@ -102,7 +102,7 @@ class HttpBalancer(BaseClient):
                 )
 
             if (
-                isinstance(client, QuicknodeHttpClient)
+                isinstance(client, QuicknodeClient)
                 and self.network == NetworkGlobalID.TESTNET
             ):
                 raise ClientError(
@@ -356,15 +356,15 @@ class HttpBalancer(BaseClient):
 
         return await self._with_failover(_call)
 
-    async def _get_contract_transactions(
+    async def _get_transactions(
         self,
         address: str,
         limit: int = 100,
         from_lt: t.Optional[int] = None,
-        to_lt: int = 0,
+        to_lt: t.Optional[int] = None,
     ) -> t.List[Transaction]:
         async def _call(client: BaseClient) -> t.List[Transaction]:
-            return await client._get_contract_transactions(
+            return await client._get_transactions(
                 address=address,
                 limit=limit,
                 from_lt=from_lt,

@@ -5,13 +5,13 @@ import typing as t
 import aiohttp
 from pydantic import BaseModel
 
-from tonutils.clients.http.providers.base import HttpProvider
-from tonutils.clients.http.providers.tonapi.models import (
-    BlockchainAccountMethodResult,
+from tonutils.clients.http.provider.base import HttpProvider
+from tonutils.clients.http.provider.models import (
+    BlockchainMessagePayload,
+    BlockchainConfigResult,
     BlockchainAccountResult,
     BlockchainAccountTransactionsResult,
-    BlockchainConfigResult,
-    BlockchainMessagePayload,
+    BlockchainAccountMethodResult,
 )
 from tonutils.types import NetworkGlobalID, RetryPolicy
 
@@ -21,6 +21,7 @@ class TonapiHttpProvider(HttpProvider):
     def __init__(
         self,
         network: NetworkGlobalID,
+        *,
         api_key: str,
         base_url: t.Optional[str] = None,
         timeout: float = 10.0,
@@ -92,12 +93,11 @@ class TonapiHttpProvider(HttpProvider):
         limit: int = 100,
         after_lt: t.Optional[int] = None,
         before_lt: t.Optional[int] = None,
-        sort_order: str = "desc",
     ) -> BlockchainAccountTransactionsResult:
-        params = {"limit": limit, "sort_order": sort_order}
+        params = {"limit": limit}
         if after_lt is not None:
             params["after_lt"] = after_lt
-        if before_lt is not None and before_lt > 0:
+        if before_lt is not None:
             params["before_lt"] = before_lt
 
         return self._model(

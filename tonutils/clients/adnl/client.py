@@ -34,8 +34,8 @@ class LiteClient(BaseClient):
 
     def __init__(
         self,
-        *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        *,
         ip: t.Union[str, int],
         port: int,
         public_key: BinaryLike,
@@ -119,8 +119,8 @@ class LiteClient(BaseClient):
     @classmethod
     def from_config(
         cls,
-        *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        *,
         config: t.Union[GlobalConfig, t.Dict[str, t.Any]],
         index: int,
         connect_timeout: float = 2.0,
@@ -170,8 +170,8 @@ class LiteClient(BaseClient):
     @classmethod
     def from_network_config(
         cls,
-        *,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        *,
         index: int,
         connect_timeout: float = 2.0,
         request_timeout: float = 10.0,
@@ -225,13 +225,14 @@ class LiteClient(BaseClient):
     async def _get_contract_info(self, address: str) -> ContractStateInfo:
         return await self.provider.get_account_state(Address(address))
 
-    async def _get_contract_transactions(
+    async def _get_transactions(
         self,
         address: str,
         limit: int = 100,
         from_lt: t.Optional[int] = None,
-        to_lt: int = 0,
+        to_lt: t.Optional[int] = None,
     ) -> t.List[Transaction]:
+        to_lt = 0 if to_lt is None else to_lt
         state = await self._get_contract_info(address)
         account = Address(address).to_tl_account_id()
 
@@ -242,38 +243,34 @@ class LiteClient(BaseClient):
         curr_hash = state.last_transaction_hash
         transactions: t.List[Transaction] = []
 
-        while len(transactions) < limit and curr_lt != 0:
-            batch_size = min(16, limit - len(transactions))
+        while curr_lt != 0:
+            fetch_lt = curr_lt
+            fetch_hash = curr_hash
 
             txs = await self.provider.get_transactions(
                 account=account,
-                count=batch_size,
-                from_lt=curr_lt,
-                from_hash=curr_hash,
+                count=16,
+                from_lt=fetch_lt,
+                from_hash=fetch_hash,
             )
             if not txs:
                 break
 
-            if to_lt > 0 and txs[-1].lt <= to_lt:
-                trimmed: t.List[Transaction] = []
-                for tx in txs:
-                    if tx.lt <= to_lt:
-                        break
-                    trimmed.append(tx)
-                transactions.extend(trimmed)
-                break
+            for tx in txs:
+                if from_lt is not None and tx.lt > from_lt:
+                    continue
+                if to_lt > 0 and tx.lt <= to_lt:
+                    return transactions[:limit]
 
-            transactions.extend(txs)
+                transactions.append(tx)
+                if len(transactions) >= limit:
+                    return transactions
 
             last_tx = txs[-1]
             curr_lt = last_tx.prev_trans_lt
             curr_hash = last_tx.prev_trans_hash.hex()
 
-        return (
-            [tx for tx in transactions if tx.lt < from_lt]
-            if from_lt is not None
-            else transactions
-        )
+        return transactions[:limit]
 
     async def _run_get_method(
         self,
