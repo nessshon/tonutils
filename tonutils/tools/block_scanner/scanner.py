@@ -1,138 +1,188 @@
 import asyncio
 import typing as t
-from dataclasses import dataclass
 
-from pytoniq_core import Transaction
 from pytoniq_core.tl import BlockIdExt
+from pytoniq_core.tlb.block import ExtBlkRef
 
 from tonutils.clients import LiteBalancer, LiteClient
-from tonutils.tools.block_scanner.annotations import (
-    BlockWhere,
-    Decorator,
-    Handler,
-    TransactionWhere,
-    TransactionsWhere,
-)
-from tonutils.tools.block_scanner.dispatcher import EventDispatcher
 from tonutils.tools.block_scanner.events import (
     BlockEvent,
-    TransactionEvent,
+    ErrorEvent,
     TransactionsEvent,
 )
-from tonutils.tools.block_scanner.traversal import ShardTraversal
-from tonutils.types import WorkchainID, MASTERCHAIN_SHARD
+from tonutils.tools.block_scanner.storage import BlockScannerStorageProtocol
+from tonutils.types import MASTERCHAIN_SHARD, WorkchainID
 
+ShardKey = t.Tuple[int, int]
+SeenShardSeqno = t.Dict[ShardKey, int]
+BlockQueue = asyncio.Queue[BlockIdExt]
 
-@dataclass(slots=True)
-class _ScanState:
-    """Internal scanner state per masterchain block."""
-
-    mc_block: BlockIdExt
-    shards_seqno: t.Dict[t.Tuple[int, int], int]
+OnError = t.Callable[[ErrorEvent], t.Awaitable[None]]
+OnBlock = t.Callable[[BlockEvent], t.Awaitable[None]]
+OnTransactions = t.Callable[[TransactionsEvent], t.Awaitable[None]]
 
 
 class BlockScanner:
-    """Asynchronous scanner for TON blockchain."""
+    """
+    Asynchronous queue-based TON block scanner.
+
+    Discovers shard blocks by following masterchain shard tips, emits events for each
+    shard block, and optionally fetches transactions for shard blocks.
+
+    Handlers can be passed via constructor or set later via decorators:
+    - on_error: receives ErrorEvent
+    - on_block: receives BlockEvent
+    - on_transactions: receives TransactionsEvent
+    """
 
     def __init__(
         self,
-        *,
         client: t.Union[LiteBalancer, LiteClient],
+        *,
+        on_error: t.Optional[OnError] = None,
+        on_block: t.Optional[OnBlock] = None,
+        on_transactions: t.Optional[OnTransactions] = None,
+        storage: t.Optional[BlockScannerStorageProtocol] = None,
         poll_interval: float = 0.1,
-        include_transactions: bool = True,
-        max_concurrency: int = 1000,
         **context: t.Any,
     ) -> None:
         """
-        Initialize a BlockScanner.
+        Initialize scanner.
 
-        :param client: LiteClient or LiteBalancer instance for blockchain access.
-        :param poll_interval: Interval in seconds to poll for new masterchain blocks.
-        :param include_transactions: If True, emit TransactionEvent and TransactionsEvent.
-        :param max_concurrency: Maximum number of concurrent event handler tasks.
-        :param context: Additional key/value data passed to all emitted events.
+        :param client: Lite client/balancer.
+        :param on_error: Called on internal errors and handler failures.
+        :param on_block: Called for each discovered shard block.
+        :param on_transactions: Called for shard blocks with fetched transactions.
+        :param storage: Progress storage (masterchain seqno).
+        :param poll_interval: Poll delay while waiting for next masterchain block.
+        :param context: Shared context passed to all events.
         """
         self._client = client
-        self._context = dict(context)
+        self._on_error = on_error
+        self._on_block = on_block
+        self._on_transactions = on_transactions
+        self._storage = storage
         self._poll_interval = poll_interval
-        self._include_transactions = include_transactions
+        self._context = dict(context)
 
-        self._traversal = ShardTraversal()
-        self._dispatcher = EventDispatcher(max_concurrency)
-
+        self._pending_blocks: BlockQueue = asyncio.Queue()
         self._stop_event = asyncio.Event()
         self._running = False
 
-    @t.overload
-    def register(
-        self,
-        event_type: t.Type[BlockEvent],
-        handler: Handler[BlockEvent],
-        *,
-        where: t.Optional[BlockWhere] = None,
-    ) -> None: ...
+    @staticmethod
+    def _shard_key(blk: BlockIdExt) -> ShardKey:
+        """Return shard key as (workchain, shard)."""
+        return blk.workchain, blk.shard
 
-    @t.overload
-    def register(
-        self,
-        event_type: t.Type[TransactionEvent],
-        handler: Handler[TransactionEvent],
-        *,
-        where: t.Optional[TransactionWhere] = None,
-    ) -> None: ...
+    @staticmethod
+    def _overflow_i64(x: int) -> int:
+        """Wrap integer to signed 64-bit range."""
+        return (x + 2**63) % 2**64 - 2**63
 
-    @t.overload
-    def register(
-        self,
-        event_type: t.Type[TransactionsEvent],
-        handler: Handler[TransactionsEvent],
-        *,
-        where: t.Optional[TransactionsWhere] = None,
-    ) -> None: ...
+    @staticmethod
+    def _lowbit64(x: int) -> int:
+        """Return lowest set bit (64-bit shard math helper)."""
+        return x & (~x + 1)
 
-    def register(
-        self,
-        event_type: t.Any,
-        handler: t.Any,
-        *,
-        where: t.Any = None,
-    ) -> None:
-        """Register a handler for an event type with optional filter."""
-        self._dispatcher.register(event_type, handler, where=where)
+    def _child_shard(self, shard: int, *, left: bool) -> int:
+        """Return left/right child shard id for split shards."""
+        step = self._lowbit64(shard) >> 1
+        return self._overflow_i64(shard - step if left else shard + step)
 
-    def on_block(
-        self,
-        where: t.Optional[BlockWhere] = None,
-    ) -> Decorator[BlockEvent]:
-        """Decorator for block event handlers."""
-        return self._dispatcher.on(BlockEvent, where=where)
+    def _parent_shard(self, shard: int) -> int:
+        """Return parent shard id for merged shards."""
+        step = self._lowbit64(shard)
+        return self._overflow_i64((shard - step) | (step << 1))
 
-    def on_transaction(
-        self,
-        where: t.Optional[TransactionWhere] = None,
-    ) -> Decorator[TransactionEvent]:
-        """Decorator for transaction event handlers."""
-        return self._dispatcher.on(TransactionEvent, where=where)
-
-    def on_transactions(
-        self,
-        where: t.Optional[TransactionsWhere] = None,
-    ) -> Decorator[TransactionsEvent]:
-        """Decorator for batch transaction event handlers."""
-        return self._dispatcher.on(TransactionsEvent, where=where)
-
-    def _get_last_mc_block(self) -> BlockIdExt:
-        """Return last masterchain block."""
+    @property
+    def last_mc_block(self) -> BlockIdExt:
+        """Return last known masterchain block from provider cache."""
         return self._client.provider.last_mc_block
+
+    def on_error(self, fn: t.Optional[OnError] = None) -> t.Any:
+        """Decorator to set error handler."""
+
+        def decorator(handler: OnError) -> OnError:
+            self._on_error = handler
+            return handler
+
+        return decorator if fn is None else decorator(fn)
+
+    def on_block(self, fn: t.Optional[OnBlock] = None) -> t.Any:
+        """Decorator to set block handler."""
+
+        def decorator(handler: OnBlock) -> OnBlock:
+            self._on_block = handler
+            return handler
+
+        return decorator if fn is None else decorator(fn)
+
+    def on_transactions(self, fn: t.Optional[OnTransactions] = None) -> t.Any:
+        """Decorator to set transactions handler."""
+
+        def decorator(handler: OnTransactions) -> OnTransactions:
+            self._on_transactions = handler
+            return handler
+
+        return decorator if fn is None else decorator(fn)
+
+    async def _call_error_handler(
+        self,
+        error: BaseException,
+        mc_block: BlockIdExt,
+        *,
+        event: t.Any = None,
+        handler: t.Any = None,
+        block: t.Optional[BlockIdExt] = None,
+    ) -> None:
+        """Call error handler with ErrorEvent. Never raises."""
+        if self._on_error is None:
+            return
+
+        try:
+            await self._on_error(
+                ErrorEvent(
+                    client=self._client,
+                    mc_block=mc_block,
+                    context=self._context,
+                    error=error,
+                    event=event,
+                    handler=handler,
+                    block=block,
+                )
+            )
+        except asyncio.CancelledError:
+            raise
+        except (BaseException,):
+            return
+
+    async def _call_handler(self, handler: t.Any, event: t.Any) -> None:
+        """Call handler(event). Route failures to on_error."""
+        if handler is None:
+            return
+
+        try:
+            await handler(event)
+        except asyncio.CancelledError:
+            raise
+        except BaseException as error:
+            await self._call_error_handler(
+                error,
+                event.mc_block,
+                event=event,
+                handler=handler,
+                block=event.block,
+            )
 
     async def _lookup_mc_block(
         self,
+        *,
         seqno: t.Optional[int] = None,
         lt: t.Optional[int] = None,
         utime: t.Optional[int] = None,
     ) -> BlockIdExt:
-        """Lookup masterchain block by seqno, lt, or utime."""
-        mc_block, _info = await self._client.lookup_block(
+        """Lookup masterchain block by seqno/lt/utime."""
+        mc_block, _ = await self._client.lookup_block(
             workchain=WorkchainID.MASTERCHAIN,
             shard=MASTERCHAIN_SHARD,
             seqno=seqno,
@@ -141,173 +191,217 @@ class BlockScanner:
         )
         return mc_block
 
-    async def _init_state(
-        self,
-        seqno: t.Optional[int] = None,
-        lt: t.Optional[int] = None,
-        utime: t.Optional[int] = None,
-    ) -> _ScanState:
-        """Initialize scanning state."""
-        if seqno is None and lt is None and utime is None:
-            mc_block = self._get_last_mc_block()
-        else:
-            mc_block = await self._lookup_mc_block(seqno=seqno, lt=lt, utime=utime)
+    async def _wait_next_mc_block(self, mc_block: BlockIdExt) -> BlockIdExt:
+        """Wait until next masterchain block becomes available."""
+        next_mc_seqno = mc_block.seqno + 1
 
-        if mc_block.seqno > 0:
-            prev_mc = await self._lookup_mc_block(seqno=mc_block.seqno - 1)
-        else:
-            prev_mc = mc_block
-
-        shards_seqno: t.Dict[t.Tuple[int, int], int] = {}
-        for shard in await self._client.get_all_shards_info(prev_mc):
-            shards_seqno[self._traversal.shard_key(shard)] = shard.seqno
-
-        return _ScanState(mc_block=mc_block, shards_seqno=shards_seqno)
-
-    def _ensure_running(self) -> None:
-        """Raise CancelledError if scanner was stopped."""
-        if self._stop_event.is_set():
-            raise asyncio.CancelledError("Block scanner stopped")
-
-    async def _collect_blocks(
-        self,
-        mc_block: BlockIdExt,
-        shards_seqno: t.Dict[t.Tuple[int, int], int],
-    ) -> t.List[BlockIdExt]:
-        """Collect all unseen shard blocks for a masterchain block."""
-        shards = await self._client.get_all_shards_info(mc_block)
-
-        blocks: t.List[BlockIdExt] = []
-        for shard_tip in shards:
-            blocks.extend(
-                await self._traversal.walk_unseen(
-                    root=shard_tip,
-                    seen_seqno=shards_seqno,
-                    get_header=self._client.get_block_header,
-                )
-            )
-            # Update seen_seqno after collecting blocks for this shard
-            shards_seqno[self._traversal.shard_key(shard_tip)] = shard_tip.seqno
-
-        return blocks
-
-    def _emit_block(self, mc_block: BlockIdExt, block: BlockIdExt) -> None:
-        """Emit block event."""
-        self._dispatcher.emit(
-            BlockEvent(
-                mc_block=mc_block,
-                client=self._client,
-                context=self._context,
-                block=block,
-            )
-        )
-
-    def _emit_transactions(
-        self,
-        mc_block: BlockIdExt,
-        block: BlockIdExt,
-        transactions: t.List[Transaction],
-    ) -> None:
-        """Emit batch transactions event."""
-        self._dispatcher.emit(
-            TransactionsEvent(
-                mc_block=mc_block,
-                client=self._client,
-                context=self._context,
-                block=block,
-                transactions=transactions,
-            )
-        )
-
-    def _emit_transaction(
-        self,
-        mc_block: BlockIdExt,
-        block: BlockIdExt,
-        transaction: Transaction,
-    ) -> None:
-        """Emit single transaction event."""
-        self._dispatcher.emit(
-            TransactionEvent(
-                mc_block=mc_block,
-                client=self._client,
-                context=self._context,
-                block=block,
-                transaction=transaction,
-            )
-        )
-
-    async def _handle_block(
-        self,
-        mc_block: BlockIdExt,
-        block: BlockIdExt,
-    ) -> None:
-        """Process shard block and emit events for block + transactions."""
-        self._ensure_running()
-        self._emit_block(mc_block, block)
-
-        if not self._include_transactions:
-            return
-
-        transactions = await self._client.get_block_transactions_ext(block)
-        self._emit_transactions(mc_block, block, transactions)
-
-        for transaction in transactions:
-            self._ensure_running()
-            self._emit_transaction(mc_block, block, transaction)
-
-    async def _wait_next_mc_block(self, current: BlockIdExt) -> BlockIdExt:
-        """Wait for next masterchain block, polling until available."""
-        next_seqno = current.seqno + 1
-
-        while True:
-            self._ensure_running()
-            last_mc_block = self._get_last_mc_block()
-
-            if next_seqno <= last_mc_block.seqno:
-                if next_seqno == last_mc_block.seqno:
+        while not self._stop_event.is_set():
+            last_mc_block = self.last_mc_block
+            if next_mc_seqno <= last_mc_block.seqno:
+                if next_mc_seqno == last_mc_block.seqno:
                     return last_mc_block
-                return await self._lookup_mc_block(seqno=next_seqno)
+                return await self._lookup_mc_block(seqno=next_mc_seqno)
 
             await asyncio.sleep(self._poll_interval)
 
-    async def start(
-        self,
-        from_seqno: t.Optional[int] = None,
-        from_lt: t.Optional[int] = None,
-        from_utime: t.Optional[int] = None,
-    ) -> None:
-        """
-        Start scanning from the specified point.
+        return mc_block
 
-        :param from_seqno: start from specific masterchain sequence number.
-        :param from_lt: start from specific logical time (LT) of a block.
-        :param from_utime: start from specific Unix timestamp.
-        """
+    async def _get_seen_shard_seqno(self, mc_block: BlockIdExt) -> SeenShardSeqno:
+        """Build map of last processed shard seqno from previous masterchain block."""
+        seen_shard_seqno: SeenShardSeqno = {}
+        if mc_block.seqno <= 0:
+            return seen_shard_seqno
+
+        prev_mc_block = await self._lookup_mc_block(seqno=mc_block.seqno - 1)
+        for shard_tip in await self._client.get_all_shards_info(prev_mc_block):
+            seen_shard_seqno[self._shard_key(shard_tip)] = shard_tip.seqno
+
+        return seen_shard_seqno
+
+    async def _process_pending_blocks(self, mc_block: BlockIdExt) -> None:
+        """Process queued shard blocks and emit events."""
+        while not self._stop_event.is_set():
+            try:
+                shard_block = self._pending_blocks.get_nowait()
+            except asyncio.QueueEmpty:
+                return
+
+            block_event = BlockEvent(
+                client=self._client,
+                mc_block=mc_block,
+                block=shard_block,
+                context=self._context,
+            )
+            await self._call_handler(self._on_block, block_event)
+
+            if self._on_transactions is None:
+                continue
+
+            get_block_transactions = self._client.get_block_transactions_ext
+            try:
+                transactions = await get_block_transactions(shard_block)
+            except asyncio.CancelledError:
+                raise
+            except BaseException as error:
+                await self._call_error_handler(
+                    error,
+                    mc_block,
+                    event=block_event,
+                    handler=get_block_transactions,
+                    block=shard_block,
+                )
+                transactions = []
+
+            transactions_event = TransactionsEvent(
+                client=self._client,
+                mc_block=mc_block,
+                block=shard_block,
+                transactions=transactions,
+                context=self._context,
+            )
+            await self._call_handler(self._on_transactions, transactions_event)
+
+    async def _enqueue_missing_blocks(
+        self,
+        shard_tip: BlockIdExt,
+        seen_seqno: SeenShardSeqno,
+    ) -> None:
+        """Enqueue unseen shard blocks in order (oldest -> newest)."""
+        shard_id = self._shard_key(shard_tip)
+        if seen_seqno.get(shard_id, -1) >= shard_tip.seqno:
+            return
+
+        _, header = await self._client.get_block_header(shard_tip)
+        info = header.info
+        prev_ref = info.prev_ref
+
+        if prev_ref.type_ == "prev_blk_info":
+            prev: ExtBlkRef = prev_ref.prev
+            prev_shard = (
+                self._parent_shard(shard_tip.shard)
+                if info.after_split
+                else shard_tip.shard
+            )
+
+            await self._enqueue_missing_blocks(
+                shard_tip=BlockIdExt(
+                    workchain=shard_tip.workchain,
+                    shard=prev_shard,
+                    seqno=prev.seqno,
+                    root_hash=prev.root_hash,
+                    file_hash=prev.file_hash,
+                ),
+                seen_seqno=seen_seqno,
+            )
+        else:
+            prev1, prev2 = prev_ref.prev1, prev_ref.prev2
+
+            await self._enqueue_missing_blocks(
+                shard_tip=BlockIdExt(
+                    workchain=shard_tip.workchain,
+                    shard=self._child_shard(shard_tip.shard, left=True),
+                    seqno=prev1.seqno,
+                    root_hash=prev1.root_hash,
+                    file_hash=prev1.file_hash,
+                ),
+                seen_seqno=seen_seqno,
+            )
+            await self._enqueue_missing_blocks(
+                shard_tip=BlockIdExt(
+                    workchain=shard_tip.workchain,
+                    shard=self._child_shard(shard_tip.shard, left=False),
+                    seqno=prev2.seqno,
+                    root_hash=prev2.root_hash,
+                    file_hash=prev2.file_hash,
+                ),
+                seen_seqno=seen_seqno,
+            )
+
+        await self._pending_blocks.put(shard_tip)
+
+    async def _run(self, mc_block: BlockIdExt) -> None:
+        """Run scanning loop from provided masterchain block."""
         if self._running:
-            raise RuntimeError("BlockScanner is already running")
+            raise RuntimeError("BlockScanner already running")
 
         self._running = True
         self._stop_event.clear()
 
-        state = await self._init_state(
-            seqno=from_seqno,
-            lt=from_lt,
-            utime=from_utime,
-        )
-
         try:
+            seen_shard_seqno = await self._get_seen_shard_seqno(mc_block)
+
             while not self._stop_event.is_set():
-                blocks = await self._collect_blocks(
-                    mc_block=state.mc_block,
-                    shards_seqno=state.shards_seqno,
-                )
-                for block in blocks:
-                    await self._handle_block(state.mc_block, block)
-                state.mc_block = await self._wait_next_mc_block(state.mc_block)
+                for shard_tip in await self._client.get_all_shards_info(mc_block):
+                    await self._enqueue_missing_blocks(shard_tip, seen_shard_seqno)
+                    seen_shard_seqno[self._shard_key(shard_tip)] = shard_tip.seqno
+
+                await self._process_pending_blocks(mc_block)
+
+                if self._storage is not None:
+                    await self._storage.set_mc_seqno(mc_block.seqno)
+                mc_block = await self._wait_next_mc_block(mc_block)
         finally:
-            await self._dispatcher.aclose()
             self._running = False
+            self._stop_event.set()
+
+    async def resume(self) -> None:
+        """Resume from storage."""
+        if self._storage is None:
+            raise RuntimeError("Storage is not configured")
+
+        saved_seqno = await self._storage.get_mc_seqno()
+        if saved_seqno is None or saved_seqno < 0:
+            raise RuntimeError("No masterchain seqno in storage")
+
+        last_mc_block = self.last_mc_block
+        if saved_seqno > last_mc_block.seqno:
+            raise RuntimeError("Storage masterchain seqno is ahead of network")
+
+        if saved_seqno >= last_mc_block.seqno:
+            mc_block = await self._wait_next_mc_block(last_mc_block)
+        else:
+            next_seqno = saved_seqno + 1
+            mc_block = (
+                last_mc_block
+                if next_seqno >= last_mc_block.seqno
+                else await self._lookup_mc_block(seqno=next_seqno)
+            )
+
+        await self._run(mc_block)
+
+    async def start_from(
+        self,
+        *,
+        seqno: t.Optional[int] = None,
+        utime: t.Optional[int] = None,
+        lt: t.Optional[int] = None,
+    ) -> None:
+        """
+        Start scanning from an explicit masterchain point.
+
+        :param seqno: Masterchain seqno.
+        :param utime: Unix time (resolved to masterchain block).
+        :param lt: Logical time (resolved to masterchain block).
+        """
+        provided = sum(v is not None for v in (seqno, utime, lt))
+        if provided != 1:
+            raise ValueError("Provide exactly one of seqno, utime, lt")
+
+        if seqno is not None:
+            mc_block = await self._lookup_mc_block(seqno=seqno)
+        elif utime is not None:
+            mc_block = await self._lookup_mc_block(utime=utime)
+        elif lt is not None:
+            mc_block = await self._lookup_mc_block(lt=lt)
+        else:
+            raise AssertionError("unreachable")
+
+        await self._run(mc_block)
+
+    async def start(self) -> None:
+        """Start from the current last masterchain block."""
+        await self._run(self.last_mc_block)
 
     async def stop(self) -> None:
-        """Stop scanning."""
+        """Request scanner stop."""
         self._stop_event.set()

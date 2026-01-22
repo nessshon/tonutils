@@ -1,16 +1,9 @@
-from .events import (
-    BlockEvent,
-    TransactionEvent,
-    TransactionsEvent,
-)
+from .events import BlockEvent, ErrorEvent, TransactionsEvent
 from .scanner import BlockScanner
-from .where import Where
-
 
 __all__ = [
     "BlockScanner",
     "BlockEvent",
-    "TransactionEvent",
+    "ErrorEvent",
     "TransactionsEvent",
-    "Where",
 ]
