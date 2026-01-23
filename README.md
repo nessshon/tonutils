@@ -37,27 +37,13 @@ pip install --pre tonutils
 
 ## Usage
 
-Practical feature examples can be found in the **[examples](examples)** directory.\
-Each script demonstrates real-world usage and can be used as a reference when integrating `tonutils` into your project.
-
-## Contribution
-
-We welcome your contributions! If you have ideas for improvement or have identified a bug, please create an issue or
-submit a pull request.
+Practical feature examples can be found in the **[examples](examples)** directory.
 
 ## Donations
 
 Your contributions help me continue developing and improving this project!
 
-- **TON**: `UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness`
-
-- **BTC**: `1JXHbB5kE1DfkHdv5dsNygRkNC3unJdU8M`
-
-- **USDT** (TRC-20): `TU4fCFdWufKb4rd25ihksiNDZZdyEYqro6`
-
-- **Crypto Bot**: [Donate through Crypto Bot](https://t.me/send?start=IVW1cyG3DYqG)
-
-- **xRocket Bot**: [Donate through xRocket](https://t.me/xrocket?start=inv_R4llrClZtPjovVe)
+**TON**: `UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness`
 
 ## Support
 
@@ -67,4 +53,3 @@ With special thanks to [Igroman787](https://github.com/Igroman787) for the suppo
 ## License
 
 This repository is distributed under the [MIT License](LICENSE).
-Feel free to use, modify, and distribute the code in accordance with the terms of the license.
