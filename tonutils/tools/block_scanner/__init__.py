@@ -1,4 +1,8 @@
-from .events import BlockEvent, ErrorEvent, TransactionsEvent
+from .events import (
+    BlockEvent,
+    ErrorEvent,
+    TransactionsEvent,
+)
 from .scanner import BlockScanner
 
 __all__ = [

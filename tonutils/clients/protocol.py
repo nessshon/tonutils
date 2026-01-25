@@ -6,7 +6,7 @@ from pytoniq_core import Cell, Transaction
 
 from tonutils.types import (
     AddressLike,
-    ContractStateInfo,
+    ContractInfo,
     DNSCategory,
     NetworkGlobalID,
     ClientType,
@@ -40,19 +40,19 @@ class ClientProtocol(t.Protocol):
         """Underlying provider or transport backend."""
 
     @property
-    def is_connected(self) -> bool:
+    def connected(self) -> bool:
         """Whether the client is connected and ready for requests."""
 
-    async def send_boc(self, boc: str) -> None:
+    async def send_message(self, boc: str) -> None:
         """Send an external message to the blockchain."""
 
-    async def get_blockchain_config(self) -> t.Dict[int, t.Any]:
+    async def get_config(self) -> t.Dict[int, t.Any]:
         """Fetch global blockchain configuration."""
 
-    async def get_contract_info(
+    async def get_info(
         self,
         address: AddressLike,
-    ) -> ContractStateInfo:
+    ) -> ContractInfo:
         """Fetch basic contract state information."""
 
     async def get_transactions(

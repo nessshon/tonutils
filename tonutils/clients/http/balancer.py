@@ -19,8 +19,9 @@ from tonutils.exceptions import (
     ProviderResponseError,
     RunGetMethodError,
     ProviderTimeoutError,
+    NotConnectedError,
 )
-from tonutils.types import ClientType, ContractStateInfo, NetworkGlobalID
+from tonutils.types import ClientType, ContractInfo, NetworkGlobalID
 
 _T = t.TypeVar("_T")
 
@@ -73,14 +74,14 @@ class HttpBalancer(BaseClient):
 
         :param network: Target TON network (mainnet or testnet)
         :param clients: List of HTTP BaseClient instances to balance between
-        :param request_timeout: Maximum total time in seconds for a balancer operation,
+        :param request_timeout: Maximum total time in seconds for a balancer method,
             including all failover attempts across providers
         """
         self.network = network
 
         self._clients: t.List[BaseClient] = []
         self._states: t.List[HttpClientState] = []
-        self.__init_clients(clients)
+        self._init_clients(clients)
 
         self._rr = cycle(self._clients)
 
@@ -89,7 +90,76 @@ class HttpBalancer(BaseClient):
 
         self._request_timeout = request_timeout
 
-    def __init_clients(
+    @property
+    def connected(self) -> bool:
+        """
+        Check whether at least one underlying client is connected.
+
+        :return: True if any client is connected, otherwise False
+        """
+        return any(c.connected for c in self._clients)
+
+    @property
+    def provider(self) -> t.Any:
+        """
+        Provider of the currently selected client.
+
+        :return: Provider instance of chosen HTTP client
+        """
+        c = self._pick_client()
+        return c.provider
+
+    async def connect(self) -> None:
+        await asyncio.gather(
+            *(state.client.connect() for state in self._states),
+            return_exceptions=True,
+        )
+
+    async def close(self) -> None:
+        await asyncio.gather(
+            *(state.client.close() for state in self._states),
+            return_exceptions=True,
+        )
+
+    @property
+    def clients(self) -> t.Tuple[BaseClient, ...]:
+        """
+        List of all registered HTTP clients.
+
+        :return: Tuple of BaseClient objects
+        """
+        return tuple(self._clients)
+
+    @property
+    def alive_clients(self) -> t.Tuple[BaseClient, ...]:
+        """
+        HTTP clients that are allowed to send requests now.
+
+        :return: Tuple of available BaseClient instances
+        """
+        now = time.monotonic()
+        return tuple(
+            state.client
+            for state in self._states
+            if state.client.connected
+            and (state.retry_after is None or state.retry_after <= now)
+        )
+
+    @property
+    def dead_clients(self) -> t.Tuple[BaseClient, ...]:
+        """
+        HTTP clients currently in cooldown due to previous errors.
+
+        :return: Tuple of unavailable BaseClient instances
+        """
+        now = time.monotonic()
+        return tuple(
+            state.client
+            for state in self._states
+            if state.retry_after is not None and state.retry_after > now
+        )
+
+    def _init_clients(
         self,
         clients: t.List[BaseClient],
     ) -> None:
@@ -115,81 +185,6 @@ class HttpBalancer(BaseClient):
             self._clients.append(client)
             self._states.append(state)
 
-    @property
-    def provider(self) -> t.Any:
-        """
-        Provider of the currently selected client.
-
-        :return: Provider instance of chosen HTTP client
-        """
-        c = self._pick_client()
-        return c.provider
-
-    @property
-    def is_connected(self) -> bool:
-        """
-        Check whether at least one underlying client is connected.
-
-        :return: True if any client is connected, otherwise False
-        """
-        return any(c.is_connected for c in self._clients)
-
-    @property
-    def clients(self) -> t.Tuple[BaseClient, ...]:
-        """
-        List of all registered HTTP clients.
-
-        :return: Tuple of BaseClient objects
-        """
-        return tuple(self._clients)
-
-    @property
-    def alive_clients(self) -> t.Tuple[BaseClient, ...]:
-        """
-        HTTP clients that are allowed to send requests now.
-
-        :return: Tuple of available BaseClient instances
-        """
-        now = time.monotonic()
-        return tuple(
-            state.client
-            for state in self._states
-            if state.retry_after is None or state.retry_after <= now
-        )
-
-    @property
-    def dead_clients(self) -> t.Tuple[BaseClient, ...]:
-        """
-        HTTP clients currently in cooldown due to previous errors.
-
-        :return: Tuple of unavailable BaseClient instances
-        """
-        now = time.monotonic()
-        return tuple(
-            state.client
-            for state in self._states
-            if state.retry_after is not None and state.retry_after > now
-        )
-
-    async def __aenter__(self) -> HttpBalancer:
-        """
-        Enter async context manager and connect all underlying clients.
-
-        :return: Self instance with initialized connections
-        """
-        await self.connect()
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: t.Optional[t.Type[BaseException]],
-        exc_value: t.Optional[BaseException],
-        traceback: t.Optional[t.Any],
-    ) -> None:
-        """Exit async context manager and close all underlying clients."""
-        with suppress(asyncio.CancelledError):
-            await self.close()
-
     def _pick_client(self) -> BaseClient:
         """
         Select the best available HTTP client.
@@ -201,8 +196,10 @@ class HttpBalancer(BaseClient):
 
         :return: Selected BaseClient instance
         """
-        alive = list(self.alive_clients)
+        if not self.connected:
+            raise NotConnectedError(component=self.__class__.__name__)
 
+        alive = list(self.alive_clients)
         height_candidates: t.List[
             t.Tuple[
                 float,
@@ -223,7 +220,9 @@ class HttpBalancer(BaseClient):
             height_candidates.append((wait, state.error_count, state))
 
         if not height_candidates:
-            raise BalancerError("no available HTTP clients")
+            raise BalancerError(
+                "http balancer has no available clients (all in cooldown or not connected)"
+            )
 
         height_candidates.sort(key=lambda x: (x[0], x[1]))
         best_wait, best_err, _ = height_candidates[0]
@@ -286,75 +285,89 @@ class HttpBalancer(BaseClient):
     async def _with_failover(
         self,
         func: t.Callable[[BaseClient], t.Awaitable[_T]],
+        method: str,
     ) -> _T:
         """
-        Execute a client operation with automatic failover.
+        Execute a client method with automatic failover.
 
         Iterates through available clients until one succeeds
         or all clients fail.
 
-        :param func: Callable performing an operation using a client
+        :param func: Callable performing an method using a client
         :return: Result of the successful invocation
         """
 
         async def _run() -> _T:
+            if not self.connected:
+                raise NotConnectedError(
+                    component=self.__class__.__name__,
+                    operation=method,
+                )
+
             last_exc: t.Optional[BaseException] = None
+            attempts = 0
 
             for _ in range(len(self._clients)):
                 if not self.alive_clients:
                     break
 
                 client = self._pick_client()
+                attempts += 1
 
                 try:
                     result = await func(client)
-
                 except RunGetMethodError:
                     raise
                 except ProviderResponseError as e:
-                    is_rate_limit = e.code == 429
-                    self._mark_error(client, is_rate_limit=is_rate_limit)
+                    self._mark_error(client, is_rate_limit=(e.code == 429))
                     last_exc = e
                     continue
                 except (TransportError, ProviderError) as e:
                     self._mark_error(client, is_rate_limit=False)
                     last_exc = e
                     continue
+                else:
+                    self._mark_success(client)
+                    return result
 
-                self._mark_success(client)
-                return result
+            if last_exc is None:
+                raise BalancerError(
+                    "http balancer has no available clients (all in cooldown or not connected)"
+                )
 
-            if last_exc is not None:
-                raise last_exc
-
-            raise ClientError("all HTTP clients failed to process request.")
+            raise BalancerError(
+                f"http failover exhausted after {attempts} attempt(s)"
+            ) from last_exc
 
         try:
             return await asyncio.wait_for(_run(), timeout=self._request_timeout)
         except asyncio.TimeoutError as exc:
             raise ProviderTimeoutError(
                 timeout=self._request_timeout,
-                endpoint="http balancer",
-                operation="failover request",
+                endpoint=self.__class__.__name__,
+                operation="request",
             ) from exc
 
-    async def _send_boc(self, boc: str) -> None:
+    async def _send_message(self, boc: str) -> None:
         async def _call(client: BaseClient) -> None:
-            return await client._send_boc(boc)
+            return await client._send_message(boc)
 
-        return await self._with_failover(_call)
+        method = "send_message"
+        return await self._with_failover(_call, method)
 
-    async def _get_blockchain_config(self) -> t.Dict[int, t.Any]:
+    async def _get_config(self) -> t.Dict[int, t.Any]:
         async def _call(client: BaseClient) -> t.Dict[int, t.Any]:
-            return await client._get_blockchain_config()
+            return await client._get_config()
 
-        return await self._with_failover(_call)
+        method = "get_config"
+        return await self._with_failover(_call, method)
 
-    async def _get_contract_info(self, address: str) -> ContractStateInfo:
-        async def _call(client: BaseClient) -> ContractStateInfo:
-            return await client._get_contract_info(address)
+    async def _get_info(self, address: str) -> ContractInfo:
+        async def _call(client: BaseClient) -> ContractInfo:
+            return await client._get_info(address)
 
-        return await self._with_failover(_call)
+        method = "get_info"
+        return await self._with_failover(_call, method)
 
     async def _get_transactions(
         self,
@@ -371,7 +384,8 @@ class HttpBalancer(BaseClient):
                 to_lt=to_lt,
             )
 
-        return await self._with_failover(_call)
+        method = "get_transactions"
+        return await self._with_failover(_call, method)
 
     async def _run_get_method(
         self,
@@ -386,16 +400,5 @@ class HttpBalancer(BaseClient):
                 stack=stack,
             )
 
-        return await self._with_failover(_call)
-
-    async def connect(self) -> None:
-        await asyncio.gather(
-            *(state.client.connect() for state in self._states),
-            return_exceptions=True,
-        )
-
-    async def close(self) -> None:
-        await asyncio.gather(
-            *(state.client.close() for state in self._states),
-            return_exceptions=True,
-        )
+        method = "run_get_method"
+        return await self._with_failover(_call, method)

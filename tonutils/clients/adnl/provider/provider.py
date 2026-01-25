@@ -14,6 +14,7 @@ from pytoniq_core import (
     Transaction,
     VmStack,
     deserialize_shard_hashes,
+    ShardAccount,
 )
 from pytoniq_core.crypto.ciphers import get_random
 from pytoniq_core.crypto.crc import crc16
@@ -41,7 +42,7 @@ from tonutils.exceptions import (
     ProviderResponseError,
 )
 from tonutils.types import (
-    ContractStateInfo,
+    ContractInfo,
     RetryPolicy,
     WorkchainID,
 )
@@ -95,13 +96,13 @@ class AdnlProvider:
         self._connect_lock: asyncio.Lock = asyncio.Lock()
 
     @property
-    def is_connected(self) -> bool:
+    def connected(self) -> bool:
         """
         Whether the underlying transport is currently connected.
 
         :return: True if connected, False otherwise
         """
-        return self.transport.is_connected
+        return self.transport.connected
 
     @property
     def last_mc_block(self) -> BlockIdExt:
@@ -165,7 +166,7 @@ class AdnlProvider:
 
         Establishes transport, performs handshake and starts background workers.
         """
-        if self.is_connected:
+        if self.connected:
             return
 
         self.loop = asyncio.get_running_loop()
@@ -215,8 +216,12 @@ class AdnlProvider:
         :param priority: Whether to use priority slot in the limiter
         :return: Lite-server response payload as a decoded dictionary
         """
-        if not self.is_connected or self.loop is None:
-            raise NotConnectedError()
+        if not self.connected or self.loop is None:
+            raise NotConnectedError(
+                component="AdnlProvider",
+                endpoint=self.node.endpoint,
+                operation="request",
+            )
 
         if self._limiter is not None:
             await self._limiter.acquire(priority=priority)
@@ -492,7 +497,7 @@ class AdnlProvider:
 
         return block_id, block_obj
 
-    async def get_block_transactions_ext(
+    async def get_block_transactions(
         self,
         block: BlockIdExt,
         count: int = 1024,
@@ -591,7 +596,7 @@ class AdnlProvider:
             for sh in v.list
         ]
 
-    async def run_smc_method(
+    async def run_get_method(
         self,
         address: Address,
         method_name: str,
@@ -643,7 +648,7 @@ class AdnlProvider:
         cs = Slice.one_from_boc(result["result"])
         return VmStack.deserialize(cs)
 
-    async def get_config_all(
+    async def get_config(
         self,
         *,
         priority: bool = False,
@@ -667,18 +672,18 @@ class AdnlProvider:
         config_proof = Cell.one_from_boc(result.get("config_proof"))
         return build_config_all(config_proof)
 
-    async def get_account_state(
+    async def get_info(
         self,
         address: Address,
         *,
         priority: bool = False,
-    ) -> ContractStateInfo:
+    ) -> ContractInfo:
         """
         Fetch contract state at the latest masterchain block.
 
         :param address: Contract address
         :param priority: Whether to use priority slot in the limiter
-        :return: ContractStateInfo with balance, code, data and last tx
+        :return: ContractInfo with balance, code, data and last tx
         """
         if self.last_mc_block is None:
             await self.updater.refresh()
@@ -693,7 +698,7 @@ class AdnlProvider:
             priority=priority,
         )
         if not result["state"]:
-            return ContractStateInfo(balance=0)
+            return ContractInfo(balance=0)
 
         account_state_root = Cell.one_from_boc(result["state"])
         account = Account.deserialize(account_state_root.begin_parse())
@@ -755,9 +760,9 @@ class AdnlProvider:
         for i, cell in enumerate(cells):
             curr_hash = cell.get_hash(0).hex()
             if curr_hash != prev_tr_hash:
-                raise ClientError(
-                    f"transaction hash mismatch: "
-                    f"expected {prev_tr_hash}, got {curr_hash}"
+                raise ProviderError(
+                    "getTransactions failed: transaction hash mismatch "
+                    f"(expected {prev_tr_hash}, got {curr_hash})"
                 )
 
             tx = Transaction.deserialize(cell.begin_parse())
@@ -765,3 +770,43 @@ class AdnlProvider:
             transactions.append(tx)
 
         return transactions
+
+    async def get_account_state(
+        self,
+        address: Address,
+        *,
+        priority: bool = False,
+    ) -> t.Tuple[t.Optional[Account], t.Optional[ShardAccount]]:
+        """
+        Fetch account state and shard account from lite-server.
+
+        :param address: Account address
+        :param priority: Whether to use priority slot in the limiter
+        :return: Tuple of (Account | None, ShardAccount | None)
+        """
+        if self.last_mc_block is None:
+            await self.updater.refresh()
+
+        data = {
+            "id": self.last_mc_block.to_dict(),
+            "account": address.to_tl_account_id(),
+        }
+        result = await self.send_liteserver_query(
+            method="getAccountState",
+            data=data,
+            priority=priority,
+        )
+        if not result.get("state"):
+            return None, None
+
+        account_state_root = Cell.one_from_boc(result["state"])
+        account = Account.deserialize(account_state_root.begin_parse())
+
+        shrd_blk = BlockIdExt.from_dict(result["shardblk"])
+        shard_account = build_shard_account(
+            account_state_root=account_state_root,
+            shard_account_descr=result["proof"],
+            shrd_blk=shrd_blk,
+            address=address,
+        )
+        return account, shard_account

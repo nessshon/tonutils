@@ -27,7 +27,7 @@ class TransportError(TonutilsError):
 
     Covers: TCP connect, ADNL handshake, send/recv, crypto failures.
 
-    :param endpoint: Server address as "host:port"
+    :param endpoint: Endpoint identifier (URL or "host:port").
     :param operation: What was attempted ("connect", "handshake", "send", "recv")
     :param reason: Why it failed ("timeout 2.0s", "connection refused", etc.)
     """
@@ -46,7 +46,7 @@ class TransportError(TonutilsError):
         self.endpoint = endpoint
         self.operation = operation
         self.reason = reason
-        super().__init__(f"{operation} failed at {endpoint}: {reason}")
+        super().__init__(f"{operation} failed: {reason} ({endpoint})")
 
 
 class ProviderError(TonutilsError):
@@ -64,14 +64,28 @@ class BalancerError(TonutilsError):
 class NotConnectedError(TonutilsError, RuntimeError):
     """Raise when an operation requires an active connection."""
 
+    component: str
     endpoint: t.Optional[str]
+    operation: t.Optional[str]
 
-    def __init__(self, endpoint: t.Optional[str] = None) -> None:
+    def __init__(
+        self,
+        *,
+        component: str = "client",
+        endpoint: t.Optional[str] = None,
+        operation: t.Optional[str] = None,
+        hint: t.Optional[str] = None,
+    ) -> None:
+        self.component = component
         self.endpoint = endpoint
-        if endpoint:
-            super().__init__(f"not connected to {endpoint}")
-        else:
-            super().__init__("not connected")
+        self.operation = operation
+
+        if hint is None:
+            hint = "Call connect() first or use an async context manager (`async with ...`)."
+
+        where = f" ({endpoint})" if endpoint else ""
+        prefix = f"cannot `{operation}`: " if operation else ""
+        super().__init__(f"{prefix}{component} is not connected{where}. {hint}")
 
 
 class ProviderTimeoutError(ProviderError, asyncio.TimeoutError):
@@ -90,7 +104,7 @@ class ProviderTimeoutError(ProviderError, asyncio.TimeoutError):
         self.timeout = timeout
         self.endpoint = endpoint
         self.operation = operation
-        super().__init__(f"{operation} timed out after {timeout}s at {endpoint}")
+        super().__init__(f"{operation} timed out after {timeout}s ({endpoint})")
 
 
 class ProviderResponseError(ProviderError):
@@ -109,7 +123,7 @@ class ProviderResponseError(ProviderError):
         self.code = code
         self.message = message
         self.endpoint = endpoint
-        super().__init__(f"request failed with code {code} at {endpoint}: {message}")
+        super().__init__(f"request failed: {code} {message} ({endpoint})")
 
 
 class RetryLimitError(ProviderError):
@@ -134,7 +148,9 @@ class RetryLimitError(ProviderError):
         self.attempts = attempts
         self.max_attempts = max_attempts
         self.last_error = last_error
-        super().__init__(f"retry exhausted ({attempts}/{max_attempts}): {last_error}")
+        super().__init__(
+            f"retry limit reached ({attempts}/{max_attempts}): {last_error}"
+        )
 
 
 class ContractError(ClientError):
@@ -153,14 +169,14 @@ class ContractError(ClientError):
         name = (
             target.__name__ if isinstance(target, type) else target.__class__.__name__
         )
-        super().__init__(f"{name}: {message}")
+        super().__init__(f"{name} failed: {message}")
 
 
 class StateNotLoadedError(ContractError):
     """Raise when a contract wrapper requires state that is not loaded.
 
     :param contract: Contract instance related to the failure.
-    :param missing: Missing field name (e.g. "state_info", "state_data").
+    :param missing: Missing field name (e.g. "info", "state_data").
     """
 
     missing: str
@@ -188,7 +204,7 @@ class RunGetMethodError(ClientError):
         self.method_name = method_name
         self.exit_code = exit_code
         super().__init__(
-            f"get-method '{method_name}' failed for {address} with exit code {exit_code}"
+            f"get-method `{method_name}` failed: exit code {exit_code} ({address})"
         )
 
 

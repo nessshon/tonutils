@@ -42,6 +42,7 @@ class TatumClient(ToncenterClient):
             NetworkGlobalID.TESTNET: "https://ton-testnet.gateway.tatum.io",
         }
         base_url = base_url or urls.get(network)
+
         super().__init__(
             network=network,
             api_key=api_key,

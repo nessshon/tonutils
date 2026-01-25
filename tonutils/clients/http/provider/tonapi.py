@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing as t
 
 import aiohttp
-from pydantic import BaseModel
 
 from tonutils.clients.http.provider.base import HttpProvider
 from tonutils.clients.http.provider.models import (
@@ -49,10 +48,6 @@ class TonapiHttpProvider(HttpProvider):
             rps_period=rps_period,
             retry_policy=retry_policy,
         )
-
-    @staticmethod
-    def _model(model: t.Type[BaseModel], data: t.Any) -> t.Any:
-        return model.model_validate(data)
 
     async def blockchain_message(
         self,

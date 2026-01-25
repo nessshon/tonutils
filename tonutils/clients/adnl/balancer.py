@@ -7,22 +7,22 @@ from contextlib import suppress
 from dataclasses import dataclass
 from itertools import cycle
 
-from pytoniq_core import Address, BlockIdExt, Block, Transaction
-
 from tonutils.clients.adnl.client import LiteClient
+from tonutils.clients.adnl.mixin import LiteMixin
 from tonutils.clients.adnl.provider import AdnlProvider
 from tonutils.clients.adnl.provider.config import (
     get_mainnet_global_config,
     get_testnet_global_config,
+    load_global_config,
 )
-from tonutils.clients.adnl.provider.models import GlobalConfig, MasterchainInfo
-from tonutils.clients.adnl.utils import decode_stack, encode_stack
+from tonutils.clients.adnl.provider.models import GlobalConfig
 from tonutils.clients.base import BaseClient
 from tonutils.clients.limiter import RateLimiter
 from tonutils.exceptions import (
     ClientError,
     BalancerError,
     RunGetMethodError,
+    NotConnectedError,
     ProviderResponseError,
     TransportError,
     ProviderError,
@@ -30,10 +30,8 @@ from tonutils.exceptions import (
 )
 from tonutils.types import (
     ClientType,
-    ContractStateInfo,
     NetworkGlobalID,
     RetryPolicy,
-    WorkchainID,
 )
 
 _T = t.TypeVar("_T")
@@ -52,7 +50,7 @@ class LiteClientState:
     error_count: int = 0
 
 
-class LiteBalancer(BaseClient):
+class LiteBalancer(LiteMixin, BaseClient):
     """
     Multi-client lite-server balancer with automatic failover and load balancing.
 
@@ -91,7 +89,7 @@ class LiteBalancer(BaseClient):
 
         self._clients: t.List[LiteClient] = []
         self._states: t.List[LiteClientState] = []
-        self.__init_clients(clients)
+        self._init_clients(clients)
 
         self._rr = cycle(self._clients)
 
@@ -104,28 +102,6 @@ class LiteBalancer(BaseClient):
         self._retry_after_base = 1.0
         self._retry_after_max = 10.0
 
-    def __init_clients(
-        self,
-        clients: t.List[LiteClient],
-    ) -> None:
-        """
-        Validate and register input lite-server clients.
-
-        Ensures correct client type and network assignment.
-        """
-        for client in clients:
-            if client.TYPE != ClientType.ADNL:
-                raise ClientError(
-                    "LiteBalancer can work only with LiteClient instances, "
-                    f"got {client.__class__.__name__}."
-                )
-
-            client.network = self.network
-
-            state = LiteClientState(client=client)
-            self._clients.append(client)
-            self._states.append(state)
-
     @property
     def provider(self) -> AdnlProvider:
         """
@@ -137,13 +113,13 @@ class LiteBalancer(BaseClient):
         return c.provider
 
     @property
-    def is_connected(self) -> bool:
+    def connected(self) -> bool:
         """
         Check whether at least one underlying lite-server client is connected.
 
         :return: True if any client is connected, otherwise False
         """
-        return any(c.is_connected for c in self._clients)
+        return any(c.connected for c in self._clients)
 
     @property
     def clients(self) -> t.Tuple[LiteClient, ...]:
@@ -165,7 +141,7 @@ class LiteBalancer(BaseClient):
         return tuple(
             state.client
             for state in self._states
-            if state.client.is_connected
+            if state.client.connected
             and (state.retry_after is None or state.retry_after <= now)
         )
 
@@ -180,35 +156,16 @@ class LiteBalancer(BaseClient):
         return tuple(
             state.client
             for state in self._states
-            if not state.client.is_connected
+            if not state.client.connected
             or (state.retry_after is not None and state.retry_after > now)
         )
-
-    async def __aenter__(self) -> LiteBalancer:
-        """
-        Enter async context manager and connect underlying clients.
-
-        :return: Self instance with initialized connections
-        """
-        await self.connect()
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: t.Optional[t.Type[BaseException]],
-        exc_value: t.Optional[BaseException],
-        traceback: t.Optional[t.Any],
-    ) -> None:
-        """Exit async context manager and close all underlying clients."""
-        with suppress(asyncio.CancelledError):
-            await self.close()
 
     @classmethod
     def from_config(
         cls,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
         *,
-        config: t.Union[GlobalConfig, t.Dict[str, t.Any]],
+        config: t.Union[GlobalConfig, t.Dict[str, t.Any], str],
         connect_timeout: float = 2.0,
         request_timeout: float = 12.0,
         client_connect_timeout: float = 1.5,
@@ -229,7 +186,7 @@ class LiteBalancer(BaseClient):
         Public free configs may also be used via `from_network_config()`.
 
         :param network: Target TON network
-        :param config: GlobalConfig instance or raw dict
+        :param config: GlobalConfig instance, config file path as string, or raw dict
         :param connect_timeout: Timeout in seconds for a single connect/reconnect attempt
             performed by the balancer during failover.
         :param request_timeout: Maximum total time in seconds for a single balancer operation,
@@ -244,6 +201,8 @@ class LiteBalancer(BaseClient):
         :param retry_policy: Optional retry policy that defines per-error-code retry rules
         :return: Configured LiteBalancer instance
         """
+        if isinstance(config, str):
+            config = load_global_config(config)
         if isinstance(config, dict):
             config = GlobalConfig(**config)
 
@@ -339,6 +298,60 @@ class LiteBalancer(BaseClient):
             retry_policy=retry_policy,
         )
 
+    async def connect(self) -> None:
+        if self.connected:
+            self._ensure_health_task()
+            return
+
+        async def _con(client: LiteClient) -> None:
+            with suppress(Exception):
+                await asyncio.wait_for(
+                    client.connect(),
+                    timeout=self._connect_timeout,
+                )
+
+        tasks = [_con(client) for client in self._clients]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+        if self.connected:
+            self._ensure_health_task()
+            return
+
+        raise BalancerError("all lite-servers failed to establish connection")
+
+    async def close(self) -> None:
+        task, self._health_task = self._health_task, None
+
+        if task is not None and not task.done():
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+        tasks = [client.close() for client in self._clients]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    def _init_clients(
+        self,
+        clients: t.List[LiteClient],
+    ) -> None:
+        """
+        Validate and register input lite-server clients.
+
+        Ensures correct client type and network assignment.
+        """
+        for client in clients:
+            if client.TYPE != ClientType.ADNL:
+                raise ClientError(
+                    f"{self.__class__.__name__} can work only with LiteClient instances, "
+                    f"got {client.__class__.__name__}."
+                )
+
+            client.network = self.network
+
+            state = LiteClientState(client=client)
+            self._clients.append(client)
+            self._states.append(state)
+
     def _pick_client(self) -> LiteClient:
         """
         Select the best available lite-server client.
@@ -348,10 +361,13 @@ class LiteBalancer(BaseClient):
         - minimal ping RTT and age among same-height clients
         - round-robin fallback if no height information
         """
+        if not self.connected:
+            raise NotConnectedError(component=self.__class__.__name__)
+
         alive = list(self.alive_clients)
 
         if not alive:
-            raise BalancerError("no alive lite-server clients available")
+            raise BalancerError("no alive lite-servers available")
 
         height_candidates: t.List[
             t.Tuple[
@@ -386,7 +402,7 @@ class LiteBalancer(BaseClient):
 
         for _ in range(len(self._clients)):
             candidate = next(self._rr)
-            if candidate in alive and candidate.is_connected:
+            if candidate in alive and candidate.connected:
                 return candidate
 
         return alive[0]
@@ -429,6 +445,48 @@ class LiteBalancer(BaseClient):
                 state.retry_after = now + cooldown
                 break
 
+    def _ensure_health_task(self) -> None:
+        """
+        Ensure background health check task is running.
+
+        Starts a periodic reconnect loop for unavailable clients
+        if it is not already active.
+        """
+        if self._health_task is not None and not self._health_task.done():
+            return
+
+        loop = asyncio.get_running_loop()
+        self._health_task = loop.create_task(
+            self._health_loop(),
+            name="_health_loop",
+        )
+
+    async def _health_loop(self) -> None:
+        """
+        Periodically attempt to reconnect dead lite-server clients.
+
+        Runs until cancelled.
+        """
+
+        async def _recon(c: LiteClient) -> None:
+            with suppress(Exception):
+                await asyncio.wait_for(
+                    c.provider.reconnect(),
+                    timeout=self._connect_timeout,
+                )
+
+        try:
+            while True:
+                await asyncio.sleep(self._health_interval)
+                tasks = [
+                    _recon(client)
+                    for client in self.dead_clients
+                    if not client.connected
+                ]
+                await asyncio.gather(*tasks, return_exceptions=True)
+        except asyncio.CancelledError:
+            return
+
     async def _with_failover(
         self,
         func: t.Callable[[AdnlProvider], t.Awaitable[_T]],
@@ -452,7 +510,7 @@ class LiteBalancer(BaseClient):
 
                 client = self._pick_client()
 
-                if not client.provider.is_connected:
+                if not client.provider.connected:
                     try:
                         await asyncio.wait_for(
                             client.provider.reconnect(),
@@ -482,316 +540,35 @@ class LiteBalancer(BaseClient):
                 return result
 
             if last_exc is not None:
-                raise last_exc
-
-            raise BalancerError("all lite-servers failed to process request")
+                raise BalancerError("lite failover exhausted") from last_exc
+            raise BalancerError("no alive lite-servers available")
 
         try:
             return await asyncio.wait_for(_run(), timeout=self._request_timeout)
         except asyncio.TimeoutError as exc:
             raise ProviderTimeoutError(
                 timeout=self._request_timeout,
-                endpoint="lite balancer",
+                endpoint=self.__class__.__name__,
                 operation="failover request",
             ) from exc
 
-    async def _send_boc(self, boc: str) -> None:
-        async def _call(provider: AdnlProvider) -> None:
-            return await provider.send_message(bytes.fromhex(boc))
-
-        return await self._with_failover(_call)
-
-    async def _get_blockchain_config(self) -> t.Dict[int, t.Any]:
-        async def _call(provider: AdnlProvider) -> t.Dict[int, t.Any]:
-            return await provider.get_config_all()
-
-        return await self._with_failover(_call)
-
-    async def _get_contract_info(self, address: str) -> ContractStateInfo:
-        async def _call(provider: AdnlProvider) -> ContractStateInfo:
-            return await provider.get_account_state(Address(address))
-
-        return await self._with_failover(_call)
-
-    async def _get_transactions(
-        self,
-        address: str,
-        limit: int = 100,
-        from_lt: t.Optional[int] = None,
-        to_lt: t.Optional[int] = None,
-    ) -> t.List[Transaction]:
-        to_lt = 0 if to_lt is None else to_lt
-        state = await self._get_contract_info(address)
-        account = Address(address).to_tl_account_id()
-
-        if state.last_transaction_lt is None or state.last_transaction_hash is None:
-            return []
-
-        curr_lt = state.last_transaction_lt
-        curr_hash = state.last_transaction_hash
-        transactions: t.List[Transaction] = []
-
-        while curr_lt != 0:
-            fetch_lt = curr_lt
-            fetch_hash = curr_hash
-
-            async def _call(provider: AdnlProvider) -> t.List[Transaction]:
-                return await provider.get_transactions(
-                    account=account,
-                    count=16,
-                    from_lt=fetch_lt,
-                    from_hash=fetch_hash,
-                )
-
-            txs = await self._with_failover(_call)
-            if not txs:
-                break
-
-            for tx in txs:
-                if from_lt is not None and tx.lt > from_lt:
-                    continue
-                if to_lt > 0 and tx.lt <= to_lt:
-                    return transactions[:limit]
-
-                transactions.append(tx)
-                if len(transactions) >= limit:
-                    return transactions
-
-            last_tx = txs[-1]
-            curr_lt = last_tx.prev_trans_lt
-            curr_hash = last_tx.prev_trans_hash.hex()
-
-        return transactions[:limit]
-
-    async def _run_get_method(
-        self,
-        address: str,
-        method_name: str,
-        stack: t.Optional[t.List[t.Any]] = None,
-    ) -> t.List[t.Any]:
-        async def _call(provider: AdnlProvider) -> t.List[t.Any]:
-            result = await provider.run_smc_method(
-                address=Address(address),
-                method_name=method_name,
-                stack=encode_stack(stack or []),
-            )
-            return decode_stack(result or [])
-
-        return await self._with_failover(_call)
-
-    def _ensure_health_task(self) -> None:
+    async def _adnl_call(self, method: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """
-        Ensure background health check task is running.
+        Execute lite-server call with failover across providers.
 
-        Starts a periodic reconnect loop for unavailable clients
-        if it is not already active.
+        :param method: Provider coroutine method name.
+        :param args: Positional arguments forwarded to the provider method.
+        :param kwargs: Keyword arguments forwarded to the provider method.
+        :return: Provider method result.
         """
-        if self._health_task is not None and not self._health_task.done():
-            return
-
-        loop = asyncio.get_running_loop()
-        self._health_task = loop.create_task(
-            self._health_loop(),
-            name="_health_loop",
-        )
-
-    async def _health_loop(self) -> None:
-        """
-        Periodically attempt to reconnect dead lite-server clients.
-
-        Runs until cancelled.
-        """
-
-        async def _recon(c: LiteClient) -> None:
-            with suppress(Exception):
-                await asyncio.wait_for(
-                    c.reconnect(),
-                    timeout=self._connect_timeout,
-                )
-
-        try:
-            while True:
-                await asyncio.sleep(self._health_interval)
-                tasks = [
-                    _recon(client)
-                    for client in self.dead_clients
-                    if not client.is_connected
-                ]
-                await asyncio.gather(*tasks, return_exceptions=True)
-        except asyncio.CancelledError:
-            return
-
-    async def connect(self) -> None:
-        if self.is_connected:
-            self._ensure_health_task()
-            return
-
-        async def _con(client: LiteClient) -> None:
-            with suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(
-                    client.connect(),
-                    timeout=self._connect_timeout,
-                )
-
-        tasks = [_con(client) for client in self._clients]
-        await asyncio.gather(*tasks, return_exceptions=True)
-
-        if self.is_connected:
-            self._ensure_health_task()
-            return
-
-        raise BalancerError("all lite-servers failed to establish connection")
-
-    async def close(self) -> None:
-        task, self._health_task = self._health_task, None
-
-        if task is not None and not task.done():
-            task.cancel()
-            with suppress(asyncio.CancelledError):
-                await task
-
-        tasks = [client.close() for client in self._clients]
-        await asyncio.gather(*tasks, return_exceptions=True)
-
-    async def get_time(self) -> int:
-        """
-        Fetch current network time from lite-server.
-
-        :return: Current UNIX timestamp
-        """
-
-        async def _call(provider: AdnlProvider) -> int:
-            return await provider.get_time()
-
-        return await self._with_failover(_call)
-
-    async def get_version(self) -> int:
-        """
-        Fetch lite-server protocol version.
-
-        :return: Version number
-        """
-
-        async def _call(provider: AdnlProvider) -> int:
-            return await provider.get_version()
-
-        return await self._with_failover(_call)
-
-    async def wait_masterchain_seqno(
-        self,
-        seqno: int,
-        timeout_ms: int,
-        schema_name: str,
-        data: t.Optional[dict] = None,
-    ) -> dict:
-        """
-        Combine waitMasterchainSeqno with another lite-server query.
-
-        :param seqno: Masterchain seqno to wait for
-        :param timeout_ms: Wait timeout in milliseconds
-        :param schema_name: Lite-server TL method name without prefix
-        :param data: Additional method arguments
-        :return: Lite-server response as dictionary
-        """
-
-        async def _call(provider: AdnlProvider) -> dict:
-            return await provider.wait_masterchain_seqno(
-                seqno=seqno,
-                timeout_ms=timeout_ms,
-                schema_name=schema_name,
-                data=data,
+        if not self.connected:
+            raise NotConnectedError(
+                component=self.__class__.__name__,
+                operation=method,
             )
 
-        return await self._with_failover(_call)
-
-    async def get_masterchain_info(self) -> MasterchainInfo:
-        """
-        Fetch basic masterchain information.
-
-        :return: MasterchainInfo instance
-        """
-
-        async def _call(provider: AdnlProvider) -> MasterchainInfo:
-            return await provider.get_masterchain_info()
-
-        return await self._with_failover(_call)
-
-    async def lookup_block(
-        self,
-        workchain: WorkchainID,
-        shard: int,
-        seqno: t.Optional[int] = None,
-        lt: t.Optional[int] = None,
-        utime: t.Optional[int] = None,
-    ) -> t.Tuple[BlockIdExt, Block]:
-        """
-        Locate a block by workchain/shard and one of seqno/lt/utime.
-
-        :param workchain: Workchain identifier
-        :param shard: Shard identifier
-        :param seqno: Block sequence number
-        :param lt: Logical time filter
-        :param utime: UNIX time filter
-        :return: Tuple of BlockIdExt and deserialized Block
-        """
-
-        async def _call(provider: AdnlProvider) -> t.Tuple[BlockIdExt, Block]:
-            return await provider.lookup_block(
-                workchain=workchain,
-                shard=shard,
-                seqno=seqno,
-                lt=lt,
-                utime=utime,
-            )
-
-        return await self._with_failover(_call)
-
-    async def get_block_header(
-        self,
-        block: BlockIdExt,
-    ) -> t.Tuple[BlockIdExt, Block]:
-        """
-        Fetch and deserialize block header by BlockIdExt.
-
-        :param block: BlockIdExt to query
-        :return: Tuple of BlockIdExt and deserialized Block
-        """
-
-        async def _call(provider: AdnlProvider) -> t.Tuple[BlockIdExt, Block]:
-            return await provider.get_block_header(block)
-
-        return await self._with_failover(_call)
-
-    async def get_block_transactions_ext(
-        self,
-        block: BlockIdExt,
-        count: int = 1024,
-    ) -> t.List[Transaction]:
-        """
-        Fetch extended block transactions list.
-
-        :param block: Target block identifier
-        :param count: Maximum number of transactions per request
-        :return: List of deserialized Transaction objects
-        """
-
-        async def _call(provider: AdnlProvider) -> t.List[Transaction]:
-            return await provider.get_block_transactions_ext(block, count=count)
-
-        return await self._with_failover(_call)
-
-    async def get_all_shards_info(
-        self,
-        block: t.Optional[BlockIdExt] = None,
-    ) -> t.List[BlockIdExt]:
-        """
-        Fetch shard info for all workchains at a given masterchain block.
-
-        :param block: Masterchain block ID or None to use latest
-        :return: List of shard BlockIdExt objects
-        """
-
-        async def _call(provider: AdnlProvider) -> t.List[BlockIdExt]:
-            return await provider.get_all_shards_info(block)
+        async def _call(provider: AdnlProvider) -> t.Any:
+            fn = getattr(provider, method)
+            return await fn(*args, **kwargs)
 
         return await self._with_failover(_call)

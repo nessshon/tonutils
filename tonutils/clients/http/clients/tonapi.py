@@ -13,7 +13,7 @@ from tonutils.exceptions import ClientError, RunGetMethodError
 from tonutils.types import (
     ClientType,
     ContractState,
-    ContractStateInfo,
+    ContractInfo,
     NetworkGlobalID,
     RetryPolicy,
 )
@@ -72,31 +72,25 @@ class TonapiClient(BaseClient):
         )
 
     @property
-    def provider(self) -> TonapiHttpProvider:
-        return self._provider
-
-    @property
-    def is_connected(self) -> bool:
+    def connected(self) -> bool:
         session = self._provider.session
         return session is not None and not session.closed
 
-    async def __aenter__(self) -> TonapiClient:
-        await self._provider.connect()
-        return self
+    @property
+    def provider(self) -> TonapiHttpProvider:
+        return self._provider
 
-    async def __aexit__(
-        self,
-        exc_type: t.Optional[t.Type[BaseException]],
-        exc_value: t.Optional[BaseException],
-        traceback: t.Optional[t.Any],
-    ) -> None:
+    async def connect(self) -> None:
+        await self._provider.connect()
+
+    async def close(self) -> None:
         await self._provider.close()
 
-    async def _send_boc(self, boc: str) -> None:
+    async def _send_message(self, boc: str) -> None:
         payload = BlockchainMessagePayload(boc=boc)
         return await self.provider.blockchain_message(payload=payload)
 
-    async def _get_blockchain_config(self) -> t.Dict[int, t.Any]:
+    async def _get_config(self) -> t.Dict[int, t.Any]:
         result = await self.provider.blockchain_config()
 
         if result.raw is None:
@@ -106,10 +100,10 @@ class TonapiClient(BaseClient):
         config_slice = config_cell.begin_parse()
         return parse_stack_config(config_slice)
 
-    async def _get_contract_info(self, address: str) -> ContractStateInfo:
+    async def _get_info(self, address: str) -> ContractInfo:
         result = await self.provider.blockchain_account(address)
 
-        contract_info = ContractStateInfo(
+        contract_info = ContractInfo(
             balance=result.balance,
             state=ContractState(result.status),
             last_transaction_lt=result.last_transaction_lt,
@@ -165,9 +159,3 @@ class TonapiClient(BaseClient):
             )
 
         return decode_tonapi_stack(result.stack or [])
-
-    async def connect(self) -> None:
-        await self._provider.connect()
-
-    async def close(self) -> None:
-        await self._provider.close()

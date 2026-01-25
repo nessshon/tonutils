@@ -5,7 +5,7 @@ import typing as t
 from pytoniq_core import Address, Cell, StateInit
 
 from tonutils.clients.protocol import ClientProtocol
-from tonutils.types import AddressLike, ContractState, ContractStateInfo, WorkchainID
+from tonutils.types import AddressLike, ContractInfo, ContractState, WorkchainID
 
 if t.TYPE_CHECKING:
     from tonutils.contracts.versions import ContractVersion
@@ -48,21 +48,21 @@ class ContractProtocol(t.Protocol[_D]):
         """Locally known StateInit for this contract, if any."""
 
     @property
-    def state_info(self) -> ContractStateInfo:
-        """
-        Cached snapshot of the contract state.
-
-        Implementations usually update this via refresh() or in constructors
-        that read on-chain data.
-        """
-
-    @property
     def state_data(self) -> _D:
         """
         Decoded on-chain data in typed form.
 
-        Implementations must decode the current data cell from state_info
+        Implementations must decode the current data cell from info
         using the associated _data_model.
+        """
+
+    @property
+    def info(self) -> ContractInfo:
+        """
+        Cached snapshot of the contract state info.
+
+        Implementations usually update this via refresh() or in constructors
+        that read on-chain data.
         """
 
     @property

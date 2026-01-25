@@ -219,13 +219,13 @@ class WalletV5R1(
 
         :return: Typed wallet data
         """
-        if not (self._state_info and self._state_info.data):
+        if not (self._info and self._info.data):
             raise StateNotLoadedError(self, missing="state_data")
 
         network_global_id = (
             NetworkGlobalID.TESTNET if self.client.network else NetworkGlobalID.MAINNET
         )
-        cs = self._state_info.data.begin_parse()
+        cs = self._info.data.begin_parse()
         return self._data_model.deserialize(cs, network_global_id)
 
     async def _build_msg_cell(

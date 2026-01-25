@@ -22,7 +22,7 @@ from tonutils.contracts.wallet.tlb import BaseWalletData
 from tonutils.exceptions import ContractError
 from tonutils.types import (
     AddressLike,
-    ContractStateInfo,
+    ContractInfo,
     SendMode,
     PublicKey,
     PrivateKey,
@@ -61,7 +61,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         client: ClientProtocol,
         address: Address,
         state_init: t.Optional[StateInit] = None,
-        state_info: t.Optional[ContractStateInfo] = None,
+        info: t.Optional[ContractInfo] = None,
         config: t.Optional[_C] = None,
         private_key: t.Optional[PrivateKey] = None,
     ) -> None:
@@ -71,7 +71,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         :param client: TON client for blockchain interactions
         :param address: Wallet address on the blockchain
         :param state_init: Optional StateInit (code and data)
-        :param state_info: Optional preloaded contract state
+        :param info: Optional preloaded contract state
         :param config: Optional wallet configuration
         :param private_key: Optional private key for signing transactions
         """
@@ -82,7 +82,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         if private_key is not None:
             self._private_key = private_key
             self._public_key = private_key.public_key
-        super().__init__(client, address, state_init, state_info)
+        super().__init__(client, address, state_init, info)
 
     @property
     def state_data(self) -> _D:
@@ -295,7 +295,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         :return: Signed external message that was sent
         """
         external_msg = await self.build_external_message(messages, params)
-        await self.client.send_boc(external_msg.as_hex)
+        await self.client.send_message(external_msg.as_hex)
         return external_msg
 
     async def transfer_message(

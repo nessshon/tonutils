@@ -16,7 +16,7 @@ __all__ = [
     "BinaryLike",
     "ClientType",
     "ContractState",
-    "ContractStateInfo",
+    "ContractInfo",
     "DNSCategory",
     "DNSPrefix",
     "MetadataPrefix",
@@ -189,7 +189,7 @@ class ContractState(str, Enum):
     NONEXIST = "nonexist"
 
 
-class ContractStateInfo:
+class ContractInfo:
     """
     TON smart contract state information.
 

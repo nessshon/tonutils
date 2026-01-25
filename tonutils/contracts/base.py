@@ -13,7 +13,7 @@ from tonutils.exceptions import (
     StateNotLoadedError,
     ProviderResponseError,
 )
-from tonutils.types import AddressLike, ContractState, ContractStateInfo, WorkchainID
+from tonutils.types import AddressLike, ContractInfo, ContractState, WorkchainID
 from tonutils.utils import to_cell
 
 _R = t.TypeVar("_R")
@@ -61,7 +61,7 @@ class BaseContract(ContractProtocol[_D]):
         client: ClientProtocol,
         address: Address,
         state_init: t.Optional[StateInit] = None,
-        state_info: t.Optional[ContractStateInfo] = None,
+        info: t.Optional[ContractInfo] = None,
     ) -> None:
         """
         Initialize base contract wrapper.
@@ -69,12 +69,12 @@ class BaseContract(ContractProtocol[_D]):
         :param client: TON client for blockchain interactions
         :param address: Contract address on the blockchain
         :param state_init: Optional known StateInit (code and data)
-        :param state_info: Optional preloaded on-chain contract state
+        :param info: Optional preloaded on-chain contract state
         """
         self._client = client
         self._address = address
         self._state_init = state_init
-        self._state_info = state_info
+        self._info = info
 
     @property
     def client(self) -> ClientProtocol:
@@ -92,17 +92,6 @@ class BaseContract(ContractProtocol[_D]):
         return self._state_init
 
     @property
-    def state_info(self) -> ContractStateInfo:
-        """
-        Cached snapshot of the contract state.
-
-        :return: Contract state information
-        """
-        if self._state_info is None:
-            raise StateNotLoadedError(self, missing="state_info")
-        return t.cast(ContractStateInfo, self._state_info)
-
-    @property
     def state_data(self) -> _D:
         """
         Decoded on-chain data in typed form.
@@ -113,10 +102,21 @@ class BaseContract(ContractProtocol[_D]):
         """
         if not hasattr(self, "_data_model") or self._data_model is None:
             raise ContractError(self, "No `_data_model` defined for contract class.")
-        if not (self._state_info and self._state_info.data):
+        if not (self._info and self._info.data):
             raise StateNotLoadedError(self, missing="state_data")
-        cs = self._state_info.data.begin_parse()
+        cs = self._info.data.begin_parse()
         return self._data_model.deserialize(cs)
+
+    @property
+    def info(self) -> ContractInfo:
+        """
+        Cached snapshot of the contract state info.
+
+        :return: Contract state information
+        """
+        if self._info is None:
+            raise StateNotLoadedError(self, missing="info")
+        return t.cast(ContractInfo, self._info)
 
     @property
     def balance(self) -> int:
@@ -125,7 +125,7 @@ class BaseContract(ContractProtocol[_D]):
 
         :return: Balance from the latest known state
         """
-        return self.state_info.balance
+        return self.info.balance
 
     @property
     def state(self) -> ContractState:
@@ -134,7 +134,7 @@ class BaseContract(ContractProtocol[_D]):
 
         :return: One of ContractState enum values (ACTIVE, FROZEN, UNINIT, NONEXIST)
         """
-        return self.state_info.state
+        return self.info.state
 
     @property
     def is_active(self) -> bool:
@@ -179,7 +179,7 @@ class BaseContract(ContractProtocol[_D]):
 
         :return: Transaction LT or None if unknown
         """
-        return self.state_info.last_transaction_lt
+        return self.info.last_transaction_lt
 
     @property
     def last_transaction_hash(self) -> t.Optional[str]:
@@ -188,7 +188,7 @@ class BaseContract(ContractProtocol[_D]):
 
         :return: Transaction hash as hex string or None if unknown
         """
-        return self.state_info.last_transaction_hash
+        return self.info.last_transaction_hash
 
     @property
     def code(self) -> t.Optional[Cell]:
@@ -197,7 +197,7 @@ class BaseContract(ContractProtocol[_D]):
 
         :return: Code cell or None if not available
         """
-        return self.state_info.code
+        return self.info.code
 
     @property
     def data(self) -> t.Optional[Cell]:
@@ -206,36 +206,36 @@ class BaseContract(ContractProtocol[_D]):
 
         :return: Data cell or None if not available
         """
-        return self.state_info.data
+        return self.info.data
 
     @classmethod
-    async def _load_state_info(
+    async def _load_info(
         cls,
         client: ClientProtocol,
         address: Address,
-    ) -> ContractStateInfo:
+    ) -> ContractInfo:
         """
         Fetch contract state from the blockchain.
 
         If the request fails (except rate limits), sets state to default empty state.
         """
         try:
-            return await client.get_contract_info(address)
+            return await client.get_info(address)
         except ProviderResponseError as e:
             if e.code in {429, 228, 5556}:  # rate limit exceed
                 raise
-            return ContractStateInfo()
+            return ContractInfo()
         except (Exception,):
-            return ContractStateInfo()
+            return ContractInfo()
 
     async def refresh(self) -> None:
         """
         Refresh contract state from the blockchain.
 
-        Fetches current contract information and updates the cached state_info.
+        Fetches current contract information and updates the cached info.
         If the request fails (except rate limits), sets state to default empty state.
         """
-        self._state_info = await self._load_state_info(self.client, self.address)
+        self._info = await self._load_info(self.client, self.address)
 
     @classmethod
     def from_state_init(
@@ -323,8 +323,8 @@ class BaseContract(ContractProtocol[_D]):
         if not load_state:
             return cls(client, address)
 
-        state_info = await cls._load_state_info(client, address)
-        return cls(client, address, state_info=state_info)
+        info = await cls._load_info(client, address)
+        return cls(client, address, info=info)
 
     def __repr__(self) -> str:
         return f"< Contract {self.__class__.__name__} address: {self.address} >"

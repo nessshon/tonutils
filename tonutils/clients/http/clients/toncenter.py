@@ -14,7 +14,7 @@ from tonutils.exceptions import ClientError, RunGetMethodError
 from tonutils.types import (
     ClientType,
     ContractState,
-    ContractStateInfo,
+    ContractInfo,
     NetworkGlobalID,
     RetryPolicy,
 )
@@ -70,56 +70,44 @@ class ToncenterClient(BaseClient):
         )
 
     @property
-    def provider(self) -> ToncenterHttpProvider:
-        return self._provider
-
-    @property
-    def is_connected(self) -> bool:
+    def connected(self) -> bool:
         session = self._provider.session
         return session is not None and not session.closed
 
-    async def __aenter__(self) -> ToncenterClient:
-        await self._provider.connect()
-        return self
+    @property
+    def provider(self) -> ToncenterHttpProvider:
+        return self._provider
 
-    async def __aexit__(
-        self,
-        exc_type: t.Optional[t.Type[BaseException]],
-        exc_value: t.Optional[BaseException],
-        traceback: t.Optional[t.Any],
-    ) -> None:
+    async def connect(self) -> None:
+        await self._provider.connect()
+
+    async def close(self) -> None:
         await self._provider.close()
 
-    async def _send_boc(self, boc: str) -> None:
+    async def _send_message(self, boc: str) -> None:
         payload = SendBocPayload(boc=boc)
         return await self.provider.send_boc(payload=payload)
 
-    async def _get_blockchain_config(self) -> t.Dict[int, t.Any]:
+    async def _get_config(self) -> t.Dict[int, t.Any]:
         request = await self.provider.get_config_all()
 
         if request.result is None:
-            raise ClientError(
-                "Invalid get_config_all response: missing 'result' field."
-            )
+            raise ClientError("Invalid get_config response: missing `result`.")
 
         if request.result.config is None:
-            raise ClientError(
-                "Invalid config response: missing 'config' section in result."
-            )
+            raise ClientError("Invalid config response: missing `config` in `result`.")
 
         if request.result.config.bytes is None:
-            raise ClientError(
-                "Invalid config response: missing 'bytes' field in 'config' section."
-            )
+            raise ClientError("Invalid config response: missing `config.bytes`.")
 
         config_cell = Cell.one_from_boc(request.result.config.bytes)
         config_slice = config_cell.begin_parse()
         return parse_stack_config(config_slice)
 
-    async def _get_contract_info(self, address: str) -> ContractStateInfo:
+    async def _get_info(self, address: str) -> ContractInfo:
         request = await self.provider.get_address_information(address)
 
-        contract_info = ContractStateInfo(
+        contract_info = ContractInfo(
             balance=int(request.result.balance),
             state=ContractState(request.result.state),
         )
@@ -241,9 +229,3 @@ class ToncenterClient(BaseClient):
             )
 
         return decode_toncenter_stack(request.result.stack or [])
-
-    async def connect(self) -> None:
-        await self._provider.connect()
-
-    async def close(self) -> None:
-        await self._provider.close()

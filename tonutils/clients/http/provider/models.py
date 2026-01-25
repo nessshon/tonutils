@@ -140,7 +140,7 @@ class RunGetMethodPayload(BaseModel):
     stack: t.List[t.Any]
 
 
-class RunGetMethodResul(BaseModel):
+class RunGetMethodResult(BaseModel):
     """Response wrapper for /runGetMethod."""
 
     result: t.Optional[_GetMethod] = None

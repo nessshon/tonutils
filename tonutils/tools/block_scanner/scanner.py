@@ -237,7 +237,7 @@ class BlockScanner:
             if self._on_transactions is None:
                 continue
 
-            get_block_transactions = self._client.get_block_transactions_ext
+            get_block_transactions = self._client.get_block_transactions
             try:
                 transactions = await get_block_transactions(shard_block)
             except asyncio.CancelledError:

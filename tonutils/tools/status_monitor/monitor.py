@@ -114,7 +114,7 @@ class LiteServerMonitor:
             self._tasks.append(asyncio.create_task(slow))
 
     async def _ensure_connected(self, index: int, client: LiteClient) -> bool:
-        if client.provider.is_connected:
+        if client.provider.connected:
             return True
 
         now = time.monotonic()
@@ -124,7 +124,7 @@ class LiteServerMonitor:
 
         self._last_connect[index] = now
         await self._connect(index, client)
-        return client.provider.is_connected
+        return client.provider.connected
 
     async def _fast_update_loop(self, index: int, client: LiteClient) -> None:
         while not self._stop.is_set():
@@ -141,7 +141,7 @@ class LiteServerMonitor:
 
     async def _medium_update_loop(self, index: int, client: LiteClient) -> None:
         while not self._stop.is_set():
-            if not client.is_connected:
+            if not client.connected:
                 await self._sleep(1.0)
                 continue
 
@@ -154,7 +154,7 @@ class LiteServerMonitor:
 
     async def _slow_update_loop(self, index: int, client: LiteClient) -> None:
         while not self._stop.is_set():
-            if not client.is_connected:
+            if not client.connected:
                 await self._sleep(1.0)
                 continue
 
@@ -223,14 +223,14 @@ class LiteServerMonitor:
                 return
 
             mc_txs, shards = await asyncio.gather(
-                client.get_block_transactions_ext(mc_block),
+                client.get_block_transactions(mc_block),
                 client.get_all_shards_info(mc_block),
             )
             last_mc_block = BlockInfo(seqno=mc_block.seqno, txs_count=len(mc_txs))
 
             if shards:
                 bc_block = max(shards, key=lambda b: b.seqno)
-                bc_txs = await client.get_block_transactions_ext(bc_block)
+                bc_txs = await client.get_block_transactions(bc_block)
                 last_bc_block = BlockInfo(seqno=bc_block.seqno, txs_count=len(bc_txs))
                 await self._set_status(
                     index,

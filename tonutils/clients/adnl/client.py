@@ -2,32 +2,29 @@ from __future__ import annotations
 
 import typing as t
 
-from pytoniq_core import Address, BlockIdExt, Block, Transaction
-
+from tonutils.clients.adnl.mixin import LiteMixin
 from tonutils.clients.adnl.provider import AdnlProvider
 from tonutils.clients.adnl.provider.config import (
     get_mainnet_global_config,
     get_testnet_global_config,
+    load_global_config,
 )
 from tonutils.clients.adnl.provider.models import (
     LiteServer,
     GlobalConfig,
-    MasterchainInfo,
 )
-from tonutils.clients.adnl.utils import decode_stack, encode_stack
 from tonutils.clients.base import BaseClient
 from tonutils.clients.limiter import RateLimiter
+from tonutils.exceptions import NotConnectedError, ClientError
 from tonutils.types import (
     BinaryLike,
     ClientType,
-    ContractStateInfo,
     NetworkGlobalID,
     RetryPolicy,
-    WorkchainID,
 )
 
 
-class LiteClient(BaseClient):
+class LiteClient(LiteMixin, BaseClient):
     """TON blockchain client for lite-server communication over ADNL provider."""
 
     TYPE = ClientType.ADNL
@@ -96,32 +93,20 @@ class LiteClient(BaseClient):
         return self._provider
 
     @property
-    def is_connected(self) -> bool:
+    def connected(self) -> bool:
         """
         Check whether the lite-server connection is established.
 
         :return: True if connected, False otherwise
         """
-        return self._provider.is_connected
-
-    async def __aenter__(self) -> LiteClient:
-        await self.connect()
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: t.Optional[t.Type[BaseException]],
-        exc_value: t.Optional[BaseException],
-        traceback: t.Optional[t.Any],
-    ) -> None:
-        await self.close()
+        return self._provider.connected
 
     @classmethod
     def from_config(
         cls,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
         *,
-        config: t.Union[GlobalConfig, t.Dict[str, t.Any]],
+        config: t.Union[GlobalConfig, t.Dict[str, t.Any], str],
         index: int,
         connect_timeout: float = 2.0,
         request_timeout: float = 10.0,
@@ -141,7 +126,7 @@ class LiteClient(BaseClient):
         Public free configs may also be used, but may be unstable under load.
 
         :param network: Target TON network
-        :param config: GlobalConfig instance or raw dict
+        :param config: GlobalConfig instance, config file path as string, or raw dict
         :param index: Index of lite-server entry in the configuration
         :param connect_timeout: Timeout in seconds for connect/handshake performed
             by this client.
@@ -152,9 +137,20 @@ class LiteClient(BaseClient):
         :param retry_policy: Optional retry policy that defines per-error-code retry rules
         :return: Configured LiteClient instance
         """
+        if isinstance(config, str):
+            config = load_global_config(config)
         if isinstance(config, dict):
             config = GlobalConfig(**config)
+
+        liteservers = config.liteservers
+        if not 0 <= index < len(liteservers):
+            raise ClientError(
+                f"{cls.__name__}.from_config: "
+                f"liteserver index {index} is out of range "
+                f"(available: 0..{len(liteservers) - 1})."
+            )
         ls = config.liteservers[index]
+
         return cls(
             network=network,
             ip=ls.host,
@@ -216,194 +212,28 @@ class LiteClient(BaseClient):
             retry_policy=retry_policy,
         )
 
-    async def _send_boc(self, boc: str) -> None:
-        return await self.provider.send_message(bytes.fromhex(boc))
-
-    async def _get_blockchain_config(self) -> t.Dict[int, t.Any]:
-        return await self.provider.get_config_all()
-
-    async def _get_contract_info(self, address: str) -> ContractStateInfo:
-        return await self.provider.get_account_state(Address(address))
-
-    async def _get_transactions(
-        self,
-        address: str,
-        limit: int = 100,
-        from_lt: t.Optional[int] = None,
-        to_lt: t.Optional[int] = None,
-    ) -> t.List[Transaction]:
-        to_lt = 0 if to_lt is None else to_lt
-        state = await self._get_contract_info(address)
-        account = Address(address).to_tl_account_id()
-
-        if state.last_transaction_lt is None or state.last_transaction_hash is None:
-            return []
-
-        curr_lt = state.last_transaction_lt
-        curr_hash = state.last_transaction_hash
-        transactions: t.List[Transaction] = []
-
-        while curr_lt != 0:
-            fetch_lt = curr_lt
-            fetch_hash = curr_hash
-
-            txs = await self.provider.get_transactions(
-                account=account,
-                count=16,
-                from_lt=fetch_lt,
-                from_hash=fetch_hash,
-            )
-            if not txs:
-                break
-
-            for tx in txs:
-                if from_lt is not None and tx.lt > from_lt:
-                    continue
-                if to_lt > 0 and tx.lt <= to_lt:
-                    return transactions[:limit]
-
-                transactions.append(tx)
-                if len(transactions) >= limit:
-                    return transactions
-
-            last_tx = txs[-1]
-            curr_lt = last_tx.prev_trans_lt
-            curr_hash = last_tx.prev_trans_hash.hex()
-
-        return transactions[:limit]
-
-    async def _run_get_method(
-        self,
-        address: str,
-        method_name: str,
-        stack: t.Optional[t.List[t.Any]] = None,
-    ) -> t.List[t.Any]:
-        result = await self.provider.run_smc_method(
-            address=Address(address),
-            method_name=method_name,
-            stack=encode_stack(stack or []),
-        )
-        return decode_stack(result or [])
-
     async def connect(self) -> None:
         """Establish connection to the lite-server."""
         await self.provider.connect()
-
-    async def reconnect(self) -> None:
-        """Force reconnection to the lite-server."""
-        await self.provider.reconnect()
 
     async def close(self) -> None:
         """Close the lite-server connection."""
         await self.provider.close()
 
-    async def get_time(self) -> int:
+    async def _adnl_call(self, method: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """
-        Fetch current network time from lite-server.
+        Execute lite-server call using the current provider.
 
-        :return: Current UNIX timestamp
+        :param method: Provider coroutine method name.
+        :param args: Positional arguments forwarded to the provider method.
+        :param kwargs: Keyword arguments forwarded to the provider method.
+        :return: Provider method result.
         """
-        return await self.provider.get_time()
+        if not self.connected:
+            raise NotConnectedError(
+                component=self.__class__.__name__,
+                operation=method,
+            )
 
-    async def get_version(self) -> int:
-        """
-        Fetch lite-server protocol version.
-
-        :return: Version number
-        """
-        return await self.provider.get_version()
-
-    async def wait_masterchain_seqno(
-        self,
-        seqno: int,
-        timeout_ms: int,
-        schema_name: str,
-        data: t.Optional[dict] = None,
-    ) -> dict:
-        """
-        Combine waitMasterchainSeqno with another lite-server query.
-
-        :param seqno: Masterchain seqno to wait for
-        :param timeout_ms: Wait timeout in milliseconds
-        :param schema_name: Lite-server TL method name without prefix
-        :param data: Additional method arguments
-        :return: Lite-server response as dictionary
-        """
-        return await self.provider.wait_masterchain_seqno(
-            seqno=seqno,
-            timeout_ms=timeout_ms,
-            schema_name=schema_name,
-            data=data,
-        )
-
-    async def get_masterchain_info(self) -> MasterchainInfo:
-        """
-        Fetch basic masterchain information.
-
-        :return: MasterchainInfo instance
-        """
-        return await self.provider.get_masterchain_info()
-
-    async def lookup_block(
-        self,
-        workchain: WorkchainID,
-        shard: int,
-        seqno: t.Optional[int] = None,
-        lt: t.Optional[int] = None,
-        utime: t.Optional[int] = None,
-    ) -> t.Tuple[BlockIdExt, Block]:
-        """
-        Locate a block by workchain/shard and one of seqno/lt/utime.
-
-        :param workchain: Workchain identifier
-        :param shard: Shard identifier
-        :param seqno: Block sequence number
-        :param lt: Logical time filter
-        :param utime: UNIX time filter
-        :return: Tuple of BlockIdExt and deserialized Block
-        """
-        return await self.provider.lookup_block(
-            workchain=workchain,
-            shard=shard,
-            seqno=seqno,
-            lt=lt,
-            utime=utime,
-        )
-
-    async def get_block_header(
-        self,
-        block: BlockIdExt,
-    ) -> t.Tuple[BlockIdExt, Block]:
-        """
-        Fetch and deserialize block header by BlockIdExt.
-
-        :param block: BlockIdExt to query
-        :return: Tuple of BlockIdExt and deserialized Block
-        """
-        return await self.provider.get_block_header(block)
-
-    async def get_block_transactions_ext(
-        self,
-        block: BlockIdExt,
-        count: int = 1024,
-    ) -> t.List[Transaction]:
-        """
-        Fetch extended block transactions list.
-
-        :param block: Target block identifier
-        :param count: Maximum number of transactions per request
-        :return: List of deserialized Transaction objects
-        """
-        return await self.provider.get_block_transactions_ext(block, count=count)
-
-    async def get_all_shards_info(
-        self,
-        block: t.Optional[BlockIdExt] = None,
-    ) -> t.List[BlockIdExt]:
-        """
-        Fetch shard info for all workchains at a given masterchain block.
-
-        :param block: Masterchain block ID or None to use latest
-        :return: List of shard BlockIdExt objects
-        """
-        return await self.provider.get_all_shards_info(block)
+        fn = getattr(self.provider, method)
+        return await fn(*args, **kwargs)

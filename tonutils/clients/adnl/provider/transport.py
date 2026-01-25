@@ -64,7 +64,7 @@ class AdnlTcpTransport:
         self._closing = False
 
     @property
-    def is_connected(self) -> bool:
+    def connected(self) -> bool:
         """Check if the transport is currently connected."""
         return self._connected
 
@@ -178,7 +178,7 @@ class AdnlTcpTransport:
                 "connect", f"timeout after {self.connect_timeout}s"
             ) from exc
         except OSError as exc:
-            raise self._error("connect", "connection refused") from exc
+            raise self._error("connect", str(exc)) from exc
 
         if self.writer is None or self.reader is None:
             raise self._error("connect", "stream init failed")
@@ -218,7 +218,11 @@ class AdnlTcpTransport:
         :param payload: Raw ADNL packet bytes
         """
         if not self._connected or self.writer is None:
-            raise NotConnectedError()
+            raise NotConnectedError(
+                component="ADNL transport",
+                endpoint=self.node.endpoint,
+                operation="send",
+            )
 
         packet = self._build_frame(payload)
         encrypted = self.encrypt_frame(packet)
@@ -233,7 +237,12 @@ class AdnlTcpTransport:
         Blocks until a complete packet is available from the background reader.
         """
         if not self._connected:
-            raise NotConnectedError()
+            raise NotConnectedError(
+                component="ADNL transport",
+                endpoint=self.node.endpoint,
+                operation="recv",
+            )
+
         return await self._incoming.get()
 
     async def read_frame(self, discard: bool = False) -> t.Optional[bytes]:

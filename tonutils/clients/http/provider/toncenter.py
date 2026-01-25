@@ -1,7 +1,6 @@
 import typing as t
 
 import aiohttp
-from pydantic import BaseModel
 
 from tonutils.clients.http.provider.base import HttpProvider
 from tonutils.clients.http.provider.models import (
@@ -10,7 +9,7 @@ from tonutils.clients.http.provider.models import (
     GetAddressInformationResult,
     GetTransactionsResult,
     RunGetMethodPayload,
-    RunGetMethodResul,
+    RunGetMethodResult,
 )
 from tonutils.types import NetworkGlobalID, RetryPolicy
 
@@ -37,6 +36,7 @@ class ToncenterHttpProvider(HttpProvider):
         }
         base_url = base_url or urls[network]
         headers = {**(headers or {}), **({"X-Api-Key": api_key} if api_key else {})}
+
         super().__init__(
             base_url=base_url,
             session=session,
@@ -47,10 +47,6 @@ class ToncenterHttpProvider(HttpProvider):
             rps_period=rps_period,
             retry_policy=retry_policy,
         )
-
-    @staticmethod
-    def _model(model: t.Type[BaseModel], data: t.Any) -> t.Any:
-        return model.model_validate(data)
 
     async def send_boc(
         self,
@@ -116,9 +112,9 @@ class ToncenterHttpProvider(HttpProvider):
     async def run_get_method(
         self,
         payload: RunGetMethodPayload,
-    ) -> RunGetMethodResul:
+    ) -> RunGetMethodResult:
         return self._model(
-            RunGetMethodResul,
+            RunGetMethodResult,
             await self.send_http_request(
                 "POST",
                 "/runGetMethod",

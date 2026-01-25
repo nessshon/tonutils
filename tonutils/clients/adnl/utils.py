@@ -15,7 +15,7 @@ from pytoniq_core import (
     VmTuple,
 )
 
-from tonutils.types import ContractState, ContractStateInfo, StackItems, StackItem
+from tonutils.types import ContractState, ContractInfo, StackItems, StackItem
 from tonutils.utils import cell_to_hex, norm_stack_num, norm_stack_cell
 
 
@@ -72,17 +72,17 @@ def build_contract_state_info(
     address: Address,
     account: Account,
     shard_account: ShardAccount,
-) -> ContractStateInfo:
+) -> ContractInfo:
     """
-    Build a high-level ContractStateInfo object from raw account data.
+    Build a high-level ContractInfo object from raw account data.
 
     :param address: Contract address
     :param account: Raw Account data structure
     :param shard_account: Parsed ShardAccount entry
-    :return: Filled ContractStateInfo instance
+    :return: Filled ContractInfo instance
     """
     simple_account = SimpleAccount.from_raw(account, address)
-    info = ContractStateInfo(balance=simple_account.balance)
+    info = ContractInfo(balance=simple_account.balance)
 
     if simple_account.state is not None:
         state_init = simple_account.state.state_init

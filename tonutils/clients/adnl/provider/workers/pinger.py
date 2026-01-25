@@ -79,5 +79,5 @@ class PingerWorker(BaseWorker):
         while self.running:
             await asyncio.sleep(self._interval)
 
-            if self.provider.is_connected:
+            if self.provider.connected:
                 await self.ping_once()

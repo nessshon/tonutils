@@ -5,6 +5,7 @@ import json
 import typing as t
 
 import aiohttp
+from pydantic import BaseModel, ValidationError
 
 from tonutils.clients.limiter import RateLimiter
 from tonutils.exceptions import (
@@ -13,6 +14,8 @@ from tonutils.exceptions import (
     ProviderTimeoutError,
     RetryLimitError,
     CDN_CHALLENGE_MARKERS,
+    TransportError,
+    ProviderError,
 )
 from tonutils.types import RetryPolicy
 
@@ -65,17 +68,77 @@ class HttpProvider:
         return self._session
 
     @property
-    def is_connected(self) -> bool:
+    def connected(self) -> bool:
         """Check whether the provider session is initialized and open."""
         return self._session is not None and not self._session.closed
 
+    @staticmethod
+    def _model(model: t.Type[BaseModel], data: t.Any) -> t.Any:
+        try:
+            return model.model_validate(data)
+        except ValidationError as e:
+            raise ProviderError(
+                f"invalid response: {model.__name__} validation failed"
+            ) from e
+
+    async def send_http_request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: t.Any = None,
+        json_data: t.Any = None,
+    ) -> t.Any:
+        """Send an HTTP request with retry handling.
+
+        On provider error, retries the request according to the retry policy
+        matched by error code and message. If no rule matches, or retry attempts
+        are exhausted, the error is raised.
+
+        :param method: HTTP method.
+        :param path: Endpoint path relative to base_url.
+        :param params: Optional query parameters.
+        :param json_data: Optional JSON body.
+        :return: Parsed response payload.
+        """
+        attempts: t.Dict[int, int] = {}
+
+        while True:
+            try:
+                return await self._send_once(
+                    method,
+                    path,
+                    params=params,
+                    json_data=json_data,
+                )
+            except ProviderResponseError as e:
+                policy = self._retry_policy
+                if policy is None:
+                    raise
+
+                rule = policy.rule_for(e.code, e.message)
+                if rule is None:
+                    raise
+
+                key = id(rule)
+                attempts[key] = attempts.get(key, 0) + 1
+
+                if attempts[key] >= rule.attempts:
+                    raise RetryLimitError(
+                        attempts=attempts[key],
+                        max_attempts=rule.attempts,
+                        last_error=e,
+                    ) from e
+
+                await asyncio.sleep(rule.delay(attempts[key] - 1))
+
     async def connect(self) -> None:
         """Initialize HTTP session if not already connected."""
-        if self.is_connected:
+        if self.connected:
             return
 
         async with self._connect_lock:
-            if self.is_connected:
+            if self.connected:
                 return
 
             self._session = aiohttp.ClientSession(
@@ -139,8 +202,12 @@ class HttpProvider:
         :param json_data: Optional JSON body.
         :return: Parsed response payload.
         """
-        if not self.is_connected:
-            raise NotConnectedError()
+        if not self.connected:
+            raise NotConnectedError(
+                component="HttpProvider",
+                endpoint=self._base_url,
+                operation=f"{method} {path}",
+            )
 
         assert self._session is not None
         url = f"{self._base_url}/{path.lstrip('/')}"
@@ -166,64 +233,12 @@ class HttpProvider:
                 endpoint=url,
                 operation="http request",
             ) from exc
-
         except aiohttp.ClientError as exc:
-            raise ProviderResponseError(
-                code=0,
-                message=str(exc),
+            raise TransportError(
                 endpoint=url,
+                operation="http request",
+                reason=str(exc),
             ) from exc
-
-    async def send_http_request(
-        self,
-        method: str,
-        path: str,
-        *,
-        params: t.Any = None,
-        json_data: t.Any = None,
-    ) -> t.Any:
-        """Send an HTTP request with retry handling.
-
-        On provider error, retries the request according to the retry policy
-        matched by error code and message. If no rule matches, or retry attempts
-        are exhausted, the error is raised.
-
-        :param method: HTTP method.
-        :param path: Endpoint path relative to base_url.
-        :param params: Optional query parameters.
-        :param json_data: Optional JSON body.
-        :return: Parsed response payload.
-        """
-        attempts: t.Dict[int, int] = {}
-
-        while True:
-            try:
-                return await self._send_once(
-                    method,
-                    path,
-                    params=params,
-                    json_data=json_data,
-                )
-            except ProviderResponseError as e:
-                policy = self._retry_policy
-                if policy is None:
-                    raise
-
-                rule = policy.rule_for(e.code, e.message)
-                if rule is None:
-                    raise
-
-                key = id(rule)
-                attempts[key] = attempts.get(key, 0) + 1
-
-                if attempts[key] >= rule.attempts:
-                    raise RetryLimitError(
-                        attempts=attempts[key],
-                        max_attempts=rule.attempts,
-                        last_error=e,
-                    ) from e
-
-                await asyncio.sleep(rule.delay(attempts[key] - 1))
 
     @classmethod
     def _detect_proxy_error(

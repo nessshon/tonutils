@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import abc
+import asyncio
 import typing as t
+from contextlib import suppress
 
 from pytoniq_core import Address, Cell, Transaction, begin_cell
 
+from tonutils.exceptions import ProviderError
 from tonutils.types import (
     AddressLike,
-    ContractStateInfo,
+    ContractInfo,
     ClientType,
     DNSCategory,
     NetworkGlobalID,
@@ -36,6 +39,15 @@ class BaseClient(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def connected(self) -> bool:
+        """
+        Check whether provider resources are initialized and usable.
+
+        :return: True if client has an active session/connection, False otherwise
+        """
+
+    @property
+    @abc.abstractmethod
     def provider(self) -> t.Any:
         """
         Underlying transport/provider backend used for all requests.
@@ -43,18 +55,50 @@ class BaseClient(abc.ABC):
         Expected to expose network I/O primitives appropriate for the client
         type (HTTP session, ADNL transport, etc.).
         """
-        raise NotImplementedError
 
     @abc.abstractmethod
+    async def connect(self) -> None:
+        """Initialize any required provider resources (sessions, transports, etc.)."""
+
+    @abc.abstractmethod
+    async def close(self) -> None:
+        """Close provider resources. Should be safe to call multiple times."""
+
+    @abc.abstractmethod
+    async def _send_message(self, boc: str) -> None: ...
+
+    @abc.abstractmethod
+    async def _get_config(self) -> t.Dict[int, t.Any]: ...
+
+    @abc.abstractmethod
+    async def _get_info(self, address: str) -> ContractInfo: ...
+
+    @abc.abstractmethod
+    async def _get_transactions(
+        self,
+        address: str,
+        limit: int = 100,
+        from_lt: t.Optional[int] = None,
+        to_lt: t.Optional[int] = None,
+    ) -> t.List[Transaction]: ...
+
+    @abc.abstractmethod
+    async def _run_get_method(
+        self,
+        address: str,
+        method_name: str,
+        stack: t.Optional[t.List[t.Any]] = None,
+    ) -> t.List[t.Any]: ...
+
     async def __aenter__(self) -> BaseClient:
         """
         Prepare client resources for use.
 
         Should initialize network connections or sessions as required.
         """
-        raise NotImplementedError
+        await self.connect()
+        return self
 
-    @abc.abstractmethod
     async def __aexit__(
         self,
         exc_type: t.Optional[t.Type[BaseException]],
@@ -66,122 +110,35 @@ class BaseClient(abc.ABC):
 
         Called automatically when the async context ends.
         """
-        raise NotImplementedError
+        with suppress(asyncio.CancelledError):
+            await self.close()
 
-    @abc.abstractmethod
-    async def _send_boc(self, boc: str) -> None:
-        """
-        Send an external message to the network using the underlying provider.
-
-        :param boc: Message body serialized as BoC string,
-            in a format accepted by the underlying provider
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def _get_blockchain_config(self) -> t.Dict[int, t.Any]:
-        """
-        Fetch full blockchain configuration from the underlying provider.
-
-        :return: Mapping of configuration parameter ID to parsed value
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def _get_contract_info(self, address: str) -> ContractStateInfo:
-        """
-        Retrieve basic contract state information from the provider.
-
-        :param address: Contract address in raw
-        :return: ContractStateInfo with basic state, balance and last tx data
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def _get_transactions(
-        self,
-        address: str,
-        limit: int = 100,
-        from_lt: t.Optional[int] = None,
-        to_lt: t.Optional[int] = None,
-    ) -> t.List[Transaction]:
-        """
-        Fetch transaction history for a contract.
-        Returns transactions in the range (to_lt, from_lt), ordered from newest to oldest.
-
-        :param address: Contract address as string
-        :param limit: Maximum number of transactions to return
-        :param from_lt: Upper bound logical time (inclusive).
-            If None, starts from the most recent transaction.
-        :param to_lt: Lower bound logical time (exclusive).
-            If None or 0, no lower bound is applied.
-        :return: List of Transaction objects ordered from newest to oldest
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def _run_get_method(
-        self,
-        address: str,
-        method_name: str,
-        stack: t.Optional[t.List[t.Any]] = None,
-    ) -> t.List[t.Any]:
-        """
-        Execute a contract get-method via the provider.
-
-        :param address: Contract address in raw
-        :param method_name: Name of the get-method to execute
-        :param stack: Optional initial TVM stack items for the call
-        :return: Decoded TVM stack items returned by the method
-        """
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def is_connected(self) -> bool:
-        """
-        Check whether provider resources are initialized and usable.
-
-        :return: True if client has an active session/connection, False otherwise
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def connect(self) -> None:
-        """Initialize any required provider resources (sessions, transports, etc.)."""
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def close(self) -> None:
-        """Close provider resources. Should be safe to call multiple times."""
-        raise NotImplementedError
-
-    async def send_boc(self, boc: str) -> None:
+    async def send_message(self, boc: str) -> None:
         """
         Send an external message to the blockchain.
 
         :param boc: Message body serialized as BoC string, in a format accepted by the underlying provider
         """
-        await self._send_boc(boc)
+        await self._send_message(boc)
 
-    async def get_blockchain_config(self) -> t.Dict[int, t.Any]:
+    async def get_config(self) -> t.Dict[int, t.Any]:
         """
         Fetch and decode global blockchain configuration.
 
         :return: Mapping of configuration parameter ID to parsed value
         """
-        return await self._get_blockchain_config()
+        return await self._get_config()
 
-    async def get_contract_info(self, address: AddressLike) -> ContractStateInfo:
+    async def get_info(self, address: AddressLike) -> ContractInfo:
         """
         Fetch basic state information for a smart contract.
 
         :param address: Contract address as Address object or string
-        :return: ContractStateInfo with code, data, balance and last tx data
+        :return: ContractInfo with code, data, balance and last tx data
         """
         if isinstance(address, Address):
             address = Address(address).to_str(is_user_friendly=False)
-        return await self._get_contract_info(address=address)
+        return await self._get_info(address=address)
 
     async def get_transactions(
         self,
@@ -192,7 +149,6 @@ class BaseClient(abc.ABC):
     ) -> t.List[Transaction]:
         """
         Fetch transaction history for a contract.
-        Returns transactions in the range (to_lt, from_lt), ordered from newest to oldest.
 
         :param address: Contract address as Address object or string
         :param limit: Maximum number of transactions to return
@@ -262,7 +218,7 @@ class BaseClient(abc.ABC):
         if isinstance(domain, str):
             domain = encode_dns_name(domain)
         if dns_root_address is None:
-            blockchain_config = await self.get_blockchain_config()
+            blockchain_config = await self.get_config()
             hash_part = blockchain_config[4].dns_root_addr
             dns_root_address = Address((WorkchainID.MASTERCHAIN.value, hash_part))
 
@@ -274,7 +230,9 @@ class BaseClient(abc.ABC):
             stack=[domain_cell.to_slice(), category.value],
         )
         if len(res) < 2:
-            raise ValueError(f"`dnsresolve` returned {len(res)} items, but 2 expected.")
+            raise ProviderError(
+                f"dnsresolve failed: invalid response (expected 2 stack items, got {len(res)})"
+            )
 
         blen = len(domain) * 8
         rlen = t.cast(int, res[0])
@@ -285,7 +243,9 @@ class BaseClient(abc.ABC):
             return None
 
         if rlen % 8 != 0 or rlen > blen:
-            raise ValueError(f"Invalid resolved length: result {rlen}, bytes {blen}.")
+            raise ProviderError(
+                f"dnsresolve failed: invalid resolved length {rlen} bits (domain {blen} bits)"
+            )
         if rlen == blen:
             # noinspection PyProtectedMember
             tcls = DNSRecords._DNS_RECORDS_CLASSES.get(category.name.lower())
