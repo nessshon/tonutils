@@ -5,9 +5,13 @@ import binascii
 import decimal
 import hashlib
 import hmac
+import json
 import os
 import time
 import typing as t
+import urllib.request
+from pathlib import Path
+from urllib.error import HTTPError, URLError
 
 from Cryptodome.Cipher import AES
 from nacl.bindings import (
@@ -40,6 +44,7 @@ __all__ = [
     "cell_to_hex",
     "decode_dns_name",
     "encode_dns_name",
+    "load_json",
     "maybe_stack_addr",
     "norm_stack_cell",
     "norm_stack_num",
@@ -387,15 +392,15 @@ class TextCipher:
         if isinstance(payload, bytes):
             return payload[:32], payload[32:48], payload[48:]
         elif isinstance(payload, str):
+            # Try hex first; if that fails, try base64.
             try:
-                payload = bytes.fromhex(payload)
+                data = bytes.fromhex(payload)
             except ValueError:
-                pass
-            try:
-                payload = base64.b64decode(payload, validate=True)
-            except (binascii.Error, ValueError):
-                raise ValueError("Invalid payload encoding: not hex or base64.")
-            return payload[:32], payload[32:48], payload[48:]
+                try:
+                    data = base64.b64decode(payload, validate=True)
+                except (binascii.Error, ValueError):
+                    raise ValueError("Invalid payload encoding: not hex or base64.")
+            return data[:32], data[32:48], data[48:]
 
         cell = EncryptedTextCommentBody.deserialize(payload.begin_parse())
         return cell.pub_xor, cell.msg_key, cell.ciphertext
@@ -501,3 +506,38 @@ class TextCipher:
 
         comment = dec_data[padding_size:]
         return comment.decode()
+
+
+def load_json(source: str, timeout: float = 5.0) -> t.Any:
+    """
+    Load and parse JSON from a URL or a local file.
+
+    :param source: URL or file path
+    :param timeout: Network timeout in seconds
+    :return: Parsed JSON object
+    """
+    try:
+        if source.startswith(("http://", "https://")):
+            req = urllib.request.Request(
+                source,
+                method="GET",
+                headers={
+                    "User-Agent": "tonutils (+https://github.com/nessshon/tonutils)",
+                    "Accept": "application/json,text/plain,*/*",
+                },
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return json.loads(r.read().decode("utf-8"))
+
+        return json.loads(Path(source).read_text(encoding="utf-8"))
+
+    except HTTPError as e:
+        raise RuntimeError(f"JSON fetch failed: {e} ({source})") from e
+    except URLError as e:
+        raise RuntimeError(f"JSON fetch failed: {e.reason} ({source})") from e
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"JSON is invalid: {e.msg} ({source})") from e
+    except OSError as e:
+        raise RuntimeError(f"JSON read failed: {e} ({source})") from e
+    except Exception as e:
+        raise RuntimeError(f"JSON load failed: {e} ({source})") from e

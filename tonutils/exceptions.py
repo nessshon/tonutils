@@ -23,26 +23,9 @@ class TonutilsError(Exception):
 
 
 class TransportError(TonutilsError):
-    """Transport-level failure with structured context.
+    """Transport-level failure (connect/handshake/send/recv)."""
 
-    Covers: TCP connect, ADNL handshake, send/recv, crypto failures.
-
-    :param endpoint: Endpoint identifier (URL or "host:port").
-    :param operation: What was attempted ("connect", "handshake", "send", "recv")
-    :param reason: Why it failed ("timeout 2.0s", "connection refused", etc.)
-    """
-
-    endpoint: str
-    operation: str
-    reason: str
-
-    def __init__(
-        self,
-        *,
-        endpoint: str,
-        operation: str,
-        reason: str,
-    ) -> None:
+    def __init__(self, *, endpoint: str, operation: str, reason: str) -> None:
         self.endpoint = endpoint
         self.operation = operation
         self.reason = reason
@@ -50,23 +33,19 @@ class TransportError(TonutilsError):
 
 
 class ProviderError(TonutilsError):
-    """Raise on provider-level failures (protocol, parsing, session/state)."""
+    """Provider-level failure (protocol/parsing/backend/state)."""
 
 
 class ClientError(TonutilsError):
-    """Raise on client misuse, validation errors, or unsupported operations."""
+    """Client misuse, validation errors, or unsupported operations."""
 
 
 class BalancerError(TonutilsError):
-    """Raise on balancer failures (no alive backends, failover exhausted)."""
+    """Balancer failure (no alive backends, failover exhausted)."""
 
 
 class NotConnectedError(TonutilsError, RuntimeError):
-    """Raise when an operation requires an active connection."""
-
-    component: str
-    endpoint: t.Optional[str]
-    operation: t.Optional[str]
+    """Raised when an operation requires an active connection."""
 
     def __init__(
         self,
@@ -74,112 +53,69 @@ class NotConnectedError(TonutilsError, RuntimeError):
         component: str = "client",
         endpoint: t.Optional[str] = None,
         operation: t.Optional[str] = None,
-        hint: t.Optional[str] = None,
     ) -> None:
         self.component = component
         self.endpoint = endpoint
         self.operation = operation
 
-        if hint is None:
-            hint = "Call connect() first or use an async context manager (`async with ...`)."
-
+        op = f"cannot `{operation}`: " if operation else ""
         where = f" ({endpoint})" if endpoint else ""
-        prefix = f"cannot `{operation}`: " if operation else ""
-        super().__init__(f"{prefix}{component} is not connected{where}. {hint}")
+        super().__init__(f"{op}{component} is not connected{where}")
 
 
 class ProviderTimeoutError(ProviderError, asyncio.TimeoutError):
-    """Raise when a provider operation exceeds its timeout.
-
-    :param timeout: Timeout in seconds.
-    :param endpoint: Endpoint identifier (URL or host:port).
-    :param operation: Operation label (e.g. "request", "connect").
-    """
-
-    timeout: float
-    endpoint: str
-    operation: str
+    """Provider operation exceeded its timeout."""
 
     def __init__(self, *, timeout: float, endpoint: str, operation: str) -> None:
-        self.timeout = timeout
+        self.timeout = float(timeout)
         self.endpoint = endpoint
         self.operation = operation
-        super().__init__(f"{operation} timed out after {timeout}s ({endpoint})")
+        super().__init__(f"{operation} timed out after {self.timeout}s ({endpoint})")
 
 
 class ProviderResponseError(ProviderError):
-    """Raise when a backend returns an error response.
-
-    :param code: Backend code (HTTP status or lite-server code).
-    :param message: Backend error description.
-    :param endpoint: Endpoint identifier (URL or host:port).
-    """
-
-    code: int
-    message: str
-    endpoint: str
+    """Backend returned an error response."""
 
     def __init__(self, *, code: int, message: str, endpoint: str) -> None:
-        self.code = code
+        self.code = int(code)
         self.message = message
         self.endpoint = endpoint
-        super().__init__(f"request failed: {code} {message} ({endpoint})")
+        super().__init__(f"request failed: {self.code} {self.message} ({endpoint})")
 
 
 class RetryLimitError(ProviderError):
-    """Raise when retry policy is exhausted for a matched rule.
-
-    :param attempts: Attempts already performed for the matched rule.
-    :param max_attempts: Maximum attempts allowed by the matched rule.
-    :param last_error: Last provider error that triggered a retry.
-    """
-
-    attempts: int
-    max_attempts: int
-    last_error: ProviderError
+    """Retry policy exhausted."""
 
     def __init__(
         self,
-        *,
         attempts: int,
         max_attempts: int,
         last_error: ProviderError,
     ) -> None:
-        self.attempts = attempts
-        self.max_attempts = max_attempts
+        self.attempts = int(attempts)
+        self.max_attempts = int(max_attempts)
         self.last_error = last_error
-        super().__init__(
-            f"retry limit reached ({attempts}/{max_attempts}): {last_error}"
-        )
+        ratio = f"{self.attempts}/{self.max_attempts}"
+        super().__init__(f"retry limit reached {ratio}: {last_error}")
 
 
 class ContractError(ClientError):
-    """Raise when a contract wrapper operation fails.
+    """Contract wrapper operation failed."""
 
-    :param target: Contract instance or contract class related to the failure.
-    :param message: Human-readable error message.
-    """
-
-    target: t.Any
-    message: str
-
-    def __init__(self, target: t.Any, message: str) -> None:
+    def __init__(self, target: t.Any, details: str) -> None:
         self.target = target
-        self.message = message
-        name = (
-            target.__name__ if isinstance(target, type) else target.__class__.__name__
-        )
-        super().__init__(f"{name} failed: {message}")
+        self.details = details
+
+        if isinstance(target, type):
+            name = target.__name__
+        else:
+            name = target.__class__.__name__
+
+        super().__init__(f"{name} failed: {details}")
 
 
 class StateNotLoadedError(ContractError):
-    """Raise when a contract wrapper requires state that is not loaded.
-
-    :param contract: Contract instance related to the failure.
-    :param missing: Missing field name (e.g. "info", "state_data").
-    """
-
-    missing: str
+    """Contract wrapper requires state that is not loaded."""
 
     def __init__(self, contract: t.Any, *, missing: str) -> None:
         self.missing = missing
@@ -188,23 +124,14 @@ class StateNotLoadedError(ContractError):
 
 
 class RunGetMethodError(ClientError):
-    """Raise when a contract get-method returns a non-zero TVM exit code.
+    """Contract get-method returned a non-zero TVM exit code."""
 
-    :param address: Contract address (string form).
-    :param method_name: Get-method name.
-    :param exit_code: TVM exit code.
-    """
-
-    address: str
-    method_name: str
-    exit_code: int
-
-    def __init__(self, *, address: str, method_name: str, exit_code: int) -> None:
+    def __init__(self, *, address: str, exit_code: int, method_name: str) -> None:
         self.address = address
+        self.exit_code = int(exit_code)
         self.method_name = method_name
-        self.exit_code = exit_code
         super().__init__(
-            f"get-method `{method_name}` failed: exit code {exit_code} ({address})"
+            f"get-method `{method_name}` failed: exit code {self.exit_code} ({address})"
         )
 
 

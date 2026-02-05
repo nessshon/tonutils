@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import typing as t
 
-from tonutils.__meta__ import __version__
+from tonutils import __version__
 from tonutils.clients.adnl.provider.config import (
     get_mainnet_global_config,
     get_testnet_global_config,

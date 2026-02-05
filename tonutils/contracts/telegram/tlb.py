@@ -296,7 +296,7 @@ class TeleItemContent(TlbScheme):
         """
         Initialize item content.
 
-        :param nft_content: Off-chain NFT metadata (image, description, etc)
+        :param nft_content: Off-chain NFT metadata (image, description, etc.)
         :param dns: DNS records for the username/domain
         :param token_info: Token name and domain information
         """

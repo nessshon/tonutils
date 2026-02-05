@@ -63,7 +63,7 @@ class _WalletV5(
         cls._validate_config_type(config)
 
         if config.subwallet_id is None:
-            config.subwallet_id = WalletV5SubwalletID(network_global_id=client.network)
+            config.subwallet_id = WalletV5SubwalletID(network=client.network)
 
         return super().from_private_key(client, private_key, workchain, config)
 
@@ -163,7 +163,7 @@ class WalletV5Beta(
 
         cell = begin_cell()
         cell.store_uint(params.op_code, 32)
-        cell.store_int(subwallet_id.network_global_id, 32)
+        cell.store_int(subwallet_id.network, 32)
         cell.store_int(subwallet_id.workchain, 8)
         cell.store_uint(subwallet_id.version, 8)
         cell.store_uint(subwallet_id.subwallet_number, 32)
@@ -222,11 +222,11 @@ class WalletV5R1(
         if not (self._info and self._info.data):
             raise StateNotLoadedError(self, missing="state_data")
 
-        network_global_id = (
+        network = (
             NetworkGlobalID.TESTNET if self.client.network else NetworkGlobalID.MAINNET
         )
         cs = self._info.data.begin_parse()
-        return self._data_model.deserialize(cs, network_global_id)
+        return self._data_model.deserialize(cs, network)
 
     async def _build_msg_cell(
         self,

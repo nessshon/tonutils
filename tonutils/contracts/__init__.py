@@ -127,6 +127,8 @@ from .vanity import (
 from .versions import ContractVersion
 from .wallet import (
     BaseMessageBuilder,
+    BaseWalletData,
+    BaseWalletParams,
     EncryptedTextCommentBody,
     ExternalMessage,
     InternalMessage,
@@ -194,6 +196,7 @@ __all__ = [
     "ALLOWED_DNS_ZONES",
     "BaseContract",
     "BaseMessageBuilder",
+    "BaseWalletData",
     "ChangeDNSRecordBody",
     "CONTRACT_CODES",
     "ContractProtocol",

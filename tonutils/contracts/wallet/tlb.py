@@ -203,7 +203,7 @@ class WalletV5SubwalletID:
         subwallet_number: int = 0,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         version: int = 0,
-        network_global_id: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
     ) -> None:
         """
         Initialize Wallet v5 subwallet ID.
@@ -211,19 +211,19 @@ class WalletV5SubwalletID:
         :param subwallet_number: Subwallet number (0-32767)
         :param workchain: Target workchain (default: BASECHAIN)
         :param version: Wallet version identifier (default: 0)
-        :param network_global_id: Network identifier (default: MAINNET)
+        :param network: Network identifier (default: MAINNET)
         """
         self.subwallet_number = subwallet_number
         self.workchain = workchain
         self.version = version
-        self.network_global_id = network_global_id
+        self.network = network
 
     def pack(self) -> int:
         """
         Pack subwallet ID components into 32-bit integer.
 
         Format: (1 << 31) | (workchain << 23) | (version << 15) | subwallet_number
-        XORed with network_global_id for network isolation.
+        XORed with network for network isolation.
 
         :return: Packed 32-bit subwallet ID
         """
@@ -232,22 +232,22 @@ class WalletV5SubwalletID:
         ctx |= (self.workchain & 0xFF) << 23
         ctx |= (self.version & 0xFF) << 15
         ctx |= self.subwallet_number & 0x7FFF
-        return ctx ^ (self.network_global_id & 0xFFFFFFFF)
+        return ctx ^ (self.network & 0xFFFFFFFF)
 
     @classmethod
     def unpack(
         cls,
         value: int,
-        network_global_id: NetworkGlobalID,
+        network: NetworkGlobalID,
     ) -> WalletV5SubwalletID:
         """
         Unpack 32-bit integer into subwallet ID components.
 
         :param value: Packed 32-bit subwallet ID
-        :param network_global_id: Network identifier for XOR decoding
+        :param network: Network identifier for XOR decoding
         :return: Unpacked WalletV5SubwalletID instance
         """
-        ctx = (value ^ network_global_id) & 0xFFFFFFFF
+        ctx = (value ^ network) & 0xFFFFFFFF
 
         subwallet_number = ctx & 0x7FFF
         version = (ctx >> 15) & 0xFF
@@ -258,7 +258,7 @@ class WalletV5SubwalletID:
             subwallet_number=subwallet_number,
             workchain=WorkchainID(workchain),
             version=version,
-            network_global_id=network_global_id,
+            network=network,
         )
 
     def __repr__(self) -> str:
@@ -298,7 +298,7 @@ class WalletV5BetaData(BaseWalletData):
 
         :param builder: Cell builder to store to
         """
-        builder.store_int(self.subwallet_id.network_global_id, 32)
+        builder.store_int(self.subwallet_id.network, 32)
         builder.store_int(self.subwallet_id.workchain, 8)
         builder.store_uint(self.subwallet_id.version, 8)
         builder.store_uint(self.subwallet_id.subwallet_number, 32)
@@ -328,7 +328,7 @@ class WalletV5BetaData(BaseWalletData):
         :return: Loaded WalletV5SubwalletID
         """
         return WalletV5SubwalletID(
-            network_global_id=NetworkGlobalID(cs.load_int(32)),
+            network=NetworkGlobalID(cs.load_int(32)),
             workchain=WorkchainID(cs.load_int(8)),
             version=cs.load_uint(8),
             subwallet_number=cs.load_uint(32),
@@ -398,20 +398,22 @@ class WalletV5Data(BaseWalletData):
         return cell.end_cell()
 
     @classmethod
-    def deserialize(cls, cs: Slice, network_global_id: NetworkGlobalID) -> WalletV5Data:
+    def deserialize(
+        cls,
+        cs: Slice,
+        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+    ) -> WalletV5Data:
         """
         Deserialize wallet data from Cell slice.
 
         :param cs: Cell slice to deserialize from
-        :param network_global_id: Network ID for unpacking subwallet_id
+        :param network: Network ID for unpacking subwallet_id
         :return: Deserialized WalletV5Data instance
         """
         return cls(
             is_signature_allowed=cs.load_bool(),
             seqno=cs.load_uint(32),
-            subwallet_id=WalletV5SubwalletID.unpack(
-                cs.load_uint(32), network_global_id
-            ),
+            subwallet_id=WalletV5SubwalletID.unpack(cs.load_uint(32), network),
             public_key=PublicKey(cs.load_bytes(32)),
             plugins=cs.load_maybe_ref(),
         )

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import base64
+import re
 import typing as t
+from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
 
@@ -280,22 +282,34 @@ class Binary:
         return self._size
 
     def _parse(self, value: t.Any) -> bytes:
-        """Parse input value into bytes."""
         if isinstance(value, bytes):
             return value
         if isinstance(value, int):
             length = max(1, (value.bit_length() + 7) // 8)
             return value.to_bytes(length, "big")
+
         if isinstance(value, str):
             s = value.strip()
+
+            # 0x... hex
             if s.lower().startswith("0x"):
-                return int(s, 16).to_bytes(self._size, "big")
-            try:
-                return base64.b64decode(s)
-            except (Exception,):
-                n = int(s, 10)
-                length = max(1, (n.bit_length() + 7) // 8)
-                return n.to_bytes(length, "big")
+                return bytes.fromhex(s[2:])
+
+            # plain hex (common case for publicKey)
+            if len(s) % 2 == 0 and re.compile(r"^[0-9a-fA-F]+$").fullmatch(s):
+                if len(s) == self._size * 2:
+                    return bytes.fromhex(s)
+
+            # base64 (strict)
+            with suppress(Exception):
+                b = base64.b64decode(s, validate=True)
+                return b
+
+            # decimal int as string fallback
+            n = int(s, 10)
+            length = max(1, (n.bit_length() + 7) // 8)
+            return n.to_bytes(length, "big")
+
         raise ValueError(f"Invalid binary type: {type(value).__name__}.")
 
     @property

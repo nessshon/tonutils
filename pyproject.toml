@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -46,8 +46,6 @@ license = "MIT"
 
 [project.urls]
 Homepage = "https://github.com/nessshon/tonutils/"
-Documentation = "https://nessshon.github.io/tonutils/"
-Repository = "https://github.com/nessshon/tonutils/"
 Examples = "https://github.com/nessshon/tonutils/tree/main/examples/"
 
 [tool.setuptools.packages.find]
@@ -60,4 +58,4 @@ tonutils = ["py.typed"]
 tonutils = "tonutils.cli:main"
 
 [tool.setuptools.dynamic]
-version = { attr = "tonutils.__meta__.__version__" }
+version = { attr = "tonutils.__init__.__version__" }

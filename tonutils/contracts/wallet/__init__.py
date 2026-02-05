@@ -34,6 +34,7 @@ from .methods import (
     seqno_get_method,
 )
 from .params import (
+    BaseWalletParams,
     WalletHighloadV2Params,
     WalletHighloadV3Params,
     WalletPreprocessedV2Params,
@@ -46,6 +47,7 @@ from .params import (
 )
 from .protocol import WalletProtocol
 from .tlb import (
+    BaseWalletData,
     EncryptedTextCommentBody,
     OutActionSendMsg,
     TextCommentBody,
@@ -81,6 +83,8 @@ __all__ = [
     "VALID_MNEMONIC_LENGTHS",
     "BaseMessageBuilder",
     "BaseWallet",
+    "BaseWalletData",
+    "BaseWalletParams",
     "EncryptedTextCommentBody",
     "ExternalMessage",
     "InternalMessage",
