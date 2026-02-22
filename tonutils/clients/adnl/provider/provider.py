@@ -60,19 +60,17 @@ class AdnlProvider:
         retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
         """
-        Initialize ADNL provider for a specific lite-server.
-
         To obtain lite-server (node) parameters (host, port, public key),
         it is recommended to use a private configuration for better stability
         and performance. You can obtain private lite-server configs from:
-            - Tonconsole website: https://tonconsole.com/
-            - dTON telegram bot: https://t.me/dtontech_bot (https://dton.io/)
+            - Tonconsole website: https://tonconsole.com/.
+            - dTON telegram bot: https://t.me/dtontech_bot (https://dton.io/).
 
-        :param node: LiteServer configuration (host, port, public key)
-        :param connect_timeout: Timeout in seconds for connect/reconnect
-        :param request_timeout: Timeout in seconds for queries
-        :param limiter: Optional priority-aware rate limiter
-        :param retry_policy: Optional retry policy that defines per-error-code retry rules
+        :param node: Lite-server configuration (host, port, public key).
+        :param connect_timeout: Timeout in seconds for connect/reconnect.
+        :param request_timeout: Timeout in seconds for queries.
+        :param limiter: Priority-aware rate limiter, or `None`.
+        :param retry_policy: Retry policy with per-error-code rules, or `None`.
         """
         self.node = node
         self.connect_timeout = connect_timeout
@@ -97,57 +95,33 @@ class AdnlProvider:
 
     @property
     def connected(self) -> bool:
-        """
-        Whether the underlying transport is currently connected.
-
-        :return: True if connected, False otherwise
-        """
+        """`True` if the underlying transport is connected."""
         return self.transport.connected
 
     @property
     def last_mc_block(self) -> BlockIdExt:
-        """
-        Last known masterchain block ID.
-
-        :return: BlockIdExt of the latest masterchain block
-        """
+        """Last known masterchain block ID."""
         return t.cast(BlockIdExt, self.updater.last_mc_block)
 
     @property
     def last_ping_age(self) -> t.Optional[float]:
-        """
-        Age of the last successful ping in seconds.
-
-        :return: Seconds since last ping or None if unknown
-        """
+        """Seconds since the last successful ping, or `None`."""
         return self.pinger.last_age
 
     @property
     def last_ping_rtt(self) -> t.Optional[float]:
-        """
-        Round-trip time of the last ping in seconds.
-
-        :return: Ping RTT in seconds or None if unknown
-        """
+        """Round-trip time of the last ping in seconds, or `None`."""
         return self.pinger.last_rtt
 
     @property
     def last_ping_ms(self) -> t.Optional[int]:
-        """
-        Round-trip time of the last successful ping.
-
-        :return: Ping RTT in milliseconds, or None if unknown
-        """
+        """Round-trip time of the last ping in milliseconds, or `None`."""
         if self.last_ping_rtt is None:
             return None
         return int(self.last_ping_rtt * 1000)
 
     async def __aenter__(self) -> AdnlProvider:
-        """
-        Enter async context manager and open ADNL connection.
-
-        :return: Self instance with active transport and workers
-        """
+        """Connect and return self."""
         await self.connect()
         return self
 
@@ -161,11 +135,7 @@ class AdnlProvider:
         await self.close()
 
     async def _do_connect(self) -> None:
-        """
-        Internal connect routine.
-
-        Establishes transport, performs handshake and starts background workers.
-        """
+        """Establish transport and start background workers."""
         if self.connected:
             return
 
@@ -176,11 +146,7 @@ class AdnlProvider:
         await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _do_close(self) -> None:
-        """
-        Internal close routine.
-
-        Stops background workers, cancels pending queries and closes transport.
-        """
+        """Stop workers, cancel pending queries, and close transport."""
         tasks = [self.updater.stop(), self.pinger.stop(), self.reader.stop()]
         await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -209,12 +175,11 @@ class AdnlProvider:
             await self._do_close()
 
     async def _send_once_adnl_query(self, query: bytes, *, priority: bool) -> dict:
-        """
-        Send a single ADNL query.
+        """Send a single ADNL query without retry.
 
-        :param query: Encoded ADNL TL-query bytes
-        :param priority: Whether to use priority slot in the limiter
-        :return: Lite-server response payload as a decoded dictionary
+        :param query: Encoded ADNL TL-query bytes.
+        :param priority: Use priority slot in the limiter.
+        :return: Decoded response dictionary.
         """
         if not self.connected or self.loop is None:
             raise NotConnectedError(
@@ -261,16 +226,11 @@ class AdnlProvider:
         query: bytes,
         priority: bool = False,
     ) -> dict:
-        """
-        Send a raw ADNL query with retry handling based on retry policy.
+        """Send a raw ADNL query with automatic retry.
 
-        On server error, retries the request according to the rule associated
-        with the received error code. If no rule matches, or retry attempts are
-        exhausted, the error is raised.
-
-        :param query: Encoded ADNL TL-query bytes
-        :param priority: Whether to use priority slot in the limiter
-        :return: Lite-server response payload as a decoded dictionary
+        :param query: Encoded ADNL TL-query bytes.
+        :param priority: Use priority slot in the limiter.
+        :return: Decoded response dictionary.
         """
         attempts: t.Dict[int, int] = {}
 
@@ -307,13 +267,12 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> t.Dict[str, t.Any]:
-        """
-        Send a lite-server query by TL method name.
+        """Send a lite-server query by TL method name.
 
-        :param method: liteServer.<method> name without prefix
-        :param data: Arguments for the method as a dict
-        :param priority: Whether to use priority slot in the limiter
-        :return: Lite-server response as dictionary
+        :param method: Method name without `liteServer.` prefix.
+        :param data: Method arguments.
+        :param priority: Use priority slot in the limiter.
+        :return: Decoded response dictionary.
         """
         if data is None:
             data = {}
@@ -336,15 +295,14 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> dict:
-        """
-        Combine waitMasterchainSeqno with another lite-server query.
+        """Combine waitMasterchainSeqno with another lite-server query.
 
-        :param seqno: Masterchain seqno to wait for
-        :param timeout_ms: Wait timeout in milliseconds
-        :param schema_name: Lite-server TL method name without prefix
-        :param data: Additional method arguments
-        :param priority: Whether to use priority slot in the limiter
-        :return: Lite-server response as dictionary
+        :param seqno: Masterchain seqno to wait for.
+        :param timeout_ms: Wait timeout in milliseconds.
+        :param schema_name: Method name without `liteServer.` prefix.
+        :param data: Additional method arguments.
+        :param priority: Use priority slot in the limiter.
+        :return: Decoded response dictionary.
         """
         if data is None:
             data = {}
@@ -364,32 +322,28 @@ class AdnlProvider:
         return await self.send_adnl_query(query, priority=priority)
 
     async def get_time(self, *, priority: bool = False) -> int:
-        """
-        Fetch current network time from lite-server.
+        """Fetch current network time from the lite-server.
 
-        :param priority: Whether to use priority slot in the limiter
-        :return: Current UNIX timestamp
+        :param priority: Use priority slot in the limiter.
+        :return: Current UNIX timestamp.
         """
         result = await self.send_liteserver_query("getTime", priority=priority)
         return int(result["now"])
 
     async def get_version(self, *, priority: bool = False) -> int:
-        """
-        Fetch lite-server protocol version.
+        """Fetch lite-server protocol version.
 
-        :param priority: Whether to use priority slot in the limiter
-        :return: Version number
+        :param priority: Use priority slot in the limiter.
+        :return: Version number.
         """
         result = await self.send_liteserver_query("getVersion", priority=priority)
         return int(result["version"])
 
     async def send_message(self, body: bytes, *, priority: bool = False) -> None:
-        """
-        Send an external message to the network.
+        """Send an external message to the network.
 
-        :param body: BoC bytes of the external message
-        :param priority: Whether to use priority slot in the limiter
-        :return: None
+        :param body: BoC bytes of the external message.
+        :param priority: Use priority slot in the limiter.
         """
         data = {"body": body}
         await self.send_liteserver_query(
@@ -403,11 +357,10 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> MasterchainInfo:
-        """
-        Fetch basic masterchain information.
+        """Fetch basic masterchain information.
 
-        :param priority: Whether to use priority slot in the limiter
-        :return: MasterchainInfo instance
+        :param priority: Use priority slot in the limiter.
+        :return: `MasterchainInfo` instance.
         """
         result = await self.send_liteserver_query(
             method="getMasterchainInfo",
@@ -425,16 +378,15 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> t.Tuple[BlockIdExt, Block]:
-        """
-        Locate a block by workchain/shard and one of seqno/lt/utime.
+        """Locate a block by workchain/shard and one of seqno, lt, or utime.
 
-        :param workchain: Workchain identifier
-        :param shard: Shard identifier
-        :param seqno: Block sequence number
-        :param lt: Logical time filter
-        :param utime: UNIX time filter
-        :param priority: Whether to use priority slot in the limiter
-        :return: Tuple of BlockIdExt and deserialized Block
+        :param workchain: Workchain identifier.
+        :param shard: Shard identifier.
+        :param seqno: Block sequence number.
+        :param lt: Logical time filter.
+        :param utime: UNIX time filter.
+        :param priority: Use priority slot in the limiter.
+        :return: Tuple of `BlockIdExt` and deserialized `Block`.
         """
         mode = 0
         block_seqno = 0
@@ -476,12 +428,11 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> t.Tuple[BlockIdExt, Block]:
-        """
-        Fetch and deserialize block header by BlockIdExt.
+        """Fetch and deserialize a block header.
 
-        :param block: BlockIdExt to query
-        :param priority: Whether to use priority slot in the limiter
-        :return: Tuple of BlockIdExt and deserialized Block
+        :param block: Block identifier to query.
+        :param priority: Use priority slot in the limiter.
+        :return: Tuple of `BlockIdExt` and deserialized `Block`.
         """
         data = {"id": block.to_dict(), "mode": 0}
 
@@ -504,13 +455,12 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> t.List[Transaction]:
-        """
-        Fetch extended block transactions list.
+        """Fetch all transactions in a block.
 
-        :param block: Target block identifier
-        :param count: Maximum number of transactions per request
-        :param priority: Whether to use priority slot in the limiter
-        :return: List of deserialized Transaction objects
+        :param block: Target block identifier.
+        :param count: Maximum transactions per request page.
+        :param priority: Use priority slot in the limiter.
+        :return: List of deserialized `Transaction` objects.
         """
         mode = 39
         result = await self.send_liteserver_query(
@@ -563,12 +513,11 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> t.List[BlockIdExt]:
-        """
-        Fetch shard info for all workchains at a given masterchain block.
+        """Fetch shard info for all workchains at a masterchain block.
 
-        :param block: Masterchain block ID or None to use latest
-        :param priority: Whether to use priority slot in the limiter
-        :return: List of shard BlockIdExt objects
+        :param block: Masterchain block ID, or `None` for latest.
+        :param priority: Use priority slot in the limiter.
+        :return: List of shard `BlockIdExt` objects.
         """
         if self.last_mc_block is None:
             await self.updater.refresh()
@@ -604,14 +553,14 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> t.List[t.Any]:
-        """
-        Execute a get-method on a contract using lite-server.
+        """Execute a get-method on a contract.
 
-        :param address: Contract address
-        :param method_name: Name of the method to run
-        :param stack: TVM stack arguments
-        :param priority: Whether to use priority slot in the limiter
-        :return: Decoded TVM stack items returned by the method
+        :param address: Contract address.
+        :param method_name: Name of the get-method.
+        :param stack: TVM stack arguments.
+        :param priority: Use priority slot in the limiter.
+        :return: Decoded TVM stack result.
+        :raises RunGetMethodError: If the method returns a non-zero exit code.
         """
         if self.last_mc_block is None:
             await self.updater.refresh()
@@ -653,11 +602,10 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> t.Dict[int, t.Any]:
-        """
-        Fetch and decode full blockchain configuration.
+        """Fetch and decode full blockchain configuration.
 
-        :param priority: Whether to use priority slot in the limiter
-        :return: Mapping of config parameter IDs to values
+        :param priority: Use priority slot in the limiter.
+        :return: Mapping of config parameter IDs to values.
         """
         if self.last_mc_block is None:
             await self.updater.refresh()
@@ -678,12 +626,11 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> ContractInfo:
-        """
-        Fetch contract state at the latest masterchain block.
+        """Fetch contract state at the latest masterchain block.
 
-        :param address: Contract address
-        :param priority: Whether to use priority slot in the limiter
-        :return: ContractInfo with balance, code, data and last tx
+        :param address: Contract address.
+        :param priority: Use priority slot in the limiter.
+        :return: `ContractInfo` with balance, code, data, and last transaction.
         """
         if self.last_mc_block is None:
             await self.updater.refresh()
@@ -725,15 +672,15 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> t.List[Transaction]:
-        """
-        Fetch a chain of transactions for an account.
+        """Fetch a chain of transactions for an account.
 
-        :param account: TL account identifier dictionary
-        :param count: Maximum number of transactions to return (<= 16)
-        :param from_lt: Start logical time
-        :param from_hash: Start transaction hash
-        :param priority: Whether to use priority slot in the limiter
-        :return: List of Transaction objects in reverse order
+        :param account: TL account identifier dictionary.
+        :param count: Maximum transactions to return (<= 16).
+        :param from_lt: Starting logical time.
+        :param from_hash: Starting transaction hash.
+        :param priority: Use priority slot in the limiter.
+        :return: List of `Transaction` objects in reverse order.
+        :raises ClientError: If `count` exceeds 16.
         """
         if count > 16:
             raise ClientError(
@@ -777,12 +724,11 @@ class AdnlProvider:
         *,
         priority: bool = False,
     ) -> t.Tuple[t.Optional[Account], t.Optional[ShardAccount]]:
-        """
-        Fetch account state and shard account from lite-server.
+        """Fetch account state and shard account from the lite-server.
 
-        :param address: Account address
-        :param priority: Whether to use priority slot in the limiter
-        :return: Tuple of (Account | None, ShardAccount | None)
+        :param address: Account address.
+        :param priority: Use priority slot in the limiter.
+        :return: Tuple of (`Account` or `None`, `ShardAccount` or `None`).
         """
         if self.last_mc_block is None:
             await self.updater.refresh()

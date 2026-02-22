@@ -40,83 +40,52 @@ class BaseNFTItem(
     """Base implementation for NFT item contracts."""
 
     _data_model: t.Type[_D]
-    """TlbScheme class for deserializing item state data."""
 
     @property
     def state_data(self) -> _D:
-        """
-        Decoded on-chain NFT item state data.
-
-        :return: Typed item data
-        """
+        """Decoded on-chain NFT item state data."""
         return super().state_data
 
     @property
     def index(self) -> int:
-        """
-        Numerical index of this item in the collection.
-
-        :return: Item index
-        """
+        """Item index in the collection."""
         return self.state_data.index
 
     @property
     def owner_address(self) -> Address:
-        """
-        Current owner address of this NFT item.
-
-        :return: Owner's wallet address
-        """
+        """Current owner address."""
         return self.state_data.owner_address
 
     @property
     def collection_address(self) -> Address:
-        """
-        Collection address this item belongs to.
-
-        :return: Parent collection address
-        """
+        """Parent collection address."""
         return self.state_data.collection_address
 
     @property
     def content(self) -> _C:
-        """
-        NFT item content metadata.
-
-        :return: Item content (offchain or onchain)
-        """
+        """NFT item content metadata."""
         return self.state_data.content
 
 
 class NFTItemStandard(BaseNFTItem[_DStandard, _C]):
-    """Standard NFT item contract."""
+    """Standard NFT item."""
 
     _data_model = NFTItemStandardData
-    """TlbScheme class for deserializing item state data."""
-
     VERSION = ContractVersion.NFTItemStandard
-    """Contract version identifier."""
 
 
 class NFTItemEditable(
     BaseNFTItem[_DEditable, _C],
     GetEditorGetMethod,
 ):
-    """Editable NFT item contract."""
+    """Editable NFT item."""
 
     _data_model = NFTItemEditableData
-    """TlbScheme class for deserializing item state data."""
-
     VERSION = ContractVersion.NFTItemEditable
-    """Contract version identifier."""
 
     @property
     def editor_address(self) -> Address:
-        """
-        Address authorized to edit this NFT's content.
-
-        :return: Editor's wallet address
-        """
+        """Address authorized to edit this NFT's content."""
         return self.state_data.editor_address
 
 
@@ -125,28 +94,17 @@ class NFTItemSoulbound(
     GetAuthorityAddressGetMethod,
     GetRevokedTimeGetMethod,
 ):
-    """Soulbound NFT item contract (SBT)."""
+    """Soulbound NFT item (SBT)."""
 
     _data_model = NFTItemSoulboundData
-    """TlbScheme class for deserializing item state data."""
-
     VERSION = ContractVersion.NFTItemSoulbound
-    """Contract version identifier."""
 
     @property
     def authority_address(self) -> t.Optional[Address]:
-        """
-        Authority address that can revoke this SBT.
-
-        :return: Authority address or None if no authority set
-        """
+        """Authority address that can revoke this SBT, or `None`."""
         return self.state_data.authority_address
 
     @property
     def revoked_at(self) -> int:
-        """
-        Unix timestamp when this SBT was revoked.
-
-        :return: Revocation timestamp, 0 if not revoked
-        """
+        """Revocation unix timestamp, or 0 if not revoked."""
         return self.state_data.revoked_at

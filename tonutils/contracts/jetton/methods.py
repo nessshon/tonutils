@@ -11,12 +11,11 @@ async def get_jetton_data_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> t.List[t.Any]:
-    """
-    Get Jetton master contract data.
+    """Call `get_jetton_data` on a Jetton master contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: Jetton master contract address
-    :return: List containing total_supply, mintable, admin_address, jetton_content, and jetton_wallet_code
+    :param client: TON client.
+    :param address: Jetton master address.
+    :return: List of [total_supply, mintable, admin_address, content, wallet_code].
     """
     return await client.run_get_method(
         address=address,
@@ -25,16 +24,10 @@ async def get_jetton_data_get_method(
 
 
 class GetJettonDataGetMethod(ContractProtocol):
-    """Mixin providing get_jetton_data() get method for Jetton master contracts."""
+    """Mixin for the `get_jetton_data` get-method."""
 
     async def get_jetton_data(self) -> t.List[t.Any]:
-        """
-        Get Jetton master contract data.
-
-        Returns total supply, mintable flag, admin address, content, and wallet code.
-
-        :return: List containing total_supply, mintable, admin_address, jetton_content, and jetton_wallet_code
-        """
+        """Return Jetton master data (supply, mintable, admin, content, code)."""
         return await get_jetton_data_get_method(
             client=self.client,
             address=self.address,
@@ -46,13 +39,12 @@ async def get_wallet_address_get_method(
     address: AddressLike,
     owner_address: AddressLike,
 ) -> Address:
-    """
-    Get Jetton wallet address for a specific owner.
+    """Call `get_wallet_address` on a Jetton master contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: Jetton master contract address
-    :param owner_address: Owner's wallet address (Address or string)
-    :return: Address of the Jetton wallet contract for this owner
+    :param client: TON client.
+    :param address: Jetton master address.
+    :param owner_address: Owner's wallet address.
+    :return: Jetton wallet address for the owner.
     """
     if isinstance(owner_address, str):
         owner_address = Address(owner_address)
@@ -66,17 +58,13 @@ async def get_wallet_address_get_method(
 
 
 class GetWalletAddressGetMethod(ContractProtocol):
-    """Mixin providing get_wallet_address() get method for Jetton master contracts."""
+    """Mixin for the `get_wallet_address` get-method."""
 
-    async def get_wallet_address(
-        self,
-        owner_address: AddressLike,
-    ) -> Address:
-        """
-        Get Jetton wallet address for a specific owner.
+    async def get_wallet_address(self, owner_address: AddressLike) -> Address:
+        """Return Jetton wallet address for the given owner.
 
-        :param owner_address: Owner's wallet address (Address or string)
-        :return: Address of the Jetton wallet contract for this owner
+        :param owner_address: Owner's wallet address.
+        :return: Jetton wallet address.
         """
         return await get_wallet_address_get_method(
             client=self.client,
@@ -89,12 +77,11 @@ async def get_next_admin_address_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> t.Optional[Address]:
-    """
-    Get next admin address from a Jetton master contract.
+    """Call `get_next_admin_address` on a Jetton master contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: Jetton master contract address
-    :return: Address of the next admin if set, None otherwise
+    :param client: TON client.
+    :param address: Jetton master address.
+    :return: Next admin address, or `None`.
     """
     r = await client.run_get_method(
         address=address,
@@ -104,16 +91,10 @@ async def get_next_admin_address_get_method(
 
 
 class GetNextAdminAddressGetMethod(ContractProtocol):
-    """Mixin providing get_next_admin_address() get method for Jetton master contracts."""
+    """Mixin for the `get_next_admin_address` get-method."""
 
     async def get_next_admin_address(self) -> t.Optional[Address]:
-        """
-        Get next admin address from this Jetton master contract.
-
-        Used during admin transfer process.
-
-        :return: Address of the next admin if set, None otherwise
-        """
+        """Return next admin address, or `None`."""
         return await get_next_admin_address_get_method(
             client=self.client,
             address=self.address,
@@ -124,12 +105,11 @@ async def get_wallet_data_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> t.List[t.Any]:
-    """
-    Get Jetton wallet data.
+    """Call `get_wallet_data` on a Jetton wallet contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: Jetton wallet contract address
-    :return: List containing balance, owner, jetton_master_address, and jetton_wallet_code
+    :param client: TON client.
+    :param address: Jetton wallet address.
+    :return: List of [balance, owner, jetton_master, wallet_code].
     """
     return await client.run_get_method(
         address=address,
@@ -138,16 +118,10 @@ async def get_wallet_data_get_method(
 
 
 class GetWalletDataGetMethod(ContractProtocol):
-    """Mixin providing get_wallet_data() get method for Jetton wallet contracts."""
+    """Mixin for the `get_wallet_data` get-method."""
 
     async def get_wallet_data(self) -> t.List[t.Any]:
-        """
-        Get Jetton wallet data.
-
-        Returns balance, owner address, Jetton master address, and wallet code.
-
-        :return: List containing balance, owner, jetton_master_address, and jetton_wallet_code
-        """
+        """Return Jetton wallet data (balance, owner, master, code)."""
         return await get_wallet_data_get_method(
             client=self.client,
             address=self.address,
@@ -158,12 +132,11 @@ async def get_status_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> int:
-    """
-    Get status from a contract.
+    """Call `get_status` on a contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: Contract address
-    :return: Status code
+    :param client: TON client.
+    :param address: Contract address.
+    :return: Status code.
     """
     r = await client.run_get_method(
         address=address,
@@ -173,14 +146,10 @@ async def get_status_get_method(
 
 
 class GetStatusGetMethod(ContractProtocol):
-    """Mixin providing get_status() get method for contracts."""
+    """Mixin for the `get_status` get-method."""
 
     async def get_status(self) -> int:
-        """
-        Get status from this contract.
-
-        :return: Status code
-        """
+        """Return contract status code."""
         return await get_status_get_method(
             client=self.client,
             address=self.address,

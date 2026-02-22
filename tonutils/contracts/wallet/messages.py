@@ -18,16 +18,11 @@ from tonutils.contracts.nft.tlb import NFTTransferBody
 from tonutils.contracts.wallet.protocol import WalletProtocol
 from tonutils.contracts.wallet.tlb import TextCommentBody
 from tonutils.types import AddressLike, SendMode, DEFAULT_SENDMODE
-from tonutils.utils import (
-    cell_to_hex,
-    cell_to_b64,
-    normalize_hash,
-    to_nano,
-)
+from tonutils.utils import cell_to_hex, cell_to_b64, normalize_hash, to_nano
 
 
 class ExternalMessage(MessageAny):
-    """External message for sending transactions to TON blockchain."""
+    """External message for sending transactions to the TON blockchain."""
 
     def __init__(
         self,
@@ -38,13 +33,11 @@ class ExternalMessage(MessageAny):
         state_init: t.Optional[StateInit] = None,
     ) -> None:
         """
-        Initialize external message.
-
-        :param src: Source address (typically None for external messages)
-        :param dest: Destination contract address
-        :param import_fee: Import fee in nanotons (default: 0)
-        :param body: Message body cell (signed transaction data)
-        :param state_init: Optional StateInit for contract deployment
+        :param src: Source address, or `None`.
+        :param dest: Destination contract address, or `None`.
+        :param import_fee: Import fee in nanotons.
+        :param body: Signed message body cell, or `None`.
+        :param state_init: `StateInit` for deployment, or `None`.
         """
         if isinstance(src, str):
             src = Address(src)
@@ -54,46 +47,26 @@ class ExternalMessage(MessageAny):
         super().__init__(info, state_init, body)
 
     def to_cell(self) -> Cell:
-        """
-        Serialize message to Cell.
-
-        :return: Serialized message cell
-        """
+        """Serialize to `Cell`."""
         return self.serialize()
 
     def to_boc(self) -> bytes:
-        """
-        Serialize message to BOC (Bag of Cells) bytes.
-
-        :return: BOC-encoded message bytes
-        """
+        """Serialize to BoC bytes."""
         return self.to_cell().to_boc()
 
     @property
     def as_hex(self) -> str:
-        """
-        Get message as hex-encoded BOC string.
-
-        :return: Hex-encoded BOC string
-        """
+        """Hex-encoded BoC string."""
         return cell_to_hex(self.to_cell())
 
     @property
     def as_b64(self) -> str:
-        """
-        Get message as base64-encoded BOC string.
-
-        :return: Base64-encoded BOC string
-        """
+        """Base64-encoded BoC string."""
         return cell_to_b64(self.to_cell())
 
     @property
     def normalized_hash(self) -> str:
-        """
-        Get normalized hash of the message.
-
-        :return: Normalized message hash as hex string
-        """
+        """Normalized message hash as hex string."""
         return normalize_hash(self)
 
 
@@ -116,20 +89,18 @@ class InternalMessage(MessageAny):
         state_init: t.Optional[StateInit] = None,
     ) -> None:
         """
-        Initialize internal message.
-
-        :param ihr_disabled: Disable instant hypercube routing (default: True)
-        :param bounce: Whether to bounce on error (auto-detected from dest if None)
-        :param bounced: Whether this is a bounced message (default: False)
-        :param src: Source address (set by blockchain if None)
-        :param dest: Destination address
-        :param value: Amount to send (nanotons or CurrencyCollection)
-        :param ihr_fee: IHR fee in nanotons (default: 0)
-        :param fwd_fee: Forward fee in nanotons (default: 0)
-        :param created_lt: Logical time when created (default: 0)
-        :param created_at: Unix timestamp when created (default: 0)
-        :param body: Message body cell (default: empty cell)
-        :param state_init: Optional StateInit for contract deployment
+        :param ihr_disabled: Disable instant hypercube routing.
+        :param bounce: Bounce on error, or `None` for auto-detect.
+        :param bounced: Whether this is a bounced message.
+        :param src: Source address, or `None`.
+        :param dest: Destination address, or `None`.
+        :param value: Amount in nanotons or `CurrencyCollection`.
+        :param ihr_fee: IHR fee in nanotons.
+        :param fwd_fee: Forward fee in nanotons.
+        :param created_lt: Logical time when created.
+        :param created_at: Unix timestamp when created.
+        :param body: Message body cell, or `None`.
+        :param state_init: `StateInit` for deployment, or `None`.
         """
         if isinstance(src, str):
             src = Address(src)
@@ -158,20 +129,14 @@ class InternalMessage(MessageAny):
 
 
 class BaseMessageBuilder(abc.ABC):
-    """
-    Abstract base class for message builders.
-
-    Message builders construct WalletMessage instances with proper
-    parameters for specific operations (transfers, NFT, jettons, etc.).
-    """
+    """Abstract base for constructing `WalletMessage` instances."""
 
     @abc.abstractmethod
     async def build(self, wallet: WalletProtocol) -> WalletMessage:
-        """
-        Build a WalletMessage for the given wallet.
+        """Build a `WalletMessage` for the given wallet.
 
-        :param wallet: Wallet instance to build message for
-        :return: Constructed WalletMessage ready for sending
+        :param wallet: Source wallet instance.
+        :return: Constructed `WalletMessage`.
         """
 
 
@@ -188,14 +153,12 @@ class TONTransferBuilder(BaseMessageBuilder):
         bounce: t.Optional[bool] = None,
     ) -> None:
         """
-        Initialize TON transfer builder.
-
-        :param destination: Recipient address
-        :param amount: Amount to send in nanotons
-        :param body: Optional message body (Cell or text comment string)
-        :param state_init: Optional StateInit for contract deployment
-        :param send_mode: Message send mode (default: pay fees separately)
-        :param bounce: Whether to bounce on error (auto-detected if None)
+        :param destination: Recipient address.
+        :param amount: Amount in nanotons.
+        :param body: Body (`Cell` or text comment), or `None`.
+        :param state_init: `StateInit` for deployment, or `None`.
+        :param send_mode: Send mode flags.
+        :param bounce: Bounce on error, or `None` for auto-detect.
         """
         if isinstance(body, str):
             body = TextCommentBody(body).serialize()
@@ -207,11 +170,10 @@ class TONTransferBuilder(BaseMessageBuilder):
         self.bounce = bounce
 
     async def build(self, wallet: WalletProtocol) -> WalletMessage:
-        """
-        Build TON transfer message.
+        """Build a TON transfer `WalletMessage`.
 
-        :param wallet: Wallet instance to build message for
-        :return: WalletMessage with TON transfer
+        :param wallet: Source wallet instance.
+        :return: Constructed `WalletMessage`.
         """
         return WalletMessage(
             send_mode=self.send_mode,
@@ -242,18 +204,16 @@ class NFTTransferBuilder(BaseMessageBuilder):
         bounce: t.Optional[bool] = None,
     ) -> None:
         """
-        Initialize NFT transfer builder.
-
-        :param destination: New NFT owner address
-        :param nft_address: NFT item contract address
-        :param response_address: Address for excess funds (default: wallet address)
-        :param custom_payload: Optional custom payload cell
-        :param forward_payload: Optional payload to forward (Cell or text string)
-        :param forward_amount: Amount to forward in nanotons (default: 1)
-        :param amount: Total amount to send in nanotons (default: 0.05 TON)
-        :param query_id: Query identifier (default: 0)
-        :param send_mode: Message send mode (default: pay fees separately)
-        :param bounce: Whether to bounce on error (auto-detected if None)
+        :param destination: New NFT owner address.
+        :param nft_address: NFT item contract address.
+        :param response_address: Address for excess funds, or `None` for wallet address.
+        :param custom_payload: Custom payload cell, or `None`.
+        :param forward_payload: Payload to forward (`Cell` or text), or `None`.
+        :param forward_amount: Amount to forward in nanotons.
+        :param amount: Total amount to send in nanotons.
+        :param query_id: Query identifier.
+        :param send_mode: Send mode flags.
+        :param bounce: Bounce on error, or `None` for auto-detect.
         """
         if isinstance(forward_payload, str):
             forward_payload = TextCommentBody(forward_payload).serialize()
@@ -269,11 +229,10 @@ class NFTTransferBuilder(BaseMessageBuilder):
         self.bounce = bounce
 
     async def build(self, wallet: WalletProtocol) -> WalletMessage:
-        """
-        Build NFT transfer message.
+        """Build an NFT transfer `WalletMessage`.
 
-        :param wallet: Wallet instance to build message for
-        :return: WalletMessage with NFT transfer
+        :param wallet: Source wallet instance.
+        :return: Constructed `WalletMessage`.
         """
         body = NFTTransferBody(
             destination=self.destination,
@@ -295,7 +254,7 @@ class NFTTransferBuilder(BaseMessageBuilder):
 
 
 class JettonTransferBuilder(BaseMessageBuilder):
-    """Builder for jetton (fungible token) transfer messages."""
+    """Builder for jetton transfer messages."""
 
     def __init__(
         self,
@@ -313,20 +272,19 @@ class JettonTransferBuilder(BaseMessageBuilder):
         bounce: t.Optional[bool] = None,
     ) -> None:
         """
-        Initialize jetton transfer builder.
-
-        :param destination: Recipient address
-        :param jetton_amount: Amount of jettons to transfer (in jetton's base units)
-        :param jetton_wallet_address: Sender's jetton wallet address (optional)
-        :param jetton_master_address: Jetton minter address (optional, used to resolve wallet)
-        :param response_address: Address for excess funds (default: wallet address)
-        :param custom_payload: Optional custom payload cell
-        :param forward_payload: Optional payload to forward (Cell or text string)
-        :param forward_amount: Amount to forward in nanotons (default: 1)
-        :param amount: Total amount to send in nanotons (default: 0.05 TON)
-        :param query_id: Query identifier (default: 0)
-        :param send_mode: Message send mode (default: pay fees separately)
-        :param bounce: Whether to bounce on error (auto-detected if None)
+        :param destination: Recipient address.
+        :param jetton_amount: Jetton amount in base units.
+        :param jetton_wallet_address: Sender's jetton wallet, or `None`.
+        :param jetton_master_address: Jetton master for wallet resolution, or `None`.
+        :param response_address: Address for excess funds, or `None` for wallet address.
+        :param custom_payload: Custom payload cell, or `None`.
+        :param forward_payload: Payload to forward (`Cell` or text), or `None`.
+        :param forward_amount: Amount to forward in nanotons.
+        :param amount: Total amount to send in nanotons.
+        :param query_id: Query identifier.
+        :param send_mode: Send mode flags.
+        :param bounce: Bounce on error, or `None` for auto-detect.
+        :raises ValueError: If both or neither wallet/master addresses given.
         """
         if (jetton_wallet_address is None) == (jetton_master_address is None):
             raise ValueError(
@@ -349,11 +307,10 @@ class JettonTransferBuilder(BaseMessageBuilder):
         self.bounce = bounce
 
     async def build(self, wallet: WalletProtocol) -> WalletMessage:
-        """
-        Build jetton transfer message.
+        """Build a jetton transfer `WalletMessage`.
 
-        :param wallet: Wallet instance to build message for
-        :return: WalletMessage with jetton transfer
+        :param wallet: Source wallet instance.
+        :return: Constructed `WalletMessage`.
         """
         jetton_wallet_address = self.jetton_wallet_address
         if self.jetton_wallet_address is None:

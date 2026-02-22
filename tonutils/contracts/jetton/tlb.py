@@ -10,7 +10,7 @@ from tonutils.types import AddressLike, MetadataPrefix
 
 
 class JettonMasterStandardData(TlbScheme):
-    """On-chain data for standard jetton minter contracts (TEP-74)."""
+    """On-chain data for standard Jetton minter contracts (TEP-74)."""
 
     def __init__(
         self,
@@ -20,12 +20,10 @@ class JettonMasterStandardData(TlbScheme):
         total_supply: int = 0,
     ) -> None:
         """
-        Initialize standard jetton minter data.
-
-        :param admin_address: Admin address with minting/management rights
-        :param content: Jetton metadata (on-chain or off-chain)
-        :param jetton_wallet_code: Code cell for jetton wallet contracts
-        :param total_supply: Total minted supply in base units (default: 0)
+        :param admin_address: Admin address with minting rights.
+        :param content: Jetton metadata (on-chain or off-chain).
+        :param jetton_wallet_code: Code cell for Jetton wallet contracts.
+        :param total_supply: Total minted supply in base units.
         """
         self.total_supply = total_supply
         self.admin_address = admin_address
@@ -33,12 +31,9 @@ class JettonMasterStandardData(TlbScheme):
         self.jetton_wallet_code = jetton_wallet_code
 
     def serialize(self) -> Cell:
-        """
-        Serialize minter data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: total_supply:coins admin:address content:^Cell jetton_wallet_code:^Cell
-
-        :return: Serialized data cell
+        TLB: `total_supply:coins admin:address content:^Cell jetton_wallet_code:^Cell`
         """
         cell = begin_cell()
         cell.store_coins(self.total_supply)
@@ -49,11 +44,9 @@ class JettonMasterStandardData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonMasterStandardData:
-        """
-        Deserialize minter data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonMasterStandardData instance
+        :param cs: Source slice.
         """
         total_supply = cs.load_coins()
         admin_address = cs.load_address()
@@ -71,7 +64,7 @@ class JettonMasterStandardData(TlbScheme):
 
 
 class JettonMasterStablecoinData(TlbScheme):
-    """On-chain data for stablecoin jetton minter contracts."""
+    """On-chain data for stablecoin Jetton minter contracts."""
 
     def __init__(
         self,
@@ -82,13 +75,11 @@ class JettonMasterStablecoinData(TlbScheme):
         total_supply: int = 0,
     ) -> None:
         """
-        Initialize stablecoin jetton minter data.
-
-        :param admin_address: Current admin address
-        :param jetton_wallet_code: Code cell for jetton wallet contracts
-        :param content: Off-chain jetton metadata
-        :param next_admin_address: Pending admin address for transition (default: None)
-        :param total_supply: Total minted supply in base units (default: 0)
+        :param admin_address: Current admin address.
+        :param jetton_wallet_code: Code cell for Jetton wallet contracts.
+        :param content: Off-chain Jetton metadata.
+        :param next_admin_address: Pending admin address, or `None`.
+        :param total_supply: Total minted supply in base units.
         """
         self.total_supply = total_supply
         self.admin_address = admin_address
@@ -97,13 +88,10 @@ class JettonMasterStablecoinData(TlbScheme):
         self.content = content
 
     def serialize(self) -> Cell:
-        """
-        Serialize minter data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: total_supply:coins admin:address next_admin:address
-                jetton_wallet_code:^Cell content:^Cell
-
-        :return: Serialized data cell
+        TLB: `total_supply:coins admin:address next_admin:address
+        jetton_wallet_code:^Cell content:^Cell`
         """
         cell = begin_cell()
         cell.store_coins(self.total_supply)
@@ -115,11 +103,9 @@ class JettonMasterStablecoinData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonMasterStablecoinData:
-        """
-        Deserialize minter data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonMasterStablecoinData instance
+        :param cs: Source slice.
         """
         return cls(
             total_supply=cs.load_coins(),
@@ -131,7 +117,7 @@ class JettonMasterStablecoinData(TlbScheme):
 
 
 class JettonWalletStandardData(TlbScheme):
-    """On-chain data for standard jetton wallet contracts (TEP-74)."""
+    """On-chain data for standard Jetton wallet contracts (TEP-74)."""
 
     def __init__(
         self,
@@ -141,12 +127,10 @@ class JettonWalletStandardData(TlbScheme):
         balance: int = 0,
     ) -> None:
         """
-        Initialize standard jetton wallet data.
-
-        :param owner_address: Wallet owner address
-        :param jetton_master_address: Jetton minter contract address
-        :param jetton_wallet_code: Code cell for jetton wallet contracts
-        :param balance: Current jetton balance in base units (default: 0)
+        :param owner_address: Wallet owner address.
+        :param jetton_master_address: Jetton minter address.
+        :param jetton_wallet_code: Code cell for Jetton wallet contracts.
+        :param balance: Current Jetton balance in base units.
         """
         self.balance = balance
         self.owner_address = owner_address
@@ -154,12 +138,9 @@ class JettonWalletStandardData(TlbScheme):
         self.jetton_wallet_code = jetton_wallet_code
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: balance:coins owner:address jetton_master:address jetton_wallet_code:^Cell
-
-        :return: Serialized data cell
+        TLB: `balance:coins owner:address jetton_master:address jetton_wallet_code:^Cell`
         """
         cell = begin_cell()
         cell.store_coins(self.balance)
@@ -170,11 +151,9 @@ class JettonWalletStandardData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonWalletStandardData:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonWalletStandardData instance
+        :param cs: Source slice.
         """
         return cls(
             balance=cs.load_coins(),
@@ -185,7 +164,7 @@ class JettonWalletStandardData(TlbScheme):
 
 
 class JettonWalletStablecoinData(TlbScheme):
-    """On-chain data for stablecoin jetton wallet contracts."""
+    """On-chain data for stablecoin Jetton wallet contracts."""
 
     def __init__(
         self,
@@ -195,12 +174,10 @@ class JettonWalletStablecoinData(TlbScheme):
         balance: int = 0,
     ) -> None:
         """
-        Initialize stablecoin jetton wallet data.
-
-        :param owner_address: Wallet owner address
-        :param jetton_master_address: Jetton minter contract address
-        :param status: Wallet status flags (4 bits)
-        :param balance: Current jetton balance in base units (default: 0)
+        :param owner_address: Wallet owner address.
+        :param jetton_master_address: Jetton minter address.
+        :param status: Wallet status flags (4 bits).
+        :param balance: Current Jetton balance in base units.
         """
         self.status = status
         self.balance = balance
@@ -208,12 +185,9 @@ class JettonWalletStablecoinData(TlbScheme):
         self.jetton_master_address = jetton_master_address
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: status:uint4 balance:coins owner:address jetton_master:address
-
-        :return: Serialized data cell
+        TLB: `status:uint4 balance:coins owner:address jetton_master:address`
         """
         cell = begin_cell()
         cell.store_uint(self.status, 4)
@@ -224,11 +198,9 @@ class JettonWalletStablecoinData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonWalletStablecoinData:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonWalletStablecoinData instance
+        :param cs: Source slice.
         """
         return cls(
             status=cs.load_uint(4),
@@ -239,7 +211,7 @@ class JettonWalletStablecoinData(TlbScheme):
 
 
 class JettonWalletStablecoinV2Data(TlbScheme):
-    """On-chain data for stablecoin jetton wallet contracts v2."""
+    """On-chain data for stablecoin v2 Jetton wallet contracts."""
 
     def __init__(
         self,
@@ -248,23 +220,18 @@ class JettonWalletStablecoinV2Data(TlbScheme):
         balance: int = 0,
     ) -> None:
         """
-        Initialize stablecoin v2 jetton wallet data.
-
-        :param owner_address: Wallet owner address
-        :param jetton_master_address: Jetton minter contract address
-        :param balance: Current jetton balance in base units (default: 0)
+        :param owner_address: Wallet owner address.
+        :param jetton_master_address: Jetton minter address.
+        :param balance: Current Jetton balance in base units.
         """
         self.balance = balance
         self.owner_address = owner_address
         self.jetton_master_address = jetton_master_address
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: balance:coins owner:address jetton_master:address
-
-        :return: Serialized data cell
+        TLB: `balance:coins owner:address jetton_master:address`
         """
         cell = begin_cell()
         cell.store_coins(self.balance)
@@ -274,11 +241,9 @@ class JettonWalletStablecoinV2Data(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonWalletStablecoinV2Data:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonWalletStablecoinV2Data instance
+        :param cs: Source slice.
         """
         return cls(
             balance=cs.load_coins(),
@@ -288,23 +253,18 @@ class JettonWalletStablecoinV2Data(TlbScheme):
 
 
 class JettonTopUpBody(TlbScheme):
-    """Message body for topping up jetton wallet balance."""
+    """Message body for topping up Jetton wallet balance."""
 
     def __init__(self, query_id: int = 0) -> None:
         """
-        Initialize top-up message body.
-
-        :param query_id: Query identifier (default: 0)
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize top-up body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.TOP_UP, 32)
@@ -313,17 +273,15 @@ class JettonTopUpBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonTopUpBody:
-        """
-        Deserialize top-up body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonTopUpBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonInternalTransferBody(TlbScheme):
-    """Message body for internal jetton transfers between wallets."""
+    """Message body for internal Jetton transfers between wallets."""
 
     def __init__(
         self,
@@ -335,14 +293,12 @@ class JettonInternalTransferBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize internal transfer message body.
-
-        :param jetton_amount: Amount of jettons to transfer in base units
-        :param forward_amount: Amount to forward in nanotons
-        :param from_address: Original sender address (default: None)
-        :param response_address: Address for excess funds (default: None)
-        :param forward_payload: Optional payload to forward (default: None)
-        :param query_id: Query identifier (default: 0)
+        :param jetton_amount: Amount to transfer in base units.
+        :param forward_amount: Amount to forward in nanotons.
+        :param from_address: Original sender address, or `None`.
+        :param response_address: Address for excess funds, or `None`.
+        :param forward_payload: Payload to forward, or `None`.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.jetton_amount = jetton_amount
@@ -352,13 +308,10 @@ class JettonInternalTransferBody(TlbScheme):
         self.forward_payload = forward_payload
 
     def serialize(self) -> Cell:
-        """
-        Serialize internal transfer body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 jetton_amount:coins from:address
-                response:address forward_amount:coins forward_payload:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 jetton_amount:coins from:address
+        response:address forward_amount:coins forward_payload:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_INTERNAL_TRANSFER, 32)
@@ -372,17 +325,15 @@ class JettonInternalTransferBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonInternalTransferBody:
-        """
-        Deserialize internal transfer body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonInternalTransferBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonTransferBody(TlbScheme):
-    """Message body for jetton transfers (TEP-74)."""
+    """Message body for Jetton transfers (TEP-74)."""
 
     def __init__(
         self,
@@ -395,15 +346,13 @@ class JettonTransferBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize jetton transfer message body.
-
-        :param destination: Recipient address
-        :param jetton_amount: Amount of jettons to transfer in base units
-        :param response_address: Address for excess funds (default: None)
-        :param custom_payload: Optional custom payload cell (default: None)
-        :param forward_payload: Optional payload to forward to recipient (default: None)
-        :param forward_amount: Amount to forward in nanotons (default: 1)
-        :param query_id: Query identifier (default: 0)
+        :param destination: Recipient address.
+        :param jetton_amount: Amount to transfer in base units.
+        :param response_address: Address for excess funds, or `None`.
+        :param custom_payload: Custom payload cell, or `None`.
+        :param forward_payload: Payload to forward, or `None`.
+        :param forward_amount: Amount to forward in nanotons.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.jetton_amount = jetton_amount
@@ -414,13 +363,10 @@ class JettonTransferBody(TlbScheme):
         self.forward_payload = forward_payload
 
     def serialize(self) -> Cell:
-        """
-        Serialize transfer body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 jetton_amount:coins destination:address
-                response:address custom_payload:^Cell forward_amount:coins forward_payload:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 jetton_amount:coins destination:address
+        response:address custom_payload:^Cell forward_amount:coins forward_payload:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_TRANSFER, 32)
@@ -435,17 +381,15 @@ class JettonTransferBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonTransferBody:
-        """
-        Deserialize transfer body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonTransferBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonMintBody(TlbScheme):
-    """Message body for minting jettons (stablecoin version)."""
+    """Message body for minting Jettons (stablecoin version)."""
 
     def __init__(
         self,
@@ -455,12 +399,10 @@ class JettonMintBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize mint message body.
-
-        :param destination: Recipient wallet address
-        :param internal_transfer: Internal transfer body with mint details
-        :param forward_amount: Amount to forward in nanotons
-        :param query_id: Query identifier (default: 0)
+        :param destination: Recipient wallet address.
+        :param internal_transfer: Internal transfer body with mint details.
+        :param forward_amount: Amount to forward in nanotons.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.destination = destination
@@ -468,13 +410,10 @@ class JettonMintBody(TlbScheme):
         self.internal_transfer = internal_transfer
 
     def serialize(self) -> Cell:
-        """
-        Serialize mint body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 destination:address
-                forward_amount:coins internal_transfer:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 destination:address
+        forward_amount:coins internal_transfer:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_MINT, 32)
@@ -486,17 +425,15 @@ class JettonMintBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonMintBody:
-        """
-        Deserialize mint body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonMintBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonStandardMintBody(TlbScheme):
-    """Message body for minting jettons (standard version)."""
+    """Message body for minting Jettons (standard version)."""
 
     def __init__(
         self,
@@ -506,12 +443,10 @@ class JettonStandardMintBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize standard mint message body.
-
-        :param destination: Recipient wallet address
-        :param internal_transfer: Internal transfer body with mint details
-        :param forward_amount: Amount to forward in nanotons
-        :param query_id: Query identifier (default: 0)
+        :param destination: Recipient wallet address.
+        :param internal_transfer: Internal transfer body with mint details.
+        :param forward_amount: Amount to forward in nanotons.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.destination = destination
@@ -519,13 +454,10 @@ class JettonStandardMintBody(TlbScheme):
         self.internal_transfer = internal_transfer
 
     def serialize(self) -> Cell:
-        """
-        Serialize mint body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 destination:address
-                forward_amount:coins internal_transfer:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 destination:address
+        forward_amount:coins internal_transfer:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(21, 32)
@@ -537,17 +469,15 @@ class JettonStandardMintBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonMintBody:
-        """
-        Deserialize mint body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonStandardMintBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonChangeAdminBody(TlbScheme):
-    """Message body for changing jetton minter admin (stablecoin version)."""
+    """Message body for changing Jetton minter admin (stablecoin version)."""
 
     def __init__(
         self,
@@ -555,21 +485,16 @@ class JettonChangeAdminBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize change admin message body.
-
-        :param admin_address: New admin address
-        :param query_id: Query identifier (default: 0)
+        :param admin_address: New admin address.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.admin_address = admin_address
 
     def serialize(self) -> Cell:
-        """
-        Serialize change admin body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 admin:address
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 admin:address`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_CHANGE_ADMIN, 32)
@@ -579,17 +504,15 @@ class JettonChangeAdminBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonChangeAdminBody:
-        """
-        Deserialize change admin body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonChangeAdminBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonStandardChangeAdminBody(TlbScheme):
-    """Message body for changing jetton minter admin (standard version)."""
+    """Message body for changing Jetton minter admin (standard version)."""
 
     def __init__(
         self,
@@ -597,21 +520,16 @@ class JettonStandardChangeAdminBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize standard change admin message body.
-
-        :param admin_address: New admin address
-        :param query_id: Query identifier (default: 0)
+        :param admin_address: New admin address.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.admin_address = admin_address
 
     def serialize(self) -> Cell:
-        """
-        Serialize change admin body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 admin:address
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 admin:address`
         """
         cell = begin_cell()
         cell.store_uint(3, 32)
@@ -621,17 +539,15 @@ class JettonStandardChangeAdminBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonChangeAdminBody:
-        """
-        Deserialize change admin body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonStandardChangeAdminBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonDiscoveryBody(TlbScheme):
-    """Message body for discovering jetton wallet address."""
+    """Message body for discovering Jetton wallet address."""
 
     def __init__(
         self,
@@ -640,23 +556,18 @@ class JettonDiscoveryBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize discovery message body.
-
-        :param owner_address: Owner address to query wallet for
-        :param include_address: Whether to include address in response (default: True)
-        :param query_id: Query identifier (default: 0)
+        :param owner_address: Owner address to query wallet for.
+        :param include_address: Include address in response.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.owner_address = owner_address
         self.include_address = include_address
 
     def serialize(self) -> Cell:
-        """
-        Serialize discovery body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 owner:address include_address:bool
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 owner:address include_address:bool`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_PROVIDE_WALLET_ADDRESS, 32)
@@ -667,33 +578,26 @@ class JettonDiscoveryBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonDiscoveryBody:
-        """
-        Deserialize discovery body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonDiscoveryBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonClaimAdminBody(TlbScheme):
-    """Message body for claiming jetton minter admin rights."""
+    """Message body for claiming Jetton minter admin rights."""
 
     def __init__(self, query_id: int = 0) -> None:
         """
-        Initialize claim admin message body.
-
-        :param query_id: Query identifier (default: 0)
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize claim admin body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_CLAIM_ADMIN, 32)
@@ -702,33 +606,26 @@ class JettonClaimAdminBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonClaimAdminBody:
-        """
-        Deserialize claim admin body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonClaimAdminBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonDropAdminBody(TlbScheme):
-    """Message body for dropping jetton minter admin rights."""
+    """Message body for dropping Jetton minter admin rights."""
 
     def __init__(self, query_id: int = 0) -> None:
         """
-        Initialize drop admin message body.
-
-        :param query_id: Query identifier (default: 0)
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize drop admin body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_DROP_ADMIN, 32)
@@ -737,17 +634,15 @@ class JettonDropAdminBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonDropAdminBody:
-        """
-        Deserialize drop admin body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonDropAdminBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonChangeContentBody(TlbScheme):
-    """Message body for changing jetton metadata (stablecoin version)."""
+    """Message body for changing Jetton metadata (stablecoin version)."""
 
     def __init__(
         self,
@@ -755,21 +650,16 @@ class JettonChangeContentBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize change content message body.
-
-        :param content: New off-chain content URI
-        :param query_id: Query identifier (default: 0)
+        :param content: New off-chain content.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.content = content
 
     def serialize(self) -> Cell:
-        """
-        Serialize change content body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 uri:snake_string
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 uri:snake_string`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_CHANGE_METADATA, 32)
@@ -779,17 +669,15 @@ class JettonChangeContentBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonChangeContentBody:
-        """
-        Deserialize change content body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonChangeContentBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonStandardChangeContentBody(TlbScheme):
-    """Message body for changing jetton metadata (standard version)."""
+    """Message body for changing Jetton metadata (standard version)."""
 
     def __init__(
         self,
@@ -797,21 +685,16 @@ class JettonStandardChangeContentBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize standard change content message body.
-
-        :param content: New content (on-chain or off-chain)
-        :param query_id: Query identifier (default: 0)
+        :param content: New content (on-chain or off-chain).
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.content = content
 
     def serialize(self) -> Cell:
-        """
-        Serialize change content body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 content:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 content:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(4, 32)
@@ -821,17 +704,15 @@ class JettonStandardChangeContentBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonStandardChangeContentBody:
-        """
-        Deserialize change content body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonStandardChangeContentBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonBurnBody(TlbScheme):
-    """Message body for burning jettons (TEP-74)."""
+    """Message body for burning Jettons (TEP-74)."""
 
     def __init__(
         self,
@@ -841,12 +722,10 @@ class JettonBurnBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize burn message body.
-
-        :param jetton_amount: Amount of jettons to burn in base units
-        :param response_address: Address for excess funds
-        :param custom_payload: Optional custom payload cell (default: None)
-        :param query_id: Query identifier (default: 0)
+        :param jetton_amount: Amount to burn in base units.
+        :param response_address: Address for excess funds.
+        :param custom_payload: Custom payload cell, or `None`.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.jetton_amount = jetton_amount
@@ -854,13 +733,10 @@ class JettonBurnBody(TlbScheme):
         self.custom_payload = custom_payload
 
     def serialize(self) -> Cell:
-        """
-        Serialize burn body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 jetton_amount:coins
-                response:address custom_payload:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 jetton_amount:coins
+        response:address custom_payload:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_BURN, 32)
@@ -872,17 +748,15 @@ class JettonBurnBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonBurnBody:
-        """
-        Deserialize burn body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonBurnBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class JettonUpgradeBody(TlbScheme):
-    """Message body for upgrading jetton contract code."""
+    """Message body for upgrading Jetton contract code."""
 
     def __init__(
         self,
@@ -891,23 +765,18 @@ class JettonUpgradeBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize upgrade message body.
-
-        :param code: New contract code cell
-        :param data: New contract data cell
-        :param query_id: Query identifier (default: 0)
+        :param code: New contract code cell.
+        :param data: New contract data cell.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.data = data
         self.code = code
 
     def serialize(self) -> Cell:
-        """
-        Serialize upgrade body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 data:^Cell code:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 data:^Cell code:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.JETTON_UPGRADE, 32)
@@ -918,10 +787,8 @@ class JettonUpgradeBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> JettonUpgradeBody:
-        """
-        Deserialize upgrade body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized JettonUpgradeBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError

@@ -11,20 +11,17 @@ from pytoniq_core import (
     SimpleAccount,
     begin_cell,
     check_account_proof,
-    Slice,
-    VmTuple,
 )
 
-from tonutils.types import ContractState, ContractInfo, StackItems, StackItem
-from tonutils.utils import cell_to_hex, norm_stack_num, norm_stack_cell
+from tonutils.types import ContractState, ContractInfo
+from tonutils.utils import cell_to_hex
 
 
 def build_config_all(config_proof: Cell) -> t.Dict[int, t.Any]:
-    """
-    Decode full blockchain configuration from a config proof cell.
+    """Decode full blockchain configuration from a config proof cell.
 
-    :param config_proof: Root cell containing the config proof
-    :return: Mapping of config parameter IDs to decoded values
+    :param config_proof: Root cell containing the config proof.
+    :return: Mapping of config parameter IDs to decoded values.
     """
     shard = ShardStateUnsplit.deserialize(config_proof[0].begin_parse())
     result: t.Dict[int, t.Any] = {}
@@ -43,14 +40,13 @@ def build_shard_account(
     shrd_blk: BlockIdExt,
     address: Address,
 ) -> ShardAccount:
-    """
-    Construct a ShardAccount object from proof data.
+    """Construct a `ShardAccount` from proof data.
 
-    :param account_state_root: Root cell of the account state
-    :param shard_account_descr: Proof bytes for the account descriptor
-    :param shrd_blk: Block ID the proof applies to
-    :param address: Account address being verified
-    :return: Parsed ShardAccount instance
+    :param account_state_root: Root cell of the account state.
+    :param shard_account_descr: Proof bytes for the account descriptor.
+    :param shrd_blk: Block ID the proof applies to.
+    :param address: Account address being verified.
+    :return: Parsed `ShardAccount` instance.
     """
     shard_descr = check_account_proof(
         proof=shard_account_descr,
@@ -73,13 +69,12 @@ def build_contract_state_info(
     account: Account,
     shard_account: ShardAccount,
 ) -> ContractInfo:
-    """
-    Build a high-level ContractInfo object from raw account data.
+    """Build a `ContractInfo` from raw account and shard data.
 
-    :param address: Contract address
-    :param account: Raw Account data structure
-    :param shard_account: Parsed ShardAccount entry
-    :return: Filled ContractInfo instance
+    :param address: Contract address.
+    :param account: Raw `Account` data structure.
+    :param shard_account: Parsed `ShardAccount` entry.
+    :return: Populated `ContractInfo` instance.
     """
     simple_account = SimpleAccount.from_raw(account, address)
     info = ContractInfo(balance=simple_account.balance)
@@ -111,61 +106,3 @@ def build_contract_state_info(
         info.state = ContractState.NONEXIST
 
     return info
-
-
-def decode_stack(items: t.List[t.Any]) -> StackItems:
-    """
-    Decode VM stack items into internal Python structures.
-
-    Supports:
-    - int → int
-    - Cell/Slice → normalized cell
-    - Address → address cell
-    - VmTuple/list → recursive decode
-    - None → None
-
-    :param items: Raw VM stack items
-    :return: Normalized Python stack values
-    """
-
-    out: StackItems = []
-    for item in items:
-        if item is None:
-            out.append(None)
-        elif isinstance(item, int):
-            out.append(norm_stack_num(item))
-        elif isinstance(item, Address):
-            out.append(item.to_cell())
-        elif isinstance(item, (Cell, Slice)):
-            out.append(norm_stack_cell(item))
-        elif isinstance(item, VmTuple):
-            out.append(decode_stack(item.list))
-        elif isinstance(item, list):
-            out.append(decode_stack(item))
-    return out
-
-
-def encode_stack(items: t.List[StackItem]) -> t.List[t.Any]:
-    """
-    Encode Python stack values into VM-compatible format.
-
-    Supports:
-    - int → int
-    - Cell/Slice → cell/slice
-    - Address → cell slice
-    - list/tuple → recursive encode
-
-    :param items: Normalized Python stack items
-    :return: VM-encoded stack values
-    """
-    out: t.List[t.Any] = []
-    for item in items:
-        if isinstance(item, int):
-            out.append(item)
-        elif isinstance(item, Address):
-            out.append(item.to_cell().to_slice())
-        elif isinstance(item, (Cell, Slice)):
-            out.append(item)
-        elif isinstance(item, (list, tuple)):
-            out.append(encode_stack(list(item)))
-    return out

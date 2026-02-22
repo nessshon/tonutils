@@ -1,7 +1,6 @@
 from .base import BaseContract
 from .codes import CONTRACT_CODES
 from .dns import (
-    ALLOWED_DNS_ZONES,
     ChangeDNSRecordBody,
     DNSBalanceReleaseBody,
     DNSRecordDNSNextResolver,
@@ -193,7 +192,6 @@ from .wallet import (
 )
 
 __all__ = [
-    "ALLOWED_DNS_ZONES",
     "BaseContract",
     "BaseMessageBuilder",
     "BaseWalletData",

@@ -28,42 +28,25 @@ class BaseNFTCollection(
     """Base implementation for NFT collection contracts."""
 
     _data_model = NFTCollectionData
-    """TlbScheme class for deserializing collection state data."""
 
     @property
     def owner_address(self) -> t.Optional[Address]:
-        """
-        Owner address of this collection.
-
-        :return: Collection owner's wallet address or None if no owner
-        """
+        """Collection owner address, or `None`."""
         return self.state_data.owner_address
 
     @property
     def next_item_index(self) -> int:
-        """
-        Next item index to be minted in this collection.
-
-        :return: Next available item index
-        """
+        """Next item index to be minted."""
         return self.state_data.next_item_index
 
     @property
     def content(self) -> NFTCollectionContent:
-        """
-        Collection content metadata.
-
-        :return: Collection content with common metadata and base URI
-        """
+        """Collection content metadata."""
         return self.state_data.content
 
     @property
     def nft_item_code(self) -> Cell:
-        """
-        Code cell for NFT items in this collection.
-
-        :return: Item contract code used for all items
-        """
+        """Code `Cell` for NFT items in this collection."""
         return self.state_data.nft_item_code
 
     @classmethod
@@ -74,14 +57,13 @@ class BaseNFTCollection(
         collection_address: AddressLike,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Address:
-        """
-        Calculate NFT item address by index.
+        """Calculate NFT item address by index.
 
-        :param index: Numerical index of the item
-        :param nft_item_code: Item contract code (Cell or hex string)
-        :param collection_address: Collection contract address
-        :param workchain: Target workchain (default: BASECHAIN)
-        :return: Calculated item address
+        :param index: Item index in the collection.
+        :param nft_item_code: Item contract code (`Cell` or hex string).
+        :param collection_address: Parent collection address.
+        :param workchain: Target workchain.
+        :return: Calculated item address.
         """
         code = to_cell(nft_item_code)
         data = begin_cell()
@@ -92,14 +74,12 @@ class BaseNFTCollection(
 
 
 class NFTCollectionStandard(BaseNFTCollection):
-    """Standard NFT collection contract."""
+    """Standard NFT collection."""
 
     VERSION = ContractVersion.NFTCollectionStandard
-    """Contract version identifier."""
 
 
 class NFTCollectionEditable(BaseNFTCollection):
-    """Editable NFT collection contract."""
+    """Editable NFT collection."""
 
     VERSION = ContractVersion.NFTCollectionEditable
-    """Contract version identifier."""

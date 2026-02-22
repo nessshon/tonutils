@@ -23,17 +23,16 @@ if t.TYPE_CHECKING:
 
 @t.runtime_checkable
 class ClientProtocol(t.Protocol):
-    """
-    Unified interface for TON data providers.
+    """Unified interface for TON data providers.
 
     Defines the minimal set of operations supported by all client types.
     """
 
     TYPE: ClientType
-    """Type of the underlying client implementation (HTTP or ADNL)."""
+    """Client implementation type (`HTTP` or `ADNL`)."""
 
     network: NetworkGlobalID
-    """Global network identifier the client is operating on (MAINNET or TESTNET)."""
+    """Network the client operates on (`MAINNET` or `TESTNET`)."""
 
     @property
     def provider(self) -> t.Any:
@@ -41,19 +40,26 @@ class ClientProtocol(t.Protocol):
 
     @property
     def connected(self) -> bool:
-        """Whether the client is connected and ready for requests."""
+        """`True` if the client is ready for requests."""
 
     async def send_message(self, boc: str) -> None:
-        """Send an external message to the blockchain."""
+        """Send an external message to the blockchain.
+
+        :param boc: Hex-encoded BoC string.
+        """
 
     async def get_config(self) -> t.Dict[int, t.Any]:
-        """Fetch global blockchain configuration."""
+        """Fetch global blockchain configuration.
 
-    async def get_info(
-        self,
-        address: AddressLike,
-    ) -> ContractInfo:
-        """Fetch basic contract state information."""
+        :return: Mapping of config parameter IDs to values.
+        """
+
+    async def get_info(self, address: AddressLike) -> ContractInfo:
+        """Fetch contract state information.
+
+        :param address: Contract address.
+        :return: `ContractInfo` snapshot.
+        """
 
     async def get_transactions(
         self,
@@ -62,7 +68,14 @@ class ClientProtocol(t.Protocol):
         from_lt: t.Optional[int] = None,
         to_lt: t.Optional[int] = None,
     ) -> t.List[Transaction]:
-        """Fetch contract transactions."""
+        """Fetch contract transactions.
+
+        :param address: Contract address.
+        :param limit: Maximum transactions to return.
+        :param from_lt: Upper-bound logical time filter.
+        :param to_lt: Lower-bound logical time filter.
+        :return: List of `Transaction` objects.
+        """
 
     async def run_get_method(
         self,
@@ -70,13 +83,19 @@ class ClientProtocol(t.Protocol):
         method_name: str,
         stack: t.Optional[t.List[t.Any]] = None,
     ) -> t.List[t.Any]:
-        """Execute a contract get-method and return resulting stack values."""
+        """Execute a contract get-method.
+
+        :param address: Contract address.
+        :param method_name: Name of the get-method.
+        :param stack: TVM stack arguments.
+        :return: Decoded TVM stack result.
+        """
 
     async def connect(self) -> None:
-        """Establish connection and initialize provider resources."""
+        """Establish connection and initialize resources."""
 
     async def close(self) -> None:
-        """Close connection and release provider resources."""
+        """Close connection and release resources."""
 
     async def dnsresolve(
         self,
@@ -92,4 +111,10 @@ class ClientProtocol(t.Protocol):
             DNSRecordWallet,
         ]
     ]:
-        """Resolve a TON DNS record for a domain and category."""
+        """Resolve a TON DNS record for a domain and category.
+
+        :param domain: Domain name string or bytes.
+        :param category: DNS record category to query.
+        :param dns_root_address: Custom DNS root address, or `None`.
+        :return: Resolved DNS record, or `None`.
+        """

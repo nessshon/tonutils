@@ -23,31 +23,14 @@ _TContract = t.TypeVar("_TContract", bound="BaseContract")
 
 
 class BaseContract(ContractProtocol[_D]):
-    """
-    Base implementation for TON smart contract wrappers.
-
-    Provides common functionality for interacting with TON smart contracts,
-    including state management, address resolution, and factory methods for
-    constructing contract instances from various sources.
-
-    Subclasses must define:
-      - _data_model: TlbScheme class for deserializing contract data
-      - VERSION: Contract version key for code lookup
-    """
+    """Base implementation for TON smart contract wrappers."""
 
     _data_model: t.Type[_D]
     VERSION: t.ClassVar[t.Union[ContractVersion, str]]
 
     @classmethod
     def get_default_code(cls) -> Cell:
-        """
-        Return default contract code for the current VERSION.
-
-        Looks up the compiled code in the global CONTRACT_CODES registry and
-        converts it into a Cell instance.
-
-        :return: Default contract code cell for this contract class
-        """
+        """Return default compiled code `Cell` for this contract version."""
         try:
             default_code = to_cell(CONTRACT_CODES[cls.VERSION])
         except KeyError:
@@ -64,12 +47,10 @@ class BaseContract(ContractProtocol[_D]):
         info: t.Optional[ContractInfo] = None,
     ) -> None:
         """
-        Initialize base contract wrapper.
-
-        :param client: TON client for blockchain interactions
-        :param address: Contract address on the blockchain
-        :param state_init: Optional known StateInit (code and data)
-        :param info: Optional preloaded on-chain contract state
+        :param client: TON client.
+        :param address: Contract address.
+        :param state_init: Known code and data, or `None`.
+        :param info: Preloaded on-chain state, or `None`.
         """
         self._client = client
         self._address = address
@@ -88,18 +69,12 @@ class BaseContract(ContractProtocol[_D]):
 
     @property
     def state_init(self) -> t.Optional[StateInit]:
-        """Locally known StateInit for this contract, if any."""
+        """Locally known `StateInit`, or `None`."""
         return self._state_init
 
     @property
     def state_data(self) -> _D:
-        """
-        Decoded on-chain data in typed form.
-
-        Deserializes the contract data cell using the _data_model TlbScheme.
-
-        :return: Typed data object
-        """
+        """Decoded on-chain data in typed form."""
         if not hasattr(self, "_data_model") or self._data_model is None:
             raise ContractError(self, "No `_data_model` defined for contract class.")
         if not (self._info and self._info.data):
@@ -109,103 +84,59 @@ class BaseContract(ContractProtocol[_D]):
 
     @property
     def info(self) -> ContractInfo:
-        """
-        Cached snapshot of the contract state info.
-
-        :return: Contract state information
-        """
+        """Cached on-chain state snapshot."""
         if self._info is None:
             raise StateNotLoadedError(self, missing="info")
         return t.cast(ContractInfo, self._info)
 
     @property
     def balance(self) -> int:
-        """
-        Current contract balance in nanotons.
-
-        :return: Balance from the latest known state
-        """
+        """Contract balance in nanotons."""
         return self.info.balance
 
     @property
     def state(self) -> ContractState:
-        """
-        Current lifecycle state of the contract.
-
-        :return: One of ContractState enum values (ACTIVE, FROZEN, UNINIT, NONEXIST)
-        """
+        """Current lifecycle state."""
         return self.info.state
 
     @property
     def is_active(self) -> bool:
-        """
-        Check whether the contract is active.
-
-        :return: True if state is ACTIVE
-        """
+        """`True` if state is `ACTIVE`."""
         return self.state == ContractState.ACTIVE
 
     @property
     def is_frozen(self) -> bool:
-        """
-        Check whether the contract is frozen.
-
-        :return: True if state is FROZEN
-        """
+        """`True` if state is `FROZEN`."""
         return self.state == ContractState.FROZEN
 
     @property
     def is_uninit(self) -> bool:
-        """
-        Check whether the contract is uninitialized.
-
-        :return: True if state is UNINIT
-        """
+        """`True` if state is `UNINIT`."""
         return self.state == ContractState.UNINIT
 
     @property
     def is_nonexit(self) -> bool:
-        """
-        Check whether the contract does not exist on-chain.
-
-        :return: True if state is NONEXIST
-        """
+        """`True` if state is `NONEXIST`."""
         return self.state == ContractState.NONEXIST
 
     @property
     def last_transaction_lt(self) -> t.Optional[int]:
-        """
-        Logical time of the last known transaction for this contract.
-
-        :return: Transaction LT or None if unknown
-        """
+        """Logical time of the last transaction, or `None`."""
         return self.info.last_transaction_lt
 
     @property
     def last_transaction_hash(self) -> t.Optional[str]:
-        """
-        Hash of the last known transaction for this contract.
-
-        :return: Transaction hash as hex string or None if unknown
-        """
+        """Hash of the last transaction as hex string, or `None`."""
         return self.info.last_transaction_hash
 
     @property
     def code(self) -> t.Optional[Cell]:
-        """
-        Contract code cell from the latest known state.
-
-        :return: Code cell or None if not available
-        """
+        """Contract code `Cell`, or `None`."""
         return self.info.code
 
     @property
     def data(self) -> t.Optional[Cell]:
-        """
-        Contract data cell from the latest known state.
-
-        :return: Data cell or None if not available
-        """
+        """Contract data `Cell`, or `None`."""
         return self.info.data
 
     @classmethod
@@ -214,27 +145,18 @@ class BaseContract(ContractProtocol[_D]):
         client: ClientProtocol,
         address: Address,
     ) -> ContractInfo:
-        """
-        Fetch contract state from the blockchain.
-
-        If the request fails (except rate limits), sets state to default empty state.
-        """
+        """Fetch contract state, returning default on failure."""
         try:
             return await client.get_info(address)
         except ProviderResponseError as e:
-            if e.code in {429, 228, 5556}:  # rate limit exceed
+            if e.code in {429, 228, 5556}:
                 raise
             return ContractInfo()
         except (Exception,):
             return ContractInfo()
 
     async def refresh(self) -> None:
-        """
-        Refresh contract state from the blockchain.
-
-        Fetches current contract information and updates the cached info.
-        If the request fails (except rate limits), sets state to default empty state.
-        """
+        """Refresh contract state from the blockchain."""
         self._info = await self._load_info(self.client, self.address)
 
     @classmethod
@@ -244,15 +166,12 @@ class BaseContract(ContractProtocol[_D]):
         state_init: StateInit,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> _TContract:
-        """
-        Construct a contract wrapper from a StateInit object.
+        """Construct from a `StateInit`.
 
-        Derives the contract address from the StateInit hash.
-
-        :param client: TON client to bind to the contract
-        :param state_init: StateInit containing code and data
-        :param workchain: Target workchain (default: BASECHAIN)
-        :return: New contract instance
+        :param client: TON client.
+        :param state_init: `StateInit` containing code and data.
+        :param workchain: Target workchain.
+        :return: New contract instance.
         """
         address = Address((workchain.value, state_init.serialize().hash))
         return cls(client=client, address=address, state_init=state_init)
@@ -265,16 +184,13 @@ class BaseContract(ContractProtocol[_D]):
         data: Cell,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> _TContract:
-        """
-        Construct a contract wrapper from code and data cells.
+        """Construct from code and data cells.
 
-        Composes a StateInit from the provided cells and delegates to from_state_init().
-
-        :param client: TON client to bind to the contract
-        :param code: Contract code cell
-        :param data: Contract data cell
-        :param workchain: Target workchain (default: BASECHAIN)
-        :return: New contract instance
+        :param client: TON client.
+        :param code: Contract code cell.
+        :param data: Contract data cell.
+        :param workchain: Target workchain.
+        :return: New contract instance.
         """
         state_init = StateInit(code=code, data=data)
         return cls.from_state_init(client, state_init, workchain)
@@ -286,16 +202,12 @@ class BaseContract(ContractProtocol[_D]):
         data: Cell,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> _TContract:
-        """
-        Construct a contract wrapper from a data cell.
+        """Construct from a data cell using default code.
 
-        Uses the default code from get_default_code() and combines it with
-        the provided data cell.
-
-        :param client: TON client to bind to the contract
-        :param data: Contract data cell
-        :param workchain: Target workchain (default: BASECHAIN)
-        :return: New contract instance
+        :param client: TON client.
+        :param data: Contract data cell.
+        :param workchain: Target workchain.
+        :return: New contract instance.
         """
         code = cls.get_default_code()
         return cls.from_code_and_data(client, code, data, workchain)
@@ -307,16 +219,12 @@ class BaseContract(ContractProtocol[_D]):
         address: AddressLike,
         load_state: bool = True,
     ) -> _TContract:
-        """
-        Construct a contract wrapper from an existing on-chain address.
+        """Construct from an on-chain address.
 
-        Optionally fetches and caches the current contract state from the blockchain.
-        If load_state is True and the request fails, sets state to default empty state.
-
-        :param client: TON client to bind to the contract
-        :param address: Address of the deployed contract (string or Address object)
-        :param load_state: Whether to fetch current state from blockchain (default: True)
-        :return: Contract instance bound to the specified address
+        :param client: TON client.
+        :param address: Deployed contract address.
+        :param load_state: Fetch current state from the blockchain.
+        :return: Contract instance bound to the address.
         """
         if isinstance(address, str):
             address = Address(address)

@@ -15,9 +15,16 @@ NETWORK_MAP: t.Dict[str, NetworkGlobalID] = {
     "mainnet": NetworkGlobalID.MAINNET,
     "testnet": NetworkGlobalID.TESTNET,
 }
+"""Mapping of network names to `NetworkGlobalID`."""
 
 
 def parse_network(value: str) -> NetworkGlobalID:
+    """Convert CLI network name to `NetworkGlobalID`.
+
+    :param value: "mainnet" or "testnet" (case-insensitive).
+    :return: Resolved `NetworkGlobalID`.
+    :raises argparse.ArgumentTypeError: Unknown network name.
+    """
     value = value.lower().strip()
     if value not in NETWORK_MAP:
         raise argparse.ArgumentTypeError(f"Unknown network: {value}")
@@ -25,6 +32,10 @@ def parse_network(value: str) -> NetworkGlobalID:
 
 
 def cmd_status(args: argparse.Namespace) -> None:
+    """Run the `status` subcommand.
+
+    :param args: Parsed arguments with *network*, *config*, and *rps*.
+    """
     if args.config:
         config = load_global_config(args.config)
     else:
@@ -52,6 +63,10 @@ def cmd_status(args: argparse.Namespace) -> None:
 
 
 def _create_parser() -> argparse.ArgumentParser:
+    """Build the top-level argument parser.
+
+    :return: Configured `ArgumentParser`.
+    """
     parser = argparse.ArgumentParser(
         prog="tonutils",
         description="Tonutils CLI.",
@@ -98,6 +113,7 @@ def _create_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    """CLI entry-point. Dispatches to the matched subcommand or prints help."""
     parser = _create_parser()
     args = parser.parse_args()
 

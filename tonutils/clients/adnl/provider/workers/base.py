@@ -13,6 +13,9 @@ class BaseWorker(ABC):
     """Base class for background workers used by ADNL providers."""
 
     def __init__(self, provider: AdnlProvider) -> None:
+        """
+        :param provider: Owning ADNL provider.
+        """
         self.provider = provider
 
         self._running: bool = False
@@ -54,11 +57,7 @@ class BaseWorker(ABC):
             await task
 
     async def _run_wrapper(self) -> None:
-        """
-        Internal task wrapper for `_run()`.
-
-        Handles worker lifecycle and prevents exceptions from escaping the task.
-        """
+        """Run `_run` with lifecycle management and exception suppression."""
         try:
             await self._run()
         except asyncio.CancelledError:
@@ -68,7 +67,5 @@ class BaseWorker(ABC):
 
     @abstractmethod
     async def _run(self) -> None:
-        """
-        Worker logic executed repeatedly while the worker is running.
-        """
+        """Worker loop executed while the worker is running."""
         raise NotImplementedError

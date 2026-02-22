@@ -20,23 +20,18 @@ class RoyaltyParams(TlbScheme):
         address: AddressLike,
     ) -> None:
         """
-        Initialize royalty parameters.
-
-        :param royalty: Royalty numerator (e.g., 5 for 5%)
-        :param denominator: Royalty denominator (e.g., 100 for percentage)
-        :param address: Address to receive royalty payments
+        :param royalty: Royalty numerator.
+        :param denominator: Royalty denominator.
+        :param address: Royalty recipient address.
         """
         self.royalty = royalty
         self.denominator = denominator
         self.address = address
 
     def serialize(self) -> Cell:
-        """
-        Serialize royalty params to Cell.
+        """Serialize to `Cell`.
 
-        Layout: royalty:uint16 denominator:uint16 address:address
-
-        :return: Serialized royalty params cell
+        TLB: `royalty:uint16 denominator:uint16 address:address`
         """
         cell = begin_cell()
         cell.store_uint(self.royalty, 16)
@@ -46,11 +41,9 @@ class RoyaltyParams(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> RoyaltyParams:
-        """
-        Deserialize royalty params from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized RoyaltyParams instance
+        :param cs: Source slice.
         """
         return cls(
             royalty=cs.load_uint(16),
@@ -74,24 +67,20 @@ class OnchainContent(TlbScheme):
         "decimals",
         "symbol",
     }
-    """Set of recognized metadata keys."""
 
     def __init__(self, data: t.Dict[t.Union[str, int], t.Any]) -> None:
         """
-        Initialize on-chain content.
-
-        :param data: Dictionary of metadata key-value pairs
+        :param data: Metadata key-value pairs.
         """
         self.metadata = data
 
     @staticmethod
     def _value_serializer(val: t.Any, b: Builder) -> Builder:
-        """
-        Serialize metadata value to builder.
+        """Serialize a metadata value into a `Builder`.
 
-        :param val: Value to serialize (string or Cell)
-        :param b: Builder to store to
-        :return: Builder with stored value
+        :param val: Value to serialize (string or `Cell`).
+        :param b: Target builder.
+        :return: The same builder.
         """
         if isinstance(val, str):
             cell = begin_cell()
@@ -102,11 +91,10 @@ class OnchainContent(TlbScheme):
 
     @staticmethod
     def _value_deserializer(val: Slice) -> t.Union[Cell, str]:
-        """
-        Deserialize metadata value from slice.
+        """Deserialize a metadata value from a `Slice`.
 
-        :param val: Slice containing value
-        :return: Deserialized string or Cell
+        :param val: Source slice.
+        :return: Decoded string or raw `Cell`.
         """
         with suppress(Exception):
             cs = val.copy().load_ref().begin_parse()
@@ -115,10 +103,9 @@ class OnchainContent(TlbScheme):
         return val.to_cell()
 
     def _build_hashmap(self) -> HashMap:
-        """
-        Build hashmap from metadata dictionary.
+        """Build `HashMap` from metadata dictionary.
 
-        :return: HashMap with serialized metadata
+        :return: Serializable `HashMap`.
         """
         hashmap = HashMap(
             key_size=256,
@@ -135,11 +122,10 @@ class OnchainContent(TlbScheme):
         cls,
         hashmap: t.Dict[t.Union[str, int], Cell],
     ) -> t.Dict[t.Union[str, int], t.Any]:
-        """
-        Parse hashmap and convert known integer keys to string keys.
+        """Convert known integer keys to string keys.
 
-        :param hashmap: Raw hashmap from deserialization
-        :return: Parsed metadata dictionary
+        :param hashmap: Raw deserialized hashmap.
+        :return: Parsed metadata dictionary.
         """
         for key in cls._KNOWN_KEYS:
             int_key = string_hash(key)
@@ -149,13 +135,11 @@ class OnchainContent(TlbScheme):
         return hashmap
 
     def serialize(self, with_prefix: bool) -> Cell:
-        """
-        Serialize on-chain content to Cell.
+        """Serialize to `Cell`.
 
-        Layout: [prefix:uint8] metadata:dict
+        TLB: `[prefix:uint8] metadata:dict`
 
-        :param with_prefix: Whether to include metadata prefix byte
-        :return: Serialized content cell
+        :param with_prefix: Include metadata prefix byte.
         """
         cell = begin_cell()
         if with_prefix:
@@ -165,12 +149,10 @@ class OnchainContent(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice, with_prefix: bool) -> OnchainContent:
-        """
-        Deserialize on-chain content from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :param with_prefix: Whether prefix byte is present
-        :return: Deserialized OnchainContent instance
+        :param cs: Source slice.
+        :param with_prefix: Whether prefix byte is present.
         """
         if with_prefix:
             cs.skip_bits(8)
@@ -186,20 +168,16 @@ class OffchainContent(TlbScheme):
 
     def __init__(self, uri: str) -> None:
         """
-        Initialize off-chain content.
-
-        :param uri: URI to metadata JSON (e.g., "https://...")
+        :param uri: URI to metadata JSON.
         """
         self.uri: str = uri
 
     def serialize(self, with_prefix: bool) -> Cell:
-        """
-        Serialize off-chain content to Cell.
+        """Serialize to `Cell`.
 
-        Layout: [prefix:uint8] uri:snake_string
+        TLB: `[prefix:uint8] uri:snake_string`
 
-        :param with_prefix: Whether to include metadata prefix byte
-        :return: Serialized content cell
+        :param with_prefix: Include metadata prefix byte.
         """
         cell = begin_cell()
         if with_prefix:
@@ -209,12 +187,10 @@ class OffchainContent(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice, with_prefix: bool) -> OffchainContent:
-        """
-        Deserialize off-chain content from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :param with_prefix: Whether prefix byte is present
-        :return: Deserialized OffchainContent instance
+        :param cs: Source slice.
+        :param with_prefix: Whether prefix byte is present.
         """
         if with_prefix:
             cs.skip_bits(8)
@@ -227,19 +203,14 @@ class OffchainCommonContent(TlbScheme):
 
     def __init__(self, prefix_uri: str) -> None:
         """
-        Initialize common item metadata base URI.
-
-        :param prefix_uri: Base URI prefix for all items (e.g., "https://example.com/items/")
+        :param prefix_uri: Base URI prefix for all items.
         """
         self.prefix_uri = prefix_uri
 
     def serialize(self) -> Cell:
-        """
-        Serialize common content to Cell.
+        """Serialize to `Cell`.
 
-        Layout: prefix_uri:snake_string
-
-        :return: Serialized content cell
+        TLB: `prefix_uri:snake_string`
         """
         cell = begin_cell()
         cell.store_snake_string(self.prefix_uri)
@@ -247,11 +218,9 @@ class OffchainCommonContent(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> OffchainCommonContent:
-        """
-        Deserialize common content from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized OffchainCommonContent instance
+        :param cs: Source slice.
         """
         uri = cs.load_snake_string()
         return cls(prefix_uri=uri)
@@ -262,19 +231,14 @@ class OffchainItemContent(TlbScheme):
 
     def __init__(self, suffix_uri: str) -> None:
         """
-        Initialize item metadata suffix.
-
-        :param suffix_uri: Item-specific URI suffix (e.g., "0.json" for item #0)
+        :param suffix_uri: Item-specific URI suffix.
         """
         self.suffix_uri = suffix_uri
 
     def serialize(self) -> Cell:
-        """
-        Serialize item content to Cell.
+        """Serialize to `Cell`.
 
-        Layout: suffix_uri:snake_string
-
-        :return: Serialized content cell
+        TLB: `suffix_uri:snake_string`
         """
         cell = begin_cell()
         cell.store_snake_string(self.suffix_uri)
@@ -282,11 +246,9 @@ class OffchainItemContent(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> OffchainItemContent:
-        """
-        Deserialize item content from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized OffchainItemContent instance
+        :param cs: Source slice.
         """
         uri = cs.load_snake_string()
         return cls(suffix_uri=uri)
@@ -301,21 +263,16 @@ class NFTCollectionContent(TlbScheme):
         common_content: OffchainCommonContent,
     ) -> None:
         """
-        Initialize collection content.
-
-        :param content: Collection metadata (on-chain or off-chain)
-        :param common_content: Common base URI for item metadata (used as prefix for all item content)
+        :param content: Collection metadata (on-chain or off-chain).
+        :param common_content: Common base URI for item metadata.
         """
         self.content = content
         self.common_content = common_content
 
     def serialize(self) -> Cell:
-        """
-        Serialize collection content to Cell.
+        """Serialize to `Cell`.
 
-        Layout: content:^Cell common_content:^Cell
-
-        :return: Serialized content cell
+        TLB: `content:^Cell common_content:^Cell`
         """
         cell = begin_cell()
         cell.store_ref(self.content.serialize(with_prefix=True))
@@ -324,11 +281,9 @@ class NFTCollectionContent(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTCollectionContent:
-        """
-        Deserialize collection content from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTCollectionContent instance
+        :param cs: Source slice.
         """
         content = cs.load_ref().begin_parse()
         return cls(
@@ -355,13 +310,11 @@ class NFTCollectionData(TlbScheme):
         next_item_index: int = 0,
     ) -> None:
         """
-        Initialize collection data.
-
-        :param owner_address: Collection owner address
-        :param content: Collection metadata
-        :param royalty_params: Royalty configuration for all items
-        :param nft_item_code: Code cell for NFT item contracts
-        :param next_item_index: Next item index to mint (default: 0)
+        :param owner_address: Collection owner address.
+        :param content: Collection metadata.
+        :param royalty_params: Royalty configuration.
+        :param nft_item_code: Code cell for NFT item contracts.
+        :param next_item_index: Next item index to mint.
         """
         self.owner_address = owner_address
         self.content = content
@@ -370,13 +323,10 @@ class NFTCollectionData(TlbScheme):
         self.next_item_index = next_item_index
 
     def serialize(self) -> Cell:
-        """
-        Serialize collection data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: owner:address next_item_index:uint64 content:^Cell
-                nft_item_code:^Cell royalty_params:^Cell
-
-        :return: Serialized data cell
+        TLB: `owner:address next_item_index:uint64 content:^Cell
+        nft_item_code:^Cell royalty_params:^Cell`
         """
         cell = begin_cell()
         cell.store_address(self.owner_address)
@@ -388,11 +338,9 @@ class NFTCollectionData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTCollectionData:
-        """
-        Deserialize collection data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTCollectionData instance
+        :param cs: Source slice.
         """
         return cls(
             owner_address=cs.load_address(),
@@ -414,12 +362,10 @@ class NFTItemStandardData(TlbScheme):
         content: OffchainItemContent,
     ) -> None:
         """
-        Initialize standard NFT item data.
-
-        :param index: Item index within collection
-        :param collection_address: Parent collection address
-        :param owner_address: Current owner address
-        :param content: Item metadata reference
+        :param index: Item index within collection.
+        :param collection_address: Parent collection address.
+        :param owner_address: Current owner address.
+        :param content: Item metadata reference.
         """
         self.index = index
         self.collection_address = collection_address
@@ -427,12 +373,9 @@ class NFTItemStandardData(TlbScheme):
         self.content = content
 
     def serialize(self) -> Cell:
-        """
-        Serialize item data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: index:uint64 collection:address owner:address content:^Cell
-
-        :return: Serialized data cell
+        TLB: `index:uint64 collection:address owner:address content:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(self.index, 64)
@@ -443,11 +386,9 @@ class NFTItemStandardData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTItemStandardData:
-        """
-        Deserialize item data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTItemStandardData instance
+        :param cs: Source slice.
         """
         return cls(
             index=cs.load_uint(64),
@@ -469,13 +410,11 @@ class NFTItemEditableData(TlbScheme):
         editor_address: AddressLike,
     ) -> None:
         """
-        Initialize editable NFT item data.
-
-        :param index: Item index within collection
-        :param collection_address: Parent collection address
-        :param owner_address: Current owner address
-        :param content: Item metadata reference
-        :param editor_address: Address authorized to edit content
+        :param index: Item index within collection.
+        :param collection_address: Parent collection address.
+        :param owner_address: Current owner address.
+        :param content: Item metadata reference.
+        :param editor_address: Address authorized to edit content.
         """
         self.index = index
         self.collection_address = collection_address
@@ -484,13 +423,10 @@ class NFTItemEditableData(TlbScheme):
         self.editor_address = editor_address
 
     def serialize(self) -> Cell:
-        """
-        Serialize item data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: index:uint64 collection:address owner:address
-                content:^Cell editor:address
-
-        :return: Serialized data cell
+        TLB: `index:uint64 collection:address owner:address
+        content:^Cell editor:address`
         """
         cell = begin_cell()
         cell.store_uint(self.index, 64)
@@ -502,11 +438,9 @@ class NFTItemEditableData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTItemEditableData:
-        """
-        Deserialize item data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTItemEditableData instance
+        :param cs: Source slice.
         """
         return cls(
             index=cs.load_uint(64),
@@ -518,7 +452,7 @@ class NFTItemEditableData(TlbScheme):
 
 
 class NFTItemSoulboundData(TlbScheme):
-    """On-chain data for Soulbound Token (SBT) contracts (TEP-85)."""
+    """On-chain data for Soulbound Token contracts (TEP-85)."""
 
     def __init__(
         self,
@@ -530,14 +464,12 @@ class NFTItemSoulboundData(TlbScheme):
         revoked_at: int = 0,
     ) -> None:
         """
-        Initialize soulbound token data.
-
-        :param index: Item index within collection
-        :param collection_address: Parent collection address
-        :param owner_address: Current owner address (cannot transfer)
-        :param content: Item metadata reference
-        :param authority_address: Address authorized to revoke token
-        :param revoked_at: Unix timestamp of revocation (0 if not revoked)
+        :param index: Item index within collection.
+        :param collection_address: Parent collection address.
+        :param owner_address: Current owner address.
+        :param content: Item metadata reference.
+        :param authority_address: Address authorized to revoke.
+        :param revoked_at: Revocation unix timestamp, or 0.
         """
         self.index = index
         self.collection_address = collection_address
@@ -547,13 +479,10 @@ class NFTItemSoulboundData(TlbScheme):
         self.revoked_at = revoked_at
 
     def serialize(self) -> Cell:
-        """
-        Serialize SBT data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: index:uint64 collection:address owner:address content:^Cell
-                authority:address revoked_at:uint64
-
-        :return: Serialized data cell
+        TLB: `index:uint64 collection:address owner:address content:^Cell
+        authority:address revoked_at:uint64`
         """
         cell = begin_cell()
         cell.store_uint(self.index, 64)
@@ -566,11 +495,9 @@ class NFTItemSoulboundData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTItemSoulboundData:
-        """
-        Deserialize SBT data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTItemSoulboundData instance
+        :param cs: Source slice.
         """
         return cls(
             index=cs.load_uint(64),
@@ -591,21 +518,16 @@ class NFTItemStandardMintRef(TlbScheme):
         content: OffchainItemContent,
     ) -> None:
         """
-        Initialize standard mint reference.
-
-        :param owner_address: Initial owner address
-        :param content: Item metadata reference
+        :param owner_address: Initial owner address.
+        :param content: Item metadata reference.
         """
         self.owner_address = owner_address
         self.content = content
 
     def serialize(self) -> Cell:
-        """
-        Serialize mint reference to Cell.
+        """Serialize to `Cell`.
 
-        Layout: owner:address content:^Cell
-
-        :return: Serialized mint ref cell
+        TLB: `owner:address content:^Cell`
         """
         cell = begin_cell()
         cell.store_address(self.owner_address)
@@ -614,11 +536,9 @@ class NFTItemStandardMintRef(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTItemStandardMintRef:
-        """
-        Deserialize mint reference from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTItemStandardMintRef instance
+        :param cs: Source slice.
         """
         return cls(
             owner_address=cs.load_address(),
@@ -636,23 +556,18 @@ class NFTItemEditableMintRef(TlbScheme):
         content: OffchainItemContent,
     ) -> None:
         """
-        Initialize editable mint reference.
-
-        :param owner_address: Initial owner address
-        :param editor_address: Address authorized to edit content
-        :param content: Item metadata reference
+        :param owner_address: Initial owner address.
+        :param editor_address: Address authorized to edit content.
+        :param content: Item metadata reference.
         """
         self.owner_address = owner_address
         self.editor_address = editor_address
         self.content = content
 
     def serialize(self) -> Cell:
-        """
-        Serialize mint reference to Cell.
+        """Serialize to `Cell`.
 
-        Layout: owner:address editor:address content:^Cell
-
-        :return: Serialized mint ref cell
+        TLB: `owner:address editor:address content:^Cell`
         """
         cell = begin_cell()
         cell.store_address(self.owner_address)
@@ -662,11 +577,9 @@ class NFTItemEditableMintRef(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTItemEditableMintRef:
-        """
-        Deserialize mint reference from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTItemEditableMintRef instance
+        :param cs: Source slice.
         """
         return cls(
             owner_address=cs.load_address(),
@@ -686,12 +599,10 @@ class NFTItemSoulboundMintRef(TlbScheme):
         revoked_time: int = 0,
     ) -> None:
         """
-        Initialize soulbound mint reference.
-
-        :param owner_address: Initial owner address
-        :param content: Item metadata reference
-        :param authority_address: Address authorized to revoke token
-        :param revoked_time: Initial revocation timestamp (default: 0)
+        :param owner_address: Initial owner address.
+        :param content: Item metadata reference.
+        :param authority_address: Address authorized to revoke.
+        :param revoked_time: Initial revocation timestamp.
         """
         self.owner_address = owner_address
         self.content = content
@@ -699,12 +610,9 @@ class NFTItemSoulboundMintRef(TlbScheme):
         self.revoked_time = revoked_time
 
     def serialize(self) -> Cell:
-        """
-        Serialize mint reference to Cell.
+        """Serialize to `Cell`.
 
-        Layout: owner:address content:^Cell authority:address revoked_time:uint64
-
-        :return: Serialized mint ref cell
+        TLB: `owner:address content:^Cell authority:address revoked_time:uint64`
         """
         cell = begin_cell()
         cell.store_address(self.owner_address)
@@ -715,11 +623,9 @@ class NFTItemSoulboundMintRef(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTItemSoulboundMintRef:
-        """
-        Deserialize mint reference from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTItemSoulboundMintRef instance
+        :param cs: Source slice.
         """
         return cls(
             owner_address=cs.load_address(),
@@ -740,12 +646,10 @@ class NFTCollectionMintItemBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize mint item message body.
-
-        :param item_index: Index for the new item
-        :param item_ref: Mint reference cell (owner, content, etc.)
-        :param forward_amount: Amount to forward to item contract in nanotons
-        :param query_id: Query identifier (default: 0)
+        :param item_index: Index for the new item.
+        :param item_ref: Mint reference cell.
+        :param forward_amount: Amount to forward in nanotons.
+        :param query_id: Query identifier.
         """
         self.item_index = item_index
         self.item_ref = item_ref
@@ -753,13 +657,10 @@ class NFTCollectionMintItemBody(TlbScheme):
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize mint body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 item_index:uint64
-                forward_amount:coins item_ref:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 item_index:uint64
+        forward_amount:coins item_ref:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(1, 32)
@@ -771,11 +672,9 @@ class NFTCollectionMintItemBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTCollectionMintItemBody:
-        """
-        Deserialize mint body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTCollectionMintItemBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -784,7 +683,6 @@ class NFTCollectionBatchMintItemBody(TlbScheme):
     """Message body for batch minting multiple NFT items."""
 
     MAX_BATCH_ITEMS = 249
-    """Maximum number of items allowed in a single batch mint."""
 
     def __init__(
         self,
@@ -794,12 +692,11 @@ class NFTCollectionBatchMintItemBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize batch mint message body.
-
-        :param items_refs: List of mint reference cells
-        :param from_index: Starting index for batch
-        :param forward_amount: Amount to forward per item in nanotons
-        :param query_id: Query identifier (default: 0)
+        :param items_refs: List of mint reference cells.
+        :param from_index: Starting index for batch.
+        :param forward_amount: Amount to forward per item in nanotons.
+        :param query_id: Query identifier.
+        :raises ValueError: If batch size exceeds `MAX_BATCH_ITEMS`.
         """
         n = len(items_refs)
         if n > self.MAX_BATCH_ITEMS:
@@ -815,11 +712,10 @@ class NFTCollectionBatchMintItemBody(TlbScheme):
 
     @classmethod
     def _parse_hashmap(cls, cs: Slice) -> t.List[t.Tuple[int, int, Cell]]:
-        """
-        Parse hashmap of items from slice.
+        """Parse hashmap of items from a `Slice`.
 
-        :param cs: Cell slice containing hashmap
-        :return: Sorted list of (index, amount, item_ref) tuples
+        :param cs: Source slice containing hashmap.
+        :return: Sorted list of (index, amount, item_ref) tuples.
         """
         hashmap = cs.load_dict(key_length=64)
         out: t.List[tuple[int, int, Cell]] = []
@@ -831,10 +727,9 @@ class NFTCollectionBatchMintItemBody(TlbScheme):
         return out
 
     def _build_hashmap(self) -> HashMap:
-        """
-        Build hashmap from items list.
+        """Build `HashMap` from items list.
 
-        :return: HashMap with item indices and references
+        :return: Serializable `HashMap`.
         """
         hashmap = HashMap(key_size=64)
         for key, item_ref in enumerate(self.items_refs, start=self.from_index):
@@ -845,12 +740,9 @@ class NFTCollectionBatchMintItemBody(TlbScheme):
         return hashmap
 
     def serialize(self) -> Cell:
-        """
-        Serialize batch mint body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 items:dict
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 items:dict`
         """
         cell = begin_cell()
         cell.store_uint(2, 32)
@@ -860,11 +752,9 @@ class NFTCollectionBatchMintItemBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTCollectionBatchMintItemBody:
-        """
-        Deserialize batch mint body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTCollectionBatchMintItemBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -878,21 +768,16 @@ class NFTCollectionChangeOwnerBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize change owner message body.
-
-        :param owner_address: New owner address
-        :param query_id: Query identifier (default: 0)
+        :param owner_address: New owner address.
+        :param query_id: Query identifier.
         """
         self.owner_address = owner_address
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize change owner body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 owner:address
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 owner:address`
         """
         cell = begin_cell()
         cell.store_uint(3, 32)
@@ -902,11 +787,9 @@ class NFTCollectionChangeOwnerBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTCollectionChangeOwnerBody:
-        """
-        Deserialize change owner body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTCollectionChangeOwnerBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -921,23 +804,18 @@ class NFTCollectionChangeContentBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize change content message body.
-
-        :param content: New collection content
-        :param royalty_params: New royalty parameters
-        :param query_id: Query identifier (default: 0)
+        :param content: New collection content.
+        :param royalty_params: New royalty parameters.
+        :param query_id: Query identifier.
         """
         self.content = content
         self.royalty_params = royalty_params
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize change content body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 content:^Cell royalty_params:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 content:^Cell royalty_params:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(4, 32)
@@ -948,11 +826,9 @@ class NFTCollectionChangeContentBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTCollectionChangeContentBody:
-        """
-        Deserialize change content body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTCollectionChangeContentBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -966,21 +842,16 @@ class NFTEditContentBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize edit content message body.
-
-        :param content: New item content
-        :param query_id: Query identifier (default: 0)
+        :param content: New item content.
+        :param query_id: Query identifier.
         """
         self.content = content
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize edit content body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 content:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 content:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.NFT_EDIT_CONTENT, 32)
@@ -990,11 +861,9 @@ class NFTEditContentBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTEditContentBody:
-        """
-        Deserialize edit content body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTEditContentBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -1012,14 +881,12 @@ class NFTTransferEditorshipBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize transfer editorship message body.
-
-        :param editor_address: New editor address
-        :param response_address: Address for excess funds
-        :param custom_payload: Optional custom payload cell
-        :param forward_payload: Optional payload to forward
-        :param forward_amount: Amount to forward in nanotons (default: 1)
-        :param query_id: Query identifier (default: 0)
+        :param editor_address: New editor address.
+        :param response_address: Address for excess funds.
+        :param custom_payload: Custom payload cell, or `None`.
+        :param forward_payload: Payload to forward, or `None`.
+        :param forward_amount: Amount to forward in nanotons.
+        :param query_id: Query identifier.
         """
         self.editor_address = editor_address
         self.response_address = response_address
@@ -1029,13 +896,10 @@ class NFTTransferEditorshipBody(TlbScheme):
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize transfer editorship body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 editor:address response:address
-                custom_payload:^Cell forward_amount:coins forward_payload:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 editor:address response:address
+        custom_payload:^Cell forward_amount:coins forward_payload:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.NFT_TRANSFER_EDITORSHIP, 32)
@@ -1049,11 +913,9 @@ class NFTTransferEditorshipBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTTransferEditorshipBody:
-        """
-        Deserialize transfer editorship body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTTransferEditorshipBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -1063,19 +925,14 @@ class NFTDestroyBody(TlbScheme):
 
     def __init__(self, query_id: int = 0) -> None:
         """
-        Initialize destroy message body.
-
-        :param query_id: Query identifier (default: 0)
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize destroy body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.SBT_DESTORY, 32)
@@ -1084,11 +941,9 @@ class NFTDestroyBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTDestroyBody:
-        """
-        Deserialize destroy body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTDestroyBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -1098,19 +953,14 @@ class NFTRevokeBody(TlbScheme):
 
     def __init__(self, query_id: int = 0) -> None:
         """
-        Initialize revoke message body.
-
-        :param query_id: Query identifier (default: 0)
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize revoke body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.SBT_REVOKE, 32)
@@ -1119,11 +969,9 @@ class NFTRevokeBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTRevokeBody:
-        """
-        Deserialize revoke body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTRevokeBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -1141,14 +989,12 @@ class NFTTransferBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize NFT transfer message body.
-
-        :param destination: New owner address
-        :param response_address: Address for excess funds (default: None)
-        :param custom_payload: Optional custom payload cell
-        :param forward_payload: Optional payload to forward to new owner
-        :param forward_amount: Amount to forward in nanotons (default: 1)
-        :param query_id: Query identifier (default: 0)
+        :param destination: New owner address.
+        :param response_address: Address for excess funds, or `None`.
+        :param custom_payload: Custom payload cell, or `None`.
+        :param forward_payload: Payload to forward, or `None`.
+        :param forward_amount: Amount to forward in nanotons.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.destination = destination
@@ -1158,13 +1004,10 @@ class NFTTransferBody(TlbScheme):
         self.forward_payload = forward_payload
 
     def serialize(self) -> Cell:
-        """
-        Serialize transfer body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 destination:address response:address
-                custom_payload:^Cell forward_amount:coins forward_payload:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 destination:address response:address
+        custom_payload:^Cell forward_amount:coins forward_payload:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.NFT_TRANSFER, 32)
@@ -1178,10 +1021,8 @@ class NFTTransferBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> NFTTransferBody:
-        """
-        Deserialize transfer body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized NFTTransferBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError

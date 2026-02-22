@@ -15,6 +15,7 @@ from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
 class ToncenterHttpProvider(HttpProvider):
+    """HTTP provider for the Toncenter API."""
 
     def __init__(
         self,
@@ -30,6 +31,18 @@ class ToncenterHttpProvider(HttpProvider):
         rps_period: float = 1.0,
         retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
+        """
+        :param network: Target TON network.
+        :param api_key: Toncenter API key, or `None`.
+        :param base_url: Custom endpoint base URL, or `None`.
+        :param timeout: Request timeout in seconds.
+        :param session: External aiohttp session, or `None`.
+        :param headers: Default headers for owned session.
+        :param cookies: Default cookies for owned session.
+        :param rps_limit: Requests-per-period limit, or `None`.
+        :param rps_period: Rate limit period in seconds.
+        :param retry_policy: Retry policy with per-error-code rules, or `None`.
+        """
         urls = {
             NetworkGlobalID.MAINNET: "https://toncenter.com/api/v2",
             NetworkGlobalID.TESTNET: "https://testnet.toncenter.com/api/v2",
@@ -48,31 +61,35 @@ class ToncenterHttpProvider(HttpProvider):
             retry_policy=retry_policy,
         )
 
-    async def send_boc(
-        self,
-        payload: SendBocPayload,
-    ) -> None:
+    async def send_boc(self, payload: SendBocPayload) -> None:
+        """Send a BoC to the network.
+
+        :param payload: Serialized BoC payload.
+        """
         await self.send_http_request(
             "POST",
             "/sendBoc",
             json_data=payload.model_dump(),
         )
 
-    async def get_config_all(
-        self,
-    ) -> GetConfigAllResult:
+    async def get_config_all(self) -> GetConfigAllResult:
+        """Fetch full blockchain configuration.
+
+        :return: Parsed `GetConfigAllResult`.
+        """
         return self._model(
             GetConfigAllResult,
-            await self.send_http_request(
-                "GET",
-                "/getConfigAll",
-            ),
+            await self.send_http_request("GET", "/getConfigAll"),
         )
 
     async def get_address_information(
-        self,
-        address: str,
+        self, address: str
     ) -> GetAddressInformationResult:
+        """Fetch contract state information.
+
+        :param address: Contract address string.
+        :return: Parsed `GetAddressInformationResult`.
+        """
         return self._model(
             GetAddressInformationResult,
             await self.send_http_request(
@@ -90,9 +107,17 @@ class ToncenterHttpProvider(HttpProvider):
         from_hash: t.Optional[str] = None,
         to_lt: t.Optional[int] = None,
     ) -> GetTransactionsResult:
+        """Fetch account transactions.
+
+        :param address: Account address string.
+        :param limit: Maximum transactions to return.
+        :param lt: Starting logical time (requires `from_hash`).
+        :param from_hash: Starting transaction hash (requires `lt`).
+        :param to_lt: Lower-bound logical time filter.
+        :return: Parsed `GetTransactionsResult`.
+        """
         params = {"address": address, "limit": limit, "archival": "true"}
 
-        # lt and hash must be used together
         if lt is not None and from_hash is not None:
             params["lt"] = lt
             params["hash"] = from_hash
@@ -102,17 +127,15 @@ class ToncenterHttpProvider(HttpProvider):
 
         return self._model(
             GetTransactionsResult,
-            await self.send_http_request(
-                "GET",
-                "/getTransactions",
-                params=params,
-            ),
+            await self.send_http_request("GET", "/getTransactions", params=params),
         )
 
-    async def run_get_method(
-        self,
-        payload: RunGetMethodPayload,
-    ) -> RunGetMethodResult:
+    async def run_get_method(self, payload: RunGetMethodPayload) -> RunGetMethodResult:
+        """Execute a contract get-method.
+
+        :param payload: Get-method request payload.
+        :return: Parsed `RunGetMethodResult`.
+        """
         return self._model(
             RunGetMethodResult,
             await self.send_http_request(

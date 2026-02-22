@@ -13,11 +13,10 @@ if t.TYPE_CHECKING:
 
 
 class UpdaterWorker(BaseWorker):
-    """
-    Masterchain update worker for ADNL providers.
+    """Masterchain update worker for ADNL providers.
 
-    Tracks the latest masterchain block and updates it by subscribing
-    to new seqno notifications through lite-server.
+    Tracks the latest masterchain block by subscribing to new seqno
+    notifications through the lite-server.
     """
 
     def __init__(self, provider: AdnlProvider) -> None:
@@ -35,11 +34,7 @@ class UpdaterWorker(BaseWorker):
         self._last_mc_block = info.last_block()
 
     async def _run(self) -> None:
-        """
-        Wait for new masterchain seqno updates and refresh block info.
-
-        Uses waitMasterchainSeqno to detect new blocks.
-        """
+        """Wait for new masterchain seqno updates and refresh block info."""
         provider = self.provider
 
         while self.running:

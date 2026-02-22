@@ -3,11 +3,12 @@ import typing as t
 from pytoniq_core import Address, Block, BlockIdExt, Transaction, Account, ShardAccount
 
 from tonutils.clients.adnl.provider.models import MasterchainInfo
-from tonutils.clients.adnl.utils import decode_stack, encode_stack
+from tonutils.clients.adnl.stack import LiteStackCodec
 from tonutils.types import ContractInfo, WorkchainID, AddressLike
 
 
 class LiteMixin:
+    """High-level lite-server operations mixin for ADNL clients."""
 
     async def _adnl_call(
         self,
@@ -16,15 +17,11 @@ class LiteMixin:
         *args: t.Any,
         **kwargs: t.Any,
     ) -> t.Any:
-        """
-        Execute a single lite-server provider call.
+        """Execute a provider call (overridden by subclasses).
 
-        This is an internal hook used by the mixin to unify implementations between
-        LiteClient (direct call) and LiteBalancer (failover / retry call).
-
-        :param method: Provider coroutine method name (e.g. "get_time", "lookup_block").
-        :param args: Positional arguments forwarded to the provider method.
-        :param kwargs: Keyword arguments forwarded to the provider method.
+        :param method: Provider method name.
+        :param args: Positional arguments.
+        :param kwargs: Keyword arguments.
         :return: Provider method result.
         """
         raise NotImplementedError("LiteMixin requires `_adnl_call()` implementation.")
@@ -55,9 +52,9 @@ class LiteMixin:
             method,
             address=Address(address),
             method_name=method_name,
-            stack=encode_stack(stack or []),
+            stack=LiteStackCodec.encode(stack or []),
         )
-        return decode_stack(res or [])
+        return LiteStackCodec.decode(res or [])
 
     async def _get_transactions(
         self,
@@ -113,28 +110,25 @@ class LiteMixin:
         return out[:limit]
 
     async def get_time(self) -> int:
-        """
-        Fetch current network time from lite-server.
+        """Fetch current network time from the lite-server.
 
-        :return: Current UNIX timestamp
+        :return: Current UNIX timestamp.
         """
         method = "get_time"
         return t.cast(int, await self._adnl_call(method))
 
     async def get_version(self) -> int:
-        """
-        Fetch lite-server protocol version.
+        """Fetch lite-server protocol version.
 
-        :return: Version number
+        :return: Version number.
         """
         method = "get_version"
         return t.cast(int, await self._adnl_call(method))
 
     async def get_masterchain_info(self) -> MasterchainInfo:
-        """
-        Fetch basic masterchain information.
+        """Fetch basic masterchain information.
 
-        :return: MasterchainInfo instance
+        :return: `MasterchainInfo` instance.
         """
         method = "get_masterchain_info"
         return t.cast(MasterchainInfo, await self._adnl_call(method))
@@ -146,14 +140,13 @@ class LiteMixin:
         schema_name: str,
         data: t.Optional[dict] = None,
     ) -> t.Dict[str, t.Any]:
-        """
-        Combine waitMasterchainSeqno with another lite-server query.
+        """Combine waitMasterchainSeqno with another lite-server query.
 
-        :param seqno: Masterchain seqno to wait for
-        :param timeout_ms: Wait timeout in milliseconds
-        :param schema_name: Lite-server TL method name without prefix
-        :param data: Additional method arguments
-        :return: Lite-server response as dictionary
+        :param seqno: Masterchain seqno to wait for.
+        :param timeout_ms: Wait timeout in milliseconds.
+        :param schema_name: Method name without `liteServer.` prefix.
+        :param data: Additional method arguments.
+        :return: Decoded response dictionary.
         """
         method = "wait_masterchain_seqno"
         return t.cast(
@@ -175,15 +168,14 @@ class LiteMixin:
         lt: t.Optional[int] = None,
         utime: t.Optional[int] = None,
     ) -> t.Tuple[BlockIdExt, Block]:
-        """
-        Locate a block by workchain/shard and one of seqno/lt/utime.
+        """Locate a block by workchain/shard and one of seqno, lt, or utime.
 
-        :param workchain: Workchain identifier
-        :param shard: Shard identifier
-        :param seqno: Block sequence number
-        :param lt: Logical time filter
-        :param utime: UNIX time filter
-        :return: Tuple of BlockIdExt and deserialized Block
+        :param workchain: Workchain identifier.
+        :param shard: Shard identifier.
+        :param seqno: Block sequence number.
+        :param lt: Logical time filter.
+        :param utime: UNIX time filter.
+        :return: Tuple of `BlockIdExt` and deserialized `Block`.
         """
         method = "lookup_block"
         return t.cast(
@@ -202,11 +194,10 @@ class LiteMixin:
         self,
         block: BlockIdExt,
     ) -> t.Tuple[BlockIdExt, Block]:
-        """
-        Fetch and deserialize block header by BlockIdExt.
+        """Fetch and deserialize a block header.
 
-        :param block: BlockIdExt to query
-        :return: Tuple of BlockIdExt and deserialized Block
+        :param block: Block identifier to query.
+        :return: Tuple of `BlockIdExt` and deserialized `Block`.
         """
         method = "get_block_header"
         return t.cast(
@@ -219,12 +210,11 @@ class LiteMixin:
         block: BlockIdExt,
         count: int = 1024,
     ) -> t.List[Transaction]:
-        """
-        Fetch extended block transactions list.
+        """Fetch all transactions in a block.
 
-        :param block: Target block identifier
-        :param count: Maximum number of transactions per request
-        :return: List of deserialized Transaction objects
+        :param block: Target block identifier.
+        :param count: Maximum transactions per request page.
+        :return: List of deserialized `Transaction` objects.
         """
         method = "get_block_transactions"
         return t.cast(
@@ -236,11 +226,10 @@ class LiteMixin:
         self,
         block: t.Optional[BlockIdExt] = None,
     ) -> t.List[BlockIdExt]:
-        """
-        Fetch shard info for all workchains at a given masterchain block.
+        """Fetch shard info for all workchains at a masterchain block.
 
-        :param block: Masterchain block ID or None to use latest
-        :return: List of shard BlockIdExt objects
+        :param block: Masterchain block ID, or `None` for latest.
+        :return: List of shard `BlockIdExt` objects.
         """
         method = "get_all_shards_info"
         return t.cast(
@@ -252,11 +241,10 @@ class LiteMixin:
         self,
         address: AddressLike,
     ) -> t.Tuple[t.Optional[Account], t.Optional[ShardAccount]]:
-        """
-        Fetch account state and shard account from lite-server.
+        """Fetch account state and shard account from the lite-server.
 
-        :param address: Contract address as Address object or string
-        :return: Tuple of (Account | None, ShardAccount | None)
+        :param address: Contract address.
+        :return: Tuple of (`Account` or `None`, `ShardAccount` or `None`).
         """
         if isinstance(address, str):
             address = Address(address)

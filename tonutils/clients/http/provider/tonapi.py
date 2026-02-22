@@ -16,6 +16,7 @@ from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
 class TonapiHttpProvider(HttpProvider):
+    """HTTP provider for the Tonapi API."""
 
     def __init__(
         self,
@@ -31,6 +32,18 @@ class TonapiHttpProvider(HttpProvider):
         rps_period: float = 1.0,
         retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
+        """
+        :param network: Target TON network.
+        :param api_key: Tonapi API key.
+        :param base_url: Custom endpoint base URL, or `None`.
+        :param timeout: Request timeout in seconds.
+        :param session: External aiohttp session, or `None`.
+        :param headers: Default headers for owned session.
+        :param cookies: Default cookies for owned session.
+        :param rps_limit: Requests-per-period limit, or `None`.
+        :param rps_period: Rate limit period in seconds.
+        :param retry_policy: Retry policy with per-error-code rules, or `None`.
+        """
         urls = {
             NetworkGlobalID.MAINNET: "https://tonapi.io/v2",
             NetworkGlobalID.TESTNET: "https://testnet.tonapi.io/v2",
@@ -49,37 +62,36 @@ class TonapiHttpProvider(HttpProvider):
             retry_policy=retry_policy,
         )
 
-    async def blockchain_message(
-        self,
-        payload: BlockchainMessagePayload,
-    ) -> None:
+    async def blockchain_message(self, payload: BlockchainMessagePayload) -> None:
+        """Send an external message to the blockchain.
+
+        :param payload: Message payload with BoC.
+        """
         await self.send_http_request(
             "POST",
             "/blockchain/message",
             json_data=payload.model_dump(),
         )
 
-    async def blockchain_config(
-        self,
-    ) -> BlockchainConfigResult:
+    async def blockchain_config(self) -> BlockchainConfigResult:
+        """Fetch blockchain configuration.
+
+        :return: Parsed `BlockchainConfigResult`.
+        """
         return self._model(
             BlockchainConfigResult,
-            await self.send_http_request(
-                "GET",
-                "/blockchain/config",
-            ),
+            await self.send_http_request("GET", "/blockchain/config"),
         )
 
-    async def blockchain_account(
-        self,
-        address: str,
-    ) -> BlockchainAccountResult:
+    async def blockchain_account(self, address: str) -> BlockchainAccountResult:
+        """Fetch account information.
+
+        :param address: Account address string.
+        :return: Parsed `BlockchainAccountResult`.
+        """
         return self._model(
             BlockchainAccountResult,
-            await self.send_http_request(
-                "GET",
-                f"/blockchain/accounts/{address}",
-            ),
+            await self.send_http_request("GET", f"/blockchain/accounts/{address}"),
         )
 
     async def blockchain_account_transactions(
@@ -89,6 +101,14 @@ class TonapiHttpProvider(HttpProvider):
         after_lt: t.Optional[int] = None,
         before_lt: t.Optional[int] = None,
     ) -> BlockchainAccountTransactionsResult:
+        """Fetch account transactions.
+
+        :param address: Account address string.
+        :param limit: Maximum transactions to return.
+        :param after_lt: Lower-bound logical time filter.
+        :param before_lt: Upper-bound logical time filter.
+        :return: Parsed `BlockchainAccountTransactionsResult`.
+        """
         params = {"limit": limit}
         if after_lt is not None:
             params["after_lt"] = after_lt
@@ -110,6 +130,13 @@ class TonapiHttpProvider(HttpProvider):
         method_name: str,
         args: t.List[t.Any],
     ) -> BlockchainAccountMethodResult:
+        """Execute a contract get-method.
+
+        :param address: Contract address string.
+        :param method_name: Name of the get-method.
+        :param args: Encoded TVM stack arguments.
+        :return: Parsed `BlockchainAccountMethodResult`.
+        """
         return self._model(
             BlockchainAccountMethodResult,
             await self.send_http_request(

@@ -28,10 +28,12 @@ _T = t.TypeVar("_T")
 
 @dataclass
 class HttpClientState:
-    """
-    Internal state container for an HTTP client.
+    """Internal state for an HTTP client in the balancer.
 
-    Tracks error count and cooldown timeout for retry scheduling.
+    Attributes:
+        client: Associated HTTP client.
+        retry_after: Monotonic time before which requests are blocked, or `None`.
+        error_count: Consecutive error count.
     """
 
     client: BaseClient
@@ -40,11 +42,10 @@ class HttpClientState:
 
 
 class HttpBalancer(BaseClient):
-    """
-    Multi-provider HTTP client with automatic failover and load balancing.
+    """Multi-provider HTTP client with automatic failover.
 
     Selects the best available HTTP client using limiter readiness,
-    error counters and round-robin tie-breaking.
+    error counters, and round-robin tie-breaking.
     """
 
     TYPE = ClientType.HTTP
@@ -57,25 +58,9 @@ class HttpBalancer(BaseClient):
         request_timeout: float = 12.0,
     ) -> None:
         """
-        Initialize HTTP balancer.
-
-        Each supported HTTP client requires its own credentials or endpoint
-        configuration. You can obtain them from the corresponding provider:
-            - ToncenterClient:
-                API key available via Telegram bot: https://t.me/toncenter
-            - TonapiClient:
-                API key available on the Tonconsole website: https://tonconsole.com/
-            - ChainstackClient:
-                Personal endpoint available on: https://chainstack.com/
-            - QuicknodeClient:
-                Personal endpoint available on: https://www.quicknode.com/
-            - TatumClient:
-                API key available on: https://tatum.io/
-
-        :param network: Target TON network (mainnet or testnet)
-        :param clients: List of HTTP BaseClient instances to balance between
-        :param request_timeout: Maximum total time in seconds for a balancer method,
-            including all failover attempts across providers
+        :param network: Target TON network.
+        :param clients: HTTP `BaseClient` instances to balance between.
+        :param request_timeout: Total timeout in seconds including all failover attempts.
         """
         self.network = network
 
@@ -92,30 +77,24 @@ class HttpBalancer(BaseClient):
 
     @property
     def connected(self) -> bool:
-        """
-        Check whether at least one underlying client is connected.
-
-        :return: True if any client is connected, otherwise False
-        """
+        """`True` if at least one HTTP client is connected."""
         return any(c.connected for c in self._clients)
 
     @property
     def provider(self) -> t.Any:
-        """
-        Provider of the currently selected client.
-
-        :return: Provider instance of chosen HTTP client
-        """
+        """Provider of currently the best HTTP client."""
         c = self._pick_client()
         return c.provider
 
     async def connect(self) -> None:
+        """Connect all registered clients."""
         await asyncio.gather(
             *(state.client.connect() for state in self._states),
             return_exceptions=True,
         )
 
     async def close(self) -> None:
+        """Close all registered clients."""
         await asyncio.gather(
             *(state.client.close() for state in self._states),
             return_exceptions=True,
@@ -123,20 +102,12 @@ class HttpBalancer(BaseClient):
 
     @property
     def clients(self) -> t.Tuple[BaseClient, ...]:
-        """
-        List of all registered HTTP clients.
-
-        :return: Tuple of BaseClient objects
-        """
+        """All registered HTTP clients."""
         return tuple(self._clients)
 
     @property
     def alive_clients(self) -> t.Tuple[BaseClient, ...]:
-        """
-        HTTP clients that are allowed to send requests now.
-
-        :return: Tuple of available BaseClient instances
-        """
+        """Connected clients not in cooldown."""
         now = time.monotonic()
         return tuple(
             state.client
@@ -147,11 +118,7 @@ class HttpBalancer(BaseClient):
 
     @property
     def dead_clients(self) -> t.Tuple[BaseClient, ...]:
-        """
-        HTTP clients currently in cooldown due to previous errors.
-
-        :return: Tuple of unavailable BaseClient instances
-        """
+        """Clients currently in cooldown."""
         now = time.monotonic()
         return tuple(
             state.client
@@ -159,11 +126,8 @@ class HttpBalancer(BaseClient):
             if state.retry_after is not None and state.retry_after > now
         )
 
-    def _init_clients(
-        self,
-        clients: t.List[BaseClient],
-    ) -> None:
-        """Validate and register input HTTP clients."""
+    def _init_clients(self, clients: t.List[BaseClient]) -> None:
+        """Validate and register HTTP clients."""
         for client in clients:
             if client.TYPE != ClientType.HTTP:
                 raise ClientError(
@@ -186,15 +150,10 @@ class HttpBalancer(BaseClient):
             self._states.append(state)
 
     def _pick_client(self) -> BaseClient:
-        """
-        Select the best available HTTP client.
+        """Select the best available HTTP client.
 
-        Selection criteria:
-        - minimal limiter waiting time
-        - minimal error count
-        - round-robin for ties
-
-        :return: Selected BaseClient instance
+        Prefers lowest limiter wait time, then fewest errors,
+        with round-robin fallback.
         """
         if not self.connected:
             raise NotConnectedError(component=self.__class__.__name__)
@@ -245,11 +204,7 @@ class HttpBalancer(BaseClient):
         return equal_states[0].client
 
     def _mark_success(self, client: BaseClient) -> None:
-        """
-        Reset error state for a successful client.
-
-        Clears cooldown and error counters.
-        """
+        """Reset error state for a successful client."""
         for state in self._states:
             if state.client is client:
                 state.error_count = 0
@@ -257,14 +212,10 @@ class HttpBalancer(BaseClient):
                 break
 
     def _mark_error(self, client: BaseClient, *, is_rate_limit: bool) -> None:
-        """
-        Update error state and schedule retry cooldown.
+        """Update error state and schedule exponential-backoff cooldown.
 
-        Exponential backoff is used with separate handling
-        for rate-limit vs generic errors.
-
-        :param client: Client to update
-        :param is_rate_limit: Whether the error was rate-limit related
+        :param client: Client to penalize.
+        :param is_rate_limit: Whether the error was rate-limit related.
         """
         now = time.monotonic()
         for state in self._states:
@@ -287,14 +238,12 @@ class HttpBalancer(BaseClient):
         func: t.Callable[[BaseClient], t.Awaitable[_T]],
         method: str,
     ) -> _T:
-        """
-        Execute a client method with automatic failover.
+        """Execute a client operation with automatic failover.
 
-        Iterates through available clients until one succeeds
-        or all clients fail.
-
-        :param func: Callable performing an method using a client
-        :return: Result of the successful invocation
+        :param func: Async callable accepting a `BaseClient`.
+        :param method: Operation name for error reporting.
+        :return: Result of the first successful invocation.
+        :raises BalancerError: If all clients fail.
         """
 
         async def _run() -> _T:

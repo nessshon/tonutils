@@ -32,37 +32,28 @@ class BaseClient(abc.ABC):
     """Abstract base class for TON blockchain clients."""
 
     TYPE: ClientType
-    """Type of the underlying client implementation (HTTP or ADNL)."""
+    """Client implementation type (`HTTP` or `ADNL`)."""
 
     network: NetworkGlobalID
-    """Global network identifier the client is operating on (MAINNET or TESTNET)."""
+    """Network the client operates on (`MAINNET` or `TESTNET`)."""
 
     @property
     @abc.abstractmethod
     def connected(self) -> bool:
-        """
-        Check whether provider resources are initialized and usable.
-
-        :return: True if client has an active session/connection, False otherwise
-        """
+        """`True` if the client has an active session or connection."""
 
     @property
     @abc.abstractmethod
     def provider(self) -> t.Any:
-        """
-        Underlying transport/provider backend used for all requests.
-
-        Expected to expose network I/O primitives appropriate for the client
-        type (HTTP session, ADNL transport, etc.).
-        """
+        """Underlying transport or provider backend."""
 
     @abc.abstractmethod
     async def connect(self) -> None:
-        """Initialize any required provider resources (sessions, transports, etc.)."""
+        """Initialize provider resources."""
 
     @abc.abstractmethod
     async def close(self) -> None:
-        """Close provider resources. Should be safe to call multiple times."""
+        """Close provider resources."""
 
     @abc.abstractmethod
     async def _send_message(self, boc: str) -> None: ...
@@ -91,11 +82,6 @@ class BaseClient(abc.ABC):
     ) -> t.List[t.Any]: ...
 
     async def __aenter__(self) -> BaseClient:
-        """
-        Prepare client resources for use.
-
-        Should initialize network connections or sessions as required.
-        """
         await self.connect()
         return self
 
@@ -105,36 +91,28 @@ class BaseClient(abc.ABC):
         exc_value: t.Optional[BaseException],
         traceback: t.Optional[t.Any],
     ) -> None:
-        """
-        Release allocated client resources.
-
-        Called automatically when the async context ends.
-        """
         with suppress(asyncio.CancelledError):
             await self.close()
 
     async def send_message(self, boc: str) -> None:
-        """
-        Send an external message to the blockchain.
+        """Send an external message to the blockchain.
 
-        :param boc: Message body serialized as BoC string, in a format accepted by the underlying provider
+        :param boc: Serialized BoC string.
         """
         await self._send_message(boc)
 
     async def get_config(self) -> t.Dict[int, t.Any]:
-        """
-        Fetch and decode global blockchain configuration.
+        """Fetch global blockchain configuration.
 
-        :return: Mapping of configuration parameter ID to parsed value
+        :return: Mapping of config parameter IDs to values.
         """
         return await self._get_config()
 
     async def get_info(self, address: AddressLike) -> ContractInfo:
-        """
-        Fetch basic state information for a smart contract.
+        """Fetch contract state information.
 
-        :param address: Contract address as Address object or string
-        :return: ContractInfo with code, data, balance and last tx data
+        :param address: Contract address.
+        :return: `ContractInfo` snapshot.
         """
         if isinstance(address, Address):
             address = Address(address).to_str(is_user_friendly=False)
@@ -147,16 +125,13 @@ class BaseClient(abc.ABC):
         from_lt: t.Optional[int] = None,
         to_lt: t.Optional[int] = None,
     ) -> t.List[Transaction]:
-        """
-        Fetch transaction history for a contract.
+        """Fetch transaction history for a contract.
 
-        :param address: Contract address as Address object or string
-        :param limit: Maximum number of transactions to return
-        :param from_lt: Upper bound logical time (inclusive).
-            If None, starts from the most recent transaction.
-        :param to_lt: Lower bound logical time (exclusive).
-            If None or 0, no lower bound is applied.
-        :return: List of Transaction objects ordered from newest to oldest
+        :param address: Contract address.
+        :param limit: Maximum number of transactions to return.
+        :param from_lt: Upper-bound logical time (inclusive), or `None`.
+        :param to_lt: Lower-bound logical time (exclusive), or `None`.
+        :return: Transactions ordered from newest to oldest.
         """
         if isinstance(address, Address):
             address = Address(address).to_str(is_user_friendly=False)
@@ -173,13 +148,12 @@ class BaseClient(abc.ABC):
         method_name: str,
         stack: t.Optional[t.List[t.Any]] = None,
     ) -> t.List[t.Any]:
-        """
-        Execute a smart-contract get-method.
+        """Execute a contract get-method.
 
-        :param address: Contract address as Address object or string
-        :param method_name: Name of the get-method to execute
-        :param stack: Optional initial TVM stack items for the call
-        :return: Decoded TVM stack items returned by the method
+        :param address: Contract address.
+        :param method_name: Name of the get-method.
+        :param stack: TVM stack arguments, or `None`.
+        :return: Decoded TVM stack result.
         """
         if isinstance(address, Address):
             address = Address(address).to_str(is_user_friendly=False)
@@ -203,15 +177,12 @@ class BaseClient(abc.ABC):
             DNSRecordWallet,
         ]
     ]:
-        """
-        Resolve a TON DNS record.
+        """Resolve a TON DNS record.
 
-        :param domain: Domain name as UTF-8 string or encoded DNS bytes
-        :param category: DNS record category to resolve
-        :param dns_root_address: Optional custom DNS root contract address;
-            if omitted, value is taken from config param 4
-        :return: Parsed DNS record for the requested category, or raw Cell
-            if record type is unknown; None if nothing is resolved
+        :param domain: Domain name string or encoded DNS bytes.
+        :param category: DNS record category to query.
+        :param dns_root_address: Custom DNS root address, or `None` for config param 4.
+        :return: Parsed DNS record, raw `Cell`, or `None`.
         """
         from tonutils.contracts.dns.tlb import DNSRecordDNSNextResolver, DNSRecords
 

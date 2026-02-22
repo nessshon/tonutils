@@ -7,7 +7,6 @@ from .methods import (
     get_last_fill_up_time_get_method,
 )
 from .tlb import (
-    ALLOWED_DNS_ZONES,
     ChangeDNSRecordBody,
     DNSBalanceReleaseBody,
     DNSRecordDNSNextResolver,
@@ -22,7 +21,6 @@ from .tlb import (
 )
 
 __all__ = [
-    "ALLOWED_DNS_ZONES",
     "ChangeDNSRecordBody",
     "DNSBalanceReleaseBody",
     "DNSRecordDNSNextResolver",

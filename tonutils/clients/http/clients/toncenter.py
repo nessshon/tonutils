@@ -9,7 +9,7 @@ from pytoniq_core import Cell, Slice, Transaction
 from tonutils.clients.base import BaseClient
 from tonutils.clients.http.provider.models import SendBocPayload, RunGetMethodPayload
 from tonutils.clients.http.provider.toncenter import ToncenterHttpProvider
-from tonutils.clients.http.utils import decode_toncenter_stack, encode_toncenter_stack
+from tonutils.clients.http.stack import ToncenterStackCodec
 from tonutils.exceptions import ClientError, RunGetMethodError
 from tonutils.types import (
     ClientType,
@@ -41,19 +41,17 @@ class ToncenterClient(BaseClient):
         retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
         """
-        Initialize Toncenter HTTP client.
-
-        :param network: Target TON network (mainnet or testnet)
-        :param api_key: Optional Toncenter API key
-            You can get an API key on the Toncenter telegram bot: https://t.me/toncenter
-        :param base_url: Custom Toncenter endpoint base URL
-        :param timeout: Total request timeout in seconds.
-        :param session: Optional external aiohttp session.
+        :param network: Target TON network.
+        :param api_key: Toncenter API key, or `None`.
+            You can get an API key on the Toncenter telegram bot: https://t.me/toncenter.
+        :param base_url: Custom endpoint base URL, or `None`.
+        :param timeout: Request timeout in seconds.
+        :param session: External aiohttp session, or `None`.
         :param headers: Default headers for owned session.
         :param cookies: Default cookies for owned session.
-        :param rps_limit: Optional requests-per-period limit.
+        :param rps_limit: Requests-per-period limit, or `None`.
         :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Optional retry policy that defines per-error-code retry rules
+        :param retry_policy: Retry policy with per-error-code rules, or `None`.
         """
         self.network: NetworkGlobalID = network
         self._provider: ToncenterHttpProvider = ToncenterHttpProvider(
@@ -71,17 +69,21 @@ class ToncenterClient(BaseClient):
 
     @property
     def connected(self) -> bool:
+        """`True` if the HTTP session is open."""
         session = self._provider.session
         return session is not None and not session.closed
 
     @property
     def provider(self) -> ToncenterHttpProvider:
+        """Underlying Toncenter HTTP provider."""
         return self._provider
 
     async def connect(self) -> None:
+        """Open the HTTP session."""
         await self._provider.connect()
 
     async def close(self) -> None:
+        """Close the HTTP session."""
         await self._provider.close()
 
     async def _send_message(self, boc: str) -> None:
@@ -215,7 +217,7 @@ class ToncenterClient(BaseClient):
         payload = RunGetMethodPayload(
             address=address,
             method=method_name,
-            stack=encode_toncenter_stack(stack or []),
+            stack=ToncenterStackCodec.encode(stack or []),
         )
         request = await self.provider.run_get_method(payload=payload)
         if request.result is None:
@@ -228,4 +230,4 @@ class ToncenterClient(BaseClient):
                 exit_code=request.result.exit_code,
             )
 
-        return decode_toncenter_stack(request.result.stack or [])
+        return ToncenterStackCodec.decode(request.result.stack or [])

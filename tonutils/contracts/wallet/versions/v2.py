@@ -22,31 +22,23 @@ class _WalletV2(
     SeqnoGetMethod,
     GetPublicKeyGetMethod,
 ):
-    """Base implementation for Wallet V2 contracts."""
+    """Base implementation for Wallet v2."""
 
     _data_model = WalletV2Data
-    """TlbScheme class for deserializing wallet state data."""
-
     _config_model = WalletV2Config
-    """Configuration model class for this wallet version."""
-
     _params_model = WalletV2Params
-    """Transaction parameters model class for this wallet version."""
-
     MAX_MESSAGES = 4
-    """Maximum number of messages allowed in a single transaction."""
 
     async def _build_msg_cell(
         self,
         messages: t.List[WalletMessage],
         params: t.Optional[WalletV2Params] = None,
     ) -> Cell:
-        """
-        Build unsigned message cell for Wallet V2 transaction.
+        """Build unsigned message cell.
 
-        :param messages: List of wallet messages (max 4 for V2)
-        :param params: Optional wallet parameters (seqno, valid_until)
-        :return: Unsigned message cell ready for signing
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or `None`.
+        :return: Unsigned message cell.
         """
         params = params or self._params_model()
 
@@ -72,14 +64,12 @@ class _WalletV2(
 
 
 class WalletV2R1(_WalletV2):
-    """Wallet V2 Revision 1 contract."""
+    """Wallet v2 Revision 1."""
 
     VERSION = ContractVersion.WalletV2R1
-    """Contract version identifier."""
 
 
 class WalletV2R2(_WalletV2):
-    """Wallet V2 Revision 2 contract."""
+    """Wallet v2 Revision 2."""
 
     VERSION = ContractVersion.WalletV2R2
-    """Contract version identifier."""

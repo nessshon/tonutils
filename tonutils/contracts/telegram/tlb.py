@@ -12,12 +12,11 @@ from tonutils.utils import decode_dns_name
 
 
 def _store_text(b: Builder, text: str) -> Builder:
-    """
-    Store text with length prefix to builder.
+    """Store length-prefixed text into a `Builder`.
 
-    :param b: Cell builder to store to
-    :param text: Text string to store
-    :return: Builder with stored text
+    :param b: Target builder.
+    :param text: Text string to store.
+    :return: The same builder.
     """
     bit_len = begin_cell().store_snake_string(text)
     bytes_len, remainder = divmod(bit_len.remaining_bits, 8)
@@ -27,11 +26,10 @@ def _store_text(b: Builder, text: str) -> Builder:
 
 
 def _load_text(cs: Slice) -> bytes:
-    """
-    Load text with length prefix from slice.
+    """Load length-prefixed text from a `Slice`.
 
-    :param cs: Cell slice to load from
-    :return: Text bytes
+    :param cs: Source slice.
+    :return: Text bytes.
     """
     length_bytes = cs.load_uint(8)
     text = cs.load_bits(length_bytes * 8)
@@ -48,23 +46,18 @@ class TeleItemAuctionState(TlbScheme):
         last_bid: t.Optional[Cell] = None,
     ) -> None:
         """
-        Initialize auction state.
-
-        :param min_bid: Minimum bid amount in nanotons
-        :param end_time: Unix timestamp when auction ends
-        :param last_bid: Cell containing last bid information (default: None)
+        :param min_bid: Minimum bid in nanotons.
+        :param end_time: Auction end unix timestamp.
+        :param last_bid: Last bid info cell, or `None`.
         """
         self.last_bid = last_bid
         self.min_bid = min_bid
         self.end_time = end_time
 
     def serialize(self) -> Cell:
-        """
-        Serialize auction state to Cell.
+        """Serialize to `Cell`.
 
-        Layout: last_bid:^Cell min_bid:coins end_time:uint32
-
-        :return: Serialized state cell
+        TLB: `last_bid:^Cell min_bid:coins end_time:uint32`
         """
         cell = begin_cell()
         cell.store_maybe_ref(self.last_bid)
@@ -74,11 +67,9 @@ class TeleItemAuctionState(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemAuctionState:
-        """
-        Deserialize auction state from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemAuctionState instance
+        :param cs: Source slice.
         """
         return cls(
             last_bid=cs.load_maybe_ref(),
@@ -100,14 +91,12 @@ class TeleItemAuctionConfig(TlbScheme):
         duration: int,
     ) -> None:
         """
-        Initialize auction configuration.
-
-        :param beneficiary_address: Address to receive auction proceeds
-        :param initial_min_bid: Starting minimum bid in nanotons
-        :param max_bid: Maximum bid amount in nanotons
-        :param min_bid_step: Minimum bid increment percentage (0-255)
-        :param min_extend_time: Seconds to extend auction on late bids
-        :param duration: Total auction duration in seconds
+        :param beneficiary_address: Address to receive proceeds.
+        :param initial_min_bid: Starting minimum bid in nanotons.
+        :param max_bid: Maximum bid in nanotons.
+        :param min_bid_step: Minimum bid increment (0–255).
+        :param min_extend_time: Seconds to extend on late bids.
+        :param duration: Total auction duration in seconds.
         """
         self.beneficiary_address = beneficiary_address
         self.initial_min_bid = initial_min_bid
@@ -117,13 +106,10 @@ class TeleItemAuctionConfig(TlbScheme):
         self.duration = duration
 
     def serialize(self) -> Cell:
-        """
-        Serialize auction config to Cell.
+        """Serialize to `Cell`.
 
-        Layout: beneficiary:address initial_min_bid:coins max_bid:coins
-                min_bid_step:uint8 min_extend_time:uint32 duration:uint32
-
-        :return: Serialized config cell
+        TLB: `beneficiary:address initial_min_bid:coins max_bid:coins
+        min_bid_step:uint8 min_extend_time:uint32 duration:uint32`
         """
         cell = begin_cell()
         cell.store_address(self.beneficiary_address)
@@ -136,11 +122,9 @@ class TeleItemAuctionConfig(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemAuctionConfig:
-        """
-        Deserialize auction config from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemAuctionConfig instance
+        :param cs: Source slice.
         """
         return cls(
             beneficiary_address=cs.load_address(),
@@ -161,21 +145,16 @@ class TeleItemAuction(TlbScheme):
         config: TeleItemAuctionConfig,
     ) -> None:
         """
-        Initialize auction data.
-
-        :param state: Current auction state
-        :param config: Auction configuration parameters
+        :param state: Current auction state.
+        :param config: Auction configuration.
         """
         self.state = state
         self.config = config
 
     def serialize(self) -> Cell:
-        """
-        Serialize auction to Cell.
+        """Serialize to `Cell`.
 
-        Layout: state:^Cell config:^Cell
-
-        :return: Serialized auction cell
+        TLB: `state:^Cell config:^Cell`
         """
         cell = begin_cell()
         cell.store_ref(self.state.serialize())
@@ -184,11 +163,9 @@ class TeleItemAuction(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemAuction:
-        """
-        Deserialize auction from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemAuction instance
+        :param cs: Source slice.
         """
         return cls(
             state=TeleItemAuctionState.deserialize(cs.load_ref().begin_parse()),
@@ -205,21 +182,16 @@ class TeleItemConfig(TlbScheme):
         collection_address: AddressLike,
     ) -> None:
         """
-        Initialize item configuration.
-
-        :param item_index: Unique index within the collection
-        :param collection_address: Address of parent collection contract
+        :param item_index: Index within the collection.
+        :param collection_address: Parent collection address.
         """
         self.item_index = item_index
         self.collection_address = collection_address
 
     def serialize(self) -> Cell:
-        """
-        Serialize item config to Cell.
+        """Serialize to `Cell`.
 
-        Layout: item_index:uint256 collection_address:address
-
-        :return: Serialized config cell
+        TLB: `item_index:uint256 collection_address:address`
         """
         cell = begin_cell()
         cell.store_uint(self.item_index, 256)
@@ -228,11 +200,9 @@ class TeleItemConfig(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemConfig:
-        """
-        Deserialize item config from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemConfig instance
+        :param cs: Source slice.
         """
         return cls(
             item_index=cs.load_uint(256),
@@ -249,21 +219,16 @@ class TeleItemTokenInfo(TlbScheme):
         domain: str,
     ) -> None:
         """
-        Initialize token information.
-
-        :param name: Username or gift name
-        :param domain: Associated domain (e.g., "t.me")
+        :param name: Username or gift name.
+        :param domain: Associated domain (e.g. "t.me").
         """
         self.name = name
         self.domain = domain
 
     def serialize(self) -> Cell:
-        """
-        Serialize token info to Cell.
+        """Serialize to `Cell`.
 
-        Layout: name:text domain:text (with length prefixes)
-
-        :return: Serialized token info cell
+        TLB: `name:text domain:text`
         """
         cell = begin_cell()
         _store_text(cell, self.name)
@@ -272,11 +237,9 @@ class TeleItemTokenInfo(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemTokenInfo:
-        """
-        Deserialize token info from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemTokenInfo instance
+        :param cs: Source slice.
         """
         return cls(
             name=decode_dns_name(_load_text(cs)),
@@ -294,23 +257,18 @@ class TeleItemContent(TlbScheme):
         token_info: TeleItemTokenInfo,
     ) -> None:
         """
-        Initialize item content.
-
-        :param nft_content: Off-chain NFT metadata (image, description, etc.)
-        :param dns: DNS records for the username/domain
-        :param token_info: Token name and domain information
+        :param nft_content: Off-chain NFT metadata.
+        :param dns: DNS records for the username/domain.
+        :param token_info: Token name and domain information.
         """
         self.nft_content = nft_content
         self.dns = dns
         self.token_info = token_info
 
     def serialize(self) -> Cell:
-        """
-        Serialize item content to Cell.
+        """Serialize to `Cell`.
 
-        Layout: nft_content:^Cell dns:dict token_info:^Cell
-
-        :return: Serialized content cell
+        TLB: `nft_content:^Cell dns:dict token_info:^Cell`
         """
         cell = begin_cell()
         cell.store_ref(self.nft_content.serialize(True))
@@ -320,11 +278,9 @@ class TeleItemContent(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemContent:
-        """
-        Deserialize item content from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemContent instance
+        :param cs: Source slice.
         """
         return cls(
             nft_content=OffchainContent.deserialize(cs.load_ref().begin_parse(), True),
@@ -344,12 +300,10 @@ class TeleItemState(TlbScheme):
         auction: t.Optional[TeleItemAuction] = None,
     ) -> None:
         """
-        Initialize item state.
-
-        :param owner_address: Current owner address
-        :param content: Item content data
-        :param royalty_params: Royalty configuration for sales
-        :param auction: Active auction data (None if no auction)
+        :param owner_address: Current owner address.
+        :param content: Item content data.
+        :param royalty_params: Royalty configuration.
+        :param auction: Active auction data, or `None`.
         """
         self.owner_address = owner_address
         self.content = content
@@ -357,12 +311,9 @@ class TeleItemState(TlbScheme):
         self.royalty_params = royalty_params
 
     def serialize(self) -> Cell:
-        """
-        Serialize item state to Cell.
+        """Serialize to `Cell`.
 
-        Layout: owner:address content:^Cell auction:^Cell royalty_params:^Cell
-
-        :return: Serialized state cell
+        TLB: `owner:address content:^Cell auction:^Cell royalty_params:^Cell`
         """
         cell = begin_cell()
         cell.store_address(self.owner_address)
@@ -373,11 +324,9 @@ class TeleItemState(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemState:
-        """
-        Deserialize item state from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemState instance
+        :param cs: Source slice.
         """
         cs.preload_ref()
         return cls(
@@ -393,7 +342,7 @@ class TeleItemState(TlbScheme):
 
 
 class TeleItemData(TlbScheme):
-    """Complete on-chain data for a Telegram item NFT contract."""
+    """Complete on-chain data for a Telegram item NFT."""
 
     def __init__(
         self,
@@ -401,21 +350,16 @@ class TeleItemData(TlbScheme):
         state: t.Optional[TeleItemState] = None,
     ) -> None:
         """
-        Initialize item data.
-
-        :param config: Static item configuration
-        :param state: Mutable item state (None if uninitialized)
+        :param config: Static item configuration.
+        :param state: Mutable item state, or `None`.
         """
         self.config = config
         self.state = state
 
     def serialize(self) -> Cell:
-        """
-        Serialize item data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: config:^Cell state:^Cell
-
-        :return: Serialized data cell
+        TLB: `config:^Cell state:^Cell`
         """
         cell = begin_cell()
         cell.store_ref(self.config.serialize())
@@ -424,11 +368,9 @@ class TeleItemData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemData:
-        """
-        Deserialize item data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemData instance
+        :param cs: Source slice.
         """
         return cls(
             config=TeleItemConfig.deserialize(cs.load_ref().begin_parse()),
@@ -441,7 +383,7 @@ class TeleItemData(TlbScheme):
 
 
 class TeleCollectionData(TlbScheme):
-    """On-chain data for a Telegram collection NFT contract."""
+    """On-chain data for a Telegram collection NFT."""
 
     def __init__(
         self,
@@ -454,15 +396,13 @@ class TeleCollectionData(TlbScheme):
         royalty_params: RoyaltyParams,
     ) -> None:
         """
-        Initialize collection data.
-
-        :param touched: Whether collection has been initialized
-        :param subwallet_id: Subwallet identifier for owner
-        :param owner_key: Owner's public key
-        :param content: Collection metadata (off-chain)
-        :param item_code: Code cell for item contracts
-        :param full_domain: Full domain name (e.g., "t.me")
-        :param royalty_params: Royalty configuration for all items
+        :param touched: Whether collection has been initialized.
+        :param subwallet_id: Subwallet identifier.
+        :param owner_key: Owner's public key.
+        :param content: Off-chain collection metadata.
+        :param item_code: Code cell for item contracts.
+        :param full_domain: Collection domain (e.g. "t.me").
+        :param royalty_params: Royalty configuration.
         """
         self.touched = touched
         self.subwallet_id = subwallet_id
@@ -473,13 +413,10 @@ class TeleCollectionData(TlbScheme):
         self.royalty_params = royalty_params
 
     def serialize(self) -> Cell:
-        """
-        Serialize collection data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: touched:bool subwallet_id:uint32 owner_key:uint256
-                content:^Cell item_code:^Cell full_domain:^Cell royalty_params:^Cell
-
-        :return: Serialized data cell
+        TLB: `touched:bool subwallet_id:uint32 owner_key:uint256
+        content:^Cell item_code:^Cell full_domain:^Cell royalty_params:^Cell`
         """
         cell = begin_cell()
         cell.store_bool(self.touched)
@@ -493,11 +430,9 @@ class TeleCollectionData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleCollectionData:
-        """
-        Deserialize collection data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleCollectionData instance
+        :param cs: Source slice.
         """
         return cls(
             touched=cs.load_bool(),
@@ -519,21 +454,16 @@ class TeleItemStartAuctionBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize start auction message body.
-
-        :param auction_config: Auction configuration parameters
-        :param query_id: Query identifier (default: 0)
+        :param auction_config: Auction configuration.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.auction_config = auction_config
 
     def serialize(self) -> Cell:
-        """
-        Serialize start auction body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 auction_config:^Cell
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 auction_config:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.TELEITEM_START_AUCTION, 32)
@@ -543,11 +473,9 @@ class TeleItemStartAuctionBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemStartAuctionBody:
-        """
-        Deserialize start auction body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemStartAuctionBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -557,19 +485,14 @@ class TeleItemCancelAuctionBody(TlbScheme):
 
     def __init__(self, query_id: int = 0) -> None:
         """
-        Initialize cancel auction message body.
-
-        :param query_id: Query identifier (default: 0)
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize cancel auction body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.TELEITEM_CANCEL_AUCTION, 32)
@@ -578,10 +501,8 @@ class TeleItemCancelAuctionBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TeleItemStartAuctionBody:
-        """
-        Deserialize cancel auction body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TeleItemCancelAuctionBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError

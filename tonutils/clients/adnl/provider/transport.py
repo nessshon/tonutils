@@ -20,26 +20,17 @@ from tonutils.exceptions import TransportError, NotConnectedError
 
 
 class AdnlTcpTransport:
-    """
-    ADNL TCP transport for encrypted communication with TON liteservers.
+    """ADNL TCP transport for encrypted communication with TON lite-servers.
 
-    Implements the ADNL protocol over TCP, providing:
-    - Elliptic curve Diffie-Hellman (ECDH) key exchange
-    - AES-CTR encryption for all traffic after handshake
-    - Frame-based message protocol with checksums
-    - Automatic connection management and error handling
-
-    The transport performs a cryptographic handshake on connect, establishes
-    bidirectional encrypted channels, and maintains a background reader task
+    Performs ECDH key exchange on connect, establishes bidirectional
+    AES-CTR encrypted channels, and runs a background reader task
     for incoming frames.
     """
 
     def __init__(self, node: LiteServer, connect_timeout: float) -> None:
         """
-        Initialize ADNL TCP transport for a liteserver connection.
-
-        :param node: Liteserver configuration with host, port, and public key
-        :param connect_timeout: Timeout in seconds for connection
+        :param node: Lite-server configuration with host, port, and public key.
+        :param connect_timeout: Timeout in seconds for connection.
         """
         self.node = node
         self.server = Server(
@@ -65,7 +56,7 @@ class AdnlTcpTransport:
 
     @property
     def connected(self) -> bool:
-        """Check if the transport is currently connected."""
+        """`True` if the transport is currently connected."""
         return self._connected
 
     def _error(self, operation: str, reason: str) -> TransportError:
@@ -78,16 +69,9 @@ class AdnlTcpTransport:
 
     @staticmethod
     def _build_frame(data: bytes) -> bytes:
-        """
-        Build an ADNL frame with length prefix, nonce, payload, and checksum.
+        """Build an ADNL frame with length prefix, nonce, payload, and SHA-256 checksum.
 
-        Frame structure:
-        - 4 bytes: total length (payload + 64 bytes overhead) in little-endian
-        - 32 bytes: random nonce
-        - N bytes: payload data
-        - 32 bytes: SHA-256 checksum of (nonce + payload)
-
-        :param data: Payload bytes to frame
+        :param data: Payload bytes to frame.
         """
         result = (len(data) + 64).to_bytes(4, "little")
         result += secrets.token_bytes(32)
@@ -96,17 +80,10 @@ class AdnlTcpTransport:
         return result
 
     def _build_handshake(self) -> bytes:
-        """
-        Build ADNL handshake packet with ECDH key exchange.
+        """Build ADNL handshake packet with ECDH key exchange.
 
-        Generates ephemeral AES-CTR keys, performs Curve25519 key exchange with
-        the server's public key, and encrypts the session parameters.
-
-        Handshake structure:
-        - 32 bytes: server key ID (SHA-256 of server public key)
-        - 32 bytes: client Ed25519 public key
-        - 32 bytes: checksum of encrypted data
-        - 160 bytes: encrypted session parameters (AES keys + nonces)
+        Generates ephemeral AES-CTR keys, performs Curve25519 key exchange
+        with the server's public key, and encrypts the session parameters.
         """
         rand = secrets.token_bytes(160)
 
@@ -142,20 +119,18 @@ class AdnlTcpTransport:
             raise self._error("send", "connection lost") from exc
 
     def encrypt_frame(self, data: bytes) -> bytes:
-        """
-        Encrypt a frame using the session's encryption cipher.
+        """Encrypt a frame using the session's AES-CTR cipher.
 
-        :param data: Plaintext frame bytes
+        :param data: Plaintext frame bytes.
         """
         if self.enc_cipher is None:
             raise self._error("encrypt", "cipher not initialized")
         return aes_ctr_encrypt(self.enc_cipher, data)
 
     def decrypt_frame(self, data: bytes) -> bytes:
-        """
-        Decrypt a frame using the session's decryption cipher.
+        """Decrypt a frame using the session's AES-CTR cipher.
 
-        :param data: Encrypted frame bytes
+        :param data: Encrypted frame bytes.
         """
         if self.dec_cipher is None:
             raise self._error("decrypt", "cipher not initialized")
@@ -174,11 +149,11 @@ class AdnlTcpTransport:
                 timeout=self.connect_timeout,
             )
         except asyncio.TimeoutError as exc:
-            raise self._error(
-                "connect", f"timeout after {self.connect_timeout}s"
-            ) from exc
+            reason = f"timeout after {self.connect_timeout}s"
+            raise self._error("connect", reason) from exc
         except OSError as exc:
-            raise self._error("connect", str(exc)) from exc
+            reason = str(exc).split("(")[0].strip().rstrip(":")
+            raise self._error("connect", reason) from exc
 
         if self.writer is None or self.reader is None:
             raise self._error("connect", "stream init failed")
@@ -210,12 +185,9 @@ class AdnlTcpTransport:
             raise
 
     async def send_adnl_packet(self, payload: bytes) -> None:
-        """
-        Send an ADNL packet to the liteserver.
+        """Frame, encrypt, and send an ADNL packet to the lite-server.
 
-        Frames, encrypts, and transmits the payload.
-
-        :param payload: Raw ADNL packet bytes
+        :param payload: Raw ADNL packet bytes.
         """
         if not self._connected or self.writer is None:
             raise NotConnectedError(
@@ -231,8 +203,7 @@ class AdnlTcpTransport:
         await self._flush()
 
     async def recv_adnl_packet(self) -> bytes:
-        """
-        Receive an ADNL packet from the liteserver.
+        """Receive an ADNL packet from the lite-server.
 
         Blocks until a complete packet is available from the background reader.
         """
@@ -246,15 +217,9 @@ class AdnlTcpTransport:
         return await self._incoming.get()
 
     async def read_frame(self, discard: bool = False) -> t.Optional[bytes]:
-        """
-        Read and validate a single ADNL frame from the stream.
+        """Read, decrypt, and validate a single ADNL frame from the stream.
 
-        Frame validation:
-        - Reads 4-byte length prefix
-        - Reads and decrypts frame body
-        - Verifies SHA-256 checksum
-
-        :param discard: If True, validates but returns None (used for handshake ack)
+        :param discard: If `True`, validate but return `None` (handshake ack).
         """
         if self.reader is None:
             raise self._error("recv", "reader not initialized")

@@ -23,48 +23,29 @@ class TONDNSCollection(
     GetNFTAddressByIndexGetMethod,
     DNSResolveGetMethod,
 ):
-    """TON DNS root collection contract."""
+    """TON DNS root collection."""
 
     _data_model = TONDNSCollectionData
-    """TlbScheme class for deserializing DNS collection state data."""
-
     VERSION = ContractVersion.TONDNSCollection
-    """Contract version identifier."""
 
     @property
     def owner_address(self) -> t.Optional[Address]:
-        """
-        Owner address of this DNS collection.
-
-        :return: Always None (DNS collection has no single owner)
-        """
+        """Always `None` for DNS collections."""
         return None
 
     @property
     def next_item_index(self) -> int:
-        """
-        Next item index in this DNS collection.
-
-        :return: Always -1 (DNS uses domain hash as index, not sequential)
-        """
+        """Always -1 (DNS uses domain hash as index)."""
         return -1
 
     @property
     def content(self) -> OffchainContent:
-        """
-        DNS collection offchain content metadata.
-
-        :return: Collection content with metadata URI
-        """
+        """Off-chain collection content metadata."""
         return self.state_data.content
 
     @property
     def nft_item_code(self) -> Cell:
-        """
-        Code cell for DNS domain items in this collection.
-
-        :return: Domain item contract code used for all domains
-        """
+        """Code `Cell` for DNS domain items."""
         return self.state_data.nft_item_code
 
     @classmethod
@@ -75,14 +56,13 @@ class TONDNSCollection(
         collection_address: AddressLike,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Address:
-        """
-        Calculate DNS domain item address by index or domain name.
+        """Calculate DNS domain item address.
 
-        :param index_or_domain: Domain name string (e.g., "test.ton") or numeric hash
-        :param nft_item_code: Domain item contract code (Cell or hex string)
-        :param collection_address: DNS collection contract address
-        :param workchain: Target workchain (default: BASECHAIN)
-        :return: Calculated domain item address
+        :param index_or_domain: Domain name string or numeric hash.
+        :param nft_item_code: Item contract code (`Cell` or hex string).
+        :param collection_address: DNS collection address.
+        :param workchain: Target workchain.
+        :return: Calculated domain item address.
         """
         index = (
             index_or_domain

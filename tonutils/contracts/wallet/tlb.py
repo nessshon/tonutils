@@ -23,24 +23,17 @@ from tonutils.types import (
 
 
 class BaseWalletData(TlbScheme, abc.ABC):
-    """
-    Abstract base class for wallet on-chain data structures.
-
-    Defines the common interface for serializing and deserializing
-    wallet state data stored on the blockchain.
-    """
+    """Abstract base for wallet on-chain data structures."""
 
     def __init__(self, public_key: PublicKey) -> None:
         """
-        Initialize base wallet data.
-
-        :param public_key: Ed25519 public key instance for the wallet
+        :param public_key: Ed25519 public key.
         """
         self.public_key = public_key
 
 
 class WalletV1Data(BaseWalletData):
-    """On-chain data structure for Wallet v1 contracts."""
+    """On-chain data for Wallet v1."""
 
     def __init__(
         self,
@@ -48,21 +41,16 @@ class WalletV1Data(BaseWalletData):
         seqno: int = 0,
     ) -> None:
         """
-        Initialize Wallet v1 data.
-
-        :param public_key: Ed25519 public key instance
-        :param seqno: Sequence number (default: 0)
+        :param public_key: Ed25519 public key.
+        :param seqno: Sequence number.
         """
         super().__init__(public_key)
         self.seqno = seqno
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: seqno:uint32 public_key:bits256
-
-        :return: Serialized data cell
+        TLB: `seqno:uint32 public_key:bits256`
         """
         cell = begin_cell()
         cell.store_uint(self.seqno, 32)
@@ -71,11 +59,9 @@ class WalletV1Data(BaseWalletData):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> WalletV1Data:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized WalletV1Data instance
+        :param cs: Source slice.
         """
         return cls(
             seqno=cs.load_uint(32),
@@ -84,11 +70,11 @@ class WalletV1Data(BaseWalletData):
 
 
 class WalletV2Data(WalletV1Data):
-    """On-chain data structure for Wallet v2 contracts."""
+    """On-chain data for Wallet v2."""
 
 
 class WalletV3Data(BaseWalletData):
-    """On-chain data structure for Wallet v3 contracts."""
+    """On-chain data for Wallet v3."""
 
     def __init__(
         self,
@@ -97,23 +83,18 @@ class WalletV3Data(BaseWalletData):
         subwallet_id: int = DEFAULT_SUBWALLET_ID,
     ) -> None:
         """
-        Initialize Wallet v3 data.
-
-        :param public_key: Ed25519 public key instance
-        :param seqno: Sequence number (default: 0)
-        :param subwallet_id: Subwallet identifier (default: 698983191)
+        :param public_key: Ed25519 public key.
+        :param seqno: Sequence number.
+        :param subwallet_id: Subwallet identifier.
         """
         super().__init__(public_key)
         self.seqno = seqno
         self.subwallet_id = subwallet_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: seqno:uint32 subwallet_id:uint32 public_key:bits256
-
-        :return: Serialized data cell
+        TLB: `seqno:uint32 subwallet_id:uint32 public_key:bits256`
         """
         cell = begin_cell()
         cell.store_uint(self.seqno, 32)
@@ -123,11 +104,9 @@ class WalletV3Data(BaseWalletData):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> WalletV3Data:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized WalletV3Data instance
+        :param cs: Source slice.
         """
         return cls(
             seqno=cs.load_uint(32),
@@ -137,7 +116,7 @@ class WalletV3Data(BaseWalletData):
 
 
 class WalletV4Data(BaseWalletData):
-    """On-chain data structure for Wallet v4 contracts."""
+    """On-chain data for Wallet v4."""
 
     def __init__(
         self,
@@ -147,12 +126,10 @@ class WalletV4Data(BaseWalletData):
         plugins: t.Optional[Cell] = None,
     ) -> None:
         """
-        Initialize Wallet v4 data.
-
-        :param public_key: Ed25519 public key instance
-        :param seqno: Sequence number (default: 0)
-        :param subwallet_id: Subwallet identifier (default: 698983191)
-        :param plugins: Dictionary cell of installed plugins (default: None)
+        :param public_key: Ed25519 public key.
+        :param seqno: Sequence number.
+        :param subwallet_id: Subwallet identifier.
+        :param plugins: Plugins dictionary cell, or `None`.
         """
         super().__init__(public_key)
         self.seqno = seqno
@@ -160,12 +137,9 @@ class WalletV4Data(BaseWalletData):
         self.plugins = plugins
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: seqno:uint32 subwallet_id:uint32 public_key:bits256 plugins:dict
-
-        :return: Serialized data cell
+        TLB: `seqno:uint32 subwallet_id:uint32 public_key:bits256 plugins:dict`
         """
         cell = begin_cell()
         cell.store_uint(self.seqno, 32)
@@ -176,11 +150,9 @@ class WalletV4Data(BaseWalletData):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> WalletV4Data:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized WalletV4Data instance
+        :param cs: Source slice.
         """
         return cls(
             seqno=cs.load_uint(32),
@@ -191,11 +163,10 @@ class WalletV4Data(BaseWalletData):
 
 
 class WalletV5SubwalletID:
-    """
-    Enhanced subwallet identifier for Wallet v5 contracts.
+    """Enhanced subwallet identifier for Wallet v5.
 
-    Encodes network, workchain, version, and subwallet number into
-    a single 32-bit value for improved wallet isolation.
+    Packs network, workchain, version, and subwallet number
+    into a single 32-bit value.
     """
 
     def __init__(
@@ -206,12 +177,10 @@ class WalletV5SubwalletID:
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
     ) -> None:
         """
-        Initialize Wallet v5 subwallet ID.
-
-        :param subwallet_number: Subwallet number (0-32767)
-        :param workchain: Target workchain (default: BASECHAIN)
-        :param version: Wallet version identifier (default: 0)
-        :param network: Network identifier (default: MAINNET)
+        :param subwallet_number: Subwallet number (0–32767).
+        :param workchain: Target workchain.
+        :param version: Wallet version identifier.
+        :param network: Network identifier.
         """
         self.subwallet_number = subwallet_number
         self.workchain = workchain
@@ -219,13 +188,10 @@ class WalletV5SubwalletID:
         self.network = network
 
     def pack(self) -> int:
-        """
-        Pack subwallet ID components into 32-bit integer.
+        """Pack components into a 32-bit integer.
 
-        Format: (1 << 31) | (workchain << 23) | (version << 15) | subwallet_number
-        XORed with network for network isolation.
-
-        :return: Packed 32-bit subwallet ID
+        Format: `(1 << 31) | (workchain << 23) | (version << 15) | subwallet_number`
+        XORed with the network global ID.
         """
         ctx = 0
         ctx |= 1 << 31
@@ -240,12 +206,10 @@ class WalletV5SubwalletID:
         value: int,
         network: NetworkGlobalID,
     ) -> WalletV5SubwalletID:
-        """
-        Unpack 32-bit integer into subwallet ID components.
+        """Unpack a 32-bit integer into components.
 
-        :param value: Packed 32-bit subwallet ID
-        :param network: Network identifier for XOR decoding
-        :return: Unpacked WalletV5SubwalletID instance
+        :param value: Packed 32-bit subwallet ID.
+        :param network: Network identifier for XOR decoding.
         """
         ctx = (value ^ network) & 0xFFFFFFFF
 
@@ -266,11 +230,7 @@ class WalletV5SubwalletID:
 
 
 class WalletV5BetaData(BaseWalletData):
-    """
-    On-chain data structure for Wallet v5 Beta contracts.
-
-    Experimental v5 implementation with enhanced subwallet ID.
-    """
+    """On-chain data for Wallet v5 Beta."""
 
     def __init__(
         self,
@@ -280,12 +240,10 @@ class WalletV5BetaData(BaseWalletData):
         plugins: t.Optional[Cell] = None,
     ) -> None:
         """
-        Initialize Wallet v5 Beta data.
-
-        :param public_key: Ed25519 public key instance
-        :param subwallet_id: Enhanced subwallet identifier
-        :param seqno: Sequence number (default: 0)
-        :param plugins: Dictionary cell of installed plugins (default: None)
+        :param public_key: Ed25519 public key.
+        :param subwallet_id: Enhanced subwallet identifier.
+        :param seqno: Sequence number.
+        :param plugins: Plugins dictionary cell, or `None`.
         """
         super().__init__(public_key)
         self.seqno = seqno
@@ -293,10 +251,9 @@ class WalletV5BetaData(BaseWalletData):
         self.plugins = plugins
 
     def _store_wallet_id(self, builder: Builder) -> None:
-        """
-        Store wallet ID components to builder.
+        """Store wallet ID components into a `Builder`.
 
-        :param builder: Cell builder to store to
+        :param builder: Target builder.
         """
         builder.store_int(self.subwallet_id.network, 32)
         builder.store_int(self.subwallet_id.workchain, 8)
@@ -304,13 +261,10 @@ class WalletV5BetaData(BaseWalletData):
         builder.store_uint(self.subwallet_id.subwallet_number, 32)
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: seqno:uint33 network_id:int32 workchain:int8 version:uint8
-                subwallet_number:uint32 public_key:bits256 plugins:dict
-
-        :return: Serialized data cell
+        TLB: `seqno:uint33 network_id:int32 workchain:int8 version:uint8
+        subwallet_number:uint32 public_key:bits256 plugins:dict`
         """
         cell = begin_cell()
         cell.store_uint(self.seqno, 33)
@@ -321,11 +275,9 @@ class WalletV5BetaData(BaseWalletData):
 
     @classmethod
     def _load_wallet_id(cls, cs: Slice) -> WalletV5SubwalletID:
-        """
-        Load wallet ID components from slice.
+        """Load wallet ID components from a `Slice`.
 
-        :param cs: Cell slice to load from
-        :return: Loaded WalletV5SubwalletID
+        :param cs: Source slice.
         """
         return WalletV5SubwalletID(
             network=NetworkGlobalID(cs.load_int(32)),
@@ -336,11 +288,9 @@ class WalletV5BetaData(BaseWalletData):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> WalletV5BetaData:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized WalletV5BetaData instance
+        :param cs: Source slice.
         """
         return cls(
             seqno=cs.load_uint(33),
@@ -351,11 +301,7 @@ class WalletV5BetaData(BaseWalletData):
 
 
 class WalletV5Data(BaseWalletData):
-    """
-    On-chain data structure for Wallet v5 contracts.
-
-    Wallet version with signature control and packed subwallet ID.
-    """
+    """On-chain data for Wallet v5."""
 
     def __init__(
         self,
@@ -366,13 +312,11 @@ class WalletV5Data(BaseWalletData):
         is_signature_allowed: bool = True,
     ) -> None:
         """
-        Initialize Wallet v5 data.
-
-        :param public_key: Ed25519 public key instance
-        :param subwallet_id: Enhanced subwallet identifier
-        :param seqno: Sequence number (default: 0)
-        :param plugins: Dictionary cell of installed plugins (default: None)
-        :param is_signature_allowed: Whether signature auth is enabled (default: True)
+        :param public_key: Ed25519 public key.
+        :param subwallet_id: Enhanced subwallet identifier.
+        :param seqno: Sequence number.
+        :param plugins: Plugins dictionary cell, or `None`.
+        :param is_signature_allowed: Whether signature auth is enabled.
         """
         super().__init__(public_key)
         self.seqno = seqno
@@ -381,13 +325,10 @@ class WalletV5Data(BaseWalletData):
         self.is_signature_allowed = is_signature_allowed
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: is_signature_allowed:bool seqno:uint32 subwallet_id:uint32
-                public_key:bits256 plugins:dict
-
-        :return: Serialized data cell
+        TLB: `is_signature_allowed:bool seqno:uint32 subwallet_id:uint32
+        public_key:bits256 plugins:dict`
         """
         cell = begin_cell()
         cell.store_bool(self.is_signature_allowed)
@@ -403,12 +344,10 @@ class WalletV5Data(BaseWalletData):
         cs: Slice,
         network: NetworkGlobalID = NetworkGlobalID.MAINNET,
     ) -> WalletV5Data:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :param network: Network ID for unpacking subwallet_id
-        :return: Deserialized WalletV5Data instance
+        :param cs: Source slice.
+        :param network: Network ID for unpacking subwallet_id.
         """
         return cls(
             is_signature_allowed=cs.load_bool(),
@@ -420,11 +359,7 @@ class WalletV5Data(BaseWalletData):
 
 
 class WalletHighloadV2Data(BaseWalletData):
-    """
-    On-chain data structure for Highload Wallet v2 contracts.
-
-    Optimized for high transaction throughput with query-based replay protection.
-    """
+    """On-chain data for Highload Wallet v2."""
 
     def __init__(
         self,
@@ -434,12 +369,10 @@ class WalletHighloadV2Data(BaseWalletData):
         old_queries: t.Optional[Cell] = None,
     ) -> None:
         """
-        Initialize Highload Wallet v2 data.
-
-        :param public_key: Ed25519 public key instance
-        :param subwallet_id: Subwallet identifier (default: 698983191)
-        :param last_cleaned: Timestamp of last cleanup (default: 0)
-        :param old_queries: Dictionary of processed query IDs (default: None)
+        :param public_key: Ed25519 public key.
+        :param subwallet_id: Subwallet identifier.
+        :param last_cleaned: Timestamp of last query cleanup.
+        :param old_queries: Processed query IDs dictionary, or `None`.
         """
         super().__init__(public_key)
         self.subwallet_id = subwallet_id
@@ -447,12 +380,10 @@ class WalletHighloadV2Data(BaseWalletData):
         self.old_queries = old_queries
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: subwallet_id:uint32 last_cleaned:uint64 public_key:bits256 old_queries:dict
-
-        :return: Serialized data cell
+        TLB: `subwallet_id:uint32 last_cleaned:uint64 public_key:bits256
+        old_queries:dict`
         """
         cell = begin_cell()
         cell.store_uint(self.subwallet_id, 32)
@@ -463,11 +394,9 @@ class WalletHighloadV2Data(BaseWalletData):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> WalletHighloadV2Data:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized WalletHighloadV2Data instance
+        :param cs: Source slice.
         """
         return cls(
             subwallet_id=cs.load_uint(32),
@@ -478,11 +407,7 @@ class WalletHighloadV2Data(BaseWalletData):
 
 
 class WalletHighloadV3Data(BaseWalletData):
-    """
-    On-chain data structure for Highload Wallet v3 contracts.
-
-    Improved highload wallet with separate old/new query tracking.
-    """
+    """On-chain data for Highload Wallet v3."""
 
     def __init__(
         self,
@@ -494,14 +419,12 @@ class WalletHighloadV3Data(BaseWalletData):
         timeout: int = 60 * 5,
     ) -> None:
         """
-        Initialize Highload Wallet v3 data.
-
-        :param public_key: Ed25519 public key instance
-        :param subwallet_id: Subwallet identifier (default: 698983191)
-        :param old_queries: Dictionary of old processed query IDs (default: None)
-        :param queries: Dictionary of current processed query IDs (default: None)
-        :param last_clean_time: Timestamp of last cleanup (default: 0)
-        :param timeout: Query expiration timeout in seconds (default: 300)
+        :param public_key: Ed25519 public key.
+        :param subwallet_id: Subwallet identifier.
+        :param old_queries: Old processed query IDs, or `None`.
+        :param queries: Current processed query IDs, or `None`.
+        :param last_clean_time: Timestamp of last cleanup.
+        :param timeout: Query expiration timeout in seconds.
         """
         super().__init__(public_key)
         self.subwallet_id = subwallet_id
@@ -511,13 +434,10 @@ class WalletHighloadV3Data(BaseWalletData):
         self.timeout = timeout
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: public_key:bits256 subwallet_id:uint32 old_queries:dict
-                queries:dict last_clean_time:uint64 timeout:uint22
-
-        :return: Serialized data cell
+        TLB: `public_key:bits256 subwallet_id:uint32 old_queries:dict
+        queries:dict last_clean_time:uint64 timeout:uint22`
         """
         cell = begin_cell()
         cell.store_bytes(self.public_key.as_bytes)
@@ -530,11 +450,9 @@ class WalletHighloadV3Data(BaseWalletData):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> WalletHighloadV3Data:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized WalletHighloadV3Data instance
+        :param cs: Source slice.
         """
         return cls(
             public_key=PublicKey(cs.load_bytes(32)),
@@ -547,11 +465,7 @@ class WalletHighloadV3Data(BaseWalletData):
 
 
 class WalletPreprocessedV2Data(BaseWalletData):
-    """
-    On-chain data structure for Preprocessed Wallet v2 contracts.
-
-    Special wallet for handling preprocessed external messages.
-    """
+    """On-chain data for Preprocessed Wallet v2."""
 
     def __init__(
         self,
@@ -559,21 +473,16 @@ class WalletPreprocessedV2Data(BaseWalletData):
         seqno: int = 0,
     ) -> None:
         """
-        Initialize Preprocessed Wallet v2 data.
-
-        :param public_key: Ed25519 public key instance
-        :param seqno: Sequence number (default: 0)
+        :param public_key: Ed25519 public key.
+        :param seqno: Sequence number.
         """
         super().__init__(public_key)
         self.seqno = seqno
 
     def serialize(self) -> Cell:
-        """
-        Serialize wallet data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: public_key:bits256 seqno:uint16
-
-        :return: Serialized data cell
+        TLB: `public_key:bits256 seqno:uint16`
         """
         cell = begin_cell()
         cell.store_bytes(self.public_key.as_bytes)
@@ -582,11 +491,9 @@ class WalletPreprocessedV2Data(BaseWalletData):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> WalletPreprocessedV2Data:
-        """
-        Deserialize wallet data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized WalletPreprocessedV2Data instance
+        :param cs: Source slice.
         """
         return cls(
             public_key=PublicKey(cs.load_bytes(32)),
@@ -595,28 +502,18 @@ class WalletPreprocessedV2Data(BaseWalletData):
 
 
 class OutActionSendMsg(TlbScheme):
-    """
-    Output action for sending messages from wallet contracts.
-
-    Represents a single message in the wallet's action list with
-    send mode and message data.
-    """
+    """Output action for sending a message from a wallet contract."""
 
     def __init__(self, message: WalletMessage) -> None:
         """
-        Initialize output action.
-
-        :param message: Wallet message containing send mode and internal message
+        :param message: Wallet message with send mode and internal message.
         """
         self.message = message
 
     def serialize(self) -> Cell:
-        """
-        Serialize output action to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 send_mode:uint8 message:^Cell
-
-        :return: Serialized action cell
+        TLB: `op_code:uint32 send_mode:uint8 message:^Cell`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.OUT_ACTION_SEND_MSG, 32)
@@ -626,11 +523,9 @@ class OutActionSendMsg(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> OutActionSendMsg:
-        """
-        Deserialize output action from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized OutActionSendMsg instance
+        :param cs: Source slice.
         """
         cs.skip_bits(32)
         send_mode = cs.load_uint(8)
@@ -640,27 +535,18 @@ class OutActionSendMsg(TlbScheme):
 
 
 class TextCommentBody(TlbScheme):
-    """
-    Message body containing plain text comment.
-
-    Standard format for text comments in TON transfers (opcode 0x00000000).
-    """
+    """Plain text comment body (opcode 0x00000000)."""
 
     def __init__(self, text: str) -> None:
         """
-        Initialize text comment body.
-
-        :param text: Text comment string
+        :param text: Comment text.
         """
         self.text = text
 
     def serialize(self) -> Cell:
-        """
-        Serialize text comment to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 text:snake_string
-
-        :return: Serialized comment cell
+        TLB: `op_code:uint32 text:snake_string`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.TEXT_COMMENT, 32)
@@ -669,23 +555,16 @@ class TextCommentBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TextCommentBody:
-        """
-        Deserialize text comment from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TextCommentBody instance
+        :param cs: Source slice.
         """
         cs.skip_bits(32)
         return cls(cs.load_snake_string())
 
 
 class EncryptedTextCommentBody(TlbScheme):
-    """
-    Message body containing encrypted text comment.
-
-    Standard format for encrypted comments in TON transfers (opcode 0x2167DA4B).
-    Uses AES-CBC encryption with shared secret derived from ECDH.
-    """
+    """Encrypted text comment body (opcode 0x2167DA4B)."""
 
     def __init__(
         self,
@@ -694,24 +573,20 @@ class EncryptedTextCommentBody(TlbScheme):
         ciphertext: bytes,
     ) -> None:
         """
-        Initialize encrypted text comment body.
-
-        :param pub_xor: XORed public key (32 bytes)
-        :param msg_key: Message key for AES (16 bytes)
-        :param ciphertext: Encrypted message bytes
+        :param pub_xor: XORed public key (32 bytes).
+        :param msg_key: AES message key (16 bytes).
+        :param ciphertext: Encrypted message bytes.
         """
         self.pub_xor = pub_xor
         self.msg_key = msg_key
         self.ciphertext = ciphertext
 
     def serialize(self) -> Cell:
-        """
-        Serialize encrypted comment to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 payload:snake_bytes
-        Payload: pub_xor(32) + msg_key(16) + ciphertext
+        TLB: `op_code:uint32 payload:snake_bytes`
 
-        :return: Serialized encrypted comment cell
+        Payload: `pub_xor(32) + msg_key(16) + ciphertext`
         """
         payload = self.pub_xor + self.msg_key + self.ciphertext
         cell = begin_cell()
@@ -721,11 +596,9 @@ class EncryptedTextCommentBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> EncryptedTextCommentBody:
-        """
-        Deserialize encrypted comment from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized EncryptedTextCommentBody instance
+        :param cs: Source slice.
         """
         cs.skip_bits(32)
         payload = cs.load_snake_bytes()

@@ -59,7 +59,11 @@ __all__ = [
 
 
 def to_cell(x: t.Union[str, bytes, Cell, Slice]) -> Cell:
-    """Convert various formats to a Cell object."""
+    """Convert `Slice`, BoC string, BoC bytes, or `Cell` to `Cell`.
+
+    :param x: Input in any supported format.
+    :return: Resulting `Cell`.
+    """
     if isinstance(x, Slice):
         x = x.to_cell()
     elif isinstance(x, str):
@@ -70,35 +74,58 @@ def to_cell(x: t.Union[str, bytes, Cell, Slice]) -> Cell:
 
 
 def cell_to_hex(c: t.Union[str, bytes, Cell, Slice]) -> str:
-    """Convert a cell to hexadecimal BoC representation."""
+    """Return hexadecimal BoC representation of a cell.
+
+    :param c: Cell in any format accepted by `to_cell`.
+    :return: Hex-encoded BoC string.
+    """
     return to_cell(c).to_boc().hex()
 
 
 def cell_to_b64(c: Cell) -> str:
-    """Convert a cell to base64 BoC representation."""
+    """Return base64 BoC representation of a cell.
+
+    :param c: `Cell` to encode.
+    :return: Base64-encoded BoC string.
+    """
     return base64.b64encode(c.to_boc()).decode()
 
 
 def cell_hash(c: Cell) -> int:
-    """Calculate the hash of a cell as an integer."""
+    """Calculate cell hash as big-endian unsigned integer.
+
+    :param c: `Cell` to hash.
+    :return: Hash as `int`.
+    """
     return int.from_bytes(c.hash, "big")
 
 
 def slice_hash(s: Slice) -> int:
-    """Calculate the hash of a slice as an integer."""
+    """Calculate slice hash as big-endian unsigned integer.
+
+    :param s: `Slice` to hash.
+    :return: Hash as `int`.
+    """
     return cell_hash(s.to_cell())
 
 
 def string_hash(s: str) -> int:
-    """Calculate SHA-256 hash of a string as an integer."""
+    """Calculate SHA-256 hash of a UTF-8 string as big-endian unsigned integer.
+
+    :param s: Input string.
+    :return: SHA-256 digest as `int`.
+    """
     return int.from_bytes(hashlib.sha256(s.encode()).digest(), "big")
 
 
 def normalize_hash(msg: t.Union[MessageAny, str]) -> str:
-    """
-    Calculate normalized hash of a message.
+    """Calculate normalized hash of a TON message.
 
-    :param msg: MessageAny object or BoC string
+    For internal messages returns the serialized cell hash.
+    For external messages builds a canonical cell and returns its hash.
+
+    :param msg: `MessageAny` or BoC string.
+    :return: Hex-encoded hash string.
     """
     if isinstance(msg, str):
         msg = MessageAny.deserialize(Slice.one_from_boc(msg))
@@ -121,15 +148,12 @@ def to_nano(
     value: t.Union[int, float, str, decimal.Decimal],
     decimals: int = 9,
 ) -> int:
-    """
-    Convert token amount to the smallest units (nanotons).
+    """Convert human-readable token amount to the smallest units (nanotons).
 
-    Converts human-readable token amounts to blockchain-native integer format.
-    Default decimals=9 is standard for TON, but jettons may use different values
-    (e.g., USDT uses 6).
-
-    :param value: Amount in human-readable format
-    :param decimals: Number of decimal places (default: 9 for TON)
+    :param value: Amount in human-readable format.
+    :param decimals: Decimal places (default: 9 for TON).
+    :return: Amount in the smallest units.
+    :raises ValueError: If decimals < 0 or result is negative.
     """
     if decimals < 0:
         raise ValueError("Decimals must be >= 0.")
@@ -153,15 +177,13 @@ def to_amount(
     *,
     precision: t.Optional[int] = None,
 ) -> decimal.Decimal:
-    """
-    Convert the smallest units (nanotons) to human-readable amount.
+    """Convert the smallest units (nanotons) to human-readable decimal amount.
 
-    Converts blockchain-native integer amounts to decimal representation.
-    Default decimals=9 is standard for TON, but jettons may use different values.
-
-    :param value: Amount in the smallest units (nanotons)
-    :param decimals: Number of decimal places (default: 9 for TON)
-    :param precision: Optional decimal places to round to
+    :param value: Amount in the smallest units.
+    :param decimals: Decimal places (default: 9 for TON).
+    :param precision: Round result down to this many decimal places.
+    :return: Human-readable `Decimal` amount.
+    :raises ValueError: If decimals < 0 or value < 0.
     """
     if decimals < 0:
         raise ValueError("Decimals must be >= 0.")
@@ -182,10 +204,12 @@ def to_amount(
 def maybe_stack_addr(
     v: t.Union[Cell, Slice],
 ) -> t.Optional[t.Union[Address, Cell, Slice]]:
-    """
-    Try to parse a TVM stack value as an Address.
+    """Try to parse a TVM stack value as `Address`.
 
-    :param v: Cell or Slice from TVM stack
+    Returns parsed `Address`, `None` for addr_none, or original value on failure.
+
+    :param v: `Cell` or `Slice` from TVM stack.
+    :return: `Address`, `None`, or original value.
     """
     try:
         s = v.copy().begin_parse() if isinstance(v, Cell) else v.copy()
@@ -203,10 +227,10 @@ def maybe_stack_addr(
 
 
 def norm_stack_num(n: t.Union[str, int]) -> int:
-    """
-    Normalize a TVM stack number from string or int.
+    """Normalize TVM stack number from string or integer.
 
-    :param n: Number as string or int
+    :param n: Number as string (auto-base) or `int`.
+    :return: Normalized `int`.
     """
     if isinstance(n, str):
         try:
@@ -219,20 +243,23 @@ def norm_stack_num(n: t.Union[str, int]) -> int:
 def norm_stack_cell(
     c: t.Union[Cell, Slice, str],
 ) -> t.Optional[t.Union[Address, Cell]]:
-    """
-    Converts various cell formats and tries to parse as an Address.
+    """Convert cell-like value and try to parse as `Address`.
 
-    :param c: Cell, Slice, or BoC string
+    :param c: `Cell`, `Slice`, or BoC string.
+    :return: `Address`, `Cell`, or `None`.
     """
     cell = to_cell(c)
     return maybe_stack_addr(cell)
 
 
 def parse_stack_config(config_slice: Slice) -> t.Dict[int, t.Any]:
-    """
-    Parse blockchain configuration parameters from a config cell.
+    """Parse blockchain configuration parameters from a config cell.
 
-    :param config_slice: Slice containing config dictionary
+    Known parameter IDs are deserialized into typed representations;
+    unknown IDs are returned as raw `Slice`.
+
+    :param config_slice: `Slice` containing the config dictionary.
+    :return: Mapping of parameter ID to deserialized value.
     """
 
     def key_deserializer(src: t.Any) -> int:
@@ -260,10 +287,13 @@ def parse_stack_config(config_slice: Slice) -> t.Dict[int, t.Any]:
 
 
 def encode_dns_name(name: str) -> bytes:
-    """
-    Encode a DNS domain name for TON DNS.
+    """Encode domain name into TON DNS on-chain format.
 
-    :param name: Domain name with dot-separated labels
+    Labels are reversed, null-separated, and null-terminated.
+
+    :param name: Dot-separated domain name.
+    :return: Encoded bytes.
+    :raises ValueError: Empty label, forbidden bytes (0x00-0x20), or > 127 bytes.
     """
     labels = name.split(".")
     if any(not lbl for lbl in labels):
@@ -273,7 +303,7 @@ def encode_dns_name(name: str) -> bytes:
     for lbl in reversed(labels):
         lbl_bytes = lbl.encode()
         if any(b <= 0x20 for b in lbl_bytes):
-            raise ValueError("Label contains forbidden bytes 0x00–0x20.")
+            raise ValueError("Label contains forbidden bytes 0x00\u20130x20.")
         out.extend(lbl_bytes)
         out.append(0x00)
 
@@ -284,10 +314,10 @@ def encode_dns_name(name: str) -> bytes:
 
 
 def decode_dns_name(data: bytes) -> str:
-    """
-    Decode TON DNS domain name from on-chain format.
+    """Decode TON DNS domain name from on-chain format.
 
-    :param data: Encoded DNS name bytes
+    :param data: Encoded DNS name bytes.
+    :return: Dot-separated domain name, or empty string.
     """
     if not data:
         return ""
@@ -304,75 +334,68 @@ def decode_dns_name(data: bytes) -> str:
 
 
 def calc_valid_until(seqno: int, ttl: int = 60) -> int:
-    """Calculate message expiration timestamp for wallet transactions."""
+    """Calculate message expiration timestamp for wallet transactions.
+
+    Returns 0xFFFFFFFF for seqno == 0 (deploy), otherwise now + ttl.
+
+    :param seqno: Current wallet sequence number.
+    :param ttl: Time-to-live in seconds (default: 60).
+    :return: Expiration unix timestamp.
+    """
     now = int(time.time())
     return 0xFFFFFFFF if seqno == 0 else now + ttl
 
 
 class TextCipher:
-    """
-    End-to-end encryption for TON wallet text comments.
+    """End-to-end encryption for TON wallet text comments.
 
-    Implements encrypted text message protocol for TON using:
-    - Ed25519 to Curve25519 key conversion for ECDH
-    - AES-256-CBC encryption
-    - HMAC-SHA512 for key derivation and authentication
-    - Address-based salt for additional security
-
-    This allows sending private messages as transaction comments that only
-    the recipient can decrypt.
+    Uses Ed25519-to-Curve25519 ECDH, AES-256-CBC, and HMAC-SHA512
+    for key derivation and message authentication.
     """
 
     @staticmethod
     def _xor32(a: bytes, b: bytes) -> bytes:
-        """XOR two 32-byte arrays."""
+        """XOR two 32-byte sequences."""
         return bytes(x ^ y for x, y in zip(a, b))
 
     @staticmethod
     def _derive(shared: bytes, msg_key: bytes) -> tuple[bytes, bytes]:
-        """
-        Derive AES key and IV from shared secret and message key.
+        """Derive AES-256 key and IV from shared secret and message key.
 
-        Uses HMAC-SHA512 to derive 48 bytes: 32 for AES key, 16 for IV.
-
-        :param shared: Shared secret from ECDH
-        :param msg_key: 16-byte message key
+        :param shared: ECDH shared secret.
+        :param msg_key: 16-byte message key.
+        :return: (aes_key, iv) tuple.
         """
         derived_bytes = hmac.new(shared, msg_key, hashlib.sha512).digest()
         return derived_bytes[:32], derived_bytes[32:48]
 
     @staticmethod
     def _msg_key(salt: bytes, data: bytes) -> bytes:
-        """
-        Calculate message key for authentication.
+        """Calculate 16-byte message key via HMAC-SHA512.
 
-        :param salt: Address-based salt
-        :param data: Plaintext or ciphertext data
+        :param salt: Address-based salt.
+        :param data: Plaintext or ciphertext data.
+        :return: 16-byte message key.
         """
         return hmac.new(salt, data, hashlib.sha512).digest()[:16]
 
     @staticmethod
     def _make_plain(msg: bytes) -> bytes:
-        """
-        Add PKCS#7-style padding to message.
+        """Pad message to 16-byte boundary (16-31 bytes of padding).
 
-        Prepends padding length byte and random padding to align to 16-byte blocks.
-        Padding size is always between 16 and 31 bytes.
-
-        :param msg: Message bytes to pad
+        :param msg: Message bytes.
+        :return: Padded message.
         """
         p = 16 if len(msg) % 16 == 0 else 16 + (16 - (len(msg) % 16))
         return bytes([p]) + os.urandom(p - 1) + msg
 
     @staticmethod
     def _shared_key_from_ed25519(sk64: bytes, peer_pub32: bytes) -> bytes:
-        """
-        Perform ECDH key exchange using Ed25519 keys.
+        """Perform ECDH using Ed25519 keys converted to Curve25519.
 
-        Converts Ed25519 keys to Curve25519 format and computes shared secret.
-
-        :param sk64: Our 64-byte Ed25519 keypair (private + public)
-        :param peer_pub32: Their 32-byte Ed25519 public key
+        :param sk64: 64-byte Ed25519 keypair (private + public).
+        :param peer_pub32: 32-byte Ed25519 public key.
+        :return: 32-byte shared secret.
         """
         sk_curve = crypto_sign_ed25519_sk_to_curve25519(sk64)
         pk_curve = crypto_sign_ed25519_pk_to_curve25519(peer_pub32)
@@ -380,12 +403,11 @@ class TextCipher:
 
     @staticmethod
     def _parse_payload(payload: t.Union[Cell, bytes, str]) -> t.Tuple[bytes, ...]:
-        """
-        Parse encrypted payload into components.
+        """Parse encrypted payload into (pub_xor, msg_key, ciphertext).
 
-        Extracts XORed public key, message key, and ciphertext from various formats.
-
-        :param payload: Encrypted data as Cell, bytes, hex string, or base64 string
+        :param payload: `Cell`, raw bytes, hex string, or base64 string.
+        :return: Tuple of (pub_xor, msg_key, ciphertext).
+        :raises ValueError: Invalid string encoding.
         """
         from tonutils.contracts.wallet.tlb import EncryptedTextCommentBody
 
@@ -407,12 +429,10 @@ class TextCipher:
 
     @staticmethod
     def _salt(address: AddressLike) -> bytes:
-        """
-        Generate address-based salt for key derivation.
+        """Generate address-based salt for key derivation.
 
-        Uses the bounceable, user-friendly address string as salt.
-
-        :param address: TON address
+        :param address: TON address.
+        :return: Salt bytes.
         """
         if isinstance(address, str):
             address = Address(address)
@@ -431,16 +451,13 @@ class TextCipher:
         our_private_key: PrivateKey,
         their_public_key: PublicKey,
     ) -> Cell:
-        """
-        Encrypt a text message for a recipient.
+        """Encrypt a text message for a recipient.
 
-        Creates an encrypted comment cell that can be attached to a TON transaction.
-        Only the recipient with the corresponding private key can decrypt it.
-
-        :param payload: Plain text message to encrypt
-        :param sender_address: Sender's TON address (used for salt)
-        :param our_private_key: Sender's private key
-        :param their_public_key: Recipient's public key
+        :param payload: Plaintext message.
+        :param sender_address: Sender's TON address (used as salt).
+        :param our_private_key: Sender's `PrivateKey`.
+        :param their_public_key: Recipient's `PublicKey`.
+        :return: Serialized `Cell` with encrypted comment body.
         """
         from tonutils.contracts.wallet.tlb import EncryptedTextCommentBody
 
@@ -468,15 +485,13 @@ class TextCipher:
         sender_address: AddressLike,
         our_private_key: PrivateKey,
     ) -> str:
-        """
-        Decrypt an encrypted text message.
+        """Decrypt an encrypted text message.
 
-        Decrypts a message that was encrypted with the encrypt() method
-        Verifies message integrity using HMAC authentication.
-
-        :param payload: Encrypted message as Cell, hex string, base64 string, or bytes
-        :param sender_address: Sender's TON address (used for salt verification)
-        :param our_private_key: Our private key (recipient)
+        :param payload: Encrypted message (`Cell`, hex/base64 string, or bytes).
+        :param sender_address: Sender's TON address (used for salt).
+        :param our_private_key: Recipient's `PrivateKey`.
+        :return: Decrypted plaintext string.
+        :raises ValueError: Message key mismatch or invalid padding.
         """
         sk_ed25519_64 = our_private_key.keypair.as_bytes
         our_pubkey_32 = our_private_key.public_key.as_bytes
@@ -509,12 +524,12 @@ class TextCipher:
 
 
 def load_json(source: str, timeout: float = 5.0) -> t.Any:
-    """
-    Load and parse JSON from a URL or a local file.
+    """Load and parse JSON from a URL or local file.
 
-    :param source: URL or file path
-    :param timeout: Network timeout in seconds
-    :return: Parsed JSON object
+    :param source: HTTP/HTTPS URL or filesystem path.
+    :param timeout: Network timeout in seconds (default: 5.0).
+    :return: Parsed JSON object.
+    :raises RuntimeError: Network error, invalid JSON, or file I/O failure.
     """
     try:
         if source.startswith(("http://", "https://")):

@@ -2,13 +2,7 @@ from enum import Enum
 
 
 class ContractVersion(str, Enum):
-    """
-    Standard TON smart contract version identifiers.
-
-    Enum of string keys used to look up compiled contract code in the
-    CONTRACT_CODES registry. Each version represents a specific implementation
-    of a contract type with defined behavior and interface.
-    """
+    """Standard TON smart contract version identifier."""
 
     WalletV1R1 = "wallet_v1r1"
     WalletV1R2 = "wallet_v1r2"

@@ -38,7 +38,7 @@ _P = t.TypeVar("_P", bound=BaseWalletParams)
 _TWallet = t.TypeVar("_TWallet", bound="BaseWallet[t.Any, t.Any, t.Any]")
 
 VALID_MNEMONIC_LENGTHS: t.Final[t.Tuple[int, ...]] = (12, 18, 24)
-"""Valid BIP39 mnemonic phrase lengths in words."""
+"""Valid mnemonic phrase lengths in words."""
 
 
 class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
@@ -66,14 +66,12 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         private_key: t.Optional[PrivateKey] = None,
     ) -> None:
         """
-        Initialize wallet instance.
-
-        :param client: TON client for blockchain interactions
-        :param address: Wallet address on the blockchain
-        :param state_init: Optional StateInit (code and data)
-        :param info: Optional preloaded contract state
-        :param config: Optional wallet configuration
-        :param private_key: Optional private key for signing transactions
+        :param client: TON client.
+        :param address: Wallet address.
+        :param state_init: Code and data, or `None`.
+        :param info: Preloaded contract state, or `None`.
+        :param config: Wallet configuration, or `None`.
+        :param private_key: Signing key, or `None` for read-only.
         """
         self._config = config
         self._private_key: t.Optional[PrivateKey] = None
@@ -86,38 +84,22 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     @property
     def state_data(self) -> _D:
-        """
-        Decoded on-chain wallet state data.
-
-        :return: Typed wallet data
-        """
+        """Decoded on-chain wallet state data."""
         return super().state_data
 
     @property
     def config(self) -> _C:
-        """
-        Wallet configuration parameters.
-
-        :return: Configuration object
-        """
+        """Wallet configuration parameters."""
         return t.cast(_C, self._config)
 
     @property
     def public_key(self) -> t.Optional[PublicKey]:
-        """
-        Public key associated with this wallet.
-
-        :return: Public key or None if not available
-        """
+        """Public key, or `None`."""
         return self._public_key if self._public_key else None
 
     @property
     def private_key(self) -> t.Optional[PrivateKey]:
-        """
-        Private key for signing transactions.
-
-        :return: Private key or None if wallet is read-only
-        """
+        """Private key, or `None` for read-only wallets."""
         return self._private_key if self._private_key else None
 
     @abc.abstractmethod
@@ -126,12 +108,11 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         messages: t.List[WalletMessage],
         params: t.Optional[_P] = None,
     ) -> Cell:
-        """
-        Build unsigned message cell for this wallet version.
+        """Build unsigned message cell for this wallet version.
 
-        :param messages: List of internal messages to include
-        :param params: Optional transaction parameters
-        :return: Unsigned message cell ready for signing
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or `None`.
+        :return: Unsigned message cell.
         """
 
     async def _build_sign_msg_cell(
@@ -139,12 +120,11 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         signing_msg: Cell,
         signature: bytes,
     ) -> Cell:
-        """
-        Combine signature with unsigned message cell.
+        """Combine signature with unsigned message cell.
 
-        :param signing_msg: Unsigned message cell
-        :param signature: Ed25519 signature bytes
-        :return: Signed message cell
+        :param signing_msg: Unsigned message cell.
+        :param signature: Ed25519 signature bytes.
+        :return: Signed message cell.
         """
         cell = begin_cell()
         cell.store_bytes(signature)
@@ -156,12 +136,12 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         messages: t.List[WalletMessage],
         params: t.Optional[_P] = None,
     ) -> Cell:
-        """
-        Build and sign message cell.
+        """Build and sign a message cell.
 
-        :param messages: List of internal messages to include
-        :param params: Optional transaction parameters
-        :return: Fully signed message cell
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or `None`.
+        :return: Signed message cell.
+        :raises ContractError: If private key is not set.
         """
         if self._private_key is None:
             raise ContractError(
@@ -182,14 +162,13 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         config: t.Optional[_C] = None,
     ) -> _TWallet:
-        """
-        Create wallet instance from a private key.
+        """Create wallet from a private key.
 
-        :param client: TON client for blockchain interactions
-        :param private_key: Ed25519 PrivateKey instance
-        :param workchain: Target workchain (default: BASECHAIN)
-        :param config: Optional wallet configuration
-        :return: New wallet instance
+        :param client: TON client.
+        :param private_key: Ed25519 private key.
+        :param workchain: Target workchain.
+        :param config: Wallet configuration, or `None`.
+        :return: New wallet instance.
         """
         config = config or cls._config_model()
         cls._validate_config_type(config)
@@ -211,15 +190,14 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         config: t.Optional[_C] = None,
     ) -> t.Tuple[_TWallet, PublicKey, PrivateKey, t.List[str]]:
-        """
-        Create wallet instance from a mnemonic phrase.
+        """Create wallet from a mnemonic phrase.
 
-        :param client: TON client for blockchain interactions
-        :param mnemonic: BIP39 mnemonic phrase (list or space-separated string)
-        :param validate: Whether to validate mnemonic checksum (default: True)
-        :param workchain: Target workchain (default: BASECHAIN)
-        :param config: Optional wallet configuration
-        :return: Tuple of (wallet, public_key, private_key, mnemonic_list)
+        :param client: TON client.
+        :param mnemonic: BIP39 mnemonic (list or space-separated string).
+        :param validate: Validate mnemonic checksum.
+        :param workchain: Target workchain.
+        :param config: Wallet configuration, or `None`.
+        :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         """
         if isinstance(mnemonic, str):
             mnemonic = mnemonic.strip().lower().split()
@@ -241,14 +219,14 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         config: t.Optional[_C] = None,
     ) -> t.Tuple[_TWallet, PublicKey, PrivateKey, t.List[str]]:
-        """
-        Create a new wallet with a randomly generated mnemonic.
+        """Create a new wallet with a random mnemonic.
 
-        :param client: TON client for blockchain interactions
-        :param mnemonic_length: Number of words in mnemonic (12, 18, or 24; default: 24)
-        :param workchain: Target workchain (default: BASECHAIN)
-        :param config: Optional wallet configuration
-        :return: Tuple of (wallet, public_key, private_key, mnemonic_list)
+        :param client: TON client.
+        :param mnemonic_length: Word count (12, 18, or 24).
+        :param workchain: Target workchain.
+        :param config: Wallet configuration, or `None`.
+        :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
+        :raises ContractError: If mnemonic length is invalid.
         """
         cls._validate_mnemonic_length(mnemonic_length)
 
@@ -260,12 +238,11 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         messages: t.List[t.Union[WalletMessage, BaseMessageBuilder]],
         params: t.Optional[_P] = None,
     ) -> ExternalMessage:
-        """
-        Build a signed external message for sending transactions.
+        """Build a signed external message.
 
-        :param messages: List of internal messages or message builders
-        :param params: Optional transaction parameters (seqno, timeout, etc.)
-        :return: Signed external message ready for sending
+        :param messages: Internal messages or message builders.
+        :param params: Transaction parameters, or `None`.
+        :return: Signed `ExternalMessage`.
         """
         messages = [
             (
@@ -287,12 +264,11 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         messages: t.List[t.Union[WalletMessage, BaseMessageBuilder]],
         params: t.Optional[_P] = None,
     ) -> ExternalMessage:
-        """
-        Build and send a batch transfer message with multiple recipients.
+        """Build, sign, and send a batch transfer.
 
-        :param messages: List of internal messages or message builders
-        :param params: Optional transaction parameters
-        :return: Signed external message that was sent
+        :param messages: Internal messages or message builders.
+        :param params: Transaction parameters, or `None`.
+        :return: Sent `ExternalMessage`.
         """
         external_msg = await self.build_external_message(messages, params)
         await self.client.send_message(external_msg.as_hex)
@@ -303,12 +279,11 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         message: t.Union[WalletMessage, BaseMessageBuilder],
         params: t.Optional[_P] = None,
     ) -> ExternalMessage:
-        """
-        Build and send a transfer message for a single recipient.
+        """Build, sign, and send a single transfer.
 
-        :param message: Internal message or message builder
-        :param params: Optional transaction parameters
-        :return: Signed external message that was sent
+        :param message: Internal message or message builder.
+        :param params: Transaction parameters, or `None`.
+        :return: Sent `ExternalMessage`.
         """
         return await self.batch_transfer_message([message], params)
 
@@ -322,17 +297,16 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         bounce: t.Optional[bool] = None,
         params: t.Optional[_P] = None,
     ) -> ExternalMessage:
-        """
-        Build and send a transfer to a single destination.
+        """Send a simple TON transfer.
 
-        :param destination: Recipient address
-        :param amount: Amount to send in nanotons
-        :param body: Optional message body (Cell or text comment)
-        :param state_init: Optional StateInit for contract deployment
-        :param send_mode: Message send mode (default: pay fees separately)
-        :param bounce: Whether message should bounce on error
-        :param params: Optional transaction parameters
-        :return: Signed external message that was sent
+        :param destination: Recipient address.
+        :param amount: Amount in nanotons.
+        :param body: Message body (`Cell` or text comment), or `None`.
+        :param state_init: `StateInit` for deployment, or `None`.
+        :param send_mode: Send mode flags.
+        :param bounce: Bounce on error, or `None` for auto-detect.
+        :param params: Transaction parameters, or `None`.
+        :return: Sent `ExternalMessage`.
         """
         message = TONTransferBuilder(
             destination=destination,
@@ -349,11 +323,10 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         cls: t.Type[_TWallet],
         config: _C,
     ) -> None:
-        """
-        Validate that config matches expected type for this wallet version.
+        """Validate config type for this wallet version.
 
-        :param config: Configuration object to validate
-        :raises ContractError: If config type is incorrect
+        :param config: Configuration to validate.
+        :raises ContractError: If type does not match `_config_model`.
         """
         if not isinstance(config, cls._config_model):
             raise ContractError(
@@ -368,11 +341,10 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         cls: t.Type[_TWallet],
         params: t.Optional[_P] = None,
     ) -> None:
-        """
-        Validate that params match expected type for this wallet version.
+        """Validate params type for this wallet version.
 
-        :param params: Parameters object to validate
-        :raises ContractError: If params type is incorrect
+        :param params: Parameters to validate, or `None`.
+        :raises ContractError: If type does not match `_params_model`.
         """
         if params is not None and not isinstance(params, cls._params_model):
             raise ContractError(
@@ -387,11 +359,10 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         cls: t.Type[_TWallet],
         messages: t.List[WalletMessage],
     ) -> None:
-        """
-        Validate that message count does not exceed MAX_MESSAGES limit.
+        """Validate message count against `MAX_MESSAGES`.
 
-        :param messages: List of messages to validate
-        :raises ContractError: If too many messages
+        :param messages: Messages to validate.
+        :raises ContractError: If count exceeds the limit.
         """
         if len(messages) > cls.MAX_MESSAGES:
             raise ContractError(
@@ -406,11 +377,10 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         cls: t.Type[_TWallet],
         mnemonic_length: int,
     ) -> None:
-        """
-        Validate that mnemonic length is valid (12, 18, or 24 words).
+        """Validate mnemonic word count.
 
-        :param mnemonic_length: Number of words to validate
-        :raises ContractError: If length is invalid
+        :param mnemonic_length: Number of words.
+        :raises ContractError: If not in (12, 18, 24).
         """
         if mnemonic_length not in VALID_MNEMONIC_LENGTHS:
             raise ContractError(
@@ -421,13 +391,10 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     @classmethod
     def validate_mnemonic(cls, mnemonic: t.Union[str, t.List[str]]) -> None:
-        """
-        Validate BIP39 mnemonic phrase.
+        """Validate mnemonic phrase.
 
-        Checks that mnemonic has valid length and all words exist in BIP39 wordlist.
-
-        :param mnemonic: Mnemonic phrase (list or space-separated string)
-        :raises ValueError: If mnemonic length is invalid or contains invalid words
+        :param mnemonic: Mnemonic (list or space-separated string).
+        :raises ValueError: If length is invalid or words are not in the wordlist.
         """
         if isinstance(mnemonic, str):
             mnemonic_words = mnemonic.strip().lower().split()

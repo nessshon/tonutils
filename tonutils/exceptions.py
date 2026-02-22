@@ -26,6 +26,11 @@ class TransportError(TonutilsError):
     """Transport-level failure (connect/handshake/send/recv)."""
 
     def __init__(self, *, endpoint: str, operation: str, reason: str) -> None:
+        """
+        :param endpoint: Remote endpoint identifier.
+        :param operation: Failed operation name.
+        :param reason: Failure description.
+        """
         self.endpoint = endpoint
         self.operation = operation
         self.reason = reason
@@ -54,6 +59,11 @@ class NotConnectedError(TonutilsError, RuntimeError):
         endpoint: t.Optional[str] = None,
         operation: t.Optional[str] = None,
     ) -> None:
+        """
+        :param component: Name of the disconnected component.
+        :param endpoint: Remote endpoint identifier.
+        :param operation: Operation that required a connection.
+        """
         self.component = component
         self.endpoint = endpoint
         self.operation = operation
@@ -67,6 +77,11 @@ class ProviderTimeoutError(ProviderError, asyncio.TimeoutError):
     """Provider operation exceeded its timeout."""
 
     def __init__(self, *, timeout: float, endpoint: str, operation: str) -> None:
+        """
+        :param timeout: Timeout threshold in seconds.
+        :param endpoint: Remote endpoint identifier.
+        :param operation: Operation that timed out.
+        """
         self.timeout = float(timeout)
         self.endpoint = endpoint
         self.operation = operation
@@ -77,6 +92,11 @@ class ProviderResponseError(ProviderError):
     """Backend returned an error response."""
 
     def __init__(self, *, code: int, message: str, endpoint: str) -> None:
+        """
+        :param code: Error code from the backend.
+        :param message: Error message from the backend.
+        :param endpoint: Remote endpoint identifier.
+        """
         self.code = int(code)
         self.message = message
         self.endpoint = endpoint
@@ -92,6 +112,11 @@ class RetryLimitError(ProviderError):
         max_attempts: int,
         last_error: ProviderError,
     ) -> None:
+        """
+        :param attempts: Number of attempts performed.
+        :param max_attempts: Maximum attempts allowed by the policy.
+        :param last_error: Last error before giving up.
+        """
         self.attempts = int(attempts)
         self.max_attempts = int(max_attempts)
         self.last_error = last_error
@@ -103,6 +128,10 @@ class ContractError(ClientError):
     """Contract wrapper operation failed."""
 
     def __init__(self, target: t.Any, details: str) -> None:
+        """
+        :param target: Contract class or instance that failed.
+        :param details: Failure description.
+        """
         self.target = target
         self.details = details
 
@@ -118,6 +147,10 @@ class StateNotLoadedError(ContractError):
     """Contract wrapper requires state that is not loaded."""
 
     def __init__(self, contract: t.Any, *, missing: str) -> None:
+        """
+        :param contract: Contract instance missing the state.
+        :param missing: Name of the missing state attribute.
+        """
         self.missing = missing
         name = contract.__class__.__name__
         super().__init__(contract, f"{missing} is not loaded. Call {name}.refresh().")
@@ -127,6 +160,11 @@ class RunGetMethodError(ClientError):
     """Contract get-method returned a non-zero TVM exit code."""
 
     def __init__(self, *, address: str, exit_code: int, method_name: str) -> None:
+        """
+        :param address: Contract address.
+        :param exit_code: TVM exit code returned by the method.
+        :param method_name: Name of the get-method that failed.
+        """
         self.address = address
         self.exit_code = int(exit_code)
         self.method_name = method_name

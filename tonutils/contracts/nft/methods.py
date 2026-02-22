@@ -11,12 +11,11 @@ async def get_collection_data_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> t.List[t.Any]:
-    """
-    Get collection data from an NFT collection contract.
+    """Call `get_collection_data` on an NFT collection contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: NFT collection contract address
-    :return: List containing next_item_index, collection_content, and owner_address
+    :param client: TON client.
+    :param address: NFT collection address.
+    :return: List of [next_item_index, collection_content, owner_address].
     """
     return await client.run_get_method(
         address=address,
@@ -25,16 +24,10 @@ async def get_collection_data_get_method(
 
 
 class GetCollectionDataGetMethod(ContractProtocol):
-    """Mixin providing get_collection_data() get method for NFT collections."""
+    """Mixin for the `get_collection_data` get-method."""
 
     async def get_collection_data(self) -> t.List[t.Any]:
-        """
-        Get collection data from this NFT collection.
-
-        Returns next item index, collection content, and owner address.
-
-        :return: List containing next_item_index, collection_content, and owner_address
-        """
+        """Return collection data (next index, content, owner)."""
         return await get_collection_data_get_method(
             client=self.client,
             address=self.address,
@@ -46,13 +39,12 @@ async def get_nft_address_by_index_get_method(
     address: AddressLike,
     index: int,
 ) -> Address:
-    """
-    Get NFT item address by its index in the collection.
+    """Call `get_nft_address_by_index` on an NFT collection contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: NFT collection contract address
-    :param index: Numerical index of the NFT item in the collection
-    :return: Address of the NFT item contract
+    :param client: TON client.
+    :param address: NFT collection address.
+    :param index: Item index in the collection.
+    :return: NFT item contract address.
     """
     r = await client.run_get_method(
         address=address,
@@ -63,17 +55,13 @@ async def get_nft_address_by_index_get_method(
 
 
 class GetNFTAddressByIndexGetMethod(ContractProtocol):
-    """Mixin providing get_nft_address_by_index() get method for NFT collections."""
+    """Mixin for the `get_nft_address_by_index` get-method."""
 
-    async def get_nft_address_by_index(
-        self,
-        index: int,
-    ) -> Address:
-        """
-        Get NFT item address by its index in this collection.
+    async def get_nft_address_by_index(self, index: int) -> Address:
+        """Return NFT item address by index.
 
-        :param index: Numerical index of the NFT item
-        :return: Address of the NFT item contract
+        :param index: Item index in the collection.
+        :return: NFT item contract address.
         """
         return await get_nft_address_by_index_get_method(
             client=self.client,
@@ -86,12 +74,11 @@ async def royalty_params_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> t.List[t.Any]:
-    """
-    Get royalty parameters from an NFT collection contract.
+    """Call `royalty_params` on an NFT contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: NFT collection contract address
-    :return: List containing numerator, denominator, and destination address
+    :param client: TON client.
+    :param address: NFT contract address.
+    :return: List of [numerator, denominator, destination].
     """
     return await client.run_get_method(
         address=address,
@@ -100,16 +87,10 @@ async def royalty_params_get_method(
 
 
 class RoyaltyParamsGetMethod(ContractProtocol):
-    """Mixin providing royalty_params() get method for NFT collections."""
+    """Mixin for the `royalty_params` get-method."""
 
     async def royalty_params(self) -> t.List[t.Any]:
-        """
-        Get royalty parameters from this NFT collection.
-
-        Returns numerator, denominator, and destination address for royalty calculations.
-
-        :return: List containing numerator, denominator, and destination address
-        """
+        """Return royalty parameters (numerator, denominator, destination)."""
         return await royalty_params_get_method(
             client=self.client,
             address=self.address,
@@ -122,14 +103,13 @@ async def get_nft_content_get_method(
     index: int,
     individual_nft_content: Cell,
 ) -> Cell:
-    """
-    Get full NFT content by combining collection and individual content.
+    """Call `get_nft_content` on an NFT collection contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: NFT collection contract address
-    :param index: Numerical index of the NFT item
-    :param individual_nft_content: Individual NFT content cell from the item
-    :return: Cell containing full NFT metadata
+    :param client: TON client.
+    :param address: NFT collection address.
+    :param index: Item index in the collection.
+    :param individual_nft_content: Individual item content `Cell`.
+    :return: Full NFT metadata `Cell`.
     """
     r = await client.run_get_method(
         address=address,
@@ -140,19 +120,18 @@ async def get_nft_content_get_method(
 
 
 class GetNFTContentGetMethod(ContractProtocol):
-    """Mixin providing get_nft_content() get method for NFT collections."""
+    """Mixin for the `get_nft_content` get-method."""
 
     async def get_nft_content(
         self,
         index: int,
         individual_nft_content: Cell,
     ) -> Cell:
-        """
-        Get full NFT content by combining collection and individual content.
+        """Return full NFT content by combining collection and individual content.
 
-        :param index: Numerical index of the NFT item
-        :param individual_nft_content: Individual NFT content cell from the item
-        :return: Cell containing full NFT metadata
+        :param index: Item index in the collection.
+        :param individual_nft_content: Individual item content `Cell`.
+        :return: Full NFT metadata `Cell`.
         """
         return await get_nft_content_get_method(
             client=self.client,
@@ -166,12 +145,11 @@ async def get_second_owner_address_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> Address:
-    """
-    Get second owner address from an NFT contract.
+    """Call `get_second_owner_address` on an NFT contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: NFT contract address
-    :return: Address of the second owner
+    :param client: TON client.
+    :param address: NFT contract address.
+    :return: Second owner address.
     """
     r = await client.run_get_method(
         address=address,
@@ -181,14 +159,10 @@ async def get_second_owner_address_get_method(
 
 
 class GetSecondOwnerAddressGetMethod(ContractProtocol):
-    """Mixin providing get_second_owner_address() get method for NFT contracts."""
+    """Mixin for the `get_second_owner_address` get-method."""
 
     async def get_second_owner_address(self) -> Address:
-        """
-        Get second owner address from this NFT contract.
-
-        :return: Address of the second owner
-        """
+        """Return second owner address."""
         return await get_second_owner_address_get_method(
             client=self.client,
             address=self.address,
@@ -199,12 +173,11 @@ async def get_nft_data_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> t.List[t.Any]:
-    """
-    Get NFT item data from an NFT item contract.
+    """Call `get_nft_data` on an NFT item contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: NFT item contract address
-    :return: List containing init flag, index, collection_address, owner_address, and individual_content
+    :param client: TON client.
+    :param address: NFT item address.
+    :return: List of [init, index, collection_address, owner_address, content].
     """
     return await client.run_get_method(
         address=address,
@@ -213,16 +186,10 @@ async def get_nft_data_get_method(
 
 
 class GetNFTDataGetMethod(ContractProtocol):
-    """Mixin providing get_nft_data() get method for NFT items."""
+    """Mixin for the `get_nft_data` get-method."""
 
     async def get_nft_data(self) -> t.List[t.Any]:
-        """
-        Get NFT item data from this NFT item.
-
-        Returns initialization status, index, collection address, owner address, and content.
-
-        :return: List containing init flag, index, collection_address, owner_address, and individual_content
-        """
+        """Return NFT item data (init, index, collection, owner, content)."""
         return await get_nft_data_get_method(
             client=self.client,
             address=self.address,
@@ -233,12 +200,11 @@ async def get_editor_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> t.Optional[Address]:
-    """
-    Get editor address from an NFT contract.
+    """Call `get_editor` on an editable NFT contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: NFT contract address
-    :return: Editor address if set, None otherwise
+    :param client: TON client.
+    :param address: NFT contract address.
+    :return: Editor address, or `None`.
     """
     r = await client.run_get_method(
         address=address,
@@ -248,14 +214,10 @@ async def get_editor_get_method(
 
 
 class GetEditorGetMethod(ContractProtocol):
-    """Mixin providing get_editor() get method for editable NFT contracts."""
+    """Mixin for the `get_editor` get-method."""
 
     async def get_editor(self) -> t.Optional[Address]:
-        """
-        Get editor address from this NFT contract.
-
-        :return: Editor address if set, None otherwise
-        """
+        """Return editor address, or `None`."""
         return await get_editor_get_method(
             client=self.client,
             address=self.address,
@@ -266,12 +228,11 @@ async def get_authority_address_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> t.Optional[Address]:
-    """
-    Get authority address from an SBT contract.
+    """Call `get_authority_address` on an SBT contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: SBT contract address
-    :return: Authority address that can revoke the SBT, None if no authority
+    :param client: TON client.
+    :param address: SBT contract address.
+    :return: Authority address, or `None`.
     """
     r = await client.run_get_method(
         address=address,
@@ -281,16 +242,10 @@ async def get_authority_address_get_method(
 
 
 class GetAuthorityAddressGetMethod(ContractProtocol):
-    """Mixin providing get_authority_address() get method for SBT contracts."""
+    """Mixin for the `get_authority_address` get-method."""
 
     async def get_authority_address(self) -> t.Optional[Address]:
-        """
-        Get authority address from this SBT contract.
-
-        Returns the address that can revoke this Soulbound Token.
-
-        :return: Authority address that can revoke the SBT, None if no authority
-        """
+        """Return authority address that can revoke this SBT, or `None`."""
         return await get_authority_address_get_method(
             client=self.client,
             address=self.address,
@@ -301,12 +256,11 @@ async def get_revoked_time_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> int:
-    """
-    Get revocation timestamp from an SBT contract.
+    """Call `get_revoked_time` on an SBT contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: SBT contract address
-    :return: Unix timestamp when SBT was revoked, 0 if not revoked
+    :param client: TON client.
+    :param address: SBT contract address.
+    :return: Revocation unix timestamp, or 0 if not revoked.
     """
     r = await client.run_get_method(
         address=address,
@@ -316,16 +270,10 @@ async def get_revoked_time_get_method(
 
 
 class GetRevokedTimeGetMethod(ContractProtocol):
-    """Mixin providing get_revoked_time() get method for SBT contracts."""
+    """Mixin for the `get_revoked_time` get-method."""
 
     async def get_revoked_time(self) -> int:
-        """
-        Get revocation timestamp from this SBT contract.
-
-        Returns when this Soulbound Token was revoked.
-
-        :return: Unix timestamp when SBT was revoked, 0 if not revoked
-        """
+        """Return revocation unix timestamp, or 0 if not revoked."""
         return await get_revoked_time_get_method(
             client=self.client,
             address=self.address,

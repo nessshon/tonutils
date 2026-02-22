@@ -7,6 +7,7 @@ from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
 class TatumClient(ToncenterClient):
+    """Toncenter-compatible client using Tatum as backend."""
 
     def __init__(
         self,
@@ -23,19 +24,17 @@ class TatumClient(ToncenterClient):
         retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
         """
-        Initialize Tatum HTTP client.
-
-        :param network: Target TON network (mainnet or testnet)
-        :param api_key: Tatum API key
-            You can get an API key on the Tatum website: https://tatum.io/
-        :param base_url: Optional custom Tatum base URL
-        :param timeout: Total request timeout in seconds.
-        :param session: Optional external aiohttp session.
+        :param network: Target TON network.
+        :param api_key: Tatum API key.
+            You can get an API key on the Tatum website: https://tatum.io/.
+        :param base_url: Custom endpoint base URL, or `None`.
+        :param timeout: Request timeout in seconds.
+        :param session: External aiohttp session, or `None`.
         :param headers: Default headers for owned session.
         :param cookies: Default cookies for owned session.
-        :param rps_limit: Optional requests-per-period limit.
+        :param rps_limit: Requests-per-period limit, or `None`.
         :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Optional retry policy that defines per-error-code retry rules
+        :param retry_policy: Retry policy with per-error-code rules, or `None`.
         """
         urls = {
             NetworkGlobalID.MAINNET: "https://ton-mainnet.gateway.tatum.io",

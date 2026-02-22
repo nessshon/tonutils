@@ -50,42 +50,25 @@ class BaseJettonMaster(
     """Base implementation for Jetton master contracts."""
 
     _data_model: t.Type[_D]
-    """TlbScheme class for deserializing master state data."""
 
     @property
     def jetton_wallet_code(self) -> Cell:
-        """
-        Code cell for Jetton wallets managed by this master.
-
-        :return: Wallet contract code
-        """
+        """Code `Cell` for Jetton wallets managed by this master."""
         return self.state_data.jetton_wallet_code
 
     @property
     def admin_address(self) -> t.Optional[Address]:
-        """
-        Admin address of this Jetton master.
-
-        :return: Admin's wallet address or None if no admin
-        """
+        """Admin address, or `None`."""
         return self.state_data.admin_address
 
     @property
     def total_supply(self) -> int:
-        """
-        Total supply of this Jetton.
-
-        :return: Total supply in base units
-        """
+        """Total supply in base units."""
         return self.state_data.total_supply
 
     @property
     def content(self) -> _C:
-        """
-        Jetton metadata content.
-
-        :return: Onchain or offchain content with token metadata
-        """
+        """Jetton metadata content."""
         return self.state_data.content
 
     @classmethod
@@ -96,13 +79,12 @@ class BaseJettonMaster(
         jetton_master_address: AddressLike,
         jetton_wallet_code: t.Union[Cell, str],
     ) -> Cell:
-        """
-        Pack Jetton wallet data cell for address calculation.
+        """Pack Jetton wallet data cell for address calculation.
 
-        :param owner_address: Wallet owner's address
-        :param jetton_master_address: Master contract address
-        :param jetton_wallet_code: Wallet contract code
-        :return: Packed wallet data cell
+        :param owner_address: Wallet owner's address.
+        :param jetton_master_address: Master contract address.
+        :param jetton_wallet_code: Wallet contract code.
+        :return: Packed wallet data `Cell`.
         """
 
     @classmethod
@@ -113,14 +95,13 @@ class BaseJettonMaster(
         jetton_wallet_code: t.Union[Cell, str],
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Address:
-        """
-        Calculate user's Jetton wallet address.
+        """Calculate user's Jetton wallet address.
 
-        :param owner_address: Wallet owner's address
-        :param jetton_master_address: Master contract address
-        :param jetton_wallet_code: Wallet contract code (Cell or hex string)
-        :param workchain: Target workchain (default: BASECHAIN)
-        :return: Calculated wallet address
+        :param owner_address: Wallet owner's address.
+        :param jetton_master_address: Master contract address.
+        :param jetton_wallet_code: Wallet contract code (`Cell` or hex string).
+        :param workchain: Target workchain.
+        :return: Calculated wallet address.
         """
 
         code = to_cell(jetton_wallet_code)
@@ -134,13 +115,10 @@ class BaseJettonMaster(
 
 
 class JettonMasterStandard(BaseJettonMaster[_DStandard, _CStandard]):
-    """Standard Jetton master contract."""
+    """Standard Jetton master."""
 
     _data_model = JettonMasterStandardData
-    """TlbScheme class for deserializing master state data."""
-
     VERSION = ContractVersion.JettonMasterStandard
-    """Contract version identifier."""
 
     @classmethod
     def _pack_jetton_wallet_data(
@@ -150,14 +128,13 @@ class JettonMasterStandard(BaseJettonMaster[_DStandard, _CStandard]):
         jetton_wallet_code: Cell,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Cell:
-        """
-        Pack standard Jetton wallet data cell.
+        """Pack standard Jetton wallet data cell.
 
-        :param owner_address: Wallet owner's address
-        :param jetton_master_address: Master contract address
-        :param jetton_wallet_code: Wallet contract code
-        :param workchain: Target workchain (default: BASECHAIN)
-        :return: Packed wallet data cell
+        :param owner_address: Wallet owner's address.
+        :param jetton_master_address: Master contract address.
+        :param jetton_wallet_code: Wallet contract code.
+        :param workchain: Target workchain.
+        :return: Packed wallet data `Cell`.
         """
         cell = begin_cell()
         cell.store_coins(0)
@@ -171,13 +148,10 @@ class JettonMasterStablecoin(
     BaseJettonMaster[_DStablecoin, _CStablecoin],
     GetNextAdminAddressGetMethod,
 ):
-    """Stablecoin Jetton master contract."""
+    """Stablecoin Jetton master."""
 
     _data_model = JettonMasterStablecoinData
-    """TlbScheme class for deserializing master state data."""
-
     VERSION = ContractVersion.JettonMasterStablecoin
-    """Contract version identifier."""
 
     @classmethod
     def _pack_jetton_wallet_data(
@@ -186,13 +160,12 @@ class JettonMasterStablecoin(
         jetton_master_address: AddressLike,
         jetton_wallet_code: Cell,
     ) -> Cell:
-        """
-        Pack stablecoin Jetton wallet data cell.
+        """Pack stablecoin Jetton wallet data cell.
 
-        :param owner_address: Wallet owner's address
-        :param jetton_master_address: Master contract address
-        :param jetton_wallet_code: Wallet contract code
-        :return: Packed wallet data cell with status field
+        :param owner_address: Wallet owner's address.
+        :param jetton_master_address: Master contract address.
+        :param jetton_wallet_code: Wallet contract code.
+        :return: Packed wallet data `Cell`.
         """
         cell = begin_cell()
         cell.store_uint(0, 4)
@@ -203,21 +176,17 @@ class JettonMasterStablecoin(
 
 
 class JettonMasterStablecoinV2(JettonMasterStablecoin):
-    """Stablecoin V2 Jetton master contract."""
+    """Stablecoin v2 Jetton master."""
 
     _SHARD_DEPTH: int = 8
-    """Number of bits used for address sharding."""
-
     VERSION = ContractVersion.JettonMasterStablecoinV2
-    """Contract version identifier."""
 
     @classmethod
     def _get_address_shard_prefix(cls, address: AddressLike) -> int:
-        """
-        Extract shard prefix from address for sharded wallet calculation.
+        """Extract shard prefix from an address.
 
-        :param address: Address to extract prefix from
-        :return: Shard prefix (8 bits)
+        :param address: Source address.
+        :return: Shard prefix (8 bits).
         """
         if isinstance(address, str):
             address = Address(address)
@@ -231,13 +200,12 @@ class JettonMasterStablecoinV2(JettonMasterStablecoin):
         jetton_master_address: AddressLike,
         jetton_wallet_code: Cell,
     ) -> Cell:
-        """
-        Pack stablecoin V2 Jetton wallet data cell.
+        """Pack stablecoin v2 Jetton wallet data cell.
 
-        :param owner_address: Wallet owner's address
-        :param jetton_master_address: Master contract address
-        :param jetton_wallet_code: Wallet contract code
-        :return: Packed wallet data cell
+        :param owner_address: Wallet owner's address.
+        :param jetton_master_address: Master contract address.
+        :param jetton_wallet_code: Wallet contract code.
+        :return: Packed wallet data `Cell`.
         """
         cell = begin_cell()
         cell.store_coins(0)
@@ -252,13 +220,12 @@ class JettonMasterStablecoinV2(JettonMasterStablecoin):
         jetton_master_address: AddressLike,
         jetton_wallet_code: t.Union[Cell, str],
     ) -> Cell:
-        """
-        Calculate StateInit cell for sharded wallet.
+        """Calculate `StateInit` cell for sharded wallet.
 
-        :param owner_address: Wallet owner's address
-        :param jetton_master_address: Master contract address
-        :param jetton_wallet_code: Wallet contract code (Cell or hex string)
-        :return: StateInit cell with shard depth
+        :param owner_address: Wallet owner's address.
+        :param jetton_master_address: Master contract address.
+        :param jetton_wallet_code: Wallet contract code (`Cell` or hex string).
+        :return: `StateInit` cell with shard depth.
         """
         code = to_cell(jetton_wallet_code)
         data = cls._pack_jetton_wallet_data(
@@ -283,16 +250,13 @@ class JettonMasterStablecoinV2(JettonMasterStablecoin):
         jetton_wallet_code: t.Union[Cell, str],
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Address:
-        """
-        Calculate user's sharded Jetton wallet address.
+        """Calculate user's sharded Jetton wallet address.
 
-        Uses shard prefix from owner address for load distribution.
-
-        :param owner_address: Wallet owner's address
-        :param jetton_master_address: Master contract address
-        :param jetton_wallet_code: Wallet contract code (Cell or hex string)
-        :param workchain: Target workchain (default: BASECHAIN)
-        :return: Calculated sharded wallet address
+        :param owner_address: Wallet owner's address.
+        :param jetton_master_address: Master contract address.
+        :param jetton_wallet_code: Wallet contract code (`Cell` or hex string).
+        :param workchain: Target workchain.
+        :return: Calculated sharded wallet address.
         """
         state_init_cell = cls._calculate_jetton_wallet_state_init_cell(
             owner_address=owner_address,

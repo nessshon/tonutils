@@ -8,5 +8,5 @@ __all__ = [
     "__version__",
 ]
 
-__version__ = "2.0.1b8"
+__version__ = "2.0.1b9"
 __uri__ = "https://github.com/nessshon/tonutils"

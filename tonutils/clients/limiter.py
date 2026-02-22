@@ -3,8 +3,7 @@ import time
 
 
 class RateLimiter:
-    """
-    Asynchronous token-bucket rate limiter with priority support.
+    """Asynchronous token-bucket rate limiter with priority support.
 
     Priority requests are served before non-priority requests when
     tokens become available.
@@ -21,11 +20,9 @@ class RateLimiter:
 
     def __init__(self, max_rate: int, period: float = 1.0) -> None:
         """
-        Initialize the rate limiter.
-
-        :param max_rate: Maximum number of acquisitions allowed per period.
+        :param max_rate: Maximum acquisitions allowed per period.
         :param period: Period length in seconds.
-        :raises ValueError: If max_rate or period is not positive.
+        :raises ValueError: If `max_rate` or `period` is not positive.
         """
         if max_rate <= 0:
             raise ValueError("max_rate must be > 0")
@@ -57,8 +54,7 @@ class RateLimiter:
         return missing / rate
 
     async def acquire(self, priority: bool = False) -> None:
-        """
-        Acquire a single token, waiting if necessary.
+        """Acquire a single token, waiting if necessary.
 
         Priority requests bypass non-priority waiters when tokens
         become available.
@@ -102,10 +98,9 @@ class RateLimiter:
                     self._cond.notify_all()
 
     def when_ready(self) -> float:
-        """
-        Calculate delay until the next token becomes available.
+        """Calculate delay until the next token becomes available.
 
-        :return: Seconds to wait, or 0 if ready immediately.
+        :return: Seconds to wait, or 0.0 if ready immediately.
         """
         now = time.monotonic()
         elapsed = now - self._updated_at

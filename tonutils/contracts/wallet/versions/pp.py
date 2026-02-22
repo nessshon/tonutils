@@ -18,30 +18,20 @@ class WalletPreprocessedV2(
         WalletPreprocessedV2Params,
     ]
 ):
-    """Wallet Preprocessed V2 contract."""
+    """Preprocessed Wallet v2."""
 
     _data_model = WalletPreprocessedV2Data
-    """TlbScheme class for deserializing wallet state data."""
-
     _config_model = WalletPreprocessedV2Config
-    """Configuration model class for this wallet version."""
-
     _params_model = WalletPreprocessedV2Params
-    """Transaction parameters model class for this wallet version."""
-
     VERSION = ContractVersion.WalletPreprocessedV2
-    """Contract version identifier."""
-
     MAX_MESSAGES = 255
-    """Maximum number of messages allowed in a single transaction."""
 
     @classmethod
     def _build_out_actions(cls, messages: t.List[WalletMessage]) -> Cell:
-        """
-        Build out-actions list from wallet messages.
+        """Build out-actions list from wallet messages.
 
-        :param messages: List of wallet messages to serialize
-        :return: Cell containing serialized out-actions
+        :param messages: Wallet messages to serialize.
+        :return: Out-actions `Cell`.
         """
         actions_cell = Cell.empty()
 
@@ -59,12 +49,11 @@ class WalletPreprocessedV2(
         messages: t.List[WalletMessage],
         params: t.Optional[WalletPreprocessedV2Params] = None,
     ) -> Cell:
-        """
-        Build unsigned message cell for Wallet Preprocessed V2 transaction.
+        """Build unsigned message cell.
 
-        :param messages: List of wallet messages (max 255)
-        :param params: Optional wallet parameters (seqno, valid_until)
-        :return: Unsigned message cell ready for signing
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or `None`.
+        :return: Unsigned message cell.
         """
         params = params or self._params_model()
 
@@ -90,12 +79,11 @@ class WalletPreprocessedV2(
         signing_msg: Cell,
         signature: bytes,
     ) -> Cell:
-        """
-        Combine signature with unsigned message cell.
+        """Combine signature with unsigned message cell.
 
-        :param signing_msg: Unsigned message cell
-        :param signature: Ed25519 signature bytes
-        :return: Signed message cell
+        :param signing_msg: Unsigned message cell.
+        :param signature: Ed25519 signature bytes.
+        :return: Signed message cell.
         """
         cell = begin_cell()
         cell.store_bytes(signature)
@@ -103,19 +91,11 @@ class WalletPreprocessedV2(
         return cell.end_cell()
 
     async def get_public_key(self) -> PublicKey:
-        """
-        Get public key from wallet state data.
-
-        :return: Ed25519 public key instance stored in wallet
-        """
+        """Return Ed25519 public key from wallet state data."""
         await self.refresh()
         return self.state_data.public_key
 
     async def seqno(self) -> int:
-        """
-        Get current sequence number from wallet state data.
-
-        :return: Current sequence number
-        """
+        """Return current sequence number from wallet state data."""
         await self.refresh()
         return self.state_data.seqno

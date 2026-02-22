@@ -37,10 +37,9 @@ class _WalletV5(
     GetPublicKeyGetMethod,
     abc.ABC,
 ):
-    """Base implementation for Wallet V5 contracts."""
+    """Base implementation for Wallet v5."""
 
     MAX_MESSAGES = 255
-    """Maximum number of messages allowed in a single transaction."""
 
     @classmethod
     def from_private_key(
@@ -50,14 +49,13 @@ class _WalletV5(
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         config: t.Optional[_C] = None,
     ) -> _TWalletV5:
-        """
-        Create wallet instance from a private key.
+        """Create wallet from a private key.
 
-        :param client: TON client for blockchain interactions
-        :param private_key: Ed25519 PrivateKey instance
-        :param workchain: Target workchain (default: BASECHAIN)
-        :param config: Optional wallet configuration
-        :return: New wallet instance
+        :param client: TON client.
+        :param private_key: Ed25519 private key.
+        :param workchain: Target workchain.
+        :param config: Wallet configuration, or `None`.
+        :return: New wallet instance.
         """
         config = config or cls._config_model()
         cls._validate_config_type(config)
@@ -72,12 +70,11 @@ class _WalletV5(
         signing_msg: Cell,
         signature: bytes,
     ) -> Cell:
-        """
-        Combine signature with unsigned message cell.
+        """Combine signature with unsigned message cell.
 
-        :param signing_msg: Unsigned message cell
-        :param signature: Ed25519 signature bytes
-        :return: Signed message cell
+        :param signing_msg: Unsigned message cell.
+        :param signature: Ed25519 signature bytes.
+        :return: Signed message cell.
         """
         cell = begin_cell()
         cell.store_cell(signing_msg)
@@ -86,11 +83,10 @@ class _WalletV5(
 
     @classmethod
     def _build_out_actions(cls, messages: t.List[WalletMessage]) -> Cell:
-        """
-        Build out-actions list from wallet messages.
+        """Build out-actions list from wallet messages.
 
-        :param messages: List of wallet messages to serialize
-        :return: Cell containing serialized out-actions
+        :param messages: Wallet messages to serialize.
+        :return: Out-actions `Cell`.
         """
         actions_cell = Cell.empty()
 
@@ -106,11 +102,10 @@ class _WalletV5(
     @classmethod
     @abc.abstractmethod
     def _pack_actions(cls, actions: Cell) -> Cell:
-        """
-        Pack out-actions cell with version-specific format.
+        """Pack out-actions with version-specific format.
 
-        :param actions: Serialized out-actions cell
-        :return: Packed actions cell ready for inclusion in message
+        :param actions: Out-actions `Cell`.
+        :return: Packed actions `Cell`.
         """
 
 
@@ -121,31 +116,23 @@ class WalletV5Beta(
         WalletV5BetaParams,
     ]
 ):
-    """Wallet V5 Beta contract."""
+    """Wallet v5 Beta."""
 
     _data_model = WalletV5BetaData
-    """TlbScheme class for deserializing wallet state data."""
-
     _config_model = WalletV5BetaConfig
-    """Configuration model class for this wallet version."""
-
     _params_model = WalletV5BetaParams
-    """Transaction parameters model class for this wallet version."""
-
     VERSION = ContractVersion.WalletV5Beta
-    """Contract version identifier."""
 
     async def _build_msg_cell(
         self,
         messages: t.List[WalletMessage],
         params: t.Optional[WalletV5BetaParams] = None,
     ) -> Cell:
-        """
-        Build unsigned message cell for Wallet V5 Beta transaction.
+        """Build unsigned message cell.
 
-        :param messages: List of wallet messages (max 255 for V5)
-        :param params: Optional wallet parameters (seqno, valid_until, op_code)
-        :return: Unsigned message cell ready for signing
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or `None`.
+        :return: Unsigned message cell.
         """
         params = params or self._params_model()
 
@@ -176,11 +163,10 @@ class WalletV5Beta(
 
     @classmethod
     def _pack_actions(cls, actions: Cell) -> Cell:
-        """
-        Pack out-actions cell with V5 Beta format.
+        """Pack out-actions with v5 Beta format (0x00 prefix).
 
-        :param actions: Serialized out-actions cell
-        :return: Packed actions cell with 0x00 prefix
+        :param actions: Out-actions `Cell`.
+        :return: Packed actions `Cell`.
         """
         cell = begin_cell()
         cell.store_uint(0x00, 1)
@@ -198,27 +184,16 @@ class WalletV5R1(
     GetExtensionsGetMethod,
     IsSignatureAllowedGetMethod,
 ):
-    """Wallet V5 Revision 1 contract."""
+    """Wallet v5 Revision 1."""
 
     _data_model = WalletV5Data
-    """TlbScheme class for deserializing wallet state data."""
-
     _config_model = WalletV5Config
-    """Configuration model class for this wallet version."""
-
     _params_model = WalletV5Params
-    """Transaction parameters model class for this wallet version."""
-
     VERSION = ContractVersion.WalletV5R1
-    """Contract version identifier."""
 
     @property
     def state_data(self) -> WalletV5Data:
-        """
-        Decoded on-chain wallet state data.
-
-        :return: Typed wallet data
-        """
+        """Decoded on-chain wallet state data."""
         if not (self._info and self._info.data):
             raise StateNotLoadedError(self, missing="state_data")
 
@@ -233,12 +208,11 @@ class WalletV5R1(
         messages: t.List[WalletMessage],
         params: t.Optional[WalletV5Params] = None,
     ) -> Cell:
-        """
-        Build unsigned message cell for Wallet V5 R1 transaction.
+        """Build unsigned message cell.
 
-        :param messages: List of wallet messages (max 255 for V5)
-        :param params: Optional wallet parameters (seqno, valid_until, op_code)
-        :return: Unsigned message cell ready for signing
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or `None`.
+        :return: Unsigned message cell.
         """
         params = params or self._params_model()
 
@@ -266,11 +240,10 @@ class WalletV5R1(
 
     @classmethod
     def _pack_actions(cls, actions: Cell) -> Cell:
-        """
-        Pack out-actions cell with V5 R1 format.
+        """Pack out-actions with v5 R1 format (0x01 prefix + extension flag).
 
-        :param actions: Serialized out-actions cell
-        :return: Packed actions cell with 0x01 prefix and extension flag
+        :param actions: Out-actions `Cell`.
+        :return: Packed actions `Cell`.
         """
         cell = begin_cell()
         cell.store_uint(0x01, 1)

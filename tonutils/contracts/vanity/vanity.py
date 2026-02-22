@@ -9,7 +9,7 @@ from tonutils.contracts.vanity.models import VanityResult
 
 
 class Vanity(BaseContract):
-    """Vanity contract."""
+    """Vanity contract wrapper."""
 
     @classmethod
     def from_result(
@@ -17,15 +17,15 @@ class Vanity(BaseContract):
         client: ClientProtocol,
         result: VanityResult,
     ) -> Vanity:
-        """
-        Construct Vanity contract wrapper from generated result.
+        """Construct from a `VanityResult`.
 
-        :param client: TON client to bind to the contract
-        :param result: Vanity generation result with address and init data
-        :return: Vanity contract instance
+        :param client: TON client.
+        :param result: Vanity generation result.
+        :return: New contract instance.
         """
         address = Address(result.address)
         state_init = StateInit(code=result.init.code_cell)
+
         if result.init.split_depth:
             state_init.split_depth = result.init.split_depth
         if result.init.special:
@@ -33,6 +33,7 @@ class Vanity(BaseContract):
                 tick=result.init.special.tick,
                 tock=result.init.special.tock,
             )
+
         return cls(
             client=client,
             address=address,

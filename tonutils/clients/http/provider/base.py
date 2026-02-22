@@ -35,16 +35,15 @@ class HttpProvider:
         rps_period: float = 1.0,
         retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
-        """Initialize HTTP provider.
-
+        """
         :param base_url: Base endpoint URL without trailing slash.
-        :param timeout: Total request timeout in seconds.
-        :param session: Optional external aiohttp session.
+        :param timeout: Request timeout in seconds.
+        :param session: External aiohttp session, or `None`.
         :param headers: Default headers for owned session.
         :param cookies: Default cookies for owned session.
-        :param rps_limit: Optional requests-per-period limit.
+        :param rps_limit: Requests-per-period limit, or `None`.
         :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Optional retry policy that defines per-error-code retry rules
+        :param retry_policy: Retry policy with per-error-code rules, or `None`.
         """
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
@@ -64,12 +63,12 @@ class HttpProvider:
 
     @property
     def session(self) -> t.Optional[aiohttp.ClientSession]:
-        """Underlying aiohttp session, or None if not connected."""
+        """Underlying aiohttp session, or `None` if not connected."""
         return self._session
 
     @property
     def connected(self) -> bool:
-        """Check whether the provider session is initialized and open."""
+        """`True` if the session is initialized and open."""
         return self._session is not None and not self._session.closed
 
     @staticmethod
@@ -89,16 +88,12 @@ class HttpProvider:
         params: t.Any = None,
         json_data: t.Any = None,
     ) -> t.Any:
-        """Send an HTTP request with retry handling.
-
-        On provider error, retries the request according to the retry policy
-        matched by error code and message. If no rule matches, or retry attempts
-        are exhausted, the error is raised.
+        """Send an HTTP request with automatic retry.
 
         :param method: HTTP method.
-        :param path: Endpoint path relative to base_url.
-        :param params: Optional query parameters.
-        :param json_data: Optional JSON body.
+        :param path: Endpoint path relative to base URL.
+        :param params: Query parameters.
+        :param json_data: JSON body.
         :return: Parsed response payload.
         """
         attempts: t.Dict[int, int] = {}
@@ -133,7 +128,7 @@ class HttpProvider:
                 await asyncio.sleep(rule.delay(attempts[key] - 1))
 
     async def connect(self) -> None:
-        """Initialize HTTP session if not already connected."""
+        """Initialize the HTTP session if not already connected."""
         if self.connected:
             return
 
@@ -148,7 +143,7 @@ class HttpProvider:
             )
 
     async def close(self) -> None:
-        """Close owned HTTP session and release resources."""
+        """Close the owned HTTP session and release resources."""
         async with self._connect_lock:
             if self._owns_session and self._session and not self._session.closed:
                 await self._session.close()
@@ -190,16 +185,12 @@ class HttpProvider:
         params: t.Any = None,
         json_data: t.Any = None,
     ) -> t.Any:
-        """Send a single HTTP request.
+        """Send a single HTTP request without retry.
 
-        Performs exactly one request attempt:
-        - applies rate limiting if configured
-        - converts network and protocol errors into provider exceptions
-
-        :param method: HTTP method (GET, POST, etc.).
-        :param path: Endpoint path relative to base_url.
-        :param params: Optional query parameters.
-        :param json_data: Optional JSON body.
+        :param method: HTTP method.
+        :param path: Endpoint path relative to base URL.
+        :param params: Query parameters.
+        :param json_data: JSON body.
         :return: Parsed response payload.
         """
         if not self.connected:

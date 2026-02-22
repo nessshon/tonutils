@@ -11,12 +11,11 @@ async def get_domain_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> Cell:
-    """
-    Get domain name from a DNS contract.
+    """Call `get_domain` on a DNS contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: DNS contract address
-    :return: Cell containing the domain name
+    :param client: TON client.
+    :param address: DNS contract address.
+    :return: Domain name `Cell`.
     """
     r = await client.run_get_method(
         address=address,
@@ -26,14 +25,10 @@ async def get_domain_get_method(
 
 
 class GetDomainGetMethod(ContractProtocol):
-    """Mixin providing get_domain() get method for DNS contracts."""
+    """Mixin for the `get_domain` get-method."""
 
     async def get_domain(self) -> Cell:
-        """
-        Get domain name from this DNS contract.
-
-        :return: Cell containing the domain name
-        """
+        """Return domain name `Cell`."""
         return await get_domain_get_method(
             client=self.client,
             address=self.address,
@@ -44,12 +39,11 @@ async def get_auction_info_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> t.List[t.Any]:
-    """
-    Get auction information from a DNS contract.
+    """Call `get_auction_info` on a DNS contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: DNS contract address
-    :return: List containing auction details (max_bid, max_bid_address, auction_end_time)
+    :param client: TON client.
+    :param address: DNS contract address.
+    :return: List of [max_bid, max_bid_address, auction_end_time].
     """
     return await client.run_get_method(
         address=address,
@@ -58,16 +52,10 @@ async def get_auction_info_get_method(
 
 
 class GetAuctionInfoGetMethod(ContractProtocol):
-    """Mixin providing get_auction_info() get method for DNS contracts."""
+    """Mixin for the `get_auction_info` get-method."""
 
     async def get_auction_info(self) -> t.List[t.Any]:
-        """
-        Get auction information from this DNS contract.
-
-        Returns auction details including max bid, bidder address, and end time.
-
-        :return: List containing auction details (max_bid, max_bid_address, auction_end_time)
-        """
+        """Return auction info (max bid, bidder, end time)."""
         return await get_auction_info_get_method(
             client=self.client,
             address=self.address,
@@ -78,12 +66,11 @@ async def get_last_fill_up_time_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> int:
-    """
-    Get last fill-up timestamp from a DNS contract.
+    """Call `get_last_fill_up_time` on a DNS contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: DNS contract address
-    :return: Unix timestamp of last fill-up operation
+    :param client: TON client.
+    :param address: DNS contract address.
+    :return: Last fill-up unix timestamp.
     """
     r = await client.run_get_method(
         address=address,
@@ -93,16 +80,10 @@ async def get_last_fill_up_time_get_method(
 
 
 class GetLastFillUpTimeGetMethod(ContractProtocol):
-    """Mixin providing get_last_fill_up_time() get method for DNS contracts."""
+    """Mixin for the `get_last_fill_up_time` get-method."""
 
     async def get_last_fill_up_time(self) -> int:
-        """
-        Get last fill-up timestamp from this DNS contract.
-
-        Returns when the domain was last renewed or filled up.
-
-        :return: Unix timestamp of last fill-up operation
-        """
+        """Return last fill-up unix timestamp."""
         return await get_last_fill_up_time_get_method(
             client=self.client,
             address=self.address,
@@ -115,14 +96,13 @@ async def dnsresolve_get_method(
     category: DNSCategory,
     subdomain: t.Optional[str] = None,
 ) -> t.Tuple[int, Cell]:
-    """
-    Resolve DNS record for a specific category and subdomain.
+    """Call `dnsresolve` on a DNS contract.
 
-    :param client: TON client for blockchain interactions
-    :param address: DNS contract address
-    :param category: DNS category to resolve (e.g., wallet, site, storage)
-    :param subdomain: Subdomain to resolve (optional, defaults to root)
-    :return: Tuple of (resolved_bits, result_cell) where resolved_bits indicates resolution depth
+    :param client: TON client.
+    :param address: DNS contract address.
+    :param category: DNS category to resolve.
+    :param subdomain: Subdomain to resolve, or `None` for root.
+    :return: Tuple of (resolved_bits, result `Cell`).
     """
     subdomain = "\x00" if subdomain is None else subdomain
     subdomain_cell = begin_cell().store_snake_string(subdomain).end_cell()
@@ -136,19 +116,18 @@ async def dnsresolve_get_method(
 
 
 class DNSResolveGetMethod(ContractProtocol):
-    """Mixin providing dnsresolve() get method for DNS contracts."""
+    """Mixin for the `dnsresolve` get-method."""
 
     async def dnsresolve(
         self,
         category: DNSCategory,
         subdomain: t.Optional[str] = None,
     ) -> t.Tuple[int, Cell]:
-        """
-        Resolve DNS record for a specific category and subdomain.
+        """Resolve a DNS record.
 
-        :param category: DNS category to resolve (e.g., wallet, site, storage)
-        :param subdomain: Subdomain to resolve (optional, defaults to root)
-        :return: Tuple of (resolved_bits, result_cell) where resolved_bits indicates resolution depth
+        :param category: DNS category to resolve.
+        :param subdomain: Subdomain to resolve, or `None` for root.
+        :return: Tuple of (resolved_bits, result `Cell`).
         """
         return await dnsresolve_get_method(
             client=self.client,

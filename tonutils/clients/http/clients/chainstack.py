@@ -7,6 +7,7 @@ from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
 class ChainstackClient(ToncenterClient):
+    """Toncenter-compatible client using Chainstack as backend."""
 
     def __init__(
         self,
@@ -22,18 +23,16 @@ class ChainstackClient(ToncenterClient):
         retry_policy: t.Optional[RetryPolicy] = None,
     ) -> None:
         """
-        Initialize Chainstack HTTP client.
-
-        :param network: Target TON network (mainnet or testnet)
-        :param http_provider_url: Chainstack TON HTTP endpoint URL
-            You can obtain a personal endpoint on the Chainstack website: https://chainstack.com/
-        :param timeout: Total request timeout in seconds.
-        :param session: Optional external aiohttp session.
+        :param network: Target TON network.
+        :param http_provider_url: Chainstack TON HTTP endpoint URL.
+            You can obtain a personal endpoint on the Chainstack website: https://chainstack.com/.
+        :param timeout: Request timeout in seconds.
+        :param session: External aiohttp session, or `None`.
         :param headers: Default headers for owned session.
         :param cookies: Default cookies for owned session.
-        :param rps_limit: Optional requests-per-period limit.
+        :param rps_limit: Requests-per-period limit, or `None`.
         :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Optional retry policy that defines per-error-code retry rules
+        :param retry_policy: Retry policy with per-error-code rules, or `None`.
         """
         super().__init__(
             network=network,

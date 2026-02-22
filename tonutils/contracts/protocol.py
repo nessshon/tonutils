@@ -22,18 +22,11 @@ class ContractProtocol(t.Protocol[_D]):
     """TlbScheme-compatible class representing decoded on-chain data."""
 
     VERSION: t.ClassVar[t.Union[ContractVersion, str]]
-    """Logical contract version used as a key in CONTRACT_CODES."""
+    """Logical contract version used as a key in `CONTRACT_CODES`."""
 
     @classmethod
     def get_default_code(cls) -> Cell:
-        """
-        Return default contract code for this contract class.
-
-        Implementations usually resolve compiled code from a global registry
-        (e.g. CONTRACT_CODES) by using cls.VERSION as a key.
-
-        :return: Compiled contract code cell.
-        """
+        """Return default compiled code `Cell` for this contract version."""
 
     @property
     def client(self) -> ClientProtocol:
@@ -45,105 +38,55 @@ class ContractProtocol(t.Protocol[_D]):
 
     @property
     def state_init(self) -> t.Optional[StateInit]:
-        """Locally known StateInit for this contract, if any."""
+        """Locally known `StateInit`, or `None`."""
 
     @property
     def state_data(self) -> _D:
-        """
-        Decoded on-chain data in typed form.
-
-        Implementations must decode the current data cell from info
-        using the associated _data_model.
-        """
+        """Decoded on-chain data in typed form."""
 
     @property
     def info(self) -> ContractInfo:
-        """
-        Cached snapshot of the contract state info.
-
-        Implementations usually update this via refresh() or in constructors
-        that read on-chain data.
-        """
+        """Cached on-chain state snapshot."""
 
     @property
     def balance(self) -> int:
-        """
-        Current contract balance in nanotons.
-
-        :return: Balance from the latest known state.
-        """
+        """Contract balance in nanotons."""
 
     @property
     def state(self) -> ContractState:
-        """
-        Current lifecycle state of the contract.
-
-        :return: One of ContractState values.
-        """
+        """Current lifecycle state."""
 
     @property
     def is_active(self) -> bool:
-        """
-        Check whether the contract is active.
-
-        :return: True if state is ACTIVE.
-        """
+        """`True` if state is `ACTIVE`."""
 
     @property
     def is_frozen(self) -> bool:
-        """
-        Check whether the contract is frozen.
-
-        :return: True if state is FROZEN.
-        """
+        """`True` if state is `FROZEN`."""
 
     @property
     def is_uninit(self) -> bool:
-        """
-        Check whether the contract is uninitialized.
-
-        :return: True if state is UNINIT.
-        """
+        """`True` if state is `UNINIT`."""
 
     @property
     def is_nonexit(self) -> bool:
-        """
-        Check whether the contract does not exist on-chain.
-
-        :return: True if state is NONEXIST.
-        """
+        """`True` if state is `NONEXIST`."""
 
     @property
     def last_transaction_lt(self) -> t.Optional[int]:
-        """
-        Logical time of the last known transaction for this contract.
-
-        :return: Transaction LT or None if unknown.
-        """
+        """Logical time of the last transaction, or `None`."""
 
     @property
     def last_transaction_hash(self) -> t.Optional[str]:
-        """
-        Hash of the last known transaction for this contract.
-
-        :return: Transaction hash as hex string or None if unknown.
-        """
+        """Hash of the last transaction as hex string, or `None`."""
 
     @property
     def code(self) -> Cell:
-        """
-        Contract code cell from the latest known state.
-
-        :return: Code cell.
-        """
+        """Contract code `Cell` from the latest known state."""
 
     @property
     def data(self) -> Cell:
-        """
-        Contract data cell from the latest known state.
-
-        :return: Data cell.
-        """
+        """Contract data `Cell` from the latest known state."""
 
     async def refresh(self) -> None:
         """Refresh contract state from the blockchain."""
@@ -155,12 +98,11 @@ class ContractProtocol(t.Protocol[_D]):
         state_init: StateInit,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> _TContract:
-        """
-        Construct a contract wrapper from a StateInit object.
+        """Construct from a `StateInit`.
 
-        :param client: TON client to bind to the contract.
-        :param state_init: StateInit containing code and data.
-        :param workchain: Target workchain (default: BASECHAIN).
+        :param client: TON client.
+        :param state_init: `StateInit` containing code and data.
+        :param workchain: Target workchain.
         :return: New contract instance.
         """
 
@@ -172,16 +114,12 @@ class ContractProtocol(t.Protocol[_D]):
         data: Cell,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> _TContract:
-        """
-        Construct a contract wrapper from code and data cells.
+        """Construct from code and data cells.
 
-        Implementations usually compose a StateInit from code and data and then
-        delegate to from_state_init().
-
-        :param client: TON client to bind to the contract.
+        :param client: TON client.
         :param code: Contract code cell.
         :param data: Contract data cell.
-        :param workchain: Target workchain (default: BASECHAIN).
+        :param workchain: Target workchain.
         :return: New contract instance.
         """
 
@@ -192,15 +130,11 @@ class ContractProtocol(t.Protocol[_D]):
         data: _D,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> _TContract:
-        """
-        Construct a contract wrapper from typed data.
+        """Construct from typed data.
 
-        Composes StateInit by combining default code with the provided data,
-        then delegates to from_state_init().
-
-        :param client: TON client to bind to the contract.
-        :param data: Typed data object conforming to _data_model.
-        :param workchain: Target workchain (default: BASECHAIN).
+        :param client: TON client.
+        :param data: Typed data conforming to `_data_model`.
+        :param workchain: Target workchain.
         :return: New contract instance.
         """
 
@@ -211,13 +145,10 @@ class ContractProtocol(t.Protocol[_D]):
         address: AddressLike,
         load_state: bool = True,
     ) -> _TContract:
-        """
-        Construct a contract wrapper from an existing on-chain address.
+        """Construct from an on-chain address.
 
-        Optionally fetches and caches the current contract state from the blockchain.
-
-        :param client: TON client to bind to the contract.
-        :param address: Address of the deployed contract.
-        :param load_state: Whether to fetch current state from blockchain (default: True).
-        :return: Contract instance bound to the specified address.
+        :param client: TON client.
+        :param address: Deployed contract address.
+        :param load_state: Fetch current state from the blockchain.
+        :return: Contract instance bound to the address.
         """

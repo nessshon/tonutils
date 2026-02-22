@@ -31,64 +31,42 @@ class BaseJettonWallet(
     """Base implementation for Jetton wallet contracts."""
 
     _data_model: t.Type[_D]
-    """TlbScheme class for deserializing wallet state data."""
 
     @property
     def jetton_balance(self) -> int:
-        """
-        Current Jetton balance in this wallet.
-
-        :return: Balance in smallest Jetton units
-        """
+        """Current Jetton balance in smallest units."""
         return self.state_data.balance
 
     @property
     def owner_address(self) -> Address:
-        """
-        Owner address of this Jetton wallet.
-
-        :return: Owner's wallet address
-        """
+        """Owner address of this Jetton wallet."""
         return self.state_data.owner_address
 
     @property
     def jetton_master_address(self) -> Address:
-        """
-        Jetton master contract address.
-
-        :return: Master contract address for this Jetton
-        """
+        """Jetton master contract address."""
         return self.state_data.jetton_master_address
 
 
 class JettonWalletStandard(BaseJettonWallet[JettonWalletStandardData]):
-    """Standard Jetton wallet contract."""
+    """Standard Jetton wallet."""
 
     _data_model = JettonWalletStandardData
-    """TlbScheme class for deserializing wallet state data."""
-
     VERSION = ContractVersion.JettonWalletStandard
-    """Contract version identifier."""
 
 
 class JettonWalletStablecoin(
     BaseJettonWallet[JettonWalletStablecoinData],
     GetStatusGetMethod,
 ):
-    """Stablecoin Jetton wallet contract."""
+    """Stablecoin Jetton wallet."""
 
     _data_model = JettonWalletStablecoinData
-    """TlbScheme class for deserializing wallet state data."""
-
     VERSION = ContractVersion.JettonWalletStablecoin
-    """Contract version identifier."""
 
 
 class JettonWalletStablecoinV2(BaseJettonWallet[JettonWalletStablecoinV2Data]):
-    """Stablecoin V2 Jetton wallet contract."""
+    """Stablecoin v2 Jetton wallet."""
 
     _data_model = JettonWalletStablecoinV2Data
-    """TlbScheme class for deserializing wallet state data."""
-
     VERSION = ContractVersion.JettonWalletStablecoinV2
-    """Contract version identifier."""

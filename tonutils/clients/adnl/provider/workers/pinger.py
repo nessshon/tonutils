@@ -12,10 +12,9 @@ if t.TYPE_CHECKING:
 
 
 class PingerWorker(BaseWorker):
-    """
-    Periodic ping worker for ADNL providers.
+    """Periodic ping worker for ADNL providers.
 
-    Sends lite-server ping requests at fixed intervals and records RTT metrics.
+    Sends lite-server ping requests at fixed intervals and records RTT.
     """
 
     def __init__(
@@ -23,6 +22,10 @@ class PingerWorker(BaseWorker):
         provider: AdnlProvider,
         interval: int = 5,
     ) -> None:
+        """
+        :param provider: Parent ADNL provider.
+        :param interval: Ping interval in seconds.
+        """
         super().__init__(provider)
         self._interval = interval
         self._last_rtt: t.Optional[float] = None
@@ -47,11 +50,7 @@ class PingerWorker(BaseWorker):
         return loop.time() - self._last_time
 
     async def ping_once(self) -> None:
-        """
-        Perform a single lite-server ping request and measure RTT.
-
-        Creates a pending ADNL future, sends ping packet and waits for reply.
-        """
+        """Perform a single lite-server ping and measure RTT."""
         if self.provider.loop is None:
             return
 
@@ -73,9 +72,7 @@ class PingerWorker(BaseWorker):
         self._last_rtt = end - start
 
     async def _run(self) -> None:
-        """
-        Periodically execute `ping_once()` while the worker is running.
-        """
+        """Periodically execute `ping_once` while the worker is running."""
         while self.running:
             await asyncio.sleep(self._interval)
 

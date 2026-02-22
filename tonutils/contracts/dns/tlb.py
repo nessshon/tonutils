@@ -18,83 +18,60 @@ from tonutils.types import (
 )
 from tonutils.utils import string_hash
 
-TValue = t.TypeVar("TValue")
-
-ALLOWED_DNS_ZONES = (".ton", ".t.me")
-"""Allowed DNS zone suffixes for TON domains."""
+_TValue = t.TypeVar("_TValue")
 
 
-class BaseDNSRecord(TlbScheme, abc.ABC, t.Generic[TValue]):
-    """Abstract base class for DNS record types."""
+class BaseDNSRecord(TlbScheme, abc.ABC, t.Generic[_TValue]):
+    """Abstract base for DNS record types."""
 
     PREFIX: t.ClassVar[DNSPrefix]
-    """DNS record type prefix identifier."""
 
     def __init__(self, value: t.Any) -> None:
         """
-        Initialize DNS record with value.
-
-        :param value: Record value (type depends on subclass)
+        :param value: Record value (type depends on subclass).
         """
-        self.value: TValue = value
+        self.value: _TValue = value
 
     @abc.abstractmethod
     def _build_cell(self) -> Cell:
-        """
-        Build Cell from record value.
-
-        :return: Serialized record cell
-        """
+        """Build `Cell` from record value."""
 
     @classmethod
     @abc.abstractmethod
     def _parse_cell(cls, cs: Slice) -> t.Any:
-        """
-        Parse record value from Cell slice.
+        """Parse record value from `Slice`.
 
-        :param cs: Cell slice to parse from
-        :return: Parsed record instance
+        :param cs: Source slice.
         """
 
     def serialize(self) -> Cell:
-        """
-        Serialize DNS record to Cell.
-
-        :return: Serialized record cell
-        """
+        """Serialize to `Cell`."""
         return self._build_cell()
 
     @classmethod
     def deserialize(cls, cs: Slice) -> t.Any:
-        """
-        Deserialize DNS record from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized record instance
+        :param cs: Source slice.
         """
         return cls._parse_cell(cs)
 
 
 class BaseDNSRecordAddress(BaseDNSRecord[Address]):
-    """Base class for DNS records containing TON addresses."""
+    """Base for DNS records containing TON addresses."""
 
     def __init__(self, value: AddressLike) -> None:
         """
-        Initialize address DNS record.
-
-        :param value: TON address (Address object or string)
+        :param value: TON address.
         """
         if not isinstance(value, Address):
             value = Address(value)
         super().__init__(value)
 
     def _build_cell(self) -> Cell:
-        """
-        Build Cell from address value.
+        """Build `Cell` from address value.
 
-        Layout: prefix:uint16 address:address padding:uint8
-
-        :return: Serialized record cell
+        TLB: `prefix:uint16 address:address padding:uint8`
         """
         cell = begin_cell()
         cell.store_uint(self.PREFIX, 16)
@@ -104,39 +81,31 @@ class BaseDNSRecordAddress(BaseDNSRecord[Address]):
 
     @classmethod
     def _parse_cell(cls, cs: Slice) -> BaseDNSRecordAddress:
-        """
-        Parse address record from Cell slice.
+        """Parse address record from `Slice`.
 
-        :param cs: Cell slice to parse from
-        :return: Parsed address record instance
+        :param cs: Source slice.
         """
         cs.skip_bits(16)
         return cls(cs.load_address())
 
 
 class BaseDNSRecordBinary(BaseDNSRecord[Binary]):
-    """Base class for DNS records containing binary data."""
+    """Base for DNS records containing binary data."""
 
     BINARY_CLS: t.ClassVar[t.Type[Binary]]
-    """Binary data class for this record type."""
 
     def __init__(self, value: t.Union[Binary, BinaryLike]) -> None:
         """
-        Initialize binary DNS record.
-
-        :param value: Binary data (Binary object or bytes/hex string)
+        :param value: Binary data.
         """
         if not isinstance(value, Binary):
             value = self.__class__.BINARY_CLS(value)
         super().__init__(value)
 
     def _build_cell(self) -> Cell:
-        """
-        Build Cell from binary value.
+        """Build `Cell` from binary value.
 
-        Layout: prefix:uint16 data:bytes(32) padding:uint8
-
-        :return: Serialized record cell
+        TLB: `prefix:uint16 data:bytes(32) padding:uint8`
         """
         cell = begin_cell()
         cell.store_uint(self.PREFIX, 16)
@@ -146,11 +115,9 @@ class BaseDNSRecordBinary(BaseDNSRecord[Binary]):
 
     @classmethod
     def _parse_cell(cls, cs: Slice) -> BaseDNSRecordBinary:
-        """
-        Parse binary record from Cell slice.
+        """Parse binary record from `Slice`.
 
-        :param cs: Cell slice to parse from
-        :return: Parsed binary record instance
+        :param cs: Source slice.
         """
         cs.skip_bits(16)
         return cls(cs.load_bytes(32))
@@ -163,11 +130,9 @@ class DNSRecordDNSNextResolver(BaseDNSRecordAddress):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> DNSRecordDNSNextResolver:
-        """
-        Deserialize next resolver record from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized DNSRecordDNSNextResolver instance
+        :param cs: Source slice.
         """
         return super().deserialize(cs)
 
@@ -179,11 +144,9 @@ class DNSRecordWallet(BaseDNSRecordAddress):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> DNSRecordWallet:
-        """
-        Deserialize wallet record from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized DNSRecordWallet instance
+        :param cs: Source slice.
         """
         return super().deserialize(cs)
 
@@ -196,11 +159,9 @@ class DNSRecordStorage(BaseDNSRecordBinary):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> DNSRecordStorage:
-        """
-        Deserialize storage record from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized DNSRecordStorage instance
+        :param cs: Source slice.
         """
         return super().deserialize(cs)
 
@@ -213,11 +174,9 @@ class DNSRecordSite(BaseDNSRecordBinary):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> DNSRecordSite:
-        """
-        Deserialize site record from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized DNSRecordSite instance
+        :param cs: Source slice.
         """
         return super().deserialize(cs)
 
@@ -231,7 +190,6 @@ class DNSRecords(OnchainContent):
         "wallet": DNSRecordWallet,
         "site": DNSRecordSite,
     }
-    """Mapping of record names to record classes."""
 
     _DNS_CATEGORIES: t.Dict[int, str] = {
         DNSCategory.DNS_NEXT_RESOLVER: "dns_next_resolver",
@@ -239,21 +197,14 @@ class DNSRecords(OnchainContent):
         DNSCategory.WALLET: "wallet",
         DNSCategory.SITE: "site",
     }
-    """Mapping of category integers to record names."""
 
     _DNS_KEYS: t.Set[str] = set(_DNS_RECORDS_CLASSES.keys())
-    """Set of recognized DNS record keys."""
 
     def __init__(self, data: t.Dict[t.Union[str, int], t.Any]) -> None:
         """
-        Initialize DNS records collection.
-
-        Separates DNS-specific records from other metadata.
-
-        :param data: Dictionary of record keys to values
+        :param data: Record keys to values.
         """
         self.records: t.Dict[t.Union[str, int], BaseDNSRecord] = {}
-        """DNS-specific records (wallet, site, storage, etc.)."""
 
         other: t.Dict[t.Union[str, int], t.Any] = {}
 
@@ -277,12 +228,11 @@ class DNSRecords(OnchainContent):
 
     @classmethod
     def _to_record(cls, record_cls: t.Type[BaseDNSRecord], val: t.Any) -> BaseDNSRecord:
-        """
-        Convert value to DNS record instance.
+        """Convert a value to a `BaseDNSRecord` instance.
 
-        :param record_cls: Record class to instantiate
-        :param val: Value to convert (Cell or raw value)
-        :return: DNS record instance
+        :param record_cls: Target record class.
+        :param val: Value to convert (`Cell` or raw value).
+        :return: DNS record instance.
         """
         if isinstance(val, Cell):
             cs = val.begin_parse().load_ref().begin_parse()
@@ -290,10 +240,9 @@ class DNSRecords(OnchainContent):
         return record_cls(val)
 
     def _build_hashmap(self) -> HashMap:
-        """
-        Build hashmap from records and metadata.
+        """Build `HashMap` from records and metadata.
 
-        :return: HashMap with all records and metadata
+        :return: Serializable `HashMap`.
         """
         hashmap = super()._build_hashmap()
         for key, val in self.records.items():
@@ -307,11 +256,10 @@ class DNSRecords(OnchainContent):
         cls,
         hashmap: t.Dict[t.Union[str, int], Cell],
     ) -> t.Dict[t.Union[str, int], t.Any]:
-        """
-        Parse hashmap and deserialize DNS records.
+        """Parse hashmap and deserialize DNS records.
 
-        :param hashmap: Raw hashmap from deserialization
-        :return: Parsed dictionary with deserialized records
+        :param hashmap: Raw deserialized hashmap.
+        :return: Parsed dictionary with deserialized records.
         """
         hashmap = super()._parse_hashmap(hashmap)
         for key in cls._DNS_KEYS:
@@ -324,7 +272,7 @@ class DNSRecords(OnchainContent):
 
 
 class TONDNSAuction(TlbScheme):
-    """Auction state for TON DNS domain."""
+    """Auction state for a TON DNS domain."""
 
     def __init__(
         self,
@@ -333,23 +281,18 @@ class TONDNSAuction(TlbScheme):
         auction_end_time: int,
     ) -> None:
         """
-        Initialize DNS auction state.
-
-        :param max_bid_address: Address of highest bidder
-        :param max_bid_amount: Highest bid amount in nanotons
-        :param auction_end_time: Unix timestamp when auction ends
+        :param max_bid_address: Highest bidder address.
+        :param max_bid_amount: Highest bid in nanotons.
+        :param auction_end_time: Auction end unix timestamp.
         """
         self.max_bid_address = max_bid_address
         self.max_bid_amount = max_bid_amount
         self.auction_end_time = auction_end_time
 
     def serialize(self) -> Cell:
-        """
-        Serialize auction state to Cell.
+        """Serialize to `Cell`.
 
-        Layout: max_bid_address:address max_bid_amount:coins auction_end_time:uint64
-
-        :return: Serialized auction cell
+        TLB: `max_bid_address:address max_bid_amount:coins auction_end_time:uint64`
         """
         cell = begin_cell()
         cell.store_address(self.max_bid_address)
@@ -359,11 +302,9 @@ class TONDNSAuction(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TONDNSAuction:
-        """
-        Deserialize auction state from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TONDNSAuction instance
+        :param cs: Source slice.
         """
         return cls(
             max_bid_address=cs.load_address(),
@@ -381,21 +322,16 @@ class TONDNSCollectionData(TlbScheme):
         nft_item_code: Cell,
     ) -> None:
         """
-        Initialize DNS collection data.
-
-        :param content: Collection metadata (off-chain)
-        :param nft_item_code: Code cell for DNS item contracts
+        :param content: Off-chain collection metadata.
+        :param nft_item_code: Code cell for DNS item contracts.
         """
         self.content = content
         self.nft_item_code = nft_item_code
 
     def serialize(self) -> Cell:
-        """
-        Serialize collection data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: content:^Cell nft_item_code:^Cell
-
-        :return: Serialized data cell
+        TLB: `content:^Cell nft_item_code:^Cell`
         """
         cell = begin_cell()
         cell.store_ref(self.content.serialize(True))
@@ -404,11 +340,9 @@ class TONDNSCollectionData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TONDNSCollectionData:
-        """
-        Deserialize collection data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TONDNSCollectionData instance
+        :param cs: Source slice.
         """
         return cls(
             content=OffchainContent.deserialize(cs.load_ref().begin_parse(), True),
@@ -430,15 +364,13 @@ class TONDNSItemData(TlbScheme):
         auction: t.Optional[TONDNSAuction] = None,
     ) -> None:
         """
-        Initialize DNS item data.
-
-        :param index: Item index within collection
-        :param collection_address: Parent collection address
-        :param owner_address: Current domain owner address
-        :param content: On-chain DNS records and metadata
-        :param domain: Domain name string
-        :param last_fill_up_time: Unix timestamp of last renewal
-        :param auction: Active auction state (None if no auction)
+        :param index: Item index within collection.
+        :param collection_address: Parent collection address.
+        :param owner_address: Current domain owner address.
+        :param content: On-chain DNS records and metadata.
+        :param domain: Domain name string.
+        :param last_fill_up_time: Last renewal unix timestamp.
+        :param auction: Active auction state, or `None`.
         """
         self.index = index
         self.collection_address = collection_address
@@ -449,13 +381,10 @@ class TONDNSItemData(TlbScheme):
         self.last_fill_up_time = last_fill_up_time
 
     def serialize(self) -> Cell:
-        """
-        Serialize item data to Cell.
+        """Serialize to `Cell`.
 
-        Layout: index:uint256 collection:address owner:address content:^Cell
-                domain:^Cell auction:dict last_fill_up_time:uint64
-
-        :return: Serialized data cell
+        TLB: `index:uint256 collection:address owner:address content:^Cell
+        domain:^Cell auction:dict last_fill_up_time:uint64`
         """
         cell = begin_cell()
         cell.store_uint(self.index, 256)
@@ -469,11 +398,9 @@ class TONDNSItemData(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> TONDNSItemData:
-        """
-        Deserialize item data from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized TONDNSItemData instance
+        :param cs: Source slice.
         """
         return cls(
             index=cs.load_uint(256),
@@ -491,7 +418,7 @@ class TONDNSItemData(TlbScheme):
 
 
 class ChangeDNSRecordBody(TlbScheme):
-    """Message body for changing DNS record."""
+    """Message body for changing a DNS record."""
 
     def __init__(
         self,
@@ -507,23 +434,18 @@ class ChangeDNSRecordBody(TlbScheme):
         query_id: int = 0,
     ) -> None:
         """
-        Initialize change DNS record message body.
-
-        :param category: DNS record category to change
-        :param record: New record value (None to delete record)
-        :param query_id: Query identifier (default: 0)
+        :param category: DNS record category to change.
+        :param record: New record value, or `None` to delete.
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
         self.category = category
         self.record = record
 
     def serialize(self) -> Cell:
-        """
-        Serialize change record body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 category:uint256 [record:^Cell]
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 category:uint256 [record:^Cell]`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.CHANGE_DNS_RECORD, 32)
@@ -535,33 +457,26 @@ class ChangeDNSRecordBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> ChangeDNSRecordBody:
-        """
-        Deserialize change record body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized ChangeDNSRecordBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
 
 class RenewDNSBody(TlbScheme):
-    """Message body for renewing DNS domain."""
+    """Message body for renewing a DNS domain."""
 
     def __init__(self, query_id: int = 0) -> None:
         """
-        Initialize renew DNS message body.
-
-        :param query_id: Query identifier (default: 0)
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize renew body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64 zero:uint256
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64 zero:uint256`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.CHANGE_DNS_RECORD, 32)
@@ -571,11 +486,9 @@ class RenewDNSBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> RenewDNSBody:
-        """
-        Deserialize renew body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized RenewDNSBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError
 
@@ -585,19 +498,14 @@ class DNSBalanceReleaseBody(TlbScheme):
 
     def __int__(self, query_id: int = 0) -> None:
         """
-        Initialize balance release message body.
-
-        :param query_id: Query identifier (default: 0)
+        :param query_id: Query identifier.
         """
         self.query_id = query_id
 
     def serialize(self) -> Cell:
-        """
-        Serialize balance release body to Cell.
+        """Serialize to `Cell`.
 
-        Layout: op_code:uint32 query_id:uint64
-
-        :return: Serialized message body cell
+        TLB: `op_code:uint32 query_id:uint64`
         """
         cell = begin_cell()
         cell.store_uint(OpCode.DNS_BALANCE_RELEASE, 32)
@@ -606,10 +514,8 @@ class DNSBalanceReleaseBody(TlbScheme):
 
     @classmethod
     def deserialize(cls, cs: Slice) -> RenewDNSBody:
-        """
-        Deserialize balance release body from Cell slice.
+        """Deserialize from `Slice`.
 
-        :param cs: Cell slice to deserialize from
-        :return: Deserialized DNSBalanceReleaseBody instance
+        :param cs: Source slice.
         """
         raise NotImplementedError

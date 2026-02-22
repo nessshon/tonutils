@@ -23,16 +23,10 @@ OnTransactions = t.Callable[[TransactionsEvent], t.Awaitable[None]]
 
 
 class BlockScanner:
-    """
-    Asynchronous queue-based TON block scanner.
+    """Asynchronous queue-based TON block scanner.
 
-    Discovers shard blocks by following masterchain shard tips, emits events for each
-    shard block, and optionally fetches transactions for shard blocks.
-
-    Handlers can be passed via constructor or set later via decorators:
-    - on_error: receives ErrorEvent
-    - on_block: receives BlockEvent
-    - on_transactions: receives TransactionsEvent
+    Discovers shard blocks by following masterchain shard tips, emits
+    events for each shard block, and optionally fetches transactions.
     """
 
     def __init__(
@@ -47,14 +41,12 @@ class BlockScanner:
         **context: t.Any,
     ) -> None:
         """
-        Initialize scanner.
-
-        :param client: Lite client/balancer.
-        :param on_error: Called on internal errors and handler failures.
-        :param on_block: Called for each discovered shard block.
-        :param on_transactions: Called for shard blocks with fetched transactions.
-        :param storage: Progress storage (masterchain seqno).
-        :param poll_interval: Poll delay while waiting for next masterchain block.
+        :param client: Lite client or balancer.
+        :param on_error: Error handler callback, or `None`.
+        :param on_block: Block event handler, or `None`.
+        :param on_transactions: Transactions event handler, or `None`.
+        :param storage: Progress storage, or `None`.
+        :param poll_interval: Poll delay in seconds.
         :param context: Shared context passed to all events.
         """
         self._client = client
@@ -81,26 +73,26 @@ class BlockScanner:
 
     @staticmethod
     def _lowbit64(x: int) -> int:
-        """Return lowest set bit (64-bit shard math helper)."""
+        """Return lowest set bit (64-bit shard math)."""
         return x & (~x + 1)
 
     def _child_shard(self, shard: int, *, left: bool) -> int:
-        """Return left/right child shard id for split shards."""
+        """Return left or right child shard id."""
         step = self._lowbit64(shard) >> 1
         return self._overflow_i64(shard - step if left else shard + step)
 
     def _parent_shard(self, shard: int) -> int:
-        """Return parent shard id for merged shards."""
+        """Return parent shard id."""
         step = self._lowbit64(shard)
         return self._overflow_i64((shard - step) | (step << 1))
 
     @property
     def last_mc_block(self) -> BlockIdExt:
-        """Return last known masterchain block from provider cache."""
+        """Last known masterchain block from provider cache."""
         return self._client.provider.last_mc_block
 
     def on_error(self, fn: t.Optional[OnError] = None) -> t.Any:
-        """Decorator to set error handler."""
+        """Decorator to set the error handler."""
 
         def decorator(handler: OnError) -> OnError:
             self._on_error = handler
@@ -109,7 +101,7 @@ class BlockScanner:
         return decorator if fn is None else decorator(fn)
 
     def on_block(self, fn: t.Optional[OnBlock] = None) -> t.Any:
-        """Decorator to set block handler."""
+        """Decorator to set the block handler."""
 
         def decorator(handler: OnBlock) -> OnBlock:
             self._on_block = handler
@@ -118,7 +110,7 @@ class BlockScanner:
         return decorator if fn is None else decorator(fn)
 
     def on_transactions(self, fn: t.Optional[OnTransactions] = None) -> t.Any:
-        """Decorator to set transactions handler."""
+        """Decorator to set the transactions' handler."""
 
         def decorator(handler: OnTransactions) -> OnTransactions:
             self._on_transactions = handler
@@ -135,7 +127,7 @@ class BlockScanner:
         handler: t.Any = None,
         block: t.Optional[BlockIdExt] = None,
     ) -> None:
-        """Call error handler with ErrorEvent. Never raises."""
+        """Invoke the error handler with an `ErrorEvent`. Never raises."""
         if self._on_error is None:
             return
 
@@ -157,7 +149,7 @@ class BlockScanner:
             return
 
     async def _call_handler(self, handler: t.Any, event: t.Any) -> None:
-        """Call handler(event). Route failures to on_error."""
+        """Call a handler, routing failures to the error handler."""
         if handler is None:
             return
 
@@ -181,7 +173,7 @@ class BlockScanner:
         lt: t.Optional[int] = None,
         utime: t.Optional[int] = None,
     ) -> BlockIdExt:
-        """Lookup masterchain block by seqno/lt/utime."""
+        """Lookup masterchain block by seqno, lt, or utime."""
         mc_block, _ = await self._client.lookup_block(
             workchain=WorkchainID.MASTERCHAIN,
             shard=MASTERCHAIN_SHARD,
@@ -192,7 +184,7 @@ class BlockScanner:
         return mc_block
 
     async def _wait_next_mc_block(self, mc_block: BlockIdExt) -> BlockIdExt:
-        """Wait until next masterchain block becomes available."""
+        """Wait until the next masterchain block becomes available."""
         next_mc_seqno = mc_block.seqno + 1
 
         while not self._stop_event.is_set():
@@ -207,7 +199,7 @@ class BlockScanner:
         return mc_block
 
     async def _get_seen_shard_seqno(self, mc_block: BlockIdExt) -> SeenShardSeqno:
-        """Build map of last processed shard seqno from previous masterchain block."""
+        """Build map of last processed shard seqnos from the previous mc block."""
         seen_shard_seqno: SeenShardSeqno = {}
         if mc_block.seqno <= 0:
             return seen_shard_seqno
@@ -266,7 +258,7 @@ class BlockScanner:
         shard_tip: BlockIdExt,
         seen_seqno: SeenShardSeqno,
     ) -> None:
-        """Enqueue unseen shard blocks in order (oldest -> newest)."""
+        """Enqueue unseen shard blocks in order (oldest first)."""
         shard_id = self._shard_key(shard_tip)
         if seen_seqno.get(shard_id, -1) >= shard_tip.seqno:
             return
@@ -320,7 +312,10 @@ class BlockScanner:
         await self._pending_blocks.put(shard_tip)
 
     async def _run(self, mc_block: BlockIdExt) -> None:
-        """Run scanning loop from provided masterchain block."""
+        """Run scanning loop from the given masterchain block.
+
+        :raises RuntimeError: If the scanner is already running.
+        """
         if self._running:
             raise RuntimeError("BlockScanner already running")
 
@@ -345,7 +340,10 @@ class BlockScanner:
             self._stop_event.set()
 
     async def resume(self) -> None:
-        """Resume from storage."""
+        """Resume scanning from storage.
+
+        :raises RuntimeError: If storage is not configured or has no valid seqno.
+        """
         if self._storage is None:
             raise RuntimeError("Storage is not configured")
 
@@ -376,12 +374,14 @@ class BlockScanner:
         utime: t.Optional[int] = None,
         lt: t.Optional[int] = None,
     ) -> None:
-        """
-        Start scanning from an explicit masterchain point.
+        """Start scanning from an explicit masterchain point.
+
+        Exactly one of the parameters must be provided.
 
         :param seqno: Masterchain seqno.
-        :param utime: Unix time (resolved to masterchain block).
-        :param lt: Logical time (resolved to masterchain block).
+        :param utime: Unix time.
+        :param lt: Logical time.
+        :raises ValueError: If not exactly one parameter is provided.
         """
         provided = sum(v is not None for v in (seqno, utime, lt))
         if provided != 1:
@@ -399,9 +399,9 @@ class BlockScanner:
         await self._run(mc_block)
 
     async def start(self) -> None:
-        """Start from the current last masterchain block."""
+        """Start scanning from the current last masterchain block."""
         await self._run(self.last_mc_block)
 
     async def stop(self) -> None:
-        """Request scanner stop."""
+        """Request the scanner to stop."""
         self._stop_event.set()

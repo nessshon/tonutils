@@ -9,10 +9,10 @@ from tonutils.clients import LiteBalancer, LiteClient
 
 @dataclass(frozen=True, slots=True)
 class _BaseEvent:
-    """Base event for BlockScanner.
+    """Base event for `BlockScanner`.
 
     Attributes:
-        client: Lite client/balancer.
+        client: Lite client or balancer.
         mc_block: Masterchain block being processed.
         context: Shared user context.
     """
@@ -27,13 +27,10 @@ class ErrorEvent(_BaseEvent):
     """Error raised during scanning or handler execution.
 
     Attributes:
-        client: Lite client/balancer.
-        mc_block: Masterchain block being processed.
-        context: Shared user context.
         error: Raised exception.
-        event: Related event (if any).
-        handler: Handler/callable that raised (if any).
-        block: Related shard block (if any).
+        event: Related event, or `None`.
+        handler: Handler that raised, or `None`.
+        block: Related shard block, or `None`.
     """
 
     error: BaseException
@@ -44,12 +41,9 @@ class ErrorEvent(_BaseEvent):
 
 @dataclass(frozen=True, slots=True)
 class BlockEvent(_BaseEvent):
-    """Shard block event.
+    """Shard block discovered by the scanner.
 
     Attributes:
-        client: Lite client/balancer.
-        mc_block: Masterchain block being processed.
-        context: Shared user context.
         block: Shard block identifier.
     """
 
@@ -58,12 +52,9 @@ class BlockEvent(_BaseEvent):
 
 @dataclass(frozen=True, slots=True)
 class TransactionsEvent(_BaseEvent):
-    """Transactions event for a shard block.
+    """Transactions fetched for a shard block.
 
     Attributes:
-        client: Lite client/balancer.
-        mc_block: Masterchain block being processed.
-        context: Shared user context.
         block: Shard block identifier.
         transactions: Transactions from this block.
     """

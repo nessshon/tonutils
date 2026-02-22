@@ -38,30 +38,20 @@ class WalletHighloadV2(
     GetPublicKeyGetMethod,
     ProcessedGetMethod,
 ):
-    """Wallet Highload V2 contract."""
+    """Highload Wallet v2."""
 
     _data_model = WalletHighloadV2Data
-    """TlbScheme class for deserializing wallet state data."""
-
     _config_model = WalletHighloadV2Config
-    """Configuration model class for this wallet version."""
-
     _params_model = WalletHighloadV2Params
-    """Transaction parameters model class for this wallet version."""
-
     VERSION = ContractVersion.WalletHighloadV2
-    """Contract version identifier."""
-
     MAX_MESSAGES = 254
-    """Maximum number of messages allowed in a single transaction."""
 
     @staticmethod
     def _build_messages_dict_cell(messages: t.List[WalletMessage]) -> Cell:
-        """
-        Build dictionary cell containing indexed messages.
+        """Build `HashMap` cell with indexed messages.
 
-        :param messages: List of wallet messages to serialize
-        :return: HashMap cell with messages indexed 0..n-1
+        :param messages: Wallet messages to serialize.
+        :return: Serialized `HashMap` cell.
         """
         value_serializer = lambda src, dest: dest.store_cell(src.serialize())
         cell_dict = HashMap(key_size=16, value_serializer=value_serializer)
@@ -74,12 +64,12 @@ class WalletHighloadV2(
         messages: t.List[WalletMessage],
         params: t.Optional[WalletHighloadV2Params] = None,
     ) -> Cell:
-        """
-        Build unsigned message cell for Wallet Highload V2 transaction.
+        """Build unsigned message cell.
 
-        :param messages: List of wallet messages (max 254)
-        :param params: Optional wallet parameters (bounded_id)
-        :return: Unsigned message cell ready for signing
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or `None`.
+        :return: Unsigned message cell.
+        :raises ContractError: If `bounded_id` is out of range.
         """
         params = params or self._params_model()
 
@@ -112,34 +102,24 @@ class WalletHighloadV3R1(
     GetLastCleanTimeGetMethod,
     GetTimeoutGetMethod,
 ):
-    """Wallet Highload V3 Revision 1 contract."""
+    """Highload Wallet v3 Revision 1."""
 
     _data_model = WalletHighloadV3Data
-    """TlbScheme class for deserializing wallet state data."""
-
     _config_model = WalletHighloadV3Config
-    """Configuration model class for this wallet version."""
-
     _params_model = WalletHighloadV3Params
-    """Transaction parameters model class for this wallet version."""
-
     VERSION = ContractVersion.WalletHighloadV3R1
-    """Contract version identifier."""
-
     MAX_MESSAGES = 254 * 254
-    """Maximum number of messages allowed in a single transaction."""
 
     @staticmethod
     def _build_internal_transfer(
         actions_cell: Cell,
         params: WalletHighloadV3Params,
     ) -> Cell:
-        """
-        Build internal transfer message body with out-actions.
+        """Build internal transfer body with out-actions.
 
-        :param actions_cell: Serialized out-actions cell
-        :param params: Wallet parameters containing query_id
-        :return: Internal transfer message body cell
+        :param actions_cell: Serialized out-actions cell.
+        :param params: Transaction parameters.
+        :return: Internal transfer body `Cell`.
         """
         cell = begin_cell()
         cell.store_uint(OpCode.INTERNAL_TRANSFER, 32)
@@ -152,14 +132,13 @@ class WalletHighloadV3R1(
         messages: t.List[WalletMessage],
         params: WalletHighloadV3Params,
     ) -> WalletMessage:
-        """
-        Build recursive message structure for large message batches.
+        """Build recursive message structure for large batches.
 
-        Splits messages into packs of 253 and creates nested internal transfers.
+        Splits messages into packs of 253 with nested internal transfers.
 
-        :param messages: List of wallet messages to pack
-        :param params: Wallet parameters for internal transfers
-        :return: Single wallet message containing all nested messages
+        :param messages: Wallet messages to pack.
+        :param params: Transaction parameters.
+        :return: Single `WalletMessage` containing all nested messages.
         """
         msgs_per_pack = 253
 
@@ -186,12 +165,12 @@ class WalletHighloadV3R1(
         messages: t.List[WalletMessage],
         params: t.Optional[WalletHighloadV3Params] = None,
     ) -> Cell:
-        """
-        Build unsigned message cell for Wallet Highload V3 transaction.
+        """Build unsigned message cell.
 
-        :param messages: List of wallet messages (max 254*254)
-        :param params: Optional wallet parameters (query_id, send_mode, created_at, value_to_send)
-        :return: Unsigned message cell ready for signing
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or `None`.
+        :return: Unsigned message cell.
+        :raises ContractError: If timeout, query_id, or messages are invalid.
         """
         params = params or self._params_model()
 
@@ -232,12 +211,11 @@ class WalletHighloadV3R1(
         signing_msg: Cell,
         signature: bytes,
     ) -> Cell:
-        """
-        Combine signature with unsigned message cell.
+        """Combine signature with unsigned message cell.
 
-        :param signing_msg: Unsigned message cell
-        :param signature: Ed25519 signature bytes
-        :return: Signed message cell
+        :param signing_msg: Unsigned message cell.
+        :param signature: Ed25519 signature bytes.
+        :return: Signed message cell.
         """
         cell = begin_cell()
         cell.store_bytes(signature)

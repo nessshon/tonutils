@@ -29,31 +29,23 @@ class _WalletV4(
     GetPluginListGetMethod,
     IsPluginInstalledGetMethod,
 ):
-    """Base implementation for Wallet V4 contracts."""
-
-    _config_model = WalletV4Config
-    """Configuration model class for this wallet version."""
+    """Base implementation for Wallet v4."""
 
     _data_model = WalletV4Data
-    """TlbScheme class for deserializing wallet state data."""
-
+    _config_model = WalletV4Config
     _params_model = WalletV4Params
-    """Transaction parameters model class for this wallet version."""
-
     MAX_MESSAGES = 4
-    """Maximum number of messages allowed in a single transaction."""
 
     async def _build_msg_cell(
         self,
         messages: t.List[WalletMessage],
         params: t.Optional[WalletV4Params] = None,
     ) -> Cell:
-        """
-        Build unsigned message cell for Wallet V4 transaction.
+        """Build unsigned message cell.
 
-        :param messages: List of wallet messages (max 4 for V4)
-        :param params: Optional wallet parameters (seqno, valid_until, op_code)
-        :return: Unsigned message cell ready for signing
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or `None`.
+        :return: Unsigned message cell.
         """
         params = params or self._params_model()
 
@@ -81,14 +73,12 @@ class _WalletV4(
 
 
 class WalletV4R1(_WalletV4):
-    """Wallet V4 Revision 1 contract."""
+    """Wallet v4 Revision 1."""
 
     VERSION = ContractVersion.WalletV4R1
-    """Contract version identifier."""
 
 
 class WalletV4R2(_WalletV4):
-    """Wallet V4 Revision 2 contract."""
+    """Wallet v4 Revision 2."""
 
     VERSION = ContractVersion.WalletV4R2
-    """Contract version identifier."""

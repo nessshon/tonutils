@@ -19,7 +19,16 @@ class BlockchainConfigResult(BaseModel):
 
 
 class BlockchainAccountResult(BaseModel):
-    """Result model for /blockchain/accounts/{address}."""
+    """Result model for /blockchain/accounts/{address}.
+
+    Attributes:
+        balance: Account balance in nanotons.
+        status: Account lifecycle status string.
+        code: Hex-encoded contract code BoC, or `None`.
+        data: Hex-encoded contract data BoC, or `None`.
+        last_transaction_lt: Logical time of last transaction, or `None`.
+        last_transaction_hash: Hash of last transaction, or `None`.
+    """
 
     balance: int = 0
     status: str = ContractState.NONEXIST.value
@@ -42,15 +51,19 @@ class BlockchainAccountTransactionsResult(BaseModel):
 
 
 class BlockchainAccountMethodResult(BaseModel):
-    """Result model for /blockchain/accounts/{address}/methods/{method_name}."""
+    """Result model for /blockchain/accounts/{address}/methods/{method_name}.
+
+    Attributes:
+        stack: TVM stack items, or `None`.
+        exit_code: TVM exit code.
+    """
 
     stack: t.Optional[t.List[t.Any]] = None
     exit_code: int
 
 
 class SendBocPayload(BaseModel):
-    """
-    Payload for /sendBoc endpoint.
+    """Payload for /sendBoc endpoint.
 
     Normalizes input to base64-encoded BoC string during post-init.
     """
@@ -58,7 +71,7 @@ class SendBocPayload(BaseModel):
     boc: str
 
     def model_post_init(self, context: t.Any, /) -> None:
-        """Convert input BoC (hex/base64/Cell/Slice) into base64 BoC."""
+        """Convert input BoC into base64 BoC."""
         cell = to_cell(self.boc)
         self.boc = cell_to_b64(cell)
 
@@ -89,10 +102,9 @@ class _LastTransactionID(BaseModel):
 
 
 class _AddressInformation(BaseModel):
-    """
-    Parsed contract state information.
+    """Parsed contract state from Toncenter.
 
-    Normalizes Toncenter-specific fields such as "uninitialized".
+    Normalizes legacy state name `uninitialized` to `uninit`.
     """
 
     balance: int = 0
@@ -108,7 +120,7 @@ class _AddressInformation(BaseModel):
 
 
 class GetAddressInformationResult(BaseModel):
-    """Typed result wrapper for /getAddressInformation."""
+    """Result wrapper for /getAddressInformation."""
 
     result: _AddressInformation = _AddressInformation()
 
@@ -126,14 +138,25 @@ class GetTransactionsResult(BaseModel):
 
 
 class _GetMethod(BaseModel):
-    """Container for TVM stack array."""
+    """Container for TVM stack result.
+
+    Attributes:
+        stack: TVM stack items.
+        exit_code: TVM exit code.
+    """
 
     stack: t.List[t.Any]
     exit_code: int
 
 
 class RunGetMethodPayload(BaseModel):
-    """Request payload for /runGetMethod."""
+    """Request payload for /runGetMethod.
+
+    Attributes:
+        address: Contract address string.
+        method: Get-method name.
+        stack: Encoded TVM stack arguments.
+    """
 
     address: str
     method: str

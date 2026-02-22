@@ -5,19 +5,14 @@ from tonutils.exceptions import ProviderResponseError
 
 
 class ReaderWorker(BaseWorker):
-    """
-    Background reader for ADNL frames.
+    """Background reader for ADNL frames.
 
-    Receives ADNL packets from the transport, deserializes TL messages,
-    and resolves pending futures associated with queries and pings.
+    Receives packets from the transport, deserializes TL messages,
+    and resolves pending futures for queries and pings.
     """
 
     def _handle_message(self, root: dict) -> None:
-        """
-        Route a decoded TL message to the corresponding pending future.
-
-        Extracts message ID and resolves it with either result or exception.
-        """
+        """Route a decoded TL message to its pending future."""
         query_id = root.get("query_id")
         random_id = root.get("random_id")
 
@@ -45,11 +40,7 @@ class ReaderWorker(BaseWorker):
             fut.set_result(payload)
 
     async def _run(self) -> None:
-        """
-        Continuously read ADNL frames and dispatch decoded messages.
-
-        Skips invalid frames and malformed TL objects.
-        """
+        """Continuously read ADNL frames and dispatch decoded messages."""
         provider = self.provider
 
         while self.running:

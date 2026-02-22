@@ -39,10 +39,12 @@ _T = t.TypeVar("_T")
 
 @dataclass
 class LiteClientState:
-    """
-    Internal state container for a lite-server client.
+    """Internal state for a lite-server client in the balancer.
 
-    Tracks error count and cooldown timeout for retry scheduling.
+    Attributes:
+        client: Associated lite-server client.
+        retry_after: Monotonic time before which requests are blocked, or `None`.
+        error_count: Consecutive error count.
     """
 
     client: LiteClient
@@ -51,11 +53,10 @@ class LiteClientState:
 
 
 class LiteBalancer(LiteMixin, BaseClient):
-    """
-    Multi-client lite-server balancer with automatic failover and load balancing.
+    """Multi-client lite-server balancer with automatic failover.
 
-    Selects the best available lite-server using height, ping metrics and
-    round-robin tie-breaking.
+    Selects the best available lite-server using masterchain height,
+    ping RTT, and round-robin tie-breaking.
     """
 
     TYPE = ClientType.ADNL
@@ -69,21 +70,10 @@ class LiteBalancer(LiteMixin, BaseClient):
         request_timeout: float = 12.0,
     ) -> None:
         """
-        Initialize lite-server balancer.
-
-        It is recommended to build underlying LiteClient instances from
-        private lite-server configurations for better stability and performance.
-        You can obtain private lite-server configs from:
-            - Tonconsole website: https://tonconsole.com/
-            - dTON telegram bot: https://t.me/dtontech_bot (https://dton.io/)
-
-        Public free lite-server data may also be used via `from_network_config()`.
-
-        :param network: Target TON network (mainnet or testnet)
-        :param clients: List of LiteClient instances to balance between
-        :param connect_timeout: Timeout in seconds for connect/reconnect attempts
-        :param request_timeout: Maximum total time in seconds for a balancer operation,
-            including all failover attempts across lite-servers
+        :param network: Target TON network.
+        :param clients: `LiteClient` instances to balance between.
+        :param connect_timeout: Timeout in seconds for connect/reconnect attempts.
+        :param request_timeout: Total timeout in seconds including all failover attempts.
         """
         self.network: NetworkGlobalID = network
 
@@ -104,39 +94,23 @@ class LiteBalancer(LiteMixin, BaseClient):
 
     @property
     def provider(self) -> AdnlProvider:
-        """
-        Provider of the currently selected lite-server client.
-
-        :return: AdnlProvider instance of chosen client
-        """
+        """Provider of the currently best lite-server client."""
         c = self._pick_client()
         return c.provider
 
     @property
     def connected(self) -> bool:
-        """
-        Check whether at least one underlying lite-server client is connected.
-
-        :return: True if any client is connected, otherwise False
-        """
+        """`True` if at least one lite-server client is connected."""
         return any(c.connected for c in self._clients)
 
     @property
     def clients(self) -> t.Tuple[LiteClient, ...]:
-        """
-        List of all registered lite-server clients.
-
-        :return: Tuple of LiteClient objects
-        """
+        """All registered lite-server clients."""
         return tuple(self._clients)
 
     @property
     def alive_clients(self) -> t.Tuple[LiteClient, ...]:
-        """
-        Lite-server clients that are allowed to send requests now.
-
-        :return: Tuple of available LiteClient instances
-        """
+        """Connected clients not in cooldown."""
         now = time.monotonic()
         return tuple(
             state.client
@@ -147,11 +121,7 @@ class LiteBalancer(LiteMixin, BaseClient):
 
     @property
     def dead_clients(self) -> t.Tuple[LiteClient, ...]:
-        """
-        Lite-server clients currently in cooldown or disconnected.
-
-        :return: Tuple of unavailable LiteClient instances
-        """
+        """Disconnected or cooldown clients."""
         now = time.monotonic()
         return tuple(
             state.client
@@ -175,31 +145,25 @@ class LiteBalancer(LiteMixin, BaseClient):
         rps_per_client: bool = False,
         retry_policy: t.Optional[RetryPolicy] = None,
     ) -> LiteBalancer:
-        """
-        Build lite-server balancer from a configuration.
+        """Create a `LiteBalancer` from a configuration.
 
         For best performance, it is recommended to use a private lite-server
         configuration. You can obtain private configs from:
-            - Tonconsole website: https://tonconsole.com/
-            - dTON telegram bot: https://t.me/dtontech_bot (https://dton.io/)
-
+            - Tonconsole website: https://tonconsole.com/.
+            - dTON telegram bot: https://t.me/dtontech_bot (https://dton.io/).
         Public free configs may also be used via `from_network_config()`.
 
-        :param network: Target TON network
-        :param config: GlobalConfig instance, config file path as string, or raw dict
-        :param connect_timeout: Timeout in seconds for a single connect/reconnect attempt
-            performed by the balancer during failover.
-        :param request_timeout: Maximum total time in seconds for a single balancer operation,
-            including all failover attempts across clients.
-        :param client_connect_timeout: Timeout in seconds for connect/handshake performed by an
-            individual lite-server client.
-        :param client_request_timeout: Timeout in seconds for a single request executed by an
-            individual lite-server client.
-        :param rps_limit: Optional requests-per-second limit
-        :param rps_period: Time window in seconds for RPS limit
-        :param rps_per_client: Whether to create per-client limiters
-        :param retry_policy: Optional retry policy that defines per-error-code retry rules
-        :return: Configured LiteBalancer instance
+        :param network: Target TON network.
+        :param config: `GlobalConfig`, file path, or raw dict.
+        :param connect_timeout: Balancer failover connect timeout in seconds.
+        :param request_timeout: Total timeout in seconds including all failover attempts.
+        :param client_connect_timeout: Per-client connect/handshake timeout in seconds.
+        :param client_request_timeout: Per-client single request timeout in seconds.
+        :param rps_limit: Requests-per-second limit, or `None`.
+        :param rps_period: Time window in seconds for RPS limit.
+        :param rps_per_client: Create per-client limiters instead of shared.
+        :param retry_policy: Retry policy with per-error-code rules, or `None`.
+        :return: Configured `LiteBalancer` instance.
         """
         if isinstance(config, str):
             config = load_global_config(config)
@@ -255,30 +219,25 @@ class LiteBalancer(LiteMixin, BaseClient):
         rps_per_client: bool = False,
         retry_policy: t.Optional[RetryPolicy] = None,
     ) -> LiteBalancer:
-        """
-        Build lite-server balancer using global config fetched from ton.org.
+        """Create a `LiteBalancer` using global config from ton.org.
 
         Public lite-servers available in the global network configuration are
         free to use but may be unstable under load. For higher reliability and
         performance, it is recommended to use private lite-server configurations,
         available from:
-            - Tonconsole website: https://tonconsole.com/
-            - dTON telegram bot: https://t.me/dtontech_bot (https://dton.io/)
+            - Tonconsole website: https://tonconsole.com/.
+            - dTON telegram bot: https://t.me/dtontech_bot (https://dton.io/).
 
-        :param network: Target TON network
-        :param connect_timeout: Timeout in seconds for a single connect/reconnect attempt
-            performed by the balancer during failover.
-        :param request_timeout: Maximum total time in seconds for a single balancer operation,
-            including all failover attempts across clients.
-        :param client_connect_timeout: Timeout in seconds for connect/handshake performed by an
-            individual lite-server client.
-        :param client_request_timeout: Timeout in seconds for a single request executed by an
-            individual lite-server client.
-        :param rps_limit: Optional requests-per-second limit
-        :param rps_period: Time window in seconds for RPS limit
-        :param rps_per_client: Whether to create per-client limiters
-        :param retry_policy: Optional retry policy that defines per-error-code retry rules
-        :return: Configured LiteBalancer instance
+        :param network: Target TON network.
+        :param connect_timeout: Balancer failover connect timeout in seconds.
+        :param request_timeout: Total timeout in seconds including all failover attempts.
+        :param client_connect_timeout: Per-client connect/handshake timeout in seconds.
+        :param client_request_timeout: Per-client single request timeout in seconds.
+        :param rps_limit: Requests-per-second limit, or `None`.
+        :param rps_period: Time window in seconds for RPS limit.
+        :param rps_per_client: Create per-client limiters instead of shared.
+        :param retry_policy: Retry policy with per-error-code rules, or `None`.
+        :return: Configured `LiteBalancer` instance.
         """
         config_getters = {
             NetworkGlobalID.MAINNET: get_mainnet_global_config,
@@ -299,6 +258,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         )
 
     async def connect(self) -> None:
+        """Connect all clients and start the health check task."""
         if self.connected:
             self._ensure_health_task()
             return
@@ -320,6 +280,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         raise BalancerError("all lite-servers failed to establish connection")
 
     async def close(self) -> None:
+        """Stop the health check task and close all clients."""
         task, self._health_task = self._health_task, None
 
         if task is not None and not task.done():
@@ -334,11 +295,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         self,
         clients: t.List[LiteClient],
     ) -> None:
-        """
-        Validate and register input lite-server clients.
-
-        Ensures correct client type and network assignment.
-        """
+        """Validate and register lite-server clients."""
         for client in clients:
             if client.TYPE != ClientType.ADNL:
                 raise ClientError(
@@ -353,13 +310,10 @@ class LiteBalancer(LiteMixin, BaseClient):
             self._states.append(state)
 
     def _pick_client(self) -> LiteClient:
-        """
-        Select the best available lite-server client.
+        """Select the best available lite-server client.
 
-        Selection criteria:
-        - highest known masterchain seqno
-        - minimal ping RTT and age among same-height clients
-        - round-robin fallback if no height information
+        Prefers highest masterchain seqno, then lowest ping RTT,
+        with round-robin fallback.
         """
         if not self.connected:
             raise NotConnectedError(component=self.__class__.__name__)
@@ -408,11 +362,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         return alive[0]
 
     def _mark_success(self, client: LiteClient) -> None:
-        """
-        Reset error state for a successful client.
-
-        Clears cooldown and error counters.
-        """
+        """Reset error state for a successful client."""
         for state in self._states:
             if state.client is client:
                 state.error_count = 0
@@ -420,14 +370,10 @@ class LiteBalancer(LiteMixin, BaseClient):
                 break
 
     def _mark_error(self, client: LiteClient, is_rate_limit: bool) -> None:
-        """
-        Update error state and schedule retry cooldown.
+        """Update error state and schedule exponential-backoff cooldown.
 
-        Exponential backoff is used with separate handling
-        for rate-limit vs generic errors.
-
-        :param client: Client to update
-        :param is_rate_limit: Whether the error was rate-limit related
+        :param client: Client to penalize.
+        :param is_rate_limit: Whether the error was rate-limit related.
         """
         now = time.monotonic()
         for state in self._states:
@@ -446,12 +392,7 @@ class LiteBalancer(LiteMixin, BaseClient):
                 break
 
     def _ensure_health_task(self) -> None:
-        """
-        Ensure background health check task is running.
-
-        Starts a periodic reconnect loop for unavailable clients
-        if it is not already active.
-        """
+        """Start the background health check task if not already running."""
         if self._health_task is not None and not self._health_task.done():
             return
 
@@ -462,11 +403,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         )
 
     async def _health_loop(self) -> None:
-        """
-        Periodically attempt to reconnect dead lite-server clients.
-
-        Runs until cancelled.
-        """
+        """Periodically reconnect dead lite-server clients until cancelled."""
 
         async def _recon(c: LiteClient) -> None:
             with suppress(Exception):
@@ -491,14 +428,11 @@ class LiteBalancer(LiteMixin, BaseClient):
         self,
         func: t.Callable[[AdnlProvider], t.Awaitable[_T]],
     ) -> _T:
-        """
-        Execute a provider operation with automatic failover.
+        """Execute a provider operation with automatic failover.
 
-        Iterates through available lite-servers until one succeeds
-        or all fail.
-
-        :param func: Callable performing an operation using an AdnlProvider
-        :return: Result of the successful invocation
+        :param func: Async callable accepting an `AdnlProvider`.
+        :return: Result of the first successful invocation.
+        :raises BalancerError: If all lite-servers fail.
         """
 
         async def _run() -> _T:
@@ -553,12 +487,11 @@ class LiteBalancer(LiteMixin, BaseClient):
             ) from exc
 
     async def _adnl_call(self, method: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        """
-        Execute lite-server call with failover across providers.
+        """Execute a provider call with failover across lite-servers.
 
-        :param method: Provider coroutine method name.
-        :param args: Positional arguments forwarded to the provider method.
-        :param kwargs: Keyword arguments forwarded to the provider method.
+        :param method: Provider method name.
+        :param args: Positional arguments.
+        :param kwargs: Keyword arguments.
         :return: Provider method result.
         """
         if not self.connected:
