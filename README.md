@@ -1,8 +1,8 @@
-# 📦 Tonutils 2.0 [BETA]
+# 📦 Tonutils 2.0
 
 [![TON](https://img.shields.io/badge/TON-grey?logo=TON&logoColor=40AEF0)](https://ton.org)
 ![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.14-black?color=FFE873&labelColor=3776AB)
-[![PyPI](https://img.shields.io/badge/pypi-2.0.1b2-FFE873?labelColor=3776AB)](https://pypi.org/project/tonutils/2.0.1b2/)
+[![PyPI](https://img.shields.io/pypi/v/tonutils.svg?color=FFE873&labelColor=3776AB)](https://pypi.python.org/pypi/tonutils)
 [![License](https://img.shields.io/github/license/nessshon/tonutils)](LICENSE)
 
 ![Image](assets/banner.png)
@@ -11,14 +11,14 @@
 ![Downloads](https://pepy.tech/badge/tonutils/month)
 ![Downloads](https://pepy.tech/badge/tonutils/week)
 
-**Tonutils** is a high-level, object-oriented Python library designed to simplify interactions with the TON blockchain.
-It seamlessly integrates several prominent services for working with TON:
+**Tonutils** is a high-level Python library for interacting with the TON blockchain,
+with support for native ADNL and multiple HTTP API providers.
 
-**Native ADNL:**
+### Native ADNL
 
 * Built-in ADNL-TCP lite-server client.
 
-**HTTP API:**
+### HTTP API
 
 * [toncenter.com](https://toncenter.com/) – Fast and reliable HTTP API for The Open Network.
 * [tonapi.io](https://tonapi.io/) – REST API to the TON blockchain explorer.
@@ -26,22 +26,19 @@ It seamlessly integrates several prominent services for working with TON:
 * [tatum.io](https://tatum.io/) – RPCs and APIs powering Web3. Fast, reliable, affordable.
 * [quicknode.com](https://www.quicknode.com/) – Low-latency HTTP API access to TON via global infrastructure.
 
-By combining these services, `tonutils` provides a powerful and flexible toolset for developers, making it easier to
-build on top of the TON ecosystem.
-
 ## Installation
 
 ```bash
-pip install --pre tonutils
+pip install tonutils
 ```
 
 ## Usage
 
-Practical feature examples can be found in the **[examples](examples)** directory.
+Check out the **[examples](examples)** directory for practical usage across all features.
 
 ## Donations
 
-Your contributions help me continue developing and improving this project!
+If this project has been useful to you, consider supporting its development!
 
 **TON**: `UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness`
 
