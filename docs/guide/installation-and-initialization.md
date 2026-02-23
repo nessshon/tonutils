@@ -7,13 +7,13 @@ This section explains how to install the `tonutils` library and select the appro
 To install the base `tonutils` package:
 
 ```bash
-pip install tonutils
+pip install "tonutils<2.0"
 ```
 
 If you need to use [Native ADNL](#pytoniq) connections, install with optional dependencies:
 
 ```bash
-pip install 'tonutils[pytoniq]'
+pip install "tonutils[pytoniq]<2.0"
 ```
 
 ---
@@ -27,17 +27,19 @@ pip install 'tonutils[pytoniq]'
 All API clients in the `tonutils.client` library support request rate management parameters:
 
 * **`rps`** — requests per second limit.  
-  Different APIs enforce their own rate limits. This parameter helps ensure the client does not exceed those limits, avoiding `rate limit` errors.
+  Different APIs enforce their own rate limits. This parameter helps ensure the client does not exceed those limits,
+  avoiding `rate limit` errors.
 
 * **`max_retries`** — number of retry attempts **when a rate limit error (HTTP 429) occurs**.  
   If the API temporarily rejects a request due to too many requests, the client will wait and retry.
 
 #### toncenter
 
-**[toncenter.com](https://toncenter.com)** — fast and reliable HTTP API for The Open Network.  
+**[toncenter.com](https://toncenter.com)** — fast and reliable HTTP API for The Open Network.
 
 !!! note
-    API key is optional, but for better performance it is recommended to obtain one via  [@tonapibot](https://t.me/tonapibot).
+API key is optional, but for better performance it is recommended to obtain one
+via  [@tonapibot](https://t.me/tonapibot).
 
 ```python
 from tonutils.client import ToncenterV2Client
@@ -57,10 +59,10 @@ client_v3 = ToncenterV3Client(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 
 #### tonapi
 
-**[tonapi.io](https://tonapi.io)** — REST API to the TON blockchain explorer.  
+**[tonapi.io](https://tonapi.io)** — REST API to the TON blockchain explorer.
 
 !!! note
-    Requires an API key from [tonconsole.com](https://tonconsole.com).
+Requires an API key from [tonconsole.com](https://tonconsole.com).
 
 ```python
 from tonutils.client import TonapiClient
@@ -74,10 +76,10 @@ client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 
 #### quicknode
 
-**[quicknode.com](https://quicknode.com)** — low-latency HTTP API access to TON via global infrastructure.  
+**[quicknode.com](https://quicknode.com)** — low-latency HTTP API access to TON via global infrastructure.
 
 !!! note
-    Requires an API URL from [quicknode.com](https://quicknode.com).
+Requires an API URL from [quicknode.com](https://quicknode.com).
 
     Quicknode does not support testnet!
 
@@ -92,10 +94,10 @@ client = QuicknodeClient(HTTP_PROVIDER_URL, rps=1)
 
 #### tatum
 
-**[tatum.io](https://tatum.io)** — RPCs and APIs powering Web3.  
+**[tatum.io](https://tatum.io)** — RPCs and APIs powering Web3.
 
 !!! note
-    Requires an API key from [tatum.io](https://tatum.io).
+Requires an API key from [tatum.io](https://tatum.io).
 
 ```python
 from tonutils.client import TatumClient
@@ -111,10 +113,11 @@ client = TatumClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 
 #### pytoniq
 
-**[pytoniq](https://github.com/yungwine/pytoniq)** — library for direct interaction with Lite servers.  
+**[pytoniq](https://github.com/yungwine/pytoniq)** — library for direct interaction with Lite servers.
 
 !!! note
-    For better performance, provide your own config, which can be obtained from the [liteserver bot](https://t.me/liteserver_bot).
+For better performance, provide your own config, which can be obtained from
+the [liteserver bot](https://t.me/liteserver_bot).
 
 ```python
 from tonutils.client import LiteserverClient
