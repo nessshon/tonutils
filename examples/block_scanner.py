@@ -1,35 +1,3 @@
-"""
-Block Scanner Example
-
-Events:
-- BlockEvent:
-    Emitted for each discovered shard block (workchain/shard/seqno).
-    event.mc_block is the current masterchain context (mc_seqno).
-- TransactionsEvent:
-    Emitted after BlockEvent for the same shard block if on_transactions handler
-    is set. Contains the list of transactions for that shard block.
-- ErrorEvent:
-    Emitted on internal errors, handler failures, or transaction fetch failures.
-
-Start modes:
-- scanner.start():
-    Start from the current last masterchain block (processes the current last).
-- scanner.start_from(seqno=... | lt=... | utime=...):
-    Start from an explicit masterchain point (exactly one argument required).
-- scanner.resume():
-    Resume from storage (masterchain seqno). Requires storage.
-
-Storage:
-- To use resume/persist progress between runs, you must pass a storage
-  implementation (get_mc_seqno / set_mc_seqno).
-- This example includes a minimal file-based storage (see FileStorage below).
-
-Notes:
-- Call client.connect() before starting the scanner.
-- Use try/finally and always call scanner.stop() and client.close().
-"""
-
-import asyncio
 import time
 import typing as t
 from pathlib import Path
@@ -43,36 +11,67 @@ from tonutils.tools.block_scanner import (
 )
 from tonutils.types import NetworkGlobalID, DEFAULT_ADNL_RETRY_POLICY
 
+# Path to the file where the last processed masterchain seqno is persisted
+# Used by scanner.resume() to continue from where it left off after a restart
+STORAGE_PATH = "block_scanner.mc_seqno"
+
+# Maximum requests per second sent to lite-servers
+# Reduce if you hit rate limits; increase for faster scanning on dedicated nodes
+RPS_LIMIT = 100
+
+# How far back to start scanning when using start_from(utime=...)
+# 7 * 24 * 60 * 60 = 604800 seconds = 1 week ago
+START_FROM_OFFSET = 7 * 24 * 60 * 60
+
 
 class FileStorage:
-    """Minimal storage for resume(): stores last masterchain seqno in a file."""
+    """File-backed storage for BlockScanner resume support.
 
-    def __init__(self, path: str | Path) -> None:
+    Persists the last processed masterchain seqno to a plain-text file.
+    Pass an instance to BlockScanner(..., storage=...) to enable resume().
+    """
+
+    def __init__(self, path: t.Union[str, Path]) -> None:
         self._path = Path(path)
 
     async def get_mc_seqno(self) -> t.Optional[int]:
+        """Read the saved seqno from file, or None if missing/invalid."""
         try:
             return int(self._path.read_text(encoding="utf-8").strip())
         except (OSError, ValueError):
             return None
 
     async def set_mc_seqno(self, seqno: int) -> None:
+        """Persist the latest processed seqno to file."""
         self._path.write_text(f"{seqno}\n", encoding="utf-8")
 
 
+# Initialize lite-server client from the public mainnet configuration
 client = LiteBalancer.from_network_config(
     network=NetworkGlobalID.MAINNET,
-    rps_limit=100,
+    rps_limit=RPS_LIMIT,
     retry_policy=DEFAULT_ADNL_RETRY_POLICY,
 )
 
-storage = FileStorage("block_scanner.mc_seqno")
+# File-backed storage enables scanner.resume() across process restarts
+storage = FileStorage(STORAGE_PATH)
+
+# Create scanner instance bound to the client and storage
 scanner = BlockScanner(client, storage=storage)
+
+
+# Register handlers via decorators. All handlers receive a typed event object.
+# ErrorEvent handler must never raise — exceptions inside it are silently dropped.
 
 
 @scanner.on_error()
 async def handle_error(event: ErrorEvent) -> None:
-    """Print error context. This handler must never raise."""
+    """Handle internal scanner errors and failed transaction fetches.
+
+    event.mc_block: masterchain block context where the error occurred
+    event.block:    shard block context, or None for masterchain-level errors
+    event.error:    the raised exception
+    """
     where = f"mc_seqno={event.mc_block.seqno}"
     if event.block is not None:
         where += f", shard_seqno={event.block.seqno}"
@@ -81,7 +80,12 @@ async def handle_error(event: ErrorEvent) -> None:
 
 @scanner.on_block()
 async def handle_block(event: BlockEvent) -> None:
-    """Print shard block id with masterchain context."""
+    """Handle each discovered shard block.
+
+    Emitted once per shard block before the corresponding TransactionsEvent.
+    event.block:    shard block info (workchain, shard id, seqno)
+    event.mc_block: parent masterchain block context (mc_seqno)
+    """
     print(
         f"Block: wc={event.block.workchain}, "
         f"shard={event.block.shard:016x}, "
@@ -92,7 +96,13 @@ async def handle_block(event: BlockEvent) -> None:
 
 @scanner.on_transactions()
 async def handle_transactions(event: TransactionsEvent) -> None:
-    """Print number of transactions for a shard block."""
+    """Handle transactions for a shard block.
+
+    Emitted after handle_block for the same shard block.
+    event.transactions: list of Transaction objects for this shard block
+    event.block:        shard block info
+    event.mc_block:     parent masterchain block context
+    """
     print(
         f"Transactions: shard_seqno={event.block.seqno}, "
         f"mc_seqno={event.mc_block.seqno}, "
@@ -101,23 +111,30 @@ async def handle_transactions(event: TransactionsEvent) -> None:
 
 
 async def main() -> None:
+    # Connect to lite-servers before starting the scanner
     await client.connect()
+
     try:
-        # Start from the current last masterchain block
+        # Option 1: Start from the current last masterchain block
         # await scanner.start()
 
-        # Resume from storage (requires BlockScanner(..., storage=...))
+        # Option 2: Resume from the last saved seqno in storage
+        # Requires BlockScanner(..., storage=...) and a prior run
         # await scanner.resume()
 
-        # Start from explicit point: 1 week ago
-        from_utime = int(time.time()) - 7 * 24 * 60 * 60
+        # Option 3: Start from an explicit point in time
+        # start_from() accepts exactly one of: seqno=, lt=, or utime=
+        from_utime = int(time.time()) - START_FROM_OFFSET
         await scanner.start_from(utime=from_utime)
     finally:
+        # Always stop the scanner and close the client on exit
         await scanner.stop()
         await client.close()
 
 
 if __name__ == "__main__":
+    import asyncio
+
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
