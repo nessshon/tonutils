@@ -1,4 +1,4 @@
-# 📦 Tonutils 2.0
+# Tonutils 2.0
 
 [![TON](https://img.shields.io/badge/TON-grey?logo=TON&logoColor=40AEF0)](https://ton.org)
 ![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.14-black?color=FFE873&labelColor=3776AB)
@@ -35,6 +35,16 @@ pip install tonutils
 ## Usage
 
 Check out the **[examples](examples)** directory for practical usage across all features.
+
+## CLI
+
+Monitor lite-server availability directly from the terminal:
+
+```bash
+tonutils status                               # mainnet (default)
+tonutils status --network testnet             # testnet
+tonutils status --config /path/to/config.json # custom config
+```
 
 ## Donations
 
