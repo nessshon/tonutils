@@ -38,13 +38,16 @@ Check out the **[examples](examples)** directory for practical usage across all 
 
 ## CLI
 
-Monitor lite-server availability directly from the terminal:
+Available commands:
 
-```bash
-tonutils status                               # mainnet (default)
-tonutils status --network testnet             # testnet
-tonutils status --config /path/to/config.json # custom config
-```
+- `tonutils --version` — current library version
+
+- `tonutils status` — monitor lite-server availability in real time
+  ```bash
+  tonutils status --network mainnet              # mainnet (default) or testnet
+  tonutils status --config /path/to/config.json  # path or URL to config
+  tonutils status --rps 100                      # requests per second
+  ```
 
 ## Donations
 
