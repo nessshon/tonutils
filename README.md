@@ -29,14 +29,14 @@ on top of the TON ecosystem.
 ## Installation
 
 ```bash
-pip install tonutils
+pip install "tonutils<2.0"
 ```
 
 To use `pytoniq` with Native ADNL connection, install it with the optional dependencies, including
 the [pytoniq](https://github.com/yungwine/pytoniq) library:
 
 ```bash
-pip install 'tonutils[pytoniq]'
+pip install "tonutils[pytoniq]<2.0"
 ```
 
 ## Documentation
@@ -44,34 +44,11 @@ pip install 'tonutils[pytoniq]'
 Find all guides and references here:  
 [nessshon.github.io/tonutils](https://nessshon.github.io/tonutils/)
 
-## Contribution
-
-We welcome your contributions! If you have ideas for improvement or have identified a bug, please create an issue or
-submit a pull request.
-
 ## Donations
 
-Your donation supports the future of this project. Every contribution helps stimulate innovation and sustain
-development!
+If this project has been useful to you, consider supporting its development!
 
-- **TON**  
-  `UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness`
-
-- **BTC**  
-  `1FKJDBSxdtsMad84iYY96zLJBVEChehbx1`
-
-- **USDT (TRC-20)**  
-  `TDHMG7JRkmJBDD1qd4bNhdfoy2uzVd8ixA`
-
-#### Donate via Bots
-
-You can also donate conveniently using these bots:
-
-- **Crypto Bot**  
-  [Donate through Crypto Bot](https://t.me/send?start=IVW1cyG3DYqG)
-
-- **xRocket Bot**  
-  [Donate through xRocket](https://t.me/xrocket?start=inv_R4llrClZtPjovVe)
+**TON**: `UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness`
 
 ## Support
 
@@ -81,4 +58,3 @@ With special thanks to [Igroman787](https://github.com/Igroman787) for the suppo
 ## License
 
 This repository is distributed under the [MIT License](LICENSE).
-Feel free to use, modify, and distribute the code in accordance with the terms of the license.
