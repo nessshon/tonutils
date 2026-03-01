@@ -5,6 +5,7 @@ from pytoniq_core import Address, Builder, Cell, HashMap, Transaction, Slice
 from aiohttp import ClientSession
 
 from ._base import Client
+from .models import JettonWalletsResponse
 from .utils import RunGetMethodStack, RunGetMethodResult, unpack_config
 from ..account import AccountStatus, RawAccount
 from ..utils import boc_to_base64_string
@@ -289,6 +290,47 @@ class ToncenterV3Client(Client):
         client._limiter = self._limiter
 
         return await client.get_config_params()
+
+    async def get_jetton_wallets(
+            self,
+            address: Optional[Union[str, Address]] = None,
+            owner_address: Optional[Union[str, Address]] = None,
+            jetton_address: Optional[Union[str, Address]] = None,
+            exclude_zero_balance: bool = False,
+            limit: int = 10,
+            offset: int = 0,
+            sort: Optional[str] = None,
+    ) -> JettonWalletsResponse:
+        """
+        Get jetton wallets by filter.
+
+        :param address: Jetton wallet address.
+        :param owner_address: Address of the jetton wallet's owner.
+        :param jetton_address: Jetton Master address.
+        :param exclude_zero_balance: Exclude jetton wallets with 0 balance. Defaults to False.
+        :param limit: Maximum number of rows to return. Defaults to 10, max 1000.
+        :param offset: Number of rows to skip. Defaults to 0.
+        :param sort: Sort by balance: "asc" or "desc".
+        :return: JettonWalletsResponse with parsed jetton wallets data.
+        """
+        method = "/jetton/wallets"
+        params: Dict[str, Any] = {
+            "limit": limit,
+            "offset": offset,
+            "exclude_zero_balance": str(exclude_zero_balance).lower(),
+        }
+
+        if address is not None:
+            params["address"] = address.to_str() if isinstance(address, Address) else address
+        if owner_address is not None:
+            params["owner_address"] = owner_address.to_str() if isinstance(owner_address, Address) else owner_address
+        if jetton_address is not None:
+            params["jetton_address"] = jetton_address.to_str() if isinstance(jetton_address, Address) else jetton_address
+        if sort is not None:
+            params["sort"] = sort
+
+        result = await self._get(method=method, params=params)
+        return JettonWalletsResponse.from_dict(result)
 
     async def get_transactions(
             self,
