@@ -137,3 +137,7 @@ uv.lock
 # Ignore .idea files
 .idea/
 .DS_Store
+
+# Claude Code
+CLAUDE.md
+.claude/
