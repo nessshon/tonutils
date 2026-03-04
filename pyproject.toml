@@ -54,8 +54,13 @@ include = ["tonutils", "tonutils.*"]
 [tool.setuptools.package-data]
 tonutils = ["py.typed"]
 
-[project.scripts]
-tonutils = "tonutils.cli:main"
-
 [tool.setuptools.dynamic]
 version = { attr = "tonutils.__init__.__version__" }
+
+[tool.mypy]
+python_version = "3.10"
+follow_imports = "skip"
+ignore_missing_imports = true
+
+[project.scripts]
+tonutils = "tonutils.cli:main"
