@@ -317,12 +317,12 @@ class LiteServerMonitor:
         async def probe(days: int) -> bool:
             utime = now - days * seconds_per_day
             try:
-                await client.provider.lookup_block(
+                _, block = await client.provider.lookup_block(
                     workchain=WorkchainID.MASTERCHAIN,
                     shard=MASTERCHAIN_SHARD,
                     utime=utime,
                 )
-                return True
+                return abs(block.info.gen_utime - utime) <= seconds_per_day
             except (Exception,):
                 return False
 
