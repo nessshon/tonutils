@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import os
 import typing as t
 
 from tonutils import __version__
@@ -114,6 +115,9 @@ def _create_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     """CLI entry-point. Dispatches to the matched subcommand or prints help."""
+    if os.environ.get("PYTHONIOENCODING", "").lower() not in ("utf-8", "utf8"):
+        os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
     parser = _create_parser()
     args = parser.parse_args()
 
