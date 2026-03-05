@@ -35,7 +35,7 @@ class BaseClient(abc.ABC):
     """Client implementation type (`HTTP` or `ADNL`)."""
 
     network: NetworkGlobalID
-    """Network the client operates on (`MAINNET` or `TESTNET`)."""
+    """Network the client operates on."""
 
     @property
     @abc.abstractmethod

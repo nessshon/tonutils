@@ -342,7 +342,7 @@ class WalletV5Data(BaseWalletData):
     def deserialize(
         cls,
         cs: Slice,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
     ) -> WalletV5Data:
         """Deserialize from `Slice`.
 

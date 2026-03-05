@@ -30,7 +30,7 @@ class TonapiClient(BaseClient):
 
     def __init__(
         self,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
         *,
         api_key: str,
         base_url: t.Optional[str] = None,

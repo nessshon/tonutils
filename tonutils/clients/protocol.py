@@ -32,7 +32,7 @@ class ClientProtocol(t.Protocol):
     """Client implementation type (`HTTP` or `ADNL`)."""
 
     network: NetworkGlobalID
-    """Network the client operates on (`MAINNET` or `TESTNET`)."""
+    """Network the client operates on."""
 
     @property
     def provider(self) -> t.Any:

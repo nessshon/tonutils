@@ -12,6 +12,7 @@ __all__ = [
     "ProviderTimeoutError",
     "ProviderResponseError",
     "RetryLimitError",
+    "NetworkNotSupportedError",
     "RunGetMethodError",
     "StateNotLoadedError",
     "CDN_CHALLENGE_MARKERS",
@@ -122,6 +123,22 @@ class RetryLimitError(ProviderError):
         self.last_error = last_error
         ratio = f"{self.attempts}/{self.max_attempts}"
         super().__init__(f"retry limit reached {ratio}: {last_error}")
+
+
+class NetworkNotSupportedError(ClientError, KeyError):
+    """No built-in defaults for the given network in a provider."""
+
+    def __init__(self, network: t.Any, *, provider: str) -> None:
+        """
+        :param network: The network identifier.
+        :param provider: Provider or client name.
+        """
+        self.network = network
+        self.provider = provider
+        super().__init__(
+            f"No default for network {network!r} in {provider}. "
+            "Provide connection details explicitly."
+        )
 
 
 class ContractError(ClientError):

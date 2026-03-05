@@ -21,6 +21,7 @@ from tonutils.clients.limiter import RateLimiter
 from tonutils.exceptions import (
     ClientError,
     BalancerError,
+    NetworkNotSupportedError,
     RunGetMethodError,
     NotConnectedError,
     ProviderResponseError,
@@ -63,7 +64,7 @@ class LiteBalancer(LiteMixin, BaseClient):
 
     def __init__(
         self,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
         *,
         clients: t.List[LiteClient],
         connect_timeout: float = 2.0,
@@ -133,7 +134,7 @@ class LiteBalancer(LiteMixin, BaseClient):
     @classmethod
     def from_config(
         cls,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
         *,
         config: t.Union[GlobalConfig, t.Dict[str, t.Any], str],
         connect_timeout: float = 2.0,
@@ -208,7 +209,7 @@ class LiteBalancer(LiteMixin, BaseClient):
     @classmethod
     def from_network_config(
         cls,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
         *,
         connect_timeout: float = 2.0,
         request_timeout: float = 12.0,
@@ -243,7 +244,10 @@ class LiteBalancer(LiteMixin, BaseClient):
             NetworkGlobalID.MAINNET: get_mainnet_global_config,
             NetworkGlobalID.TESTNET: get_testnet_global_config,
         }
-        config = config_getters[network]()
+        getter = config_getters.get(network)
+        if getter is None:
+            raise NetworkNotSupportedError(network, provider="LiteBalancer")
+        config = getter()
         return cls.from_config(
             network=network,
             config=config,

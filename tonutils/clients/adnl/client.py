@@ -15,7 +15,11 @@ from tonutils.clients.adnl.provider.models import (
 )
 from tonutils.clients.base import BaseClient
 from tonutils.clients.limiter import RateLimiter
-from tonutils.exceptions import NotConnectedError, ClientError
+from tonutils.exceptions import (
+    NotConnectedError,
+    NetworkNotSupportedError,
+    ClientError,
+)
 from tonutils.types import (
     BinaryLike,
     ClientType,
@@ -31,7 +35,7 @@ class LiteClient(LiteMixin, BaseClient):
 
     def __init__(
         self,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
         *,
         ip: t.Union[str, int],
         port: int,
@@ -92,7 +96,7 @@ class LiteClient(LiteMixin, BaseClient):
     @classmethod
     def from_config(
         cls,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
         *,
         config: t.Union[GlobalConfig, t.Dict[str, t.Any], str],
         index: int,
@@ -150,7 +154,7 @@ class LiteClient(LiteMixin, BaseClient):
     @classmethod
     def from_network_config(
         cls,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
         *,
         index: int,
         connect_timeout: float = 2.0,
@@ -181,7 +185,10 @@ class LiteClient(LiteMixin, BaseClient):
             NetworkGlobalID.MAINNET: get_mainnet_global_config,
             NetworkGlobalID.TESTNET: get_testnet_global_config,
         }
-        config = config_getters[network]()
+        getter = config_getters.get(network)
+        if getter is None:
+            raise NetworkNotSupportedError(network, provider="LiteClient")
+        config = getter()
         return cls.from_config(
             network=network,
             config=config,

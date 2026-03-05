@@ -3,6 +3,7 @@ import typing as t
 from aiohttp import ClientSession
 
 from tonutils.clients.http.clients.toncenter import ToncenterClient
+from tonutils.exceptions import NetworkNotSupportedError
 from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
@@ -41,6 +42,8 @@ class TatumClient(ToncenterClient):
             NetworkGlobalID.TESTNET: "https://ton-testnet.gateway.tatum.io",
         }
         base_url = base_url or urls.get(network)
+        if base_url is None:
+            raise NetworkNotSupportedError(network, provider="Tatum")
 
         super().__init__(
             network=network,

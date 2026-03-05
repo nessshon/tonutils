@@ -52,7 +52,7 @@ class HttpBalancer(BaseClient):
 
     def __init__(
         self,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
         *,
         clients: t.List[BaseClient],
         request_timeout: float = 12.0,

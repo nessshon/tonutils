@@ -64,10 +64,12 @@ class NetworkGlobalID(int, Enum):
     Attributes:
         MAINNET: Production network (-239).
         TESTNET: Testing network (-3).
+        TETRA: Tetra experimental network (662387).
     """
 
     MAINNET = -239
     TESTNET = -3
+    TETRA = 662387
 
 
 class WorkchainID(int, Enum):

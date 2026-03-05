@@ -61,7 +61,10 @@ class _WalletV5(
         cls._validate_config_type(config)
 
         if config.subwallet_id is None:
-            config.subwallet_id = WalletV5SubwalletID(network=client.network)
+            network = client.network
+            if network == NetworkGlobalID.TETRA:
+                network = NetworkGlobalID.MAINNET
+            config.subwallet_id = WalletV5SubwalletID(network=network)
 
         return super().from_private_key(client, private_key, workchain, config)
 
@@ -197,9 +200,10 @@ class WalletV5R1(
         if not (self._info and self._info.data):
             raise StateNotLoadedError(self, missing="state_data")
 
-        network = (
-            NetworkGlobalID.TESTNET if self.client.network else NetworkGlobalID.MAINNET
-        )
+        network = self.client.network
+        if network == NetworkGlobalID.TETRA:
+            network = NetworkGlobalID.MAINNET
+
         cs = self._info.data.begin_parse()
         return self._data_model.deserialize(cs, network)
 

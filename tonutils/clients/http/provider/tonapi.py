@@ -12,6 +12,7 @@ from tonutils.clients.http.provider.models import (
     BlockchainAccountTransactionsResult,
     BlockchainAccountMethodResult,
 )
+from tonutils.exceptions import NetworkNotSupportedError
 from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
@@ -47,8 +48,11 @@ class TonapiHttpProvider(HttpProvider):
         urls = {
             NetworkGlobalID.MAINNET: "https://tonapi.io/v2",
             NetworkGlobalID.TESTNET: "https://testnet.tonapi.io/v2",
+            NetworkGlobalID.TETRA: "https://tetra.tonapi.io/v2",
         }
-        base_url = base_url or urls[network]
+        base_url = base_url or urls.get(network)
+        if base_url is None:
+            raise NetworkNotSupportedError(network, provider="Tonapi")
         headers = {**(headers or {}), "Authorization": f"Bearer {api_key}"}
 
         super().__init__(

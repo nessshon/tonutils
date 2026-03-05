@@ -11,6 +11,7 @@ from tonutils.clients.http.provider.models import (
     RunGetMethodPayload,
     RunGetMethodResult,
 )
+from tonutils.exceptions import NetworkNotSupportedError
 from tonutils.types import NetworkGlobalID, RetryPolicy
 
 
@@ -47,7 +48,9 @@ class ToncenterHttpProvider(HttpProvider):
             NetworkGlobalID.MAINNET: "https://toncenter.com/api/v2",
             NetworkGlobalID.TESTNET: "https://testnet.toncenter.com/api/v2",
         }
-        base_url = base_url or urls[network]
+        base_url = base_url or urls.get(network)
+        if base_url is None:
+            raise NetworkNotSupportedError(network, provider="Toncenter")
         headers = {**(headers or {}), **({"X-Api-Key": api_key} if api_key else {})}
 
         super().__init__(

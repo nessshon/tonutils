@@ -28,7 +28,7 @@ class ToncenterClient(BaseClient):
 
     def __init__(
         self,
-        network: NetworkGlobalID = NetworkGlobalID.MAINNET,
+        network: NetworkGlobalID,
         *,
         api_key: t.Optional[str] = None,
         base_url: t.Optional[str] = None,
