@@ -37,7 +37,7 @@ from tonutils.tonconnect.models import (
     SignDataPayloadDto,
     TonProofPayloadDto,
 )
-from tonutils.types import PublicKey
+from tonutils.types import NetworkGlobalID, PublicKey, SignatureDomain
 from tonutils.utils import encode_dns_name
 
 __all__ = [
@@ -154,6 +154,7 @@ class _BaseVerify(abc.ABC, t.Generic[_TDTO]):
         await self._resolve_public_key(
             wallet_state_init=self.wallet_state_init,
             address=self.address,
+            network=self.dto.network,
             wanted_public_key=self.public_key,
             get_wallet_public_key=get_wallet_public_key,
         )
@@ -163,7 +164,16 @@ class _BaseVerify(abc.ABC, t.Generic[_TDTO]):
         self._ensure_domain_allowed(self.domain, allowed_domains)
 
         verify_key = VerifyKey(self.public_key.as_bytes)
-        return verify_key.verify(self.signing_message, self.signature) is not None
+        data = self.signing_message
+        domain = SignatureDomain(self.dto.network)
+
+        if domain.is_l2:
+            try:
+                return verify_key.verify(domain.data_to_sign(data), self.signature) is not None
+            except BadSignatureError:
+                pass
+
+        return verify_key.verify(data, self.signature) is not None
 
     @classmethod
     def _ensure_domain_allowed(cls, domain: str, allowed_domains: t.List[str]) -> None:
@@ -212,6 +222,7 @@ class _BaseVerify(abc.ABC, t.Generic[_TDTO]):
         cls,
         wallet_state_init: StateInit,
         address: Address,
+        network: NetworkGlobalID,
         wanted_public_key: PublicKey,
         get_wallet_public_key: t.Optional[_GetWalletPublicKey],
     ) -> PublicKey:
@@ -219,12 +230,13 @@ class _BaseVerify(abc.ABC, t.Generic[_TDTO]):
 
         :param wallet_state_init: Wallet `StateInit`.
         :param address: Wallet address (for external resolver).
+        :param network: Network identifier for V5 wallet deserialization.
         :param wanted_public_key: Public key declared by the wallet.
         :param get_wallet_public_key: Async resolver, or `None`.
         :return: Resolved public key.
         :raises BadSignatureError: If key cannot be resolved or mismatches.
         """
-        public_key = cls._try_parse_public_key(wallet_state_init)
+        public_key = cls._try_parse_public_key(wallet_state_init, network)
         if public_key is None and get_wallet_public_key is not None:
             public_key = await get_wallet_public_key(address)
 
@@ -235,10 +247,15 @@ class _BaseVerify(abc.ABC, t.Generic[_TDTO]):
         return public_key
 
     @classmethod
-    def _try_parse_public_key(cls, state_init: StateInit) -> t.Optional[PublicKey]:
+    def _try_parse_public_key(
+        cls,
+        state_init: StateInit,
+        network: NetworkGlobalID,
+    ) -> t.Optional[PublicKey]:
         """Try to extract a public key from `StateInit`.
 
         :param state_init: Wallet `StateInit`.
+        :param network: Network identifier for V5 wallet deserialization.
         :return: Extracted public key, or `None`.
         """
         code, data = state_init.code, state_init.data
@@ -247,7 +264,12 @@ class _BaseVerify(abc.ABC, t.Generic[_TDTO]):
 
         data_model = _WALLET_DATA_MODELS.get(code)
         if data_model is not None:
-            wallet_data = data_model.deserialize(data.begin_parse())
+            cs = data.begin_parse()
+            if data_model is WalletV5Data:
+                v5_network = NetworkGlobalID.MAINNET if network == NetworkGlobalID.TETRA else network
+                wallet_data = data_model.deserialize(cs, v5_network)
+            else:
+                wallet_data = data_model.deserialize(cs)
             return wallet_data.public_key
 
         return None

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import re
 import typing as t
 from contextlib import suppress
@@ -28,6 +29,7 @@ __all__ = [
     "RetryPolicy",
     "RetryRule",
     "SendMode",
+    "SignatureDomain",
     "WorkchainID",
     "DEFAULT_ADNL_RETRY_POLICY",
     "DEFAULT_HTTP_RETRY_POLICY",
@@ -70,6 +72,51 @@ class NetworkGlobalID(int, Enum):
     MAINNET = -239
     TESTNET = -3
     TETRA = 662387
+
+
+@dataclass(slots=True, frozen=True)
+class SignatureDomain:
+    """Ed25519 signature domain for TON networks.
+
+    For L1 networks (mainnet/testnet) the domain is empty (no prefix).
+    For L2 networks the signature is computed over a SHA-256 domain prefix
+    prepended to the data.
+
+    Attributes:
+        network: Network identifier.
+    """
+
+    EMPTY_TAG: t.ClassVar[int] = 0x0E1D571B
+    L2_TAG: t.ClassVar[int] = 0x71B34EE1
+
+    network: NetworkGlobalID
+
+    @property
+    def is_l2(self) -> bool:
+        """`True` if the network requires domain-prefixed signatures."""
+        return self.network not in (NetworkGlobalID.MAINNET, NetworkGlobalID.TESTNET)
+
+    @property
+    def prefix(self) -> t.Optional[bytes]:
+        """32-byte SHA-256 domain prefix for signing, or `None` for L1."""
+        if not self.is_l2:
+            return None
+        tag = self.L2_TAG.to_bytes(4, "little")
+        global_id = int(self.network).to_bytes(4, "little", signed=True)
+        domain_hash = hashlib.sha256(tag + global_id).digest()
+        empty_hash = hashlib.sha256(self.EMPTY_TAG.to_bytes(4, "little")).digest()
+        if domain_hash == empty_hash:
+            return None
+        return domain_hash
+
+    def data_to_sign(self, data: bytes) -> bytes:
+        """Prepend domain prefix to data if L2, otherwise return unchanged.
+
+        :param data: Raw data bytes.
+        :return: Data with domain prefix prepended, or original data.
+        """
+        p = self.prefix
+        return (p + data) if p is not None else data
 
 
 class WorkchainID(int, Enum):

@@ -24,6 +24,7 @@ from tonutils.types import (
     AddressLike,
     ContractInfo,
     SendMode,
+    SignatureDomain,
     PublicKey,
     PrivateKey,
     WorkchainID,
@@ -151,7 +152,9 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
             )
 
         signed_msg = await self._build_msg_cell(messages, params)
-        signature = sign_message(signed_msg.hash, self._private_key.keypair.as_bytes)
+        domain = SignatureDomain(self.client.network)
+        data = domain.data_to_sign(signed_msg.hash)
+        signature = sign_message(data, self._private_key.keypair.as_bytes)
         return await self._build_sign_msg_cell(signed_msg, signature)
 
     @classmethod
