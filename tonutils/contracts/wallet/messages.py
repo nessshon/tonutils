@@ -7,7 +7,7 @@ from pytoniq_core import (
     CurrencyCollection,
     ExternalMsgInfo,
     InternalMsgInfo,
-    MessageAny,
+    MessageAny as MessageAnyBase,
     StateInit,
     WalletMessage,
 )
@@ -19,6 +19,27 @@ from tonutils.contracts.wallet.protocol import WalletProtocol
 from tonutils.contracts.wallet.tlb import TextCommentBody
 from tonutils.types import AddressLike, SendMode, DEFAULT_SENDMODE
 from tonutils.utils import cell_to_hex, cell_to_b64, normalize_hash, to_nano
+
+
+class MessageAny(MessageAnyBase):
+
+    def to_cell(self) -> Cell:
+        """Serialize to `Cell`."""
+        return self.serialize()
+
+    def to_boc(self) -> bytes:
+        """Serialize to BoC bytes."""
+        return self.to_cell().to_boc()
+
+    @property
+    def as_hex(self) -> str:
+        """Hex-encoded BoC string."""
+        return cell_to_hex(self.to_cell())
+
+    @property
+    def as_b64(self) -> str:
+        """Base64-encoded BoC string."""
+        return cell_to_b64(self.to_cell())
 
 
 class ExternalMessage(MessageAny):
@@ -45,24 +66,6 @@ class ExternalMessage(MessageAny):
             dest = Address(dest)
         info = ExternalMsgInfo(src, dest, import_fee)
         super().__init__(info, state_init, body)
-
-    def to_cell(self) -> Cell:
-        """Serialize to `Cell`."""
-        return self.serialize()
-
-    def to_boc(self) -> bytes:
-        """Serialize to BoC bytes."""
-        return self.to_cell().to_boc()
-
-    @property
-    def as_hex(self) -> str:
-        """Hex-encoded BoC string."""
-        return cell_to_hex(self.to_cell())
-
-    @property
-    def as_b64(self) -> str:
-        """Base64-encoded BoC string."""
-        return cell_to_b64(self.to_cell())
 
     @property
     def normalized_hash(self) -> str:
