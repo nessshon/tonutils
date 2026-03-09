@@ -11,6 +11,10 @@ from tonutils.clients.http.provider.models import (
     BlockchainAccountResult,
     BlockchainAccountTransactionsResult,
     BlockchainAccountMethodResult,
+    GaslessConfigResult,
+    GaslessEstimatePayload,
+    GaslessSendPayload,
+    GaslessEstimateResult,
 )
 from tonutils.exceptions import NetworkNotSupportedError
 from tonutils.types import NetworkGlobalID, RetryPolicy
@@ -148,4 +152,45 @@ class TonapiHttpProvider(HttpProvider):
                 f"/blockchain/accounts/{address}/methods/{method_name}",
                 params={"args": args} if args else None,
             ),
+        )
+
+    async def gasless_config(self) -> GaslessConfigResult:
+        """Fetch gasless transfer configuration.
+
+        :return: Parsed `GaslessConfigResult` with relay address and supported jettons.
+        """
+        return self._model(
+            GaslessConfigResult,
+            await self.send_http_request("GET", "/gasless/config"),
+        )
+
+    async def gasless_estimate(
+        self,
+        master_id: str,
+        payload: GaslessEstimatePayload,
+    ) -> GaslessEstimateResult:
+        """Estimate gasless transfer fees.
+
+        :param master_id: Jetton master address string.
+        :param payload: Estimation request payload.
+        :return: Parsed `GaslessEstimateResult` with messages to sign.
+        """
+        return self._model(
+            GaslessEstimateResult,
+            await self.send_http_request(
+                "POST",
+                f"/gasless/estimate/{master_id}",
+                json_data=payload.model_dump(),
+            ),
+        )
+
+    async def gasless_send(self, payload: GaslessSendPayload) -> None:
+        """Send a signed gasless transfer.
+
+        :param payload: Signed message payload.
+        """
+        await self.send_http_request(
+            "POST",
+            "/gasless/send",
+            json_data=payload.model_dump(),
         )
