@@ -238,7 +238,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     async def build_external_message(
         self,
-        messages: t.List[t.Union[WalletMessage, BaseMessageBuilder]],
+        messages: t.Sequence[t.Union[WalletMessage, BaseMessageBuilder]],
         params: t.Optional[_P] = None,
     ) -> ExternalMessage:
         """Build a signed external message.
@@ -264,7 +264,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     async def batch_transfer_message(
         self,
-        messages: t.List[t.Union[WalletMessage, BaseMessageBuilder]],
+        messages: t.Sequence[t.Union[WalletMessage, BaseMessageBuilder]],
         params: t.Optional[_P] = None,
     ) -> ExternalMessage:
         """Build, sign, and send a batch transfer.
