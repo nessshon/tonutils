@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tonutils"
-description = "Tonutils is a high-level, object-oriented Python library designed to facilitate seamless interactions with the TON blockchain."
+description = "Python SDK for The Open Network — lite servers (ADNL) and HTTP API providers."
 requires-python = ">=3.10,<3.15"
 authors = [
     { name = "nessshon" },
@@ -18,12 +18,15 @@ dependencies = [
     "pytoniq-core~=0.1.46",
 ]
 keywords = [
+    "ADNL",
     "AsyncIO",
+    "SDK",
     "TON",
     "TON blockchain",
     "The Open Network",
     "blockchain",
     "crypto",
+    "lite server",
     "smart contracts",
 ]
 classifiers = [
@@ -44,6 +47,9 @@ dynamic = ["version"]
 readme = "README.md"
 license = "MIT"
 
+[project.scripts]
+tonutils = "tonutils.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/nessshon/tonutils/"
 Examples = "https://github.com/nessshon/tonutils/tree/main/examples/"
@@ -61,6 +67,3 @@ version = { attr = "tonutils.__init__.__version__" }
 python_version = "3.10"
 follow_imports = "skip"
 ignore_missing_imports = true
-
-[project.scripts]
-tonutils = "tonutils.cli:main"
