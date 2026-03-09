@@ -1,6 +1,6 @@
 import typing as t
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 
 from tonutils.types import ContractState
 from tonutils.utils import to_cell, cell_to_b64
@@ -38,7 +38,7 @@ class BlockchainAccountResult(BaseModel):
     last_transaction_hash: t.Optional[str] = None
 
 
-class _BlockchainAccountTransaction(BaseModel):
+class BlockchainAccountTransaction(BaseModel):
     """Single account transaction with raw BoC payload."""
 
     raw: t.Optional[str] = None
@@ -47,7 +47,7 @@ class _BlockchainAccountTransaction(BaseModel):
 class BlockchainAccountTransactionsResult(BaseModel):
     """Result model for /blockchain/accounts/{address}/transactions."""
 
-    transactions: t.Optional[t.List[_BlockchainAccountTransaction]] = None
+    transactions: t.Optional[t.List[BlockchainAccountTransaction]] = None
 
 
 class BlockchainAccountMethodResult(BaseModel):
@@ -60,6 +60,94 @@ class BlockchainAccountMethodResult(BaseModel):
 
     stack: t.Optional[t.List[t.Any]] = None
     exit_code: int
+
+
+class _GaslessGasJetton(BaseModel):
+    """Supported gas jetton entry from gasless configuration."""
+
+    master_id: str
+
+
+class GaslessConfigResult(BaseModel):
+    """Result model for /gasless/config.
+
+    Attributes:
+        relay_address: Address of the relay that pays gas.
+        gas_jettons: Supported jettons for gas payment.
+    """
+
+    relay_address: str
+    gas_jettons: t.List[_GaslessGasJetton]
+
+
+class GaslessEstimatePayload(BaseModel):
+    """Payload for /gasless/estimate/{master_id}.
+
+    Attributes:
+        return_emulation: Whether to return emulation result.
+        wallet_address: Sender wallet address string.
+        wallet_public_key: Hex-encoded sender public key.
+        messages: BoC-encoded messages to estimate.
+    """
+
+    return_emulation: bool
+    wallet_address: str
+    wallet_public_key: str
+    messages: t.List[BlockchainMessagePayload]
+
+
+class GaslessSignRawMessage(BaseModel):
+    """Single message returned by gasless estimation.
+
+    Attributes:
+        address: Destination address string.
+        amount: Amount in nanotons as string.
+        payload: Base64-encoded message payload, or `None`.
+        state_init: Base64-encoded StateInit, or `None`.
+    """
+
+    address: str
+    amount: str
+    payload: t.Optional[str] = Field(default=None)
+    state_init: t.Optional[str] = Field(alias="stateInit", default=None)
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class GaslessEstimateResult(BaseModel):
+    """Result model for /gasless/estimate/{master_id}.
+
+    Attributes:
+        protocol_name: Gasless protocol name (e.g. ``gasless``).
+        relay_address: Address of the relay that pays gas.
+        commission: Relay commission amount as string.
+        from_: Sender address (aliased from ``from``).
+        valid_until: Expiration unix timestamp for the transaction.
+        messages: Messages to sign and send.
+        emulation: Emulation result, or `None`.
+    """
+
+    protocol_name: str
+    relay_address: str
+    commission: str
+    from_: str = Field(alias="from")
+    valid_until: int
+    messages: t.List[GaslessSignRawMessage]
+    emulation: t.Optional[t.Dict[str, t.Any]] = Field(default=None)
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class GaslessSendPayload(BaseModel):
+    """Payload for /gasless/send.
+
+    Attributes:
+        wallet_public_key: Hex-encoded sender public key.
+        boc: Hex-encoded signed external message BoC.
+    """
+
+    wallet_public_key: str
+    boc: str
 
 
 class SendBocPayload(BaseModel):
@@ -76,25 +164,25 @@ class SendBocPayload(BaseModel):
         self.boc = cell_to_b64(cell)
 
 
-class _Config(BaseModel):
+class Config(BaseModel):
     """Wrapper for base64-encoded config cell."""
 
     bytes: t.Optional[str] = None
 
 
-class _ConfigAll(BaseModel):
+class ConfigAll(BaseModel):
     """Wrapper for config section returned by Toncenter."""
 
-    config: t.Optional[_Config] = None
+    config: t.Optional[Config] = None
 
 
 class GetConfigAllResult(BaseModel):
     """Result model for /getConfigAll."""
 
-    result: t.Optional[_ConfigAll] = None
+    result: t.Optional[ConfigAll] = None
 
 
-class _LastTransactionID(BaseModel):
+class LastTransactionID(BaseModel):
     """Last transaction identification."""
 
     lt: t.Optional[str] = None
@@ -111,7 +199,7 @@ class _AddressInformation(BaseModel):
     state: t.Optional[str] = ContractState.UNINIT.value
     code: t.Optional[str] = None
     data: t.Optional[str] = None
-    last_transaction_id: t.Optional[_LastTransactionID] = None
+    last_transaction_id: t.Optional[LastTransactionID] = None
 
     def model_post_init(self, _: t.Any) -> None:
         """Normalize legacy Toncenter state names."""
@@ -125,7 +213,7 @@ class GetAddressInformationResult(BaseModel):
     result: _AddressInformation = _AddressInformation()
 
 
-class _Transaction(BaseModel):
+class Transaction(BaseModel):
     """Minimal transaction model containing raw BoC data."""
 
     data: t.Optional[str] = None
@@ -134,10 +222,10 @@ class _Transaction(BaseModel):
 class GetTransactionsResult(BaseModel):
     """Result wrapper for /getTransactions."""
 
-    result: t.Optional[t.List[_Transaction]] = None
+    result: t.Optional[t.List[Transaction]] = None
 
 
-class _GetMethod(BaseModel):
+class GetMethod(BaseModel):
     """Container for TVM stack result.
 
     Attributes:
@@ -166,4 +254,4 @@ class RunGetMethodPayload(BaseModel):
 class RunGetMethodResult(BaseModel):
     """Response wrapper for /runGetMethod."""
 
-    result: t.Optional[_GetMethod] = None
+    result: t.Optional[GetMethod] = None
