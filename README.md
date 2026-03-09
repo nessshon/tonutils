@@ -40,14 +40,13 @@ Check out the **[examples](examples)** directory for practical usage across all 
 
 Available commands:
 
-- `tonutils --version` — current library version
-
-- `tonutils status` — monitor lite-server availability in real time
-  ```bash
-  tonutils status --network mainnet              # mainnet (default) or testnet
-  tonutils status --config /path/to/config.json  # path or URL to config
-  tonutils status --rps 100                      # requests per second
-  ```
+```bash
+tonutils -v                              # current library version
+tonutils status                          # monitor lite-server availability
+tonutils status -n mainnet               # mainnet (default) or testnet
+tonutils status -c /path/to/config.json  # path or URL to config
+tonutils status --rps 100                # requests per second
+```
 
 ## Donations
 
@@ -57,7 +56,7 @@ If this project has been useful to you, consider supporting its development!
 
 ## Support
 
-Supported by [TON Society](https://github.com/ton-society/grants-and-bounties), Grants and Bounties program.\
+Supported by [TON Society](https://github.com/ton-society/grants-and-bounties), Grants and Bounties program.  
 With special thanks to [Igroman787](https://github.com/Igroman787) for the support.
 
 ## License
