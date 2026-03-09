@@ -1,14 +1,32 @@
 import abc
 import typing as t
 
-from pytoniq_core import Cell, WalletMessage, begin_cell
+from pytoniq_core import (
+    Address,
+    Cell,
+    WalletMessage,
+    begin_cell,
+)
 
+from tonutils.clients.http.provider.models import (
+    BlockchainMessagePayload,
+    GaslessConfigResult,
+    GaslessEstimatePayload,
+    GaslessEstimateResult,
+    GaslessSendPayload,
+)
 from tonutils.clients.protocol import ClientProtocol
+from tonutils.contracts.opcodes import OpCode
 from tonutils.contracts.versions import ContractVersion
 from tonutils.contracts.wallet.base import BaseWallet
 from tonutils.contracts.wallet.configs import (
     WalletV5BetaConfig,
     WalletV5Config,
+)
+from tonutils.contracts.wallet.messages import (
+    ExternalMessage,
+    JettonTransferBuilder,
+    TONTransferBuilder,
 )
 from tonutils.contracts.wallet.methods import (
     SeqnoGetMethod,
@@ -20,9 +38,9 @@ from tonutils.contracts.wallet.methods import (
 from tonutils.contracts.wallet.params import WalletV5BetaParams, WalletV5Params
 from tonutils.contracts.wallet.tlb import OutActionSendMsg, WalletV5SubwalletID
 from tonutils.contracts.wallet.tlb import WalletV5BetaData, WalletV5Data
-from tonutils.exceptions import StateNotLoadedError
-from tonutils.types import NetworkGlobalID, PrivateKey, WorkchainID
-from tonutils.utils import calc_valid_until
+from tonutils.exceptions import ClientError, StateNotLoadedError
+from tonutils.types import AddressLike, NetworkGlobalID, PrivateKey, WorkchainID
+from tonutils.utils import calc_valid_until, cell_to_hex, to_nano
 
 _C = t.TypeVar("_C", bound=t.Union[WalletV5Config, WalletV5BetaConfig])
 _D = t.TypeVar("_D", bound=t.Union[WalletV5Data, WalletV5BetaData])
@@ -110,6 +128,168 @@ class _WalletV5(
         :param actions: Out-actions `Cell`.
         :return: Packed actions `Cell`.
         """
+
+    def _gasless_validate_provider(self) -> None:
+        """Validate that the client supports gasless transfers.
+
+        :raises ClientError: If the client does not use `TonapiHttpProvider`
+            or the network is not mainnet.
+        """
+        from tonutils.clients.http.provider.tonapi import TonapiHttpProvider
+
+        if not isinstance(self.client.provider, TonapiHttpProvider):
+            raise ClientError(
+                "Gasless transfers require `TonapiClient`. "
+                f"Current client uses `{type(self.client.provider).__name__}`."
+            )
+        if self.client.network != NetworkGlobalID.MAINNET:
+            raise ClientError(
+                "Gasless transfers are only supported on MAINNET. "
+                f"Current network: `{self.client.network!r}`."
+            )
+
+    @staticmethod
+    def _gasless_validate_jetton(
+        config: GaslessConfigResult,
+        jetton_master_address: str,
+    ) -> None:
+        """Validate that the jetton is supported for gasless payments.
+
+        :param config: Gasless configuration with supported jettons.
+        :param jetton_master_address: Raw jetton master address string.
+        :raises ClientError: If the jetton is not supported.
+        """
+        supported = {jetton.master_id for jetton in config.gas_jettons}
+        if jetton_master_address not in supported:
+            raise ClientError(
+                f"Jetton `{jetton_master_address}` is not supported for gasless transfers. "
+                f"Supported: {', '.join(supported)}."
+            )
+
+    async def _gasless_build_external_msg(
+        self,
+        estimate_result: GaslessEstimateResult,
+        seqno: t.Optional[int] = None,
+    ) -> ExternalMessage:
+        """Build and sign an external message from gasless estimation result.
+
+        :param estimate_result: Gasless estimation result with messages to sign.
+        :param seqno: Sequence number, or `None` to fetch from contract.
+        :return: Signed `ExternalMessage`.
+        """
+        estimated_messages = [
+            TONTransferBuilder(
+                destination=Address(msg.address),
+                amount=int(msg.amount),
+                body=Cell.one_from_boc(msg.payload) if msg.payload else None,
+            )
+            for msg in estimate_result.messages
+        ]
+        params = t.cast(
+            _P,
+            self._params_model(
+                seqno=seqno,
+                valid_until=estimate_result.valid_until,
+                op_code=OpCode.AUTH_SIGNED_INTERNAL,
+            ),
+        )
+        return await self.build_external_message(estimated_messages, params)
+
+    async def gasless_estimate(
+        self,
+        destination: AddressLike,
+        jetton_amount: int,
+        jetton_master_address: AddressLike,
+        jetton_wallet_address: t.Optional[AddressLike] = None,
+        response_address: t.Optional[AddressLike] = None,
+        custom_payload: t.Optional[Cell] = None,
+        forward_payload: t.Optional[t.Union[Cell, str]] = None,
+        forward_amount: int = 1,
+        amount: int = to_nano("0.05"),
+        query_id: int = 0,
+        bounce: t.Optional[bool] = None,
+    ) -> GaslessEstimateResult:
+        """Estimate a gasless jetton transfer via Tonapi relay.
+
+        Builds a jetton transfer message and sends it to the gasless
+        estimation endpoint. Parameters mirror `JettonTransferBuilder`.
+
+        :param destination: Recipient address.
+        :param jetton_amount: Jetton amount in base units.
+        :param jetton_master_address: Jetton master address (also used for gas payment).
+        :param jetton_wallet_address: Sender's jetton wallet, or `None` for auto-resolve.
+        :param response_address: Address for excess funds, or `None` for wallet address.
+        :param custom_payload: Custom payload cell, or `None`.
+        :param forward_payload: Payload to forward (`Cell` or text), or `None`.
+        :param forward_amount: Amount to forward in nanotons.
+        :param amount: TON amount attached to the jetton transfer message.
+        :param query_id: Query identifier.
+        :param bounce: Bounce on error, or `None` for auto-detect.
+        :return: `GaslessEstimateResult` with messages to sign and send.
+        :raises ClientError: If the client or jetton is not supported.
+        """
+        raw_jetton_master_address = (
+            jetton_master_address.to_str(is_user_friendly=False)
+            if isinstance(jetton_master_address, Address)
+            else Address(jetton_master_address).to_str(is_user_friendly=False)
+        )
+
+        self._gasless_validate_provider()
+        config = await self.client.provider.gasless_config()
+        self._gasless_validate_jetton(config, raw_jetton_master_address)
+        response_address = response_address or Address(config.relay_address)
+
+        builder = JettonTransferBuilder(
+            destination=destination,
+            jetton_amount=jetton_amount,
+            jetton_wallet_address=jetton_wallet_address,
+            jetton_master_address=jetton_master_address,
+            response_address=response_address,
+            custom_payload=custom_payload,
+            forward_payload=forward_payload,
+            forward_amount=forward_amount,
+            amount=amount,
+            query_id=query_id,
+            bounce=bounce,
+        )
+        message = await builder.build(self)
+        boc = cell_to_hex(message.message.serialize())
+
+        assert self._public_key is not None
+        return await self.client.provider.gasless_estimate(
+            master_id=raw_jetton_master_address,
+            payload=GaslessEstimatePayload(
+                return_emulation=True,
+                wallet_address=self.address.to_str(is_user_friendly=False),
+                wallet_public_key=self._public_key.as_hex,
+                messages=[BlockchainMessagePayload(boc=boc)],
+            ),
+        )
+
+    async def gasless_send(
+        self,
+        estimate_result: GaslessEstimateResult,
+        seqno: t.Optional[int] = None,
+    ) -> None:
+        """Sign and send a gasless transfer from estimation result.
+
+        Builds an external message from the estimation, signs it,
+        and sends via the gasless relay.
+
+        :param estimate_result: Result from `gasless_estimate`.
+        :param seqno: Sequence number, or `None` to fetch from contract.
+        """
+        assert self._public_key is not None
+        external_msg = await self._gasless_build_external_msg(
+            estimate_result=estimate_result,
+            seqno=seqno,
+        )
+        await self.client.provider.gasless_send(
+            GaslessSendPayload(
+                wallet_public_key=self._public_key.as_hex,
+                boc=external_msg.as_hex,
+            ),
+        )
 
 
 class WalletV5Beta(
