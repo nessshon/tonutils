@@ -61,7 +61,7 @@ class ActiveConnection(BaseModel):
     connect_event: ConnectEventSuccess = A("connectEvent")
     session: BridgeProviderSession
     next_rpc_request_id: int = A("nextRpcRequestId", default=0)
-    last_wallet_event_id: t.Optional[int] = A("lastWalletEventId", default=None)
+    last_wallet_event_id: t.Optional[t.Union[int, str]] = A("lastWalletEventId", default=None)
     last_event_id: t.Optional[str] = A("lastEventId", default=None)
 
 

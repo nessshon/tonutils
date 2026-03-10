@@ -348,10 +348,14 @@ class Provider:
             await self._on_message(wallet_msg)
             return
 
-        # Deduplicate wallet events by monotonic integer ID.
+        # Deduplicate wallet events by monotonic ID.
         if isinstance(wallet_msg, EventBase) and wallet_msg.id is not None:
             last_id = await self._storage.get_last_wallet_event_id()
-            if last_id is not None and wallet_msg.id <= last_id:
+            if (
+                last_id is not None
+                and type(wallet_msg.id) is type(last_id)
+                and wallet_msg.id <= last_id  # type: ignore[operator]
+            ):
                 return
 
         # Lock to prevent race when multiple bridges deliver

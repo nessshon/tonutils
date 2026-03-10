@@ -94,7 +94,7 @@ class ProviderStorage:
 
         return conn
 
-    async def store_last_wallet_event_id(self, event_id: int) -> None:
+    async def store_last_wallet_event_id(self, event_id: t.Union[int, str]) -> None:
         """Persist the last wallet event ID.
 
         :param event_id: Monotonic event identifier.
@@ -102,10 +102,10 @@ class ProviderStorage:
         async with self._lock:
             conn = await self._get_connection()
             if isinstance(conn, ActiveConnection):
-                conn = conn.model_copy(update={"last_wallet_event_id": int(event_id)})
+                conn = conn.model_copy(update={"last_wallet_event_id": event_id})
                 await self.store_connection(conn)
 
-    async def get_last_wallet_event_id(self) -> t.Optional[int]:
+    async def get_last_wallet_event_id(self) -> t.Optional[t.Union[int, str]]:
         """Return the last wallet event ID, or `None`."""
         conn = await self._get_connection()
         if isinstance(conn, ActiveConnection):

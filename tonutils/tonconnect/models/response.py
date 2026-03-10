@@ -25,7 +25,7 @@ class EventBase(BaseModel):
         id: Monotonic event identifier.
     """
 
-    id: int
+    id: t.Optional[t.Union[int, str]] = None
 
 
 class TonAddressItemReply(BaseModel):

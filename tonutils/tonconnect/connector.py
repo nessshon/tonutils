@@ -454,7 +454,7 @@ class Connector:
         """Resolve a request future and dispatch the event."""
         self._cancel_request_timeout(request_id)
         event = self._request_events.pop(request_id, None)
-        future = self._request_futures.get(request_id)
+        future = self._request_futures.pop(request_id, None)
         if future is not None and not future.done():
             future.set_result((result, error))
         if event is not None:

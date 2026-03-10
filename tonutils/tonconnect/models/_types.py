@@ -114,7 +114,7 @@ def _as_binary64(v: t.Any) -> Binary:
 
 
 def _s_address(v: Address) -> str:
-    return v.to_str(is_user_friendly=False)
+    return v.to_str(is_user_friendly=True, is_bounceable=False)
 
 
 def _s_chain(v: NetworkGlobalID) -> str:
