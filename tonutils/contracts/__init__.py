@@ -126,6 +126,7 @@ from .vanity import (
 from .versions import ContractVersion
 from .wallet import (
     BaseMessageBuilder,
+    BaseWallet,
     BaseWalletData,
     BaseWalletParams,
     EncryptedTextCommentBody,
@@ -134,6 +135,7 @@ from .wallet import (
     JettonTransferBuilder,
     NFTTransferBuilder,
     OutActionSendMsg,
+    SeqnoGuard,
     TextCommentBody,
     TONTransferBuilder,
     WalletHighloadV2,
@@ -189,12 +191,16 @@ from .wallet import (
     is_signature_allowed_get_method,
     processed_get_method,
     seqno_get_method,
+    VALID_MNEMONIC_LENGTHS,
 )
 
 __all__ = [
     "BaseContract",
     "BaseMessageBuilder",
+    "BaseTeleCollection",
+    "BaseWallet",
     "BaseWalletData",
+    "BaseWalletParams",
     "ChangeDNSRecordBody",
     "CONTRACT_CODES",
     "ContractProtocol",
@@ -265,6 +271,7 @@ __all__ = [
     "OutActionSendMsg",
     "RenewDNSBody",
     "RoyaltyParams",
+    "SeqnoGuard",
     "TeleCollectionData",
     "TeleItemAuction",
     "TeleItemAuctionConfig",
@@ -368,4 +375,5 @@ __all__ = [
     "processed_get_method",
     "royalty_params_get_method",
     "seqno_get_method",
+    "VALID_MNEMONIC_LENGTHS",
 ]

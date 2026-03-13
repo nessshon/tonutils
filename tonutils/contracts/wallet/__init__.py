@@ -2,6 +2,7 @@ from .base import (
     BaseWallet,
     VALID_MNEMONIC_LENGTHS,
 )
+from .guard import SeqnoGuard
 from .configs import (
     WalletHighloadV2Config,
     WalletHighloadV3Config,
@@ -91,6 +92,7 @@ __all__ = [
     "JettonTransferBuilder",
     "NFTTransferBuilder",
     "OutActionSendMsg",
+    "SeqnoGuard",
     "TextCommentBody",
     "TONTransferBuilder",
     "WalletHighloadV2",
