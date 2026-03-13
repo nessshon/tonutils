@@ -546,6 +546,32 @@ class Connector:
         self._request_timeout_tasks.clear()
         self._request_events.clear()
 
+    def resume_connect(self, timeout: float) -> None:
+        """Resume waiting for a pending connect after restart.
+
+        :param timeout: Remaining timeout in seconds.
+        """
+        self._cancel_connect()
+        loop = asyncio.get_running_loop()
+        self._connect_future = loop.create_future()
+        self._connect_timeout_task = asyncio.create_task(
+            self._run_connect_timeout(timeout),
+        )
+
+    def resume_request(self, request_id: int, event: Event, timeout: float) -> None:
+        """Resume waiting for a pending RPC request after restart.
+
+        :param request_id: The original RPC request ID.
+        :param event: Event type (``Event.TRANSACTION`` or ``Event.SIGN_DATA``).
+        :param timeout: Remaining timeout in seconds.
+        """
+        loop = asyncio.get_running_loop()
+        self._request_futures[request_id] = loop.create_future()
+        self._request_events[request_id] = event
+        self._request_timeout_tasks[request_id] = asyncio.create_task(
+            self._run_request_timeout(request_id, timeout),
+        )
+
     async def _on_provider_error(self, error: Exception) -> None:
         """Handle provider-level errors."""
         if not isinstance(error, TonConnectError):
