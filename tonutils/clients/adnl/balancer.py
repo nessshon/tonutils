@@ -441,12 +441,14 @@ class LiteBalancer(LiteMixin, BaseClient):
 
         async def _run() -> _T:
             last_exc: t.Optional[BaseException] = None
+            attempts = 0
 
             for _ in range(len(self._clients)):
                 if not self.alive_clients:
                     break
 
                 client = self._pick_client()
+                attempts += 1
 
                 if not client.provider.connected:
                     try:
@@ -478,7 +480,9 @@ class LiteBalancer(LiteMixin, BaseClient):
                 return result
 
             if last_exc is not None:
-                raise BalancerError("lite failover exhausted") from last_exc
+                raise BalancerError(
+                    f"lite failover exhausted after {attempts} attempt(s): {last_exc}"
+                ) from last_exc
             raise BalancerError("no alive lite-servers available")
 
         try:

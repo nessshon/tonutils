@@ -285,7 +285,7 @@ class HttpBalancer(BaseClient):
                 )
 
             raise BalancerError(
-                f"http failover exhausted after {attempts} attempt(s)"
+                f"http failover exhausted after {attempts} attempt(s): {last_exc}"
             ) from last_exc
 
         try:
