@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from pytoniq_core import Address, Cell, StateInit, TlbScheme
+from pytoniq_core import Address, Cell, StateInit, TlbScheme, Transaction
 
 from tonutils.clients.protocol import ClientProtocol
 from tonutils.contracts.codes import CONTRACT_CODES
@@ -233,6 +233,43 @@ class BaseContract(ContractProtocol[_D]):
 
         info = await cls._load_info(client, address)
         return cls(client, address, info=info)
+
+    async def get_transactions(
+        self,
+        limit: int = 100,
+        from_lt: t.Optional[int] = None,
+        to_lt: t.Optional[int] = None,
+    ) -> t.List[Transaction]:
+        """Fetch transaction history for this contract.
+
+        :param limit: Maximum number of transactions to return.
+        :param from_lt: Upper-bound logical time (inclusive), or `None`.
+        :param to_lt: Lower-bound logical time (exclusive), or `None`.
+        :return: Transactions ordered from newest to oldest.
+        """
+        return await self._client.get_transactions(
+            address=self._address,
+            limit=limit,
+            from_lt=from_lt,
+            to_lt=to_lt,
+        )
+
+    async def run_get_method(
+        self,
+        method_name: str,
+        stack: t.Optional[t.List[t.Any]] = None,
+    ) -> t.List[t.Any]:
+        """Execute a get-method on this contract.
+
+        :param method_name: Name of the get-method.
+        :param stack: TVM stack arguments, or `None`.
+        :return: Decoded TVM stack result.
+        """
+        return await self._client.run_get_method(
+            address=self._address,
+            method_name=method_name,
+            stack=stack,
+        )
 
     def __repr__(self) -> str:
         return f"< Contract {self.__class__.__name__} address: {self.address} >"
