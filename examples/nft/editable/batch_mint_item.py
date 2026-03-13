@@ -81,11 +81,11 @@ async def main() -> None:
     # Send batch mint transaction to collection contract
     # destination: collection contract address
     # amount: TON attached to message (covers gas + forward_amount for all items)
-    #   Formula: 0.25 TON × items_count (scales with batch size)
+    #   Formula: 0.025 TON × items_count (scales with batch size)
     # body: serialized batch mint message
     msg = await wallet.transfer(
         destination=NFT_COLLECTION_ADDRESS,
-        amount=to_nano(0.25) * nft_items_count,
+        amount=to_nano(0.025) * nft_items_count,
         body=body.serialize(),
     )
 
