@@ -75,7 +75,7 @@ class ToncenterStackCodec(StackCodec):
             if isinstance(item, int):
                 out.append(["num", str(item)])
             elif isinstance(item, Address):
-                out.append(["tvm.Cell", cell_to_b64(item.to_cell())])
+                out.append(["tvm.Slice", cell_to_b64(item.to_cell())])
             elif isinstance(item, Cell):
                 out.append(["tvm.Cell", cell_to_b64(item)])
             elif isinstance(item, Slice):
