@@ -200,7 +200,6 @@ class _WalletV5(
         destination: AddressLike,
         jetton_amount: int,
         jetton_master_address: AddressLike,
-        jetton_wallet_address: t.Optional[AddressLike] = None,
         response_address: t.Optional[AddressLike] = None,
         custom_payload: t.Optional[Cell] = None,
         forward_payload: t.Optional[t.Union[Cell, str]] = None,
@@ -217,7 +216,6 @@ class _WalletV5(
         :param destination: Recipient address.
         :param jetton_amount: Jetton amount in base units.
         :param jetton_master_address: Jetton master address (also used for gas payment).
-        :param jetton_wallet_address: Sender's jetton wallet, or `None` for auto-resolve.
         :param response_address: Address for excess funds, or `None` for wallet address.
         :param custom_payload: Custom payload cell, or `None`.
         :param forward_payload: Payload to forward (`Cell` or text), or `None`.
@@ -242,7 +240,6 @@ class _WalletV5(
         builder = JettonTransferBuilder(
             destination=destination,
             jetton_amount=jetton_amount,
-            jetton_wallet_address=jetton_wallet_address,
             jetton_master_address=jetton_master_address,
             response_address=response_address,
             custom_payload=custom_payload,
