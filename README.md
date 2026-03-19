@@ -98,11 +98,6 @@ Monitor lite-server availability:
 tonutils status [-n mainnet|testnet] [-c PATH_OR_URL] [-r RPS]
 ```
 
-## Support
-
-Supported by [TON Society](https://github.com/ton-society/grants-and-bounties), Grants and Bounties program.  
-With special thanks to [Igroman787](https://github.com/Igroman787) for the support.
-
 ## License
 
 This repository is distributed under the [MIT License](LICENSE).
