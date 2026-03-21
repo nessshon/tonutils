@@ -1,3 +1,2 @@
 aiohttp>=3.7.0
-pydantic>=2.0,<3.0
 pytoniq-core~=0.1.46
