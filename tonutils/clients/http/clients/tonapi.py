@@ -6,8 +6,8 @@ from aiohttp import ClientSession
 from pytoniq_core import Cell, Slice, Transaction
 
 from tonutils.clients.base import BaseClient
-from tonutils.clients.http.provider.models import BlockchainMessagePayload
 from tonutils.clients.http.provider.tonapi import TonapiHttpProvider
+from tonutils.clients.http.provider.tonapi.models import BlockchainMessagePayload
 from tonutils.clients.http.stack import TonapiStackCodec
 from tonutils.exceptions import ClientError, RunGetMethodError
 from tonutils.types import (

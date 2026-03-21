@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import typing as t
+from dataclasses import asdict
 
 import aiohttp
 
 from tonutils.clients.http.provider.base import HttpProvider
-from tonutils.clients.http.provider.models import (
+from tonutils.clients.http.provider.tonapi.models import (
     BlockchainMessagePayload,
     BlockchainConfigResult,
     BlockchainAccountResult,
@@ -78,7 +79,7 @@ class TonapiHttpProvider(HttpProvider):
         await self.send_http_request(
             "POST",
             "/blockchain/message",
-            json_data=payload.model_dump(),
+            json_data=asdict(payload),
         )
 
     async def blockchain_config(self) -> BlockchainConfigResult:
@@ -180,7 +181,7 @@ class TonapiHttpProvider(HttpProvider):
             await self.send_http_request(
                 "POST",
                 f"/gasless/estimate/{master_id}",
-                json_data=payload.model_dump(),
+                json_data=asdict(payload),
             ),
         )
 
@@ -192,5 +193,5 @@ class TonapiHttpProvider(HttpProvider):
         await self.send_http_request(
             "POST",
             "/gasless/send",
-            json_data=payload.model_dump(),
+            json_data=asdict(payload),
         )

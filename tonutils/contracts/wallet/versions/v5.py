@@ -8,7 +8,7 @@ from pytoniq_core import (
     begin_cell,
 )
 
-from tonutils.clients.http.provider.models import (
+from tonutils.clients.http.provider.tonapi.models import (
     BlockchainMessagePayload,
     GaslessConfigResult,
     GaslessEstimatePayload,

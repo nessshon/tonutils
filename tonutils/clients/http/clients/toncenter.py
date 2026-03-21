@@ -7,8 +7,8 @@ from aiohttp import ClientSession
 from pytoniq_core import Cell, Slice, Transaction
 
 from tonutils.clients.base import BaseClient
-from tonutils.clients.http.provider.models import SendBocPayload, RunGetMethodPayload
 from tonutils.clients.http.provider.toncenter import ToncenterHttpProvider
+from tonutils.clients.http.provider.toncenter.models import SendBocPayload, RunGetMethodPayload
 from tonutils.clients.http.stack import ToncenterStackCodec
 from tonutils.exceptions import ClientError, RunGetMethodError
 from tonutils.types import (

@@ -1,9 +1,10 @@
 import typing as t
+from dataclasses import asdict
 
 import aiohttp
 
 from tonutils.clients.http.provider.base import HttpProvider
-from tonutils.clients.http.provider.models import (
+from tonutils.clients.http.provider.toncenter.models import (
     SendBocPayload,
     GetConfigAllResult,
     GetAddressInformationResult,
@@ -72,7 +73,7 @@ class ToncenterHttpProvider(HttpProvider):
         await self.send_http_request(
             "POST",
             "/sendBoc",
-            json_data=payload.model_dump(),
+            json_data=asdict(payload),
         )
 
     async def get_config_all(self) -> GetConfigAllResult:
@@ -144,6 +145,6 @@ class ToncenterHttpProvider(HttpProvider):
             await self.send_http_request(
                 "POST",
                 "/runGetMethod",
-                json_data=payload.model_dump(),
+                json_data=asdict(payload),
             ),
         )

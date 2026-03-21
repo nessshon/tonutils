@@ -5,7 +5,6 @@ import json
 import typing as t
 
 import aiohttp
-from pydantic import BaseModel, ValidationError
 
 from tonutils.clients.limiter import RateLimiter
 from tonutils.exceptions import (
@@ -72,10 +71,10 @@ class HttpProvider:
         return self._session is not None and not self._session.closed
 
     @staticmethod
-    def _model(model: t.Type[BaseModel], data: t.Any) -> t.Any:
+    def _model(model: t.Any, data: t.Any) -> t.Any:
         try:
-            return model.model_validate(data)
-        except ValidationError as e:
+            return model.from_dict(data)
+        except (TypeError, KeyError, ValueError) as e:
             raise ProviderError(
                 f"invalid response: {model.__name__} validation failed"
             ) from e
