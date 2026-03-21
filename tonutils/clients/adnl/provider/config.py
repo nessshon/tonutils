@@ -1,5 +1,3 @@
-from pydantic import ValidationError
-
 from tonutils.clients.adnl.provider.models import GlobalConfig
 from tonutils.utils import load_json
 
@@ -16,8 +14,8 @@ def load_global_config(source: str) -> GlobalConfig:
     """
     try:
         data = load_json(source)
-        return GlobalConfig.model_validate(data)
-    except ValidationError as e:
+        return GlobalConfig.from_dict(data)
+    except (TypeError, KeyError, ValueError) as e:
         raise RuntimeError(f"Config validation failed: {e} ({source})") from e
 
 

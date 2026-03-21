@@ -1,9 +1,9 @@
 import typing as t
+from dataclasses import dataclass
 
-from pydantic import BaseModel
 
-
-class LiteServer(BaseModel):
+@dataclass
+class LiteServer:
     """Liteserver identity for status display.
 
     Attributes:
@@ -17,7 +17,8 @@ class LiteServer(BaseModel):
     port: int
 
 
-class BlockInfo(BaseModel):
+@dataclass
+class BlockInfo:
     """Block summary for status display.
 
     Attributes:
@@ -29,7 +30,8 @@ class BlockInfo(BaseModel):
     txs_count: int
 
 
-class LiteServerStatus(BaseModel):
+@dataclass
+class LiteServerStatus:
     """Snapshot of a single liteserver's health.
 
     Attributes:

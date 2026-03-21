@@ -1,22 +1,25 @@
+from __future__ import annotations
+
 import base64
 import socket
 import struct
 import typing as t
 from contextlib import suppress
+from dataclasses import dataclass, asdict
 
-from pydantic import BaseModel
 from pytoniq_core import BlockIdExt
-
 from tonutils.types import PublicKey, BinaryLike
 
 
-class LiteServerID(BaseModel):
+@dataclass
+class LiteServerID:
     """Liteserver public key identifier."""
 
     key: str
 
 
-class LiteServer(BaseModel):
+@dataclass
+class LiteServer:
     """TON liteserver connection configuration.
 
     Attributes:
@@ -51,23 +54,34 @@ class LiteServer(BaseModel):
         """Host and port as `host:port` string."""
         return f"{self.host}:{self.port}"
 
+    @classmethod
+    def from_dict(cls, data: t.Dict[str, t.Any]) -> LiteServer:
+        """Create from a dictionary, resolving nested ``id``."""
+        id_raw = data.get("id")
+        if isinstance(id_raw, dict):
+            id_val: t.Union[LiteServerID, BinaryLike] = LiteServerID(**id_raw)
+        else:
+            id_val = id_raw
+        return cls(port=data["port"], ip=data["ip"], id=id_val)
 
-class Block(BaseModel):
+
+@dataclass
+class Block:
     """TON blockchain block identifier.
 
     Attributes:
         file_hash: Base64-encoded file hash.
         root_hash: Base64-encoded root cell hash.
+        workchain: Workchain ID (-1 masterchain, 0 basechain).
         shard: Shard identifier, or `None` for masterchain.
         seqno: Block sequence number, or `None`.
-        workchain: Workchain ID (-1 masterchain, 0 basechain).
     """
 
     file_hash: str
     root_hash: str
+    workchain: int
     shard: t.Optional[int] = None
     seqno: t.Optional[int] = None
-    workchain: int
 
     @staticmethod
     def _hash_to_hex(v: str) -> str:
@@ -85,7 +99,8 @@ class Block(BaseModel):
         return self._hash_to_hex(self.file_hash)
 
 
-class MasterchainInfo(BaseModel):
+@dataclass
+class MasterchainInfo:
     """TON masterchain state information.
 
     Attributes:
@@ -100,19 +115,20 @@ class MasterchainInfo(BaseModel):
 
     @staticmethod
     def _parse_raw_block(b: Block) -> BlockIdExt:
-        """Convert `Block` model to `BlockIdExt`."""
-        return BlockIdExt.from_dict(b.model_dump())
+        """Convert ``Block`` to ``BlockIdExt``."""
+        return BlockIdExt.from_dict(asdict(b))
 
     def last_block(self) -> BlockIdExt:
-        """Return the latest masterchain block as `BlockIdExt`."""
+        """Return the latest masterchain block as ``BlockIdExt``."""
         return self._parse_raw_block(self.last)
 
     def init_block(self) -> BlockIdExt:
-        """Return the genesis block as `BlockIdExt`."""
+        """Return the genesis block as ``BlockIdExt``."""
         return self._parse_raw_block(self.init)
 
 
-class GlobalConfig(BaseModel):
+@dataclass
+class GlobalConfig:
     """TON global network configuration.
 
     Attributes:
@@ -120,3 +136,17 @@ class GlobalConfig(BaseModel):
     """
 
     liteservers: t.List[LiteServer]
+
+    @classmethod
+    def from_dict(cls, data: t.Dict[str, t.Any]) -> GlobalConfig:
+        """Create from a dictionary, resolving nested liteservers."""
+        raw_ls = data.get("liteservers")
+        if not isinstance(raw_ls, list):
+            raise TypeError(
+                f"Expected list for 'liteservers', got {type(raw_ls).__name__}"
+            )
+        servers = [
+            LiteServer.from_dict(item) if isinstance(item, dict) else item
+            for item in raw_ls
+        ]
+        return cls(liteservers=servers)
