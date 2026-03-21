@@ -1,16 +1,7 @@
-from tonutils.tonconnect.connector import Connector, Event
-from tonutils.tonconnect.storage import (
-    FileStorage,
-    MemoryStorage,
-    StorageProtocol,
-)
-from tonutils.tonconnect.tonconnect import TonConnect
+# This module has been extracted into a standalone package: ton-connect
 
-__all__ = [
-    "Connector",
-    "Event",
-    "TonConnect",
-    "FileStorage",
-    "MemoryStorage",
-    "StorageProtocol",
-]
+raise ImportError(
+    "tonconnect has been moved to a separate package.\n"
+    "Install it with: pip install ton-connect\n"
+    "Then use: from ton_connect import TonConnect"
+)
