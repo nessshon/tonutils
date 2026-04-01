@@ -4,60 +4,64 @@ import asyncio
 import time
 import typing as t
 
-from tonutils.clients import LiteClient
-from tonutils.clients.adnl.provider.models import GlobalConfig
-from tonutils.tools.status_monitor.console import Console
-from tonutils.tools.status_monitor.models import (
-    BlockInfo,
-    LiteServerStatus,
-    LiteServer,
-)
-from tonutils.types import (
-    NetworkGlobalID,
-    WorkchainID,
+from ton_core import (
     MAINNET_GENESIS_UTIME,
     MASTERCHAIN_SHARD,
+    NetworkGlobalID,
+    WorkchainID,
 )
 
+from tonutils.clients import LiteClient
+from tonutils.utils.status_monitor.base import BaseMonitor
+from tonutils.utils.status_monitor.lite.console import LiteConsole
+from tonutils.utils.status_monitor.lite.models import (
+    BlockInfo,
+    LiteServerStatus,
+)
+from tonutils.utils.status_monitor.models import ServerInfo
 
-class LiteServerMonitor:
+if t.TYPE_CHECKING:
+    from ton_core import GlobalConfig
+
+    from tonutils.types import RetryPolicy
+
+__all__ = ["LiteServerMonitor"]
+
+
+class LiteServerMonitor(BaseMonitor[LiteClient, LiteServerStatus]):
     """Real-time liteserver health monitor with terminal UI."""
 
-    RENDER_INTERVAL = 0.1
-    RECONNECT_INTERVAL = 30.0
-
     FAST_UPDATE_INTERVAL = 0.3
-    MEDIUM_UPDATE_INTERVAL = 3.0
-    SLOW_UPDATE_INTERVAL = 10.0
+    """Seconds between time and block update cycles."""
 
-    def __init__(self, clients: t.List[LiteClient]) -> None:
-        """
+    MEDIUM_UPDATE_INTERVAL = 3.0
+    """Seconds between ping and request RTT cycles."""
+
+    SLOW_UPDATE_INTERVAL = 10.0
+    """Seconds between version and archive depth cycles."""
+
+    def __init__(self, clients: list[LiteClient]) -> None:
+        """Initialize the liteserver monitor.
+
         :param clients: Liteserver clients to monitor.
         """
-        self._clients = clients
-        self._console = Console()
-
-        self._archive_cache: t.Dict[int, int] = {}
-        self._statuses: t.Dict[int, LiteServerStatus] = {}
-        self._last_connect: t.Dict[int, float] = {}
-
-        self._tasks: t.List[asyncio.Task[None]] = []
-        self._stop = asyncio.Event()
-
-        self._locks: t.Dict[int, asyncio.Lock] = {}
+        super().__init__(clients=clients, console=LiteConsole())
+        self._archive_cache: dict[int, int] = {}
 
     @classmethod
     def from_config(
         cls,
         config: GlobalConfig,
         network: NetworkGlobalID,
-        rps_limit: t.Optional[int] = 100,
+        rps_limit: int | None = 100,
+        retry_policy: RetryPolicy | None = None,
     ) -> LiteServerMonitor:
-        """Create monitor from a `GlobalConfig`.
+        """Create monitor from a ``GlobalConfig``.
 
         :param config: Network configuration with liteserver list.
         :param network: Network identifier (mainnet / testnet).
-        :param rps_limit: Requests-per-second limit per client, or `None`.
+        :param rps_limit: Requests-per-second limit per client, or ``None``.
+        :param retry_policy: Retry policy for ADNL queries, or ``None``.
         :return: Configured monitor instance.
         """
         return cls(
@@ -66,48 +70,18 @@ class LiteServerMonitor:
                     network=network,
                     ip=server.host,
                     port=server.port,
-                    public_key=server.id,
+                    public_key=server.pub_key,
                     rps_limit=rps_limit,
+                    retry_policy=retry_policy,
                 )
                 for server in config.liteservers
             ]
         )
 
-    @property
-    def statuses(self) -> t.List[LiteServerStatus]:
-        """Current snapshot of all liteserver statuses."""
-        return list(self._statuses.values())
-
-    async def run(self) -> None:
-        """Start the monitor render loop (blocks until stopped)."""
-        self._console.enter()
-        self._init_statuses()
-        self._start_update_loops()
-
-        try:
-            while not self._stop.is_set():
-                self._console.render(self.statuses)
-                await self._sleep(self.RENDER_INTERVAL)
-        finally:
-            self._console.exit()
-
-    async def stop(self) -> None:
-        """Stop all update tasks and close clients."""
-        if self._stop.is_set():
-            return
-        self._stop.set()
-
-        for task in self._tasks:
-            task.cancel()
-        await asyncio.gather(*self._tasks, return_exceptions=True)
-
-        close_tasks = [client.close() for client in self._clients]
-        await asyncio.gather(*close_tasks, return_exceptions=True)
-
     def _init_statuses(self) -> None:
         """Initialize status entries for all clients."""
         for index, client in enumerate(self._clients):
-            server = LiteServer(
+            server = ServerInfo(
                 index=index,
                 host=client.provider.node.host,
                 port=client.provider.node.port,
@@ -115,44 +89,41 @@ class LiteServerMonitor:
             self._statuses[index] = LiteServerStatus(server=server)
             self._locks[index] = asyncio.Lock()
 
-    def _start_update_loops(self) -> None:
-        """Spawn fast, medium, and slow update tasks per client."""
-        if self._tasks:
-            return
+    def _is_connected(self, index: int) -> bool:
+        """Check whether the liteserver at *index* is connected."""
+        return self._clients[index].provider.connected
 
-        for index, client in enumerate(self._clients):
-            fast = self._fast_update_loop(index, client)
-            self._tasks.append(asyncio.create_task(fast))
+    async def _connect(self, index: int) -> None:
+        """Connect to liteserver and record RTT."""
+        client = self._clients[index]
+        try:
+            start = time.perf_counter()
+            await client.connect()
+            connect_ms = int((time.perf_counter() - start) * 1000)
+            await self._set_status(index, connect_ms=connect_ms, last_error=None)
+        except Exception as e:
+            await self._set_status(
+                index,
+                connect_ms=None,
+                ping_ms=None,
+                request_ms=None,
+                version=None,
+                time=None,
+                last_mc_block=None,
+                last_bc_block=None,
+                archive_from=None,
+                last_error=str(e),
+            )
 
-            medium = self._medium_update_loop(index, client)
-            self._tasks.append(asyncio.create_task(medium))
+    async def _close_client(self, client: LiteClient) -> None:
+        """Close a liteserver client."""
+        await client.close()
 
-            slow = self._slow_update_loop(index, client)
-            self._tasks.append(asyncio.create_task(slow))
-
-    async def _ensure_connected(self, index: int, client: LiteClient) -> bool:
-        """Ensure client is connected, reconnecting if needed.
-
-        :param index: Client index.
-        :param client: Liteserver client.
-        :return: Whether the client is connected.
-        """
-        if client.provider.connected:
-            return True
-
-        now = time.monotonic()
-        last_attempt = self._last_connect.get(index, 0.0)
-        if now - last_attempt < self.RECONNECT_INTERVAL:
-            return False
-
-        self._last_connect[index] = now
-        await self._connect(index, client)
-        return client.provider.connected
-
-    async def _fast_update_loop(self, index: int, client: LiteClient) -> None:
-        """Poll time and blocks at `FAST_UPDATE_INTERVAL`."""
+    async def _fast_update_loop(self, index: int) -> None:
+        """Poll time and blocks at ``FAST_UPDATE_INTERVAL``."""
+        client = self._clients[index]
         while not self._stop.is_set():
-            if not await self._ensure_connected(index, client):
+            if not await self._ensure_connected(index):
                 await self._sleep(1.0)
                 continue
 
@@ -163,10 +134,11 @@ class LiteServerMonitor:
             )
             await self._sleep(self.FAST_UPDATE_INTERVAL)
 
-    async def _medium_update_loop(self, index: int, client: LiteClient) -> None:
-        """Poll ping and request RTT at `MEDIUM_UPDATE_INTERVAL`."""
+    async def _medium_update_loop(self, index: int) -> None:
+        """Poll ping and request RTT at ``MEDIUM_UPDATE_INTERVAL``."""
+        client = self._clients[index]
         while not self._stop.is_set():
-            if not client.connected:
+            if not self._is_connected(index):
                 await self._sleep(1.0)
                 continue
 
@@ -177,10 +149,11 @@ class LiteServerMonitor:
             )
             await self._sleep(self.MEDIUM_UPDATE_INTERVAL)
 
-    async def _slow_update_loop(self, index: int, client: LiteClient) -> None:
-        """Poll version and archive depth at `SLOW_UPDATE_INTERVAL`."""
+    async def _slow_update_loop(self, index: int) -> None:
+        """Poll version and archive depth at ``SLOW_UPDATE_INTERVAL``."""
+        client = self._clients[index]
         while not self._stop.is_set():
-            if not client.connected:
+            if not self._is_connected(index):
                 await self._sleep(1.0)
                 continue
 
@@ -190,29 +163,6 @@ class LiteServerMonitor:
                 return_exceptions=True,
             )
             await self._sleep(self.SLOW_UPDATE_INTERVAL)
-
-    async def _sleep(self, seconds: float) -> None:
-        """Sleep interruptibly via the stop event."""
-        try:
-            await asyncio.wait_for(self._stop.wait(), timeout=seconds)
-        except asyncio.TimeoutError:
-            pass
-
-    async def _set_status(self, index: int, **kwargs: t.Any) -> None:
-        """Update status fields atomically under a per-index lock."""
-        async with self._locks[index]:
-            current = self._statuses[index]
-            self._statuses[index] = current.model_copy(update=kwargs)
-
-    async def _connect(self, index: int, client: LiteClient) -> None:
-        """Connect to liteserver and record RTT."""
-        try:
-            start = time.perf_counter()
-            await client.connect()
-            connect_ms = int((time.perf_counter() - start) * 1000)
-            await self._set_status(index, connect_ms=connect_ms, last_error=None)
-        except Exception as e:
-            await self._set_status(index, last_error=str(e))
 
     async def _update_version(self, index: int, client: LiteClient) -> None:
         """Fetch and store server version."""
@@ -293,13 +243,13 @@ class LiteServerMonitor:
     async def _find_archive_depth(
         client: LiteClient,
         now: int,
-        cached: t.Optional[int] = None,
+        cached: int | None = None,
     ) -> int:
         """Find the earliest archive timestamp via binary search.
 
         :param client: Liteserver client.
         :param now: Current unix timestamp.
-        :param cached: Previously found timestamp, or `None`.
+        :param cached: Previously found timestamp, or ``None``.
         :return: Earliest archive unix timestamp.
         """
         seconds_per_day = 86400
@@ -323,7 +273,7 @@ class LiteServerMonitor:
                     utime=utime,
                 )
                 return abs(block.info.gen_utime - utime) <= seconds_per_day
-            except (Exception,):
+            except Exception:
                 return False
 
         while left <= right:

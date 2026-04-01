@@ -4,10 +4,12 @@ from .events import (
     TransactionsEvent,
 )
 from .scanner import BlockScanner
+from .storage import BlockScannerStorageProtocol
 
 __all__ = [
-    "BlockScanner",
     "BlockEvent",
+    "BlockScanner",
+    "BlockScannerStorageProtocol",
     "ErrorEvent",
     "TransactionsEvent",
 ]

@@ -1,20 +1,28 @@
+from __future__ import annotations
+
 import asyncio
 import typing as t
 
-from pytoniq_core.tl import BlockIdExt
-from pytoniq_core.tlb.block import ExtBlkRef
+from ton_core import (
+    MASTERCHAIN_SHARD,
+    BlockIdExt,
+    WorkchainID,
+)
 
-from tonutils.clients import LiteBalancer, LiteClient
-from tonutils.tools.block_scanner.events import (
+from tonutils.utils.block_scanner.events import (
     BlockEvent,
     ErrorEvent,
     TransactionsEvent,
 )
-from tonutils.tools.block_scanner.storage import BlockScannerStorageProtocol
-from tonutils.types import MASTERCHAIN_SHARD, WorkchainID
 
-ShardKey = t.Tuple[int, int]
-SeenShardSeqno = t.Dict[ShardKey, int]
+if t.TYPE_CHECKING:
+    from ton_core import ExtBlkRef
+
+    from tonutils.clients import LiteBalancer, LiteClient
+    from tonutils.utils.block_scanner.storage import BlockScannerStorageProtocol
+
+ShardKey = tuple[int, int]
+SeenShardSeqno = dict[ShardKey, int]
 BlockQueue = asyncio.Queue[BlockIdExt]
 
 OnError = t.Callable[[ErrorEvent], t.Awaitable[None]]
@@ -31,21 +39,22 @@ class BlockScanner:
 
     def __init__(
         self,
-        client: t.Union[LiteBalancer, LiteClient],
+        client: LiteBalancer | LiteClient,
         *,
-        on_error: t.Optional[OnError] = None,
-        on_block: t.Optional[OnBlock] = None,
-        on_transactions: t.Optional[OnTransactions] = None,
-        storage: t.Optional[BlockScannerStorageProtocol] = None,
+        on_error: OnError | None = None,
+        on_block: OnBlock | None = None,
+        on_transactions: OnTransactions | None = None,
+        storage: BlockScannerStorageProtocol | None = None,
         poll_interval: float = 0.1,
         **context: t.Any,
     ) -> None:
-        """
+        """Initialize the block scanner.
+
         :param client: Lite client or balancer.
-        :param on_error: Error handler callback, or `None`.
-        :param on_block: Block event handler, or `None`.
-        :param on_transactions: Transactions event handler, or `None`.
-        :param storage: Progress storage, or `None`.
+        :param on_error: Error handler callback, or ``None``.
+        :param on_block: Block event handler, or ``None``.
+        :param on_transactions: Transactions event handler, or ``None``.
+        :param storage: Progress storage, or ``None``.
         :param poll_interval: Poll delay in seconds.
         :param context: Shared context passed to all events.
         """
@@ -87,12 +96,12 @@ class BlockScanner:
         return self._overflow_i64((shard - step) | (step << 1))
 
     @property
-    def last_mc_block(self) -> BlockIdExt:
+    def last_mc_block(self) -> BlockIdExt | None:
         """Last known masterchain block from provider cache."""
         return self._client.provider.last_mc_block
 
-    def on_error(self, fn: t.Optional[OnError] = None) -> t.Any:
-        """Decorator to set the error handler."""
+    def on_error(self, fn: OnError | None = None) -> t.Any:
+        """Set the error handler."""
 
         def decorator(handler: OnError) -> OnError:
             self._on_error = handler
@@ -100,8 +109,8 @@ class BlockScanner:
 
         return decorator if fn is None else decorator(fn)
 
-    def on_block(self, fn: t.Optional[OnBlock] = None) -> t.Any:
-        """Decorator to set the block handler."""
+    def on_block(self, fn: OnBlock | None = None) -> t.Any:
+        """Set the block handler."""
 
         def decorator(handler: OnBlock) -> OnBlock:
             self._on_block = handler
@@ -109,8 +118,8 @@ class BlockScanner:
 
         return decorator if fn is None else decorator(fn)
 
-    def on_transactions(self, fn: t.Optional[OnTransactions] = None) -> t.Any:
-        """Decorator to set the transactions' handler."""
+    def on_transactions(self, fn: OnTransactions | None = None) -> t.Any:
+        """Set the transactions' handler."""
 
         def decorator(handler: OnTransactions) -> OnTransactions:
             self._on_transactions = handler
@@ -125,9 +134,9 @@ class BlockScanner:
         *,
         event: t.Any = None,
         handler: t.Any = None,
-        block: t.Optional[BlockIdExt] = None,
+        block: BlockIdExt | None = None,
     ) -> None:
-        """Invoke the error handler with an `ErrorEvent`. Never raises."""
+        """Invoke the error handler with an ``ErrorEvent``. Never raises."""
         if self._on_error is None:
             return
 
@@ -145,7 +154,7 @@ class BlockScanner:
             )
         except asyncio.CancelledError:
             raise
-        except (BaseException,):
+        except BaseException:
             return
 
     async def _call_handler(self, handler: t.Any, event: t.Any) -> None:
@@ -169,9 +178,9 @@ class BlockScanner:
     async def _lookup_mc_block(
         self,
         *,
-        seqno: t.Optional[int] = None,
-        lt: t.Optional[int] = None,
-        utime: t.Optional[int] = None,
+        seqno: int | None = None,
+        lt: int | None = None,
+        utime: int | None = None,
     ) -> BlockIdExt:
         """Lookup masterchain block by seqno, lt, or utime."""
         mc_block, _ = await self._client.lookup_block(
@@ -189,6 +198,9 @@ class BlockScanner:
 
         while not self._stop_event.is_set():
             last_mc_block = self.last_mc_block
+            if last_mc_block is None:
+                await asyncio.sleep(self._poll_interval)
+                continue
             if next_mc_seqno <= last_mc_block.seqno:
                 if next_mc_seqno == last_mc_block.seqno:
                     return last_mc_block
@@ -352,6 +364,8 @@ class BlockScanner:
             raise RuntimeError("No masterchain seqno in storage")
 
         last_mc_block = self.last_mc_block
+        if last_mc_block is None:
+            raise RuntimeError("No masterchain block available")
         if saved_seqno > last_mc_block.seqno:
             raise RuntimeError("Storage masterchain seqno is ahead of network")
 
@@ -370,9 +384,9 @@ class BlockScanner:
     async def start_from(
         self,
         *,
-        seqno: t.Optional[int] = None,
-        utime: t.Optional[int] = None,
-        lt: t.Optional[int] = None,
+        seqno: int | None = None,
+        utime: int | None = None,
+        lt: int | None = None,
     ) -> None:
         """Start scanning from an explicit masterchain point.
 
@@ -400,7 +414,10 @@ class BlockScanner:
 
     async def start(self) -> None:
         """Start scanning from the current last masterchain block."""
-        await self._run(self.last_mc_block)
+        mc_block = self.last_mc_block
+        if mc_block is None:
+            raise RuntimeError("No masterchain block available")
+        await self._run(mc_block)
 
     async def stop(self) -> None:
         """Request the scanner to stop."""
