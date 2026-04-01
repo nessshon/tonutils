@@ -1,29 +1,29 @@
-from .adnl import (
-    LiteBalancer,
-    LiteClient,
-    AdnlProvider,
+from .dht import (
+    DhtClient,
+    DhtNetwork,
 )
 from .http import (
-    HttpBalancer,
     ChainstackClient,
+    HttpBalancer,
     QuicknodeClient,
     TatumClient,
     TonapiClient,
-    TonapiHttpProvider,
     ToncenterClient,
-    ToncenterHttpProvider,
+)
+from .lite import (
+    LiteBalancer,
+    LiteClient,
 )
 
 __all__ = [
+    "ChainstackClient",
+    "DhtClient",
+    "DhtNetwork",
+    "HttpBalancer",
     "LiteBalancer",
     "LiteClient",
-    "AdnlProvider",
-    "HttpBalancer",
-    "ChainstackClient",
     "QuicknodeClient",
     "TatumClient",
     "TonapiClient",
-    "TonapiHttpProvider",
     "ToncenterClient",
-    "ToncenterHttpProvider",
 ]

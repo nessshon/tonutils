@@ -7,38 +7,40 @@ from contextlib import suppress
 from dataclasses import dataclass
 from itertools import cycle
 
-from pytoniq_core import Transaction
+from ton_core import NetworkGlobalID
 
 from tonutils.clients.base import BaseClient
-from tonutils.clients.http.clients.quicknode import QuicknodeClient
+from tonutils.clients.http.vendors import QuicknodeClient
 from tonutils.exceptions import (
     BalancerError,
     ClientError,
-    TransportError,
+    NotConnectedError,
     ProviderError,
     ProviderResponseError,
-    RunGetMethodError,
     ProviderTimeoutError,
-    NotConnectedError,
+    RunGetMethodError,
+    TransportError,
 )
-from tonutils.types import ClientType, ContractInfo, NetworkGlobalID
+from tonutils.types import ClientType, ContractInfo
+
+if t.TYPE_CHECKING:
+    from ton_core import Transaction
 
 _T = t.TypeVar("_T")
 
 
 @dataclass
 class HttpClientState:
-    """Internal state for an HTTP client in the balancer.
-
-    Attributes:
-        client: Associated HTTP client.
-        retry_after: Monotonic time before which requests are blocked, or `None`.
-        error_count: Consecutive error count.
-    """
+    """Internal state for an HTTP client in the balancer."""
 
     client: BaseClient
-    retry_after: t.Optional[float] = None
+    """Associated HTTP client."""
+
+    retry_after: float | None = None
+    """Monotonic time before which requests are blocked, or ``None``."""
+
     error_count: int = 0
+    """Consecutive error count."""
 
 
 class HttpBalancer(BaseClient):
@@ -54,18 +56,19 @@ class HttpBalancer(BaseClient):
         self,
         network: NetworkGlobalID,
         *,
-        clients: t.List[BaseClient],
+        clients: list[BaseClient],
         request_timeout: float = 12.0,
     ) -> None:
-        """
+        """Initialize the HTTP balancer.
+
         :param network: Target TON network.
-        :param clients: HTTP `BaseClient` instances to balance between.
+        :param clients: HTTP ``BaseClient`` instances to balance between.
         :param request_timeout: Total timeout in seconds including all failover attempts.
         """
         self.network = network
 
-        self._clients: t.List[BaseClient] = []
-        self._states: t.List[HttpClientState] = []
+        self._clients: list[BaseClient] = []
+        self._states: list[HttpClientState] = []
         self._init_clients(clients)
 
         self._rr = cycle(self._clients)
@@ -77,7 +80,7 @@ class HttpBalancer(BaseClient):
 
     @property
     def connected(self) -> bool:
-        """`True` if at least one HTTP client is connected."""
+        """``True`` if at least one HTTP client is connected."""
         return any(c.connected for c in self._clients)
 
     @property
@@ -101,12 +104,12 @@ class HttpBalancer(BaseClient):
         )
 
     @property
-    def clients(self) -> t.Tuple[BaseClient, ...]:
+    def clients(self) -> tuple[BaseClient, ...]:
         """All registered HTTP clients."""
         return tuple(self._clients)
 
     @property
-    def alive_clients(self) -> t.Tuple[BaseClient, ...]:
+    def alive_clients(self) -> tuple[BaseClient, ...]:
         """Connected clients not in cooldown."""
         now = time.monotonic()
         return tuple(
@@ -117,7 +120,7 @@ class HttpBalancer(BaseClient):
         )
 
     @property
-    def dead_clients(self) -> t.Tuple[BaseClient, ...]:
+    def dead_clients(self) -> tuple[BaseClient, ...]:
         """Clients currently in cooldown."""
         now = time.monotonic()
         return tuple(
@@ -126,7 +129,7 @@ class HttpBalancer(BaseClient):
             if state.retry_after is not None and state.retry_after > now
         )
 
-    def _init_clients(self, clients: t.List[BaseClient]) -> None:
+    def _init_clients(self, clients: list[BaseClient]) -> None:
         """Validate and register HTTP clients."""
         for client in clients:
             if client.TYPE != ClientType.HTTP:
@@ -159,8 +162,8 @@ class HttpBalancer(BaseClient):
             raise NotConnectedError(component=self.__class__.__name__)
 
         alive = list(self.alive_clients)
-        height_candidates: t.List[
-            t.Tuple[
+        height_candidates: list[
+            tuple[
                 float,
                 int,
                 HttpClientState,
@@ -186,7 +189,7 @@ class HttpBalancer(BaseClient):
         height_candidates.sort(key=lambda x: (x[0], x[1]))
         best_wait, best_err, _ = height_candidates[0]
 
-        equal_states: t.List[HttpClientState] = [
+        equal_states: list[HttpClientState] = [
             state
             for (w, e, state) in height_candidates
             if w == best_wait and e == best_err
@@ -240,7 +243,7 @@ class HttpBalancer(BaseClient):
     ) -> _T:
         """Execute a client operation with automatic failover.
 
-        :param func: Async callable accepting a `BaseClient`.
+        :param func: Async callable accepting a ``BaseClient``.
         :param method: Operation name for error reporting.
         :return: Result of the first successful invocation.
         :raises BalancerError: If all clients fail.
@@ -253,7 +256,7 @@ class HttpBalancer(BaseClient):
                     operation=method,
                 )
 
-            last_exc: t.Optional[BaseException] = None
+            last_exc: BaseException | None = None
             attempts = 0
 
             for _ in range(len(self._clients)):
@@ -298,20 +301,36 @@ class HttpBalancer(BaseClient):
             ) from exc
 
     async def _send_message(self, boc: str) -> None:
+        """Send a serialized BoC message with failover across HTTP clients.
+
+        :param boc: Hex-encoded BoC string.
+        """
+
         async def _call(client: BaseClient) -> None:
             return await client._send_message(boc)
 
         method = "send_message"
         return await self._with_failover(_call, method)
 
-    async def _get_config(self) -> t.Dict[int, t.Any]:
-        async def _call(client: BaseClient) -> t.Dict[int, t.Any]:
+    async def _get_config(self) -> dict[int, t.Any]:
+        """Fetch raw blockchain configuration with failover across HTTP clients.
+
+        :return: Mapping of config parameter IDs to values.
+        """
+
+        async def _call(client: BaseClient) -> dict[int, t.Any]:
             return await client._get_config()
 
         method = "get_config"
         return await self._with_failover(_call, method)
 
     async def _get_info(self, address: str) -> ContractInfo:
+        """Fetch contract state with failover across HTTP clients.
+
+        :param address: Raw (non-user-friendly) address string.
+        :return: ``ContractInfo`` snapshot.
+        """
+
         async def _call(client: BaseClient) -> ContractInfo:
             return await client._get_info(address)
 
@@ -322,10 +341,19 @@ class HttpBalancer(BaseClient):
         self,
         address: str,
         limit: int = 100,
-        from_lt: t.Optional[int] = None,
-        to_lt: t.Optional[int] = None,
-    ) -> t.List[Transaction]:
-        async def _call(client: BaseClient) -> t.List[Transaction]:
+        from_lt: int | None = None,
+        to_lt: int | None = None,
+    ) -> list[Transaction]:
+        """Fetch transaction history with failover across HTTP clients.
+
+        :param address: Raw (non-user-friendly) address string.
+        :param limit: Maximum number of transactions to return.
+        :param from_lt: Upper-bound logical time (inclusive), or ``None``.
+        :param to_lt: Lower-bound logical time (exclusive), or ``None``.
+        :return: List of ``Transaction`` objects.
+        """
+
+        async def _call(client: BaseClient) -> list[Transaction]:
             return await client._get_transactions(
                 address=address,
                 limit=limit,
@@ -340,9 +368,17 @@ class HttpBalancer(BaseClient):
         self,
         address: str,
         method_name: str,
-        stack: t.Optional[t.List[t.Any]] = None,
-    ) -> t.List[t.Any]:
-        async def _call(client: BaseClient) -> t.List[t.Any]:
+        stack: list[t.Any] | None = None,
+    ) -> list[t.Any]:
+        """Execute a contract get-method with failover across HTTP clients.
+
+        :param address: Raw (non-user-friendly) address string.
+        :param method_name: Name of the get-method.
+        :param stack: TVM stack arguments, or ``None``.
+        :return: Decoded TVM stack result.
+        """
+
+        async def _call(client: BaseClient) -> list[t.Any]:
             return await client._run_get_method(
                 address=address,
                 method_name=method_name,

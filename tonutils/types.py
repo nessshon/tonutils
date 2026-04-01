@@ -1,250 +1,75 @@
 from __future__ import annotations
 
-import base64
-import hashlib
-import re
 import typing as t
-from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, fields
 from enum import Enum
 
-from nacl.signing import SigningKey
-from pytoniq_core import Address, Cell, StateInit
-
-__all__ = [
-    "ADNL",
-    "AddressLike",
-    "BagID",
-    "Binary",
-    "BinaryLike",
-    "ClientType",
-    "ContractState",
-    "ContractInfo",
-    "DNSCategory",
-    "DNSPrefix",
-    "MetadataPrefix",
-    "NetworkGlobalID",
-    "PrivateKey",
-    "PublicKey",
-    "RetryPolicy",
-    "RetryRule",
-    "SendMode",
-    "SignatureDomain",
-    "WorkchainID",
-    "DEFAULT_ADNL_RETRY_POLICY",
-    "DEFAULT_HTTP_RETRY_POLICY",
-    "DEFAULT_SENDMODE",
-    "DEFAULT_SUBWALLET_ID",
-    "MAINNET_GENESIS_UTIME",
-    "MASTERCHAIN_SHARD",
-]
+from ton_core import BlockIdExt, BlockRef, Cell, ContractState, StateInit
 
 from tonutils.exceptions import CDN_CHALLENGE_MARKERS
 
-AddressLike = t.Union[Address, str]
-"""TON address: `Address` object or string representation."""
+__all__ = [
+    "DEFAULT_ADNL_RETRY_POLICY",
+    "DEFAULT_HTTP_RETRY_POLICY",
+    "BaseModel",
+    "ClientType",
+    "ContractInfo",
+    "MasterchainInfo",
+    "RetryPolicy",
+    "RetryRule",
+]
 
-BinaryLike = t.Union[str, int, bytes]
-"""Binary data input: hex/base64 string, integer, or raw bytes."""
+
+@dataclass(init=False)
+class BaseModel:
+    """Base dataclass with ``from_dict`` / ``to_dict`` serialization."""
+
+    def __init__(self, **kwargs: t.Any) -> None:
+        for key, value in kwargs.items():
+            object.__setattr__(self, key, value)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, t.Any]) -> t.Any:
+        """Create an instance from a dictionary, picking only known fields.
+
+        :param data: Raw dictionary (e.g. API response).
+        :return: New instance.
+        """
+        names = {f.name for f in fields(cls)}
+        return cls(**{k: v for k, v in data.items() if k in names})
+
+    def to_dict(self) -> dict[str, t.Any]:
+        """Serialize to a plain dictionary.
+
+        :return: Dictionary of field names to values.
+        """
+        return asdict(self)
 
 
 class ClientType(str, Enum):
-    """TON blockchain client connection type.
-
-    Attributes:
-        ADNL: Abstract Datagram Network Layer protocol connection.
-        HTTP: HTTP-based API connection (e.g., Toncenter).
-    """
+    """TON blockchain client connection type."""
 
     ADNL = "adnl"
+    """Abstract Datagram Network Layer protocol connection."""
+
     HTTP = "http"
-
-
-class NetworkGlobalID(int, Enum):
-    """TON blockchain network identifier.
-
-    Attributes:
-        MAINNET: Production network (-239).
-        TESTNET: Testing network (-3).
-        TETRA: Tetra experimental network (662387).
-    """
-
-    MAINNET = -239
-    TESTNET = -3
-    TETRA = 662387
-
-
-@dataclass(slots=True, frozen=True)
-class SignatureDomain:
-    """Ed25519 signature domain for TON networks.
-
-    For L1 networks (mainnet/testnet) the domain is empty (no prefix).
-    For L2 networks the signature is computed over a SHA-256 domain prefix
-    prepended to the data.
-
-    Attributes:
-        network: Network identifier.
-    """
-
-    EMPTY_TAG: t.ClassVar[int] = 0x0E1D571B
-    L2_TAG: t.ClassVar[int] = 0x71B34EE1
-
-    network: NetworkGlobalID
-
-    @property
-    def is_l2(self) -> bool:
-        """`True` if the network requires domain-prefixed signatures."""
-        return self.network not in (NetworkGlobalID.MAINNET, NetworkGlobalID.TESTNET)
-
-    @property
-    def prefix(self) -> t.Optional[bytes]:
-        """32-byte SHA-256 domain prefix for signing, or `None` for L1."""
-        if not self.is_l2:
-            return None
-        tag = self.L2_TAG.to_bytes(4, "little")
-        global_id = int(self.network).to_bytes(4, "little", signed=True)
-        domain_hash = hashlib.sha256(tag + global_id).digest()
-        empty_hash = hashlib.sha256(self.EMPTY_TAG.to_bytes(4, "little")).digest()
-        if domain_hash == empty_hash:
-            return None
-        return domain_hash
-
-    def data_to_sign(self, data: bytes) -> bytes:
-        """Prepend domain prefix to data if L2, otherwise return unchanged.
-
-        :param data: Raw data bytes.
-        :return: Data with domain prefix prepended, or original data.
-        """
-        p = self.prefix
-        return (p + data) if p is not None else data
-
-
-class WorkchainID(int, Enum):
-    """TON blockchain workchain identifier.
-
-    Attributes:
-        BASECHAIN: Default workchain for user contracts (0).
-        MASTERCHAIN: Coordination workchain for validators and configuration (-1).
-    """
-
-    BASECHAIN = 0
-    MASTERCHAIN = -1
-
-
-class MetadataPrefix(int, Enum):
-    """Jetton/NFT metadata storage location prefix.
-
-    Attributes:
-        ONCHAIN: Metadata stored directly on-chain (0).
-        OFFCHAIN: Metadata stored off-chain with URI reference (1).
-    """
-
-    ONCHAIN = 0
-    OFFCHAIN = 1
-
-
-class SendMode(int, Enum):
-    """Message sending mode flags for TON transactions.
-
-    Attributes:
-        CARRY_ALL_REMAINING_BALANCE: Send all remaining balance (128).
-        CARRY_ALL_REMAINING_INCOMING_VALUE: Forward all remaining incoming value (64).
-        DESTROY_ACCOUNT_IF_ZERO: Destroy account if balance reaches zero (32).
-        BOUNCE_IF_ACTION_FAIL: Bounce transaction on action-phase failure (16).
-        IGNORE_ERRORS: Continue execution despite errors (2).
-        PAY_GAS_SEPARATELY: Pay forward fees separately from message value (1).
-        DEFAULT: Standard mode with no special flags (0).
-    """
-
-    CARRY_ALL_REMAINING_BALANCE = 128
-    CARRY_ALL_REMAINING_INCOMING_VALUE = 64
-    DESTROY_ACCOUNT_IF_ZERO = 32
-    BOUNCE_IF_ACTION_FAIL = 16
-    IGNORE_ERRORS = 2
-    PAY_GAS_SEPARATELY = 1
-    DEFAULT = 0
-
-
-class DNSPrefix(int, Enum):
-    """TON DNS record type prefix.
-
-    Attributes:
-        DNS_NEXT_RESOLVER: Pointer to next resolver contract (0xBA93).
-        STORAGE: TON Storage bag-ID reference (0x7473).
-        WALLET: Wallet address reference (0x9FD3).
-        SITE: ADNL address for TON Sites (0xAD01).
-    """
-
-    DNS_NEXT_RESOLVER = 0xBA93
-    STORAGE = 0x7473
-    WALLET = 0x9FD3
-    SITE = 0xAD01
-
-
-class DNSCategory(int, Enum):
-    """TON DNS record category as SHA-256 hash.
-
-    Attributes:
-        DNS_NEXT_RESOLVER: Hash for next-resolver queries.
-        STORAGE: Hash for storage bag-ID queries.
-        WALLET: Hash for wallet address queries.
-        SITE: Hash for site ADNL address queries.
-        ALL: Query all categories (0).
-    """
-
-    DNS_NEXT_RESOLVER = (
-        11732114750494247458678882651681748623800183221773167493832867265755123357695
-    )
-    STORAGE = (
-        33305727148774590499946634090951755272001978043137765208040544350030765946327
-    )
-    WALLET = (
-        105311596331855300602201538317979276640056460191511695660591596829410056223515
-    )
-    SITE = (
-        113837984718866553357015413641085683664993881322709313240352703269157551621118
-    )
-    ALL = 0
-
-
-class ContractState(str, Enum):
-    """TON smart-contract lifecycle state.
-
-    Attributes:
-        ACTIVE: Deployed and operational.
-        FROZEN: Frozen due to storage-fee debt.
-        UNINIT: Address exists but code is not deployed.
-        NONEXIST: No balance or state.
-    """
-
-    ACTIVE = "active"
-    FROZEN = "frozen"
-    UNINIT = "uninit"
-    NONEXIST = "nonexist"
+    """HTTP-based API connection (e.g., Toncenter)."""
 
 
 class ContractInfo:
-    """TON smart-contract on-chain state snapshot.
-
-    Attributes:
-        code_raw: Base64-encoded BoC of contract code, or `None`.
-        data_raw: Base64-encoded BoC of contract data, or `None`.
-        balance: Contract balance in nanotons.
-        state: Current lifecycle state.
-        last_transaction_lt: Logical time of last transaction, or `None`.
-        last_transaction_hash: Hash of last transaction, or `None`.
-    """
+    """TON smart-contract on-chain state snapshot."""
 
     def __init__(
         self,
-        code_raw: t.Optional[str] = None,
-        data_raw: t.Optional[str] = None,
+        code_raw: str | None = None,
+        data_raw: str | None = None,
         balance: int = 0,
         state: ContractState = ContractState.NONEXIST,
-        last_transaction_lt: t.Optional[int] = None,
-        last_transaction_hash: t.Optional[str] = None,
+        last_transaction_lt: int | None = None,
+        last_transaction_hash: str | None = None,
     ) -> None:
-        """
+        """Initialize contract info.
+
         :param code_raw: Base64-encoded BoC of contract code.
         :param data_raw: Base64-encoded BoC of contract data.
         :param balance: Contract balance in nanotons.
@@ -260,190 +85,58 @@ class ContractInfo:
         self.last_transaction_hash = last_transaction_hash
 
     @property
-    def code(self) -> t.Optional[Cell]:
-        """Parsed `Cell` from `code_raw`, or `None` if absent."""
+    def code(self) -> Cell | None:
+        """Parsed ``Cell`` from ``code_raw``, or ``None`` if absent."""
         return Cell.one_from_boc(self.code_raw) if self.code_raw else None
 
     @property
-    def data(self) -> t.Optional[Cell]:
-        """Parsed `Cell` from `data_raw`, or `None` if absent."""
+    def data(self) -> Cell | None:
+        """Parsed ``Cell`` from ``data_raw``, or ``None`` if absent."""
         return Cell.one_from_boc(self.data_raw) if self.data_raw else None
 
     @property
     def state_init(self) -> StateInit:
-        """`StateInit` combining `code` and `data`."""
+        """``StateInit`` combining ``code`` and ``data``."""
         return StateInit(code=self.code, data=self.data)
 
     def __repr__(self) -> str:
+        """Return a human-readable representation of the contract info.
+
+        :return: String with all field values.
+        """
         parts = " ".join(f"{k}: {v!r}" for k, v in vars(self).items())
         return f"< {self.__class__.__name__} {parts} >"
-
-
-class Binary:
-    """Binary data wrapper with multi-format input/output.
-
-    Accepts bytes, integers, hex strings (0x-prefixed or plain), base64
-    strings, and decimal-integer strings.
-    """
-
-    def __init__(self, raw: BinaryLike, size: int = 32) -> None:
-        """
-        :param raw: Input data.
-        :param size: Expected byte length (default: 32).
-        """
-        self._size = size
-        self._bytes = self._parse(raw)
-
-    @property
-    def size(self) -> int:
-        """Expected byte length."""
-        return self._size
-
-    def _parse(self, value: t.Any) -> bytes:
-        if isinstance(value, bytes):
-            return value
-        if isinstance(value, int):
-            length = max(1, (value.bit_length() + 7) // 8)
-            return value.to_bytes(length, "big")
-
-        if isinstance(value, str):
-            s = value.strip()
-
-            # 0x... hex
-            if s.lower().startswith("0x"):
-                return bytes.fromhex(s[2:])
-
-            # plain hex (common case for publicKey)
-            if len(s) % 2 == 0 and re.compile(r"^[0-9a-fA-F]+$").fullmatch(s):
-                if len(s) == self._size * 2:
-                    return bytes.fromhex(s)
-
-            # base64 (strict)
-            with suppress(Exception):
-                b = base64.b64decode(s, validate=True)
-                return b
-
-            # decimal int as string fallback
-            n = int(s, 10)
-            length = max(1, (n.bit_length() + 7) // 8)
-            return n.to_bytes(length, "big")
-
-        raise ValueError(f"Invalid binary type: {type(value).__name__}.")
-
-    @property
-    def as_bytes(self) -> bytes:
-        """Data as bytes, left-padded with zeros to `size`."""
-        return self._bytes.rjust(self._size, b"\x00")
-
-    @property
-    def as_int(self) -> int:
-        """Data as big-endian unsigned integer."""
-        return int.from_bytes(self.as_bytes, byteorder="big")
-
-    @property
-    def as_hex(self) -> str:
-        """Data as lowercase hex string."""
-        return self.as_bytes.hex()
-
-    @property
-    def as_b64(self) -> str:
-        """Data as base64-encoded string."""
-        return base64.b64encode(self.as_bytes).decode()
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, Binary) and self.as_bytes == other.as_bytes
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}<{self.as_b64!r}>"
-
-
-class PublicKey(Binary):
-    """Ed25519 public key (32 bytes)."""
-
-    def __init__(self, raw: BinaryLike) -> None:
-        """
-        :param raw: 32-byte public key data.
-        """
-        super().__init__(raw, size=32)
-
-
-class PrivateKey(Binary):
-    """Ed25519 private key with automatic public-key derivation.
-
-    Accepts a 32-byte seed or a 64-byte keypair (private + public).
-    """
-
-    def __init__(self, raw: BinaryLike) -> None:
-        """
-        :param raw: 32-byte seed or 64-byte keypair.
-        :raises ValueError: If parsed length is neither 32 nor 64 bytes.
-        """
-        raw_bytes = self._parse(raw)
-
-        if len(raw_bytes) == 32:
-            signing_key = SigningKey(raw_bytes)
-            raw_bytes += signing_key.verify_key.encode()
-        elif len(raw_bytes) == 64:
-            pass
-        else:
-            raise ValueError("Private key must be 32 or 64 bytes.")
-
-        self._public_part = raw_bytes[32:]
-        super().__init__(raw_bytes[:32], size=32)
-
-    @property
-    def public_key(self) -> PublicKey:
-        """Derived Ed25519 public key."""
-        return PublicKey(self._public_part)
-
-    @property
-    def keypair(self) -> Binary:
-        """Full 64-byte keypair (private + public)."""
-        raw = self.as_bytes + self.public_key.as_bytes
-        return Binary(raw, size=64)
-
-
-class ADNL(Binary):
-    """ADNL address (32 bytes)."""
-
-    def __init__(self, raw: BinaryLike) -> None:
-        """
-        :param raw: 32-byte ADNL address.
-        """
-        super().__init__(raw, 32)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}<{self.as_hex.upper()}>"
-
-
-class BagID(ADNL):
-    """TON Storage bag identifier (32 bytes)."""
 
 
 @dataclass(slots=True, frozen=True)
 class RetryRule:
     """Retry rule matched by error code and/or message substrings.
 
-    If `codes` is set, code must be in `codes`.
-    If `markers` is set, any marker must appear in message (case-insensitive).
+    If ``codes`` is set, code must be in ``codes``.
+    If ``markers`` is set, any marker must appear in message (case-insensitive).
     If both are set, both conditions must match.
-
-    Attributes:
-        attempts: Maximum retry attempts (>= 1).
-        base_delay: Initial delay in seconds (>= 0).
-        cap_delay: Maximum delay in seconds (>= base_delay).
-        codes: Error codes this rule applies to, or `None`.
-        markers: Case-insensitive substrings for message matching, or `None`.
     """
 
     attempts: int = 3
-    base_delay: float = 0.3
-    cap_delay: float = 3.0
+    """Maximum retry attempts (>= 1)."""
 
-    codes: t.Optional[t.Tuple[int, ...]] = None
-    markers: t.Optional[t.Tuple[str, ...]] = None
+    base_delay: float = 0.3
+    """Initial delay in seconds (>= 0)."""
+
+    cap_delay: float = 3.0
+    """Maximum delay in seconds (>= base_delay)."""
+
+    codes: tuple[int, ...] | None = None
+    """Error codes this rule applies to, or ``None``."""
+
+    markers: tuple[str, ...] | None = None
+    """Case-insensitive substrings for message matching, or ``None``."""
 
     def __post_init__(self) -> None:
+        """Validate fields and normalize ``markers`` to lowercase.
+
+        :raises ValueError: If constraints on fields are violated.
+        """
         if self.attempts < 1:
             raise ValueError("attempts must be >= 1")
         if self.base_delay < 0:
@@ -461,7 +154,7 @@ class RetryRule:
 
         :param code: Error or status code.
         :param message: Error message.
-        :return: `True` if the rule matches.
+        :return: ``True`` if the rule matches.
         """
         if self.codes is not None and code not in self.codes:
             return False
@@ -488,20 +181,17 @@ class RetryRule:
 
 @dataclass(slots=True, frozen=True)
 class RetryPolicy:
-    """Ordered collection of `RetryRule` instances (first match wins).
+    """Ordered collection of ``RetryRule`` instances (first match wins)."""
 
-    Attributes:
-        rules: Retry rules evaluated in order.
-    """
+    rules: tuple[RetryRule, ...]
+    """Retry rules evaluated in order."""
 
-    rules: t.Tuple[RetryRule, ...]
-
-    def rule_for(self, code: int, message: t.Any) -> t.Optional[RetryRule]:
-        """Return the first matching rule, or `None`.
+    def rule_for(self, code: int, message: t.Any) -> RetryRule | None:
+        """Return the first matching rule, or ``None``.
 
         :param code: Error or status code.
         :param message: Error message.
-        :return: Matching `RetryRule` or `None`.
+        :return: Matching ``RetryRule`` or ``None``.
         """
         for r in self.rules:
             if r.matches(code, message):
@@ -548,14 +238,50 @@ DEFAULT_ADNL_RETRY_POLICY = RetryPolicy(
 )
 """Default retry policy for ADNL queries."""
 
-DEFAULT_SUBWALLET_ID = 698983191
-"""Default subwallet ID for wallet contracts."""
 
-DEFAULT_SENDMODE = SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS
-"""Default send mode: pay fees separately and ignore errors."""
+@dataclass
+class MasterchainInfo:
+    """TON masterchain state information."""
 
-MASTERCHAIN_SHARD = -9223372036854775808
-"""Shard identifier for the masterchain (-2^63)."""
+    last: BlockRef
+    """Latest masterchain block."""
 
-MAINNET_GENESIS_UTIME = 1573822385
-"""Unix timestamp of the TON mainnet genesis block (November 15, 2019)."""
+    init: BlockRef
+    """Genesis / initialization block."""
+
+    state_root_hash: str
+    """Base64-encoded root hash of current state."""
+
+    @classmethod
+    def from_dict(cls, data: dict[str, t.Any]) -> MasterchainInfo:
+        """Create from a TL response dictionary.
+
+        Strips ``@type`` and parses nested block dicts into ``BlockRef``.
+
+        :param data: Raw TL response dictionary.
+        :return: Parsed ``MasterchainInfo``.
+        """
+        last = data["last"]
+        init = data["init"]
+        return cls(
+            last=BlockRef.from_dict(last) if isinstance(last, dict) else last,
+            init=BlockRef.from_dict(init) if isinstance(init, dict) else init,
+            state_root_hash=data["state_root_hash"],
+        )
+
+    @staticmethod
+    def _parse_raw_block(b: BlockRef) -> BlockIdExt:
+        """Convert ``BlockRef`` to ``BlockIdExt``.
+
+        :param b: Block reference to convert.
+        :return: Parsed ``BlockIdExt``.
+        """
+        return BlockIdExt.from_dict(asdict(b))
+
+    def last_block(self) -> BlockIdExt:
+        """Return the latest masterchain block as ``BlockIdExt``."""
+        return self._parse_raw_block(self.last)
+
+    def init_block(self) -> BlockIdExt:
+        """Return the genesis block as ``BlockIdExt``."""
+        return self._parse_raw_block(self.init)

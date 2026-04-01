@@ -1,0 +1,323 @@
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import secrets
+import typing as t
+from contextlib import suppress
+
+from nacl.bindings import crypto_scalarmult
+from ton_core import (
+    Client,
+    Server,
+    aes_ctr_decrypt,
+    aes_ctr_encrypt,
+    create_aes_ctr_cipher,
+)
+
+from tonutils.exceptions import NotConnectedError, TransportError
+
+if t.TYPE_CHECKING:
+    from ton_core import LiteServerConfig
+
+
+class AdnlTcpTransport:
+    """ADNL TCP transport for encrypted communication with TON lite-servers.
+
+    Performs ECDH key exchange on connect, establishes bidirectional
+    AES-CTR encrypted channels, and runs a background reader task
+    for incoming frames.
+    """
+
+    def __init__(self, node: LiteServerConfig, connect_timeout: float) -> None:
+        """Initialize the transport.
+
+        :param node: Lite-server configuration with host, port, and public key.
+        :param connect_timeout: Timeout in seconds for connection.
+        """
+        self.node = node
+        self.server = Server(
+            host=node.host,
+            port=node.port,
+            pub_key=node.pub_key,
+        )
+        self.client = Client(Client.generate_ed25519_private_key())
+
+        self.connect_timeout = connect_timeout
+        self.enc_cipher: t.Any = None
+        self.dec_cipher: t.Any = None
+
+        self.loop: asyncio.AbstractEventLoop | None = None
+        self.reader: asyncio.StreamReader | None = None
+        self.writer: asyncio.StreamWriter | None = None
+
+        self._incoming: asyncio.Queue[bytes] = asyncio.Queue()
+        self._reader_task: asyncio.Task[None] | None = None
+        self._close_task: asyncio.Task[None] | None = None
+
+        self._connected = False
+        self._closing = False
+
+    @property
+    def connected(self) -> bool:
+        """``True`` if the transport is currently connected."""
+        return self._connected
+
+    def _error(self, operation: str, reason: str) -> TransportError:
+        """Create ``TransportError`` with endpoint context.
+
+        :param operation: Failed operation name.
+        :param reason: Failure description.
+        :return: Configured ``TransportError``.
+        """
+        return TransportError(
+            endpoint=self.node.endpoint,
+            operation=operation,
+            reason=reason,
+        )
+
+    @staticmethod
+    def _build_frame(data: bytes) -> bytes:
+        """Build an ADNL frame with length prefix, nonce, payload, and SHA-256 checksum.
+
+        :param data: Payload bytes to frame.
+        :return: Complete ADNL frame bytes.
+        """
+        result = (len(data) + 64).to_bytes(4, "little")
+        result += secrets.token_bytes(32)
+        result += data
+        result += hashlib.sha256(result[4:]).digest()
+        return result
+
+    def _build_handshake(self) -> bytes:
+        """Build ADNL handshake packet with ECDH key exchange.
+
+        Generates ephemeral AES-CTR keys, performs Curve25519 key exchange
+        with the server's public key, and encrypts the session parameters.
+
+        :return: Handshake packet bytes.
+        """
+        rand = secrets.token_bytes(160)
+
+        self.dec_cipher = create_aes_ctr_cipher(rand[0:32], rand[64:80])
+        self.enc_cipher = create_aes_ctr_cipher(rand[32:64], rand[80:96])
+
+        checksum = hashlib.sha256(rand).digest()
+        shared_key = crypto_scalarmult(
+            self.client.x25519_private.encode(),
+            self.server.x25519_public.encode(),
+        )
+        init_cipher = create_aes_ctr_cipher(
+            shared_key[0:16] + checksum[16:32],
+            checksum[0:4] + shared_key[20:32],
+        )
+        data = aes_ctr_encrypt(init_cipher, rand)
+
+        return bytes(
+            self.server.get_key_id()
+            + self.client.ed25519_public.encode()
+            + checksum
+            + data
+        )
+
+    async def _flush(self) -> None:
+        """Flush the TCP write buffer.
+
+        :raises TransportError: If the writer is not initialized or connection is lost.
+        """
+        if self.writer is None:
+            raise self._error("send", "writer not initialized")
+        try:
+            await self.writer.drain()
+        except ConnectionError as exc:
+            await self.close()
+            raise self._error("send", "connection lost") from exc
+
+    def encrypt_frame(self, data: bytes) -> bytes:
+        """Encrypt a frame using the session's AES-CTR cipher.
+
+        :param data: Plaintext frame bytes.
+        :return: Encrypted frame bytes.
+        """
+        if self.enc_cipher is None:
+            raise self._error("encrypt", "cipher not initialized")
+        return aes_ctr_encrypt(self.enc_cipher, data)
+
+    def decrypt_frame(self, data: bytes) -> bytes:
+        """Decrypt a frame using the session's AES-CTR cipher.
+
+        :param data: Encrypted frame bytes.
+        :return: Decrypted frame bytes.
+        """
+        if self.dec_cipher is None:
+            raise self._error("decrypt", "cipher not initialized")
+        return aes_ctr_decrypt(self.dec_cipher, data)
+
+    async def connect(self) -> None:
+        """Establish encrypted connection to the liteserver."""
+        if self._connected:
+            raise self._error("connect", "already connected")
+
+        self.loop = asyncio.get_running_loop()
+
+        try:
+            self.reader, self.writer = await asyncio.wait_for(
+                asyncio.open_connection(self.server.host, self.server.port),
+                timeout=self.connect_timeout,
+            )
+        except asyncio.TimeoutError as exc:
+            reason = f"timeout after {self.connect_timeout}s"
+            raise self._error("connect", reason) from exc
+        except OSError as exc:
+            reason = str(exc).split("(")[0].strip().rstrip(":")
+            raise self._error("connect", reason) from exc
+
+        if self.writer is None or self.reader is None:
+            raise self._error("connect", "stream init failed")
+
+        try:
+            handshake = self._build_handshake()
+            self.writer.write(handshake)
+            await self._flush()
+
+            try:
+                await asyncio.wait_for(
+                    self.read_frame(discard=True),
+                    timeout=self.connect_timeout,
+                )
+            except asyncio.IncompleteReadError as exc:
+                raise self._error("handshake", "remote closed") from exc
+            except asyncio.TimeoutError as exc:
+                raise self._error(
+                    "handshake", f"timeout after {self.connect_timeout}s"
+                ) from exc
+
+            self._connected = True
+            self._reader_task = asyncio.create_task(
+                self.frame_reader_loop(),
+                name="frame_reader_loop",
+            )
+        except Exception:
+            await self.close()
+            raise
+
+    async def send_adnl_packet(self, payload: bytes) -> None:
+        """Frame, encrypt, and send an ADNL packet to the lite-server.
+
+        :param payload: Raw ADNL packet bytes.
+        """
+        if not self._connected or self.writer is None:
+            raise NotConnectedError(
+                component="ADNL transport",
+                endpoint=self.node.endpoint,
+                operation="send",
+            )
+
+        packet = self._build_frame(payload)
+        encrypted = self.encrypt_frame(packet)
+
+        self.writer.write(encrypted)
+        await self._flush()
+
+    async def recv_adnl_packet(self) -> bytes:
+        """Receive an ADNL packet from the lite-server.
+
+        Blocks until a complete packet is available from the background reader.
+
+        :return: Raw ADNL packet bytes.
+        """
+        if not self._connected:
+            raise NotConnectedError(
+                component="ADNL transport",
+                endpoint=self.node.endpoint,
+                operation="recv",
+            )
+
+        return await self._incoming.get()
+
+    async def read_frame(self, discard: bool = False) -> bytes | None:
+        """Read, decrypt, and validate a single ADNL frame from the stream.
+
+        :param discard: If ``True``, validate but return ``None`` (handshake ack).
+        :return: Payload bytes, or ``None`` when discarding.
+        """
+        if self.reader is None:
+            raise self._error("recv", "reader not initialized")
+
+        length_enc = await self.reader.readexactly(4)
+        length_dec = self.decrypt_frame(length_enc)
+        data_len = int.from_bytes(length_dec, "little")
+
+        if data_len <= 0:
+            raise self._error("recv", f"invalid frame length: {data_len}")
+
+        data_enc = await self.reader.readexactly(data_len)
+        data = self.decrypt_frame(data_enc)
+
+        if len(data) < 32:
+            raise self._error("recv", f"frame too short: {len(data)} bytes")
+
+        payload, checksum = data[:-32], data[-32:]
+        if hashlib.sha256(payload).digest() != checksum:
+            raise self._error("recv", "checksum mismatch")
+
+        if discard:
+            return None
+        return payload
+
+    async def frame_reader_loop(self) -> None:
+        """Background task that continuously reads frames and queues them."""
+        try:
+            while True:
+                frame = await self.read_frame(discard=False)
+                if frame is None:
+                    continue
+                await self._incoming.put(frame)
+        except asyncio.CancelledError:
+            pass
+        except (
+            TransportError,
+            asyncio.IncompleteReadError,
+            ConnectionAbortedError,
+            ConnectionError,
+            TimeoutError,
+            OSError,
+        ):
+            pass
+        finally:
+            self._connected = False
+            if not self._closing:
+                self._close_task = asyncio.create_task(self.close())
+
+    async def close(self) -> None:
+        """Close the transport and clean up all resources."""
+        if self._closing:
+            return
+        self._closing = True
+        try:
+            self._connected = False
+
+            task, self._reader_task = self._reader_task, None
+            if task is not None and not task.done():
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
+
+            writer, self.writer = self.writer, None
+            self.reader = None
+
+            if writer is not None:
+                try:
+                    writer.close()
+                finally:
+                    with suppress(Exception):
+                        await writer.wait_closed()
+
+            while not self._incoming.empty():
+                self._incoming.get_nowait()
+                self._incoming.task_done()
+
+            self.enc_cipher = None
+            self.dec_cipher = None
+        finally:
+            self._closing = False

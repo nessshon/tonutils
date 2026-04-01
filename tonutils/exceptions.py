@@ -2,20 +2,21 @@ import asyncio
 import typing as t
 
 __all__ = [
-    "TonutilsError",
-    "TransportError",
-    "ProviderError",
+    "CDN_CHALLENGE_MARKERS",
+    "BalancerError",
     "ClientError",
     "ContractError",
-    "BalancerError",
-    "NotConnectedError",
-    "ProviderTimeoutError",
-    "ProviderResponseError",
-    "RetryLimitError",
+    "DhtValueNotFoundError",
     "NetworkNotSupportedError",
+    "NotConnectedError",
+    "ProviderError",
+    "ProviderResponseError",
+    "ProviderTimeoutError",
+    "RetryLimitError",
     "RunGetMethodError",
     "StateNotLoadedError",
-    "CDN_CHALLENGE_MARKERS",
+    "TonutilsError",
+    "TransportError",
 ]
 
 
@@ -27,7 +28,8 @@ class TransportError(TonutilsError):
     """Transport-level failure (connect/handshake/send/recv)."""
 
     def __init__(self, *, endpoint: str, operation: str, reason: str) -> None:
-        """
+        """Initialize the transport error.
+
         :param endpoint: Remote endpoint identifier.
         :param operation: Failed operation name.
         :param reason: Failure description.
@@ -57,10 +59,11 @@ class NotConnectedError(TonutilsError, RuntimeError):
         self,
         *,
         component: str = "client",
-        endpoint: t.Optional[str] = None,
-        operation: t.Optional[str] = None,
+        endpoint: str | None = None,
+        operation: str | None = None,
     ) -> None:
-        """
+        """Initialize the not-connected error.
+
         :param component: Name of the disconnected component.
         :param endpoint: Remote endpoint identifier.
         :param operation: Operation that required a connection.
@@ -78,7 +81,8 @@ class ProviderTimeoutError(ProviderError, asyncio.TimeoutError):
     """Provider operation exceeded its timeout."""
 
     def __init__(self, *, timeout: float, endpoint: str, operation: str) -> None:
-        """
+        """Initialize the timeout error.
+
         :param timeout: Timeout threshold in seconds.
         :param endpoint: Remote endpoint identifier.
         :param operation: Operation that timed out.
@@ -93,7 +97,8 @@ class ProviderResponseError(ProviderError):
     """Backend returned an error response."""
 
     def __init__(self, *, code: int, message: str, endpoint: str) -> None:
-        """
+        """Initialize the response error.
+
         :param code: Error code from the backend.
         :param message: Error message from the backend.
         :param endpoint: Remote endpoint identifier.
@@ -113,7 +118,8 @@ class RetryLimitError(ProviderError):
         max_attempts: int,
         last_error: ProviderError,
     ) -> None:
-        """
+        """Initialize the retry limit error.
+
         :param attempts: Number of attempts performed.
         :param max_attempts: Maximum attempts allowed by the policy.
         :param last_error: Last error before giving up.
@@ -129,7 +135,8 @@ class NetworkNotSupportedError(ClientError, KeyError):
     """No built-in defaults for the given network in a provider."""
 
     def __init__(self, network: t.Any, *, provider: str) -> None:
-        """
+        """Initialize the network-not-supported error.
+
         :param network: The network identifier.
         :param provider: Provider or client name.
         """
@@ -141,22 +148,31 @@ class NetworkNotSupportedError(ClientError, KeyError):
         )
 
 
+class DhtValueNotFoundError(ClientError):
+    """DHT value not found for the requested key."""
+
+    def __init__(self, *, key: bytes) -> None:
+        """Initialize the DHT value-not-found error.
+
+        :param key: 256-bit key that was not found.
+        """
+        self.key = key
+        super().__init__(f"DHT value not found for key {key.hex()}")
+
+
 class ContractError(ClientError):
     """Contract wrapper operation failed."""
 
     def __init__(self, target: t.Any, details: str) -> None:
-        """
+        """Initialize the contract error.
+
         :param target: Contract class or instance that failed.
         :param details: Failure description.
         """
         self.target = target
         self.details = details
 
-        if isinstance(target, type):
-            name = target.__name__
-        else:
-            name = target.__class__.__name__
-
+        name = target.__name__ if isinstance(target, type) else target.__class__.__name__
         super().__init__(f"{name} failed: {details}")
 
 
@@ -164,7 +180,8 @@ class StateNotLoadedError(ContractError):
     """Contract wrapper requires state that is not loaded."""
 
     def __init__(self, contract: t.Any, *, missing: str) -> None:
-        """
+        """Initialize the state-not-loaded error.
+
         :param contract: Contract instance missing the state.
         :param missing: Name of the missing state attribute.
         """
@@ -177,7 +194,8 @@ class RunGetMethodError(ClientError):
     """Contract get-method returned a non-zero TVM exit code."""
 
     def __init__(self, *, address: str, exit_code: int, method_name: str) -> None:
-        """
+        """Initialize the get-method error.
+
         :param address: Contract address.
         :param exit_code: TVM exit code returned by the method.
         :param method_name: Name of the get-method that failed.
@@ -190,7 +208,7 @@ class RunGetMethodError(ClientError):
         )
 
 
-CDN_CHALLENGE_MARKERS: t.Dict[str, str] = {
+CDN_CHALLENGE_MARKERS: dict[str, str] = {
     # Cloudflare
     "cloudflare": "Cloudflare protection triggered or blocked the request.",
     "cf-ray": "Cloudflare intermediate error (cf-ray header detected).",
@@ -208,3 +226,4 @@ CDN_CHALLENGE_MARKERS: t.Dict[str, str] = {
     "503 service unavailable": "Service temporarily unavailable (proxy or CDN).",
     "ddos": "Possible DDoS protection or mitigation page.",
 }
+"""Mapping of CDN challenge markers to human-readable error messages."""
