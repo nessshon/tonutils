@@ -1,21 +1,23 @@
-import typing as t
-
-from pytoniq_core import Address, Cell, StateInit, begin_cell
+from ton_core import (
+    Address,
+    AddressLike,
+    Cell,
+    ContractVersion,
+    NFTCollectionContent,
+    NFTCollectionData,
+    StateInit,
+    WorkchainID,
+    begin_cell,
+    to_cell,
+)
 
 from tonutils.contracts.base import BaseContract
 from tonutils.contracts.nft.methods import (
     GetCollectionDataGetMethod,
-    GetNFTContentGetMethod,
     GetNFTAddressByIndexGetMethod,
+    GetNFTContentGetMethod,
     RoyaltyParamsGetMethod,
 )
-from tonutils.contracts.nft.tlb import (
-    NFTCollectionData,
-    NFTCollectionContent,
-)
-from tonutils.contracts.versions import ContractVersion
-from tonutils.types import AddressLike, WorkchainID
-from tonutils.utils import to_cell
 
 
 class BaseNFTCollection(
@@ -25,14 +27,15 @@ class BaseNFTCollection(
     GetNFTAddressByIndexGetMethod,
     RoyaltyParamsGetMethod,
 ):
-    """Base implementation for NFT collection contracts."""
+    """Base NFT collection contract (TEP-62)."""
 
     _data_model = NFTCollectionData
 
     @property
-    def owner_address(self) -> t.Optional[Address]:
-        """Collection owner address, or `None`."""
-        return self.state_data.owner_address
+    def owner_address(self) -> Address | None:
+        """Collection owner address, or ``None``."""
+        addr = self.state_data.owner_address
+        return Address(addr) if isinstance(addr, str) else addr
 
     @property
     def next_item_index(self) -> int:
@@ -46,21 +49,21 @@ class BaseNFTCollection(
 
     @property
     def nft_item_code(self) -> Cell:
-        """Code `Cell` for NFT items in this collection."""
+        """Code ``Cell`` for NFT items in this collection."""
         return self.state_data.nft_item_code
 
     @classmethod
     def calculate_nft_item_address(
         cls,
         index: int,
-        nft_item_code: t.Union[Cell, str],
+        nft_item_code: Cell | str,
         collection_address: AddressLike,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Address:
         """Calculate NFT item address by index.
 
         :param index: Item index in the collection.
-        :param nft_item_code: Item contract code (`Cell` or hex string).
+        :param nft_item_code: Item contract code (``Cell`` or hex string).
         :param collection_address: Parent collection address.
         :param workchain: Target workchain.
         :return: Calculated item address.
@@ -74,12 +77,12 @@ class BaseNFTCollection(
 
 
 class NFTCollectionStandard(BaseNFTCollection):
-    """Standard NFT collection."""
+    """Standard NFT collection (TEP-62)."""
 
     VERSION = ContractVersion.NFTCollectionStandard
 
 
 class NFTCollectionEditable(BaseNFTCollection):
-    """Editable NFT collection."""
+    """Editable NFT collection with mutable content and owner."""
 
     VERSION = ContractVersion.NFTCollectionEditable

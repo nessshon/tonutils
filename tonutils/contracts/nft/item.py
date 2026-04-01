@@ -1,29 +1,25 @@
 import typing as t
 
-from pytoniq_core import Address
-
-from tonutils.contracts.base import BaseContract
-from tonutils.contracts.nft.methods import (
-    GetNFTDataGetMethod,
-    GetEditorGetMethod,
-    GetAuthorityAddressGetMethod,
-    GetRevokedTimeGetMethod,
-)
-from tonutils.contracts.nft.tlb import (
+from ton_core import (
+    Address,
+    ContractVersion,
     NFTItemEditableData,
     NFTItemSoulboundData,
     NFTItemStandardData,
     OffchainItemContent,
 )
-from tonutils.contracts.versions import ContractVersion
+
+from tonutils.contracts.base import BaseContract
+from tonutils.contracts.nft.methods import (
+    GetAuthorityAddressGetMethod,
+    GetEditorGetMethod,
+    GetNFTDataGetMethod,
+    GetRevokedTimeGetMethod,
+)
 
 _D = t.TypeVar(
     "_D",
-    bound=t.Union[
-        NFTItemEditableData,
-        NFTItemSoulboundData,
-        NFTItemStandardData,
-    ],
+    bound=NFTItemEditableData | NFTItemSoulboundData | NFTItemStandardData,
 )
 _C = t.TypeVar("_C", bound=OffchainItemContent)
 
@@ -37,9 +33,9 @@ class BaseNFTItem(
     GetNFTDataGetMethod,
     t.Generic[_D, _C],
 ):
-    """Base implementation for NFT item contracts."""
+    """Base NFT item contract (TEP-62)."""
 
-    _data_model: t.Type[_D]
+    _data_model: type[_D]
 
     @property
     def state_data(self) -> _D:
@@ -54,23 +50,23 @@ class BaseNFTItem(
     @property
     def owner_address(self) -> Address:
         """Current owner address."""
-        return self.state_data.owner_address
+        return t.cast("Address", self.state_data.owner_address)
 
     @property
     def collection_address(self) -> Address:
         """Parent collection address."""
-        return self.state_data.collection_address
+        return t.cast("Address", self.state_data.collection_address)
 
     @property
     def content(self) -> _C:
         """NFT item content metadata."""
-        return self.state_data.content
+        return t.cast("_C", self.state_data.content)
 
 
 class NFTItemStandard(BaseNFTItem[_DStandard, _C]):
-    """Standard NFT item."""
+    """Standard transferable NFT item (TEP-62)."""
 
-    _data_model = NFTItemStandardData
+    _data_model: type[_DStandard] = NFTItemStandardData  # type: ignore[assignment]
     VERSION = ContractVersion.NFTItemStandard
 
 
@@ -78,15 +74,15 @@ class NFTItemEditable(
     BaseNFTItem[_DEditable, _C],
     GetEditorGetMethod,
 ):
-    """Editable NFT item."""
+    """Editable NFT item with mutable content (TEP-62)."""
 
-    _data_model = NFTItemEditableData
+    _data_model: type[_DEditable] = NFTItemEditableData  # type: ignore[assignment]
     VERSION = ContractVersion.NFTItemEditable
 
     @property
     def editor_address(self) -> Address:
         """Address authorized to edit this NFT's content."""
-        return self.state_data.editor_address
+        return t.cast("Address", self.state_data.editor_address)
 
 
 class NFTItemSoulbound(
@@ -94,15 +90,15 @@ class NFTItemSoulbound(
     GetAuthorityAddressGetMethod,
     GetRevokedTimeGetMethod,
 ):
-    """Soulbound NFT item (SBT)."""
+    """Non-transferable Soulbound Token (TEP-85)."""
 
-    _data_model = NFTItemSoulboundData
+    _data_model: type[_DSoulbound] = NFTItemSoulboundData  # type: ignore[assignment]
     VERSION = ContractVersion.NFTItemSoulbound
 
     @property
-    def authority_address(self) -> t.Optional[Address]:
-        """Authority address that can revoke this SBT, or `None`."""
-        return self.state_data.authority_address
+    def authority_address(self) -> Address | None:
+        """Authority address that can revoke this SBT, or ``None``."""
+        return t.cast("Address | None", self.state_data.authority_address)
 
     @property
     def revoked_at(self) -> int:

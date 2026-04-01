@@ -1,19 +1,24 @@
-import typing as t
-
-from pytoniq_core import Address, Cell, StateInit, begin_cell
+from ton_core import (
+    Address,
+    AddressLike,
+    Cell,
+    ContractVersion,
+    OffchainContent,
+    StateInit,
+    TONDNSCollectionData,
+    WorkchainID,
+    begin_cell,
+    string_hash,
+    to_cell,
+)
 
 from tonutils.contracts.base import BaseContract
 from tonutils.contracts.dns.methods import DNSResolveGetMethod
-from tonutils.contracts.dns.tlb import TONDNSCollectionData
 from tonutils.contracts.nft.methods import (
     GetCollectionDataGetMethod,
     GetNFTAddressByIndexGetMethod,
     GetNFTContentGetMethod,
 )
-from tonutils.contracts.nft.tlb import OffchainContent
-from tonutils.contracts.versions import ContractVersion
-from tonutils.types import WorkchainID, AddressLike
-from tonutils.utils import to_cell, string_hash
 
 
 class TONDNSCollection(
@@ -23,14 +28,14 @@ class TONDNSCollection(
     GetNFTAddressByIndexGetMethod,
     DNSResolveGetMethod,
 ):
-    """TON DNS root collection."""
+    """TON DNS root collection (TEP-81)."""
 
     _data_model = TONDNSCollectionData
     VERSION = ContractVersion.TONDNSCollection
 
     @property
-    def owner_address(self) -> t.Optional[Address]:
-        """Always `None` for DNS collections."""
+    def owner_address(self) -> Address | None:
+        """Always ``None`` for DNS collections."""
         return None
 
     @property
@@ -45,21 +50,21 @@ class TONDNSCollection(
 
     @property
     def nft_item_code(self) -> Cell:
-        """Code `Cell` for DNS domain items."""
+        """Code ``Cell`` for DNS domain items."""
         return self.state_data.nft_item_code
 
     @classmethod
     def calculate_nft_item_address(
         cls,
-        index_or_domain: t.Union[str, int],
-        nft_item_code: t.Union[Cell, str],
+        index_or_domain: str | int,
+        nft_item_code: Cell | str,
         collection_address: AddressLike,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Address:
         """Calculate DNS domain item address.
 
         :param index_or_domain: Domain name string or numeric hash.
-        :param nft_item_code: Item contract code (`Cell` or hex string).
+        :param nft_item_code: Item contract code (``Cell`` or hex string).
         :param collection_address: DNS collection address.
         :param workchain: Target workchain.
         :return: Calculated domain item address.

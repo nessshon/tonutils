@@ -3,14 +3,15 @@ from __future__ import annotations
 import asyncio
 import typing as t
 
-from pytoniq_core import Cell, StateInit, WalletMessage
+from ton_core import DEFAULT_SENDMODE, AddressLike, SendMode
 
 from tonutils.exceptions import ContractError
-from tonutils.types import AddressLike, SendMode, DEFAULT_SENDMODE
 
 if t.TYPE_CHECKING:
+    from ton_core import Cell, StateInit, WalletMessage
+
     from tonutils.contracts.wallet.base import BaseWallet
-    from tonutils.contracts.wallet.messages import ExternalMessage, BaseMessageBuilder
+    from tonutils.contracts.wallet.messages import BaseMessageBuilder, ExternalMessage
 
 
 class SeqnoGuard:
@@ -27,7 +28,7 @@ class SeqnoGuard:
 
     def __init__(
         self,
-        wallet: BaseWallet,
+        wallet: BaseWallet[t.Any, t.Any, t.Any],
         timeout: float = 30.0,
         poll_interval: float = 1.5,
     ) -> None:
@@ -45,7 +46,7 @@ class SeqnoGuard:
         """Poll until seqno advances or timeout is reached."""
         deadline = asyncio.get_event_loop().time() + self._timeout
         while asyncio.get_event_loop().time() < deadline:
-            new_seqno = await self._wallet.seqno()  # type: ignore[attr-defined]
+            new_seqno = await self._wallet.seqno()
             if new_seqno != current_seqno:
                 return
             await asyncio.sleep(self._poll_interval)
@@ -58,7 +59,7 @@ class SeqnoGuard:
     async def _send(self, coro: t.Awaitable[ExternalMessage]) -> ExternalMessage:
         """Acquire lock, send, wait for seqno confirmation."""
         async with self._lock:
-            seqno = await self._wallet.seqno()  # type: ignore[attr-defined]
+            seqno = await self._wallet.seqno()
             result = await coro
             await self._wait_seqno(seqno)
             return result
@@ -67,22 +68,22 @@ class SeqnoGuard:
         self,
         destination: AddressLike,
         amount: int,
-        body: t.Optional[t.Union[Cell, str]] = None,
-        state_init: t.Optional[StateInit] = None,
-        send_mode: t.Union[SendMode, int] = DEFAULT_SENDMODE,
-        bounce: t.Optional[bool] = None,
-        params: t.Optional[t.Any] = None,
+        body: Cell | str | None = None,
+        state_init: StateInit | None = None,
+        send_mode: SendMode | int = DEFAULT_SENDMODE,
+        bounce: bool | None = None,
+        params: t.Any | None = None,
     ) -> ExternalMessage:
         """Send a simple TON transfer with seqno confirmation.
 
         :param destination: Recipient address.
         :param amount: Amount in nanotons.
-        :param body: Message body (`Cell` or text comment), or `None`.
-        :param state_init: `StateInit` for deployment, or `None`.
+        :param body: Message body (``Cell`` or text comment), or ``None``.
+        :param state_init: ``StateInit`` for deployment, or ``None``.
         :param send_mode: Send mode flags.
-        :param bounce: Bounce on error, or `None` for auto-detect.
-        :param params: Transaction parameters, or `None`.
-        :return: Sent `ExternalMessage`.
+        :param bounce: Bounce on error, or ``None`` for auto-detect.
+        :param params: Transaction parameters, or ``None``.
+        :return: Sent ``ExternalMessage``.
         """
         return await self._send(
             self._wallet.transfer(
@@ -98,14 +99,14 @@ class SeqnoGuard:
 
     async def transfer_message(
         self,
-        message: t.Union[WalletMessage, BaseMessageBuilder],
-        params: t.Optional[t.Any] = None,
+        message: WalletMessage | BaseMessageBuilder,
+        params: t.Any | None = None,
     ) -> ExternalMessage:
         """Send a single transfer with seqno confirmation.
 
         :param message: Internal message or message builder.
-        :param params: Transaction parameters, or `None`.
-        :return: Sent `ExternalMessage`.
+        :param params: Transaction parameters, or ``None``.
+        :return: Sent ``ExternalMessage``.
         """
         return await self._send(
             self._wallet.transfer_message(
@@ -116,14 +117,14 @@ class SeqnoGuard:
 
     async def batch_transfer_message(
         self,
-        messages: t.Sequence[t.Union[WalletMessage, BaseMessageBuilder]],
-        params: t.Optional[t.Any] = None,
+        messages: t.Sequence[WalletMessage | BaseMessageBuilder],
+        params: t.Any | None = None,
     ) -> ExternalMessage:
         """Send a batch transfer with seqno confirmation.
 
         :param messages: Internal messages or message builders.
-        :param params: Transaction parameters, or `None`.
-        :return: Sent `ExternalMessage`.
+        :param params: Transaction parameters, or ``None``.
+        :return: Sent ``ExternalMessage``.
         """
         return await self._send(
             self._wallet.batch_transfer_message(

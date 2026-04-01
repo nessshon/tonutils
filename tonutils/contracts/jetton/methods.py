@@ -1,17 +1,16 @@
 import typing as t
 
-from pytoniq_core import Address
+from ton_core import Address, AddressLike
 
 from tonutils.clients.protocol import ClientProtocol
 from tonutils.contracts.protocol import ContractProtocol
-from tonutils.types import AddressLike
 
 
 async def get_jetton_data_get_method(
     client: ClientProtocol,
     address: AddressLike,
-) -> t.List[t.Any]:
-    """Call `get_jetton_data` on a Jetton master contract.
+) -> list[t.Any]:
+    """Call ``get_jetton_data`` on a Jetton master contract.
 
     :param client: TON client.
     :param address: Jetton master address.
@@ -23,10 +22,10 @@ async def get_jetton_data_get_method(
     )
 
 
-class GetJettonDataGetMethod(ContractProtocol):
-    """Mixin for the `get_jetton_data` get-method."""
+class GetJettonDataGetMethod(ContractProtocol[t.Any]):
+    """Mixin for the ``get_jetton_data`` get-method."""
 
-    async def get_jetton_data(self) -> t.List[t.Any]:
+    async def get_jetton_data(self) -> list[t.Any]:
         """Return Jetton master data (supply, mintable, admin, content, code)."""
         return await get_jetton_data_get_method(
             client=self.client,
@@ -39,7 +38,7 @@ async def get_wallet_address_get_method(
     address: AddressLike,
     owner_address: AddressLike,
 ) -> Address:
-    """Call `get_wallet_address` on a Jetton master contract.
+    """Call ``get_wallet_address`` on a Jetton master contract.
 
     :param client: TON client.
     :param address: Jetton master address.
@@ -54,11 +53,11 @@ async def get_wallet_address_get_method(
         method_name="get_wallet_address",
         stack=[owner_address],
     )
-    return t.cast(Address, r[0])
+    return t.cast("Address", r[0])
 
 
-class GetWalletAddressGetMethod(ContractProtocol):
-    """Mixin for the `get_wallet_address` get-method."""
+class GetWalletAddressGetMethod(ContractProtocol[t.Any]):
+    """Mixin for the ``get_wallet_address`` get-method."""
 
     async def get_wallet_address(self, owner_address: AddressLike) -> Address:
         """Return Jetton wallet address for the given owner.
@@ -76,25 +75,25 @@ class GetWalletAddressGetMethod(ContractProtocol):
 async def get_next_admin_address_get_method(
     client: ClientProtocol,
     address: AddressLike,
-) -> t.Optional[Address]:
-    """Call `get_next_admin_address` on a Jetton master contract.
+) -> Address | None:
+    """Call ``get_next_admin_address`` on a Jetton master contract.
 
     :param client: TON client.
     :param address: Jetton master address.
-    :return: Next admin address, or `None`.
+    :return: Next admin address, or ``None``.
     """
     r = await client.run_get_method(
         address=address,
         method_name="get_next_admin_address",
     )
-    return t.cast(t.Optional[Address], r[0])
+    return t.cast("Address | None", r[0])
 
 
-class GetNextAdminAddressGetMethod(ContractProtocol):
-    """Mixin for the `get_next_admin_address` get-method."""
+class GetNextAdminAddressGetMethod(ContractProtocol[t.Any]):
+    """Mixin for the ``get_next_admin_address`` get-method."""
 
-    async def get_next_admin_address(self) -> t.Optional[Address]:
-        """Return next admin address, or `None`."""
+    async def get_next_admin_address(self) -> Address | None:
+        """Return next admin address, or ``None``."""
         return await get_next_admin_address_get_method(
             client=self.client,
             address=self.address,
@@ -104,8 +103,8 @@ class GetNextAdminAddressGetMethod(ContractProtocol):
 async def get_wallet_data_get_method(
     client: ClientProtocol,
     address: AddressLike,
-) -> t.List[t.Any]:
-    """Call `get_wallet_data` on a Jetton wallet contract.
+) -> list[t.Any]:
+    """Call ``get_wallet_data`` on a Jetton wallet contract.
 
     :param client: TON client.
     :param address: Jetton wallet address.
@@ -117,10 +116,10 @@ async def get_wallet_data_get_method(
     )
 
 
-class GetWalletDataGetMethod(ContractProtocol):
-    """Mixin for the `get_wallet_data` get-method."""
+class GetWalletDataGetMethod(ContractProtocol[t.Any]):
+    """Mixin for the ``get_wallet_data`` get-method."""
 
-    async def get_wallet_data(self) -> t.List[t.Any]:
+    async def get_wallet_data(self) -> list[t.Any]:
         """Return Jetton wallet data (balance, owner, master, code)."""
         return await get_wallet_data_get_method(
             client=self.client,
@@ -132,7 +131,7 @@ async def get_status_get_method(
     client: ClientProtocol,
     address: AddressLike,
 ) -> int:
-    """Call `get_status` on a contract.
+    """Call ``get_status`` on a contract.
 
     :param client: TON client.
     :param address: Contract address.
@@ -145,8 +144,8 @@ async def get_status_get_method(
     return int(r[0])
 
 
-class GetStatusGetMethod(ContractProtocol):
-    """Mixin for the `get_status` get-method."""
+class GetStatusGetMethod(ContractProtocol[t.Any]):
+    """Mixin for the ``get_status`` get-method."""
 
     async def get_status(self) -> int:
         """Return contract status code."""

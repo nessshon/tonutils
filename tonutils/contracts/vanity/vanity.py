@@ -1,15 +1,22 @@
 from __future__ import annotations
 
-from pytoniq_core import StateInit, Address
-from pytoniq_core.tlb.account import TickTock
+import typing as t
 
-from tonutils.clients.protocol import ClientProtocol
+from ton_core import (
+    Address,
+    StateInit,
+    TickTock,
+)
+
 from tonutils.contracts.base import BaseContract
-from tonutils.contracts.vanity.models import VanityResult
+
+if t.TYPE_CHECKING:
+    from tonutils.clients.protocol import ClientProtocol
+    from tonutils.contracts.vanity.models import VanityResult
 
 
-class Vanity(BaseContract):
-    """Vanity contract wrapper."""
+class Vanity(BaseContract[t.Any]):
+    """Wrapper for deploying contracts at precomputed vanity addresses."""
 
     @classmethod
     def from_result(
@@ -17,7 +24,7 @@ class Vanity(BaseContract):
         client: ClientProtocol,
         result: VanityResult,
     ) -> Vanity:
-        """Construct from a `VanityResult`.
+        """Construct from a ``VanityResult``.
 
         :param client: TON client.
         :param result: Vanity generation result.

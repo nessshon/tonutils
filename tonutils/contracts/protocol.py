@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import typing as t
 
-from pytoniq_core import Address, Cell, StateInit
-
-from tonutils.clients.protocol import ClientProtocol
-from tonutils.types import AddressLike, ContractInfo, ContractState, WorkchainID
+from ton_core import WorkchainID
 
 if t.TYPE_CHECKING:
-    from tonutils.contracts.versions import ContractVersion
+    from ton_core import Address, AddressLike, Cell, ContractState, ContractVersion, StateInit
+
+    from tonutils.clients.protocol import ClientProtocol
+    from tonutils.types import ContractInfo
 
 _D = t.TypeVar("_D")
 _TContract = t.TypeVar("_TContract")
@@ -18,15 +18,15 @@ _TContract = t.TypeVar("_TContract")
 class ContractProtocol(t.Protocol[_D]):
     """Structural protocol for TON contract wrappers."""
 
-    _data_model: t.Type[_D]
+    _data_model: type[_D]
     """TlbScheme-compatible class representing decoded on-chain data."""
 
-    VERSION: t.ClassVar[t.Union[ContractVersion, str]]
-    """Logical contract version used as a key in `CONTRACT_CODES`."""
+    VERSION: t.ClassVar[ContractVersion | str]
+    """Logical contract version used as a key in ``CONTRACT_CODES``."""
 
     @classmethod
     def get_default_code(cls) -> Cell:
-        """Return default compiled code `Cell` for this contract version."""
+        """Return default compiled code ``Cell`` for this contract version."""
 
     @property
     def client(self) -> ClientProtocol:
@@ -37,8 +37,8 @@ class ContractProtocol(t.Protocol[_D]):
         """Address of this contract."""
 
     @property
-    def state_init(self) -> t.Optional[StateInit]:
-        """Locally known `StateInit`, or `None`."""
+    def state_init(self) -> StateInit | None:
+        """Locally known ``StateInit``, or ``None``."""
 
     @property
     def state_data(self) -> _D:
@@ -58,57 +58,57 @@ class ContractProtocol(t.Protocol[_D]):
 
     @property
     def is_active(self) -> bool:
-        """`True` if state is `ACTIVE`."""
+        """``True`` if state is ``ACTIVE``."""
 
     @property
     def is_frozen(self) -> bool:
-        """`True` if state is `FROZEN`."""
+        """``True`` if state is ``FROZEN``."""
 
     @property
     def is_uninit(self) -> bool:
-        """`True` if state is `UNINIT`."""
+        """``True`` if state is ``UNINIT``."""
 
     @property
     def is_nonexit(self) -> bool:
-        """`True` if state is `NONEXIST`."""
+        """``True`` if state is ``NONEXIST``."""
 
     @property
-    def last_transaction_lt(self) -> t.Optional[int]:
-        """Logical time of the last transaction, or `None`."""
+    def last_transaction_lt(self) -> int | None:
+        """Logical time of the last transaction, or ``None``."""
 
     @property
-    def last_transaction_hash(self) -> t.Optional[str]:
-        """Hash of the last transaction as hex string, or `None`."""
+    def last_transaction_hash(self) -> str | None:
+        """Hash of the last transaction as hex string, or ``None``."""
 
     @property
-    def code(self) -> Cell:
-        """Contract code `Cell` from the latest known state."""
+    def code(self) -> Cell | None:
+        """Contract code ``Cell`` from the latest known state, or ``None``."""
 
     @property
-    def data(self) -> Cell:
-        """Contract data `Cell` from the latest known state."""
+    def data(self) -> Cell | None:
+        """Contract data ``Cell`` from the latest known state, or ``None``."""
 
     async def refresh(self) -> None:
         """Refresh contract state from the blockchain."""
 
     @classmethod
     def from_state_init(
-        cls: t.Type[_TContract],
+        cls: type[_TContract],
         client: ClientProtocol,
         state_init: StateInit,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> _TContract:
-        """Construct from a `StateInit`.
+        """Construct from a ``StateInit``.
 
         :param client: TON client.
-        :param state_init: `StateInit` containing code and data.
+        :param state_init: ``StateInit`` containing code and data.
         :param workchain: Target workchain.
         :return: New contract instance.
         """
 
     @classmethod
     def from_code_and_data(
-        cls: t.Type[_TContract],
+        cls: type[_TContract],
         client: ClientProtocol,
         code: Cell,
         data: Cell,
@@ -125,22 +125,22 @@ class ContractProtocol(t.Protocol[_D]):
 
     @classmethod
     def from_data(
-        cls: t.Type[_TContract],
+        cls: type[_TContract],
         client: ClientProtocol,
-        data: _D,
+        data: Cell,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> _TContract:
         """Construct from typed data.
 
         :param client: TON client.
-        :param data: Typed data conforming to `_data_model`.
+        :param data: Typed data conforming to ``_data_model``.
         :param workchain: Target workchain.
         :return: New contract instance.
         """
 
     @classmethod
     async def from_address(
-        cls: t.Type[_TContract],
+        cls: type[_TContract],
         client: ClientProtocol,
         address: AddressLike,
         load_state: bool = True,

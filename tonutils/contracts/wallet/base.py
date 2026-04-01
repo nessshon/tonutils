@@ -3,34 +3,42 @@ from __future__ import annotations
 import abc
 import typing as t
 
-from pytoniq_core import Address, Cell, StateInit, WalletMessage, begin_cell
-from pytoniq_core.crypto.keys import mnemonic_new, mnemonic_to_private_key, words
-from pytoniq_core.crypto.signature import sign_message
+from ton_core import (
+    CONTRACT_CODES,
+    DEFAULT_SENDMODE,
+    Address,
+    AddressLike,
+    BaseWalletConfig,
+    BaseWalletData,
+    BaseWalletParams,
+    Cell,
+    PrivateKey,
+    PublicKey,
+    SendMode,
+    SignatureDomain,
+    StateInit,
+    WalletMessage,
+    WorkchainID,
+    begin_cell,
+    mnemonic_new,
+    mnemonic_to_private_key,
+    sign_message,
+    to_cell,
+    words,
+)
 
-from tonutils.clients.protocol import ClientProtocol
 from tonutils.contracts.base import BaseContract
-from tonutils.contracts.codes import CONTRACT_CODES
-from tonutils.contracts.wallet.configs import BaseWalletConfig
 from tonutils.contracts.wallet.messages import (
     BaseMessageBuilder,
     ExternalMessage,
     TONTransferBuilder,
 )
-from tonutils.contracts.wallet.params import BaseWalletParams
 from tonutils.contracts.wallet.protocol import WalletProtocol
-from tonutils.contracts.wallet.tlb import BaseWalletData
 from tonutils.exceptions import ContractError
-from tonutils.types import (
-    AddressLike,
-    ContractInfo,
-    SendMode,
-    SignatureDomain,
-    PublicKey,
-    PrivateKey,
-    WorkchainID,
-    DEFAULT_SENDMODE,
-)
-from tonutils.utils import to_cell
+
+if t.TYPE_CHECKING:
+    from tonutils.clients.protocol import ClientProtocol
+    from tonutils.types import ContractInfo
 
 _D = t.TypeVar("_D", bound=BaseWalletData)
 _C = t.TypeVar("_C", bound=BaseWalletConfig)
@@ -38,20 +46,20 @@ _P = t.TypeVar("_P", bound=BaseWalletParams)
 
 _TWallet = t.TypeVar("_TWallet", bound="BaseWallet[t.Any, t.Any, t.Any]")
 
-VALID_MNEMONIC_LENGTHS: t.Final[t.Tuple[int, ...]] = (12, 18, 24)
+VALID_MNEMONIC_LENGTHS: t.Final[tuple[int, ...]] = (12, 18, 24)
 """Valid mnemonic phrase lengths in words."""
 
 
-class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
+class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
     """Base implementation for TON wallet contracts."""
 
-    _data_model: t.Type[_D]
+    _data_model: type[_D]
     """TlbScheme class for deserializing wallet state data."""
 
-    _config_model: t.Type[_C]
+    _config_model: type[_C]
     """Configuration model class for this wallet version."""
 
-    _params_model: t.Type[_P]
+    _params_model: type[_P]
     """Transaction parameters model class for this wallet version."""
 
     MAX_MESSAGES: t.ClassVar[int]
@@ -61,22 +69,23 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         self,
         client: ClientProtocol,
         address: Address,
-        state_init: t.Optional[StateInit] = None,
-        info: t.Optional[ContractInfo] = None,
-        config: t.Optional[_C] = None,
-        private_key: t.Optional[PrivateKey] = None,
+        state_init: StateInit | None = None,
+        info: ContractInfo | None = None,
+        config: _C | None = None,
+        private_key: PrivateKey | None = None,
     ) -> None:
-        """
+        """Initialize the wallet.
+
         :param client: TON client.
         :param address: Wallet address.
-        :param state_init: Code and data, or `None`.
-        :param info: Preloaded contract state, or `None`.
-        :param config: Wallet configuration, or `None`.
-        :param private_key: Signing key, or `None` for read-only.
+        :param state_init: Code and data, or ``None``.
+        :param info: Preloaded contract state, or ``None``.
+        :param config: Wallet configuration, or ``None``.
+        :param private_key: Signing key, or ``None`` for read-only.
         """
         self._config = config
-        self._private_key: t.Optional[PrivateKey] = None
-        self._public_key: t.Optional[PublicKey] = None
+        self._private_key: PrivateKey | None = None
+        self._public_key: PublicKey | None = None
 
         if private_key is not None:
             self._private_key = private_key
@@ -91,28 +100,28 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
     @property
     def config(self) -> _C:
         """Wallet configuration parameters."""
-        return t.cast(_C, self._config)
+        return t.cast("_C", self._config)
 
     @property
-    def public_key(self) -> t.Optional[PublicKey]:
-        """Public key, or `None`."""
+    def public_key(self) -> PublicKey | None:
+        """Public key, or ``None``."""
         return self._public_key if self._public_key else None
 
     @property
-    def private_key(self) -> t.Optional[PrivateKey]:
-        """Private key, or `None` for read-only wallets."""
+    def private_key(self) -> PrivateKey | None:
+        """Private key, or ``None`` for read-only wallets."""
         return self._private_key if self._private_key else None
 
     @abc.abstractmethod
     async def _build_msg_cell(
         self,
-        messages: t.List[WalletMessage],
-        params: t.Optional[_P] = None,
+        messages: list[WalletMessage],
+        params: _P | None = None,
     ) -> Cell:
         """Build unsigned message cell for this wallet version.
 
         :param messages: Internal messages to include.
-        :param params: Transaction parameters, or `None`.
+        :param params: Transaction parameters, or ``None``.
         :return: Unsigned message cell.
         """
 
@@ -134,13 +143,13 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     async def _build_signed_msg_cell(
         self,
-        messages: t.List[WalletMessage],
-        params: t.Optional[_P] = None,
+        messages: list[WalletMessage],
+        params: _P | None = None,
     ) -> Cell:
         """Build and sign a message cell.
 
         :param messages: Internal messages to include.
-        :param params: Transaction parameters, or `None`.
+        :param params: Transaction parameters, or ``None``.
         :return: Signed message cell.
         :raises ContractError: If private key is not set.
         """
@@ -159,18 +168,18 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     @classmethod
     def from_private_key(
-        cls: t.Type[_TWallet],
+        cls: type[_TWallet],
         client: ClientProtocol,
         private_key: PrivateKey,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
-        config: t.Optional[_C] = None,
+        config: _C | None = None,
     ) -> _TWallet:
         """Create wallet from a private key.
 
         :param client: TON client.
         :param private_key: Ed25519 private key.
         :param workchain: Target workchain.
-        :param config: Wallet configuration, or `None`.
+        :param config: Wallet configuration, or ``None``.
         :return: New wallet instance.
         """
         config = config or cls._config_model()
@@ -186,20 +195,20 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     @classmethod
     def from_mnemonic(
-        cls: t.Type[_TWallet],
+        cls: type[_TWallet],
         client: ClientProtocol,
-        mnemonic: t.Union[t.List[str], str],
+        mnemonic: list[str] | str,
         validate: bool = True,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
-        config: t.Optional[_C] = None,
-    ) -> t.Tuple[_TWallet, PublicKey, PrivateKey, t.List[str]]:
+        config: _C | None = None,
+    ) -> tuple[_TWallet, PublicKey, PrivateKey, list[str]]:
         """Create wallet from a mnemonic phrase.
 
         :param client: TON client.
         :param mnemonic: BIP39 mnemonic (list or space-separated string).
         :param validate: Validate mnemonic checksum.
         :param workchain: Target workchain.
-        :param config: Wallet configuration, or `None`.
+        :param config: Wallet configuration, or ``None``.
         :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         """
         if isinstance(mnemonic, str):
@@ -216,18 +225,18 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     @classmethod
     def create(
-        cls: t.Type[_TWallet],
+        cls: type[_TWallet],
         client: ClientProtocol,
         mnemonic_length: int = 24,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
-        config: t.Optional[_C] = None,
-    ) -> t.Tuple[_TWallet, PublicKey, PrivateKey, t.List[str]]:
+        config: _C | None = None,
+    ) -> tuple[_TWallet, PublicKey, PrivateKey, list[str]]:
         """Create a new wallet with a random mnemonic.
 
         :param client: TON client.
         :param mnemonic_length: Word count (12, 18, or 24).
         :param workchain: Target workchain.
-        :param config: Wallet configuration, or `None`.
+        :param config: Wallet configuration, or ``None``.
         :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         :raises ContractError: If mnemonic length is invalid.
         """
@@ -238,16 +247,16 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     async def build_external_message(
         self,
-        messages: t.Sequence[t.Union[WalletMessage, BaseMessageBuilder]],
-        params: t.Optional[_P] = None,
+        messages: t.Sequence[WalletMessage | BaseMessageBuilder],
+        params: _P | None = None,
     ) -> ExternalMessage:
         """Build a signed external message.
 
         :param messages: Internal messages or message builders.
-        :param params: Transaction parameters, or `None`.
-        :return: Signed `ExternalMessage`.
+        :param params: Transaction parameters, or ``None``.
+        :return: Signed ``ExternalMessage``.
         """
-        messages = [
+        resolved: list[WalletMessage] = [
             (
                 message
                 if isinstance(message, WalletMessage)
@@ -256,22 +265,22 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
             for message in messages
         ]
         await self.refresh()
-        self._validate_message_count(messages)
+        self._validate_message_count(resolved)
         self._validate_params_type(params)
-        body = await self._build_signed_msg_cell(messages, params)
+        body = await self._build_signed_msg_cell(resolved, params)
         state_init = self.state_init if not self.is_active else None
         return ExternalMessage(dest=self.address, body=body, state_init=state_init)
 
     async def batch_transfer_message(
         self,
-        messages: t.Sequence[t.Union[WalletMessage, BaseMessageBuilder]],
-        params: t.Optional[_P] = None,
+        messages: t.Sequence[WalletMessage | BaseMessageBuilder],
+        params: _P | None = None,
     ) -> ExternalMessage:
         """Build, sign, and send a batch transfer.
 
         :param messages: Internal messages or message builders.
-        :param params: Transaction parameters, or `None`.
-        :return: Sent `ExternalMessage`.
+        :param params: Transaction parameters, or ``None``.
+        :return: Sent ``ExternalMessage``.
         """
         external_msg = await self.build_external_message(messages, params)
         await self.client.send_message(external_msg.as_hex)
@@ -279,14 +288,14 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     async def transfer_message(
         self,
-        message: t.Union[WalletMessage, BaseMessageBuilder],
-        params: t.Optional[_P] = None,
+        message: WalletMessage | BaseMessageBuilder,
+        params: _P | None = None,
     ) -> ExternalMessage:
         """Build, sign, and send a single transfer.
 
         :param message: Internal message or message builder.
-        :param params: Transaction parameters, or `None`.
-        :return: Sent `ExternalMessage`.
+        :param params: Transaction parameters, or ``None``.
+        :return: Sent ``ExternalMessage``.
         """
         return await self.batch_transfer_message([message], params)
 
@@ -294,22 +303,22 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
         self,
         destination: AddressLike,
         amount: int,
-        body: t.Optional[t.Union[Cell, str]] = None,
-        state_init: t.Optional[StateInit] = None,
-        send_mode: t.Union[SendMode, int] = DEFAULT_SENDMODE,
-        bounce: t.Optional[bool] = None,
-        params: t.Optional[_P] = None,
+        body: Cell | str | None = None,
+        state_init: StateInit | None = None,
+        send_mode: SendMode | int = DEFAULT_SENDMODE,
+        bounce: bool | None = None,
+        params: _P | None = None,
     ) -> ExternalMessage:
         """Send a simple TON transfer.
 
         :param destination: Recipient address.
         :param amount: Amount in nanotons.
-        :param body: Message body (`Cell` or text comment), or `None`.
-        :param state_init: `StateInit` for deployment, or `None`.
+        :param body: Message body (``Cell`` or text comment), or ``None``.
+        :param state_init: ``StateInit`` for deployment, or ``None``.
         :param send_mode: Send mode flags.
-        :param bounce: Bounce on error, or `None` for auto-detect.
-        :param params: Transaction parameters, or `None`.
-        :return: Sent `ExternalMessage`.
+        :param bounce: Bounce on error, or ``None`` for auto-detect.
+        :param params: Transaction parameters, or ``None``.
+        :return: Sent ``ExternalMessage``.
         """
         message = TONTransferBuilder(
             destination=destination,
@@ -323,13 +332,13 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     @classmethod
     def _validate_config_type(
-        cls: t.Type[_TWallet],
+        cls: type[_TWallet],
         config: _C,
     ) -> None:
         """Validate config type for this wallet version.
 
         :param config: Configuration to validate.
-        :raises ContractError: If type does not match `_config_model`.
+        :raises ContractError: If type does not match ``_config_model``.
         """
         if not isinstance(config, cls._config_model):
             raise ContractError(
@@ -341,13 +350,13 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     @classmethod
     def _validate_params_type(
-        cls: t.Type[_TWallet],
-        params: t.Optional[_P] = None,
+        cls: type[_TWallet],
+        params: _P | None = None,
     ) -> None:
         """Validate params type for this wallet version.
 
-        :param params: Parameters to validate, or `None`.
-        :raises ContractError: If type does not match `_params_model`.
+        :param params: Parameters to validate, or ``None``.
+        :raises ContractError: If type does not match ``_params_model``.
         """
         if params is not None and not isinstance(params, cls._params_model):
             raise ContractError(
@@ -359,10 +368,10 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     @classmethod
     def _validate_message_count(
-        cls: t.Type[_TWallet],
-        messages: t.List[WalletMessage],
+        cls: type[_TWallet],
+        messages: list[WalletMessage],
     ) -> None:
-        """Validate message count against `MAX_MESSAGES`.
+        """Validate message count against ``MAX_MESSAGES``.
 
         :param messages: Messages to validate.
         :raises ContractError: If count exceeds the limit.
@@ -377,7 +386,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
 
     @classmethod
     def _validate_mnemonic_length(
-        cls: t.Type[_TWallet],
+        cls: type[_TWallet],
         mnemonic_length: int,
     ) -> None:
         """Validate mnemonic word count.
@@ -393,7 +402,7 @@ class BaseWallet(BaseContract, WalletProtocol[_D, _C, _P], abc.ABC):
             )
 
     @classmethod
-    def validate_mnemonic(cls, mnemonic: t.Union[str, t.List[str]]) -> None:
+    def validate_mnemonic(cls, mnemonic: str | list[str]) -> None:
         """Validate mnemonic phrase.
 
         :param mnemonic: Mnemonic (list or space-separated string).

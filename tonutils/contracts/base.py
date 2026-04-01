@@ -2,55 +2,68 @@ from __future__ import annotations
 
 import typing as t
 
-from pytoniq_core import Address, Cell, StateInit, TlbScheme, Transaction
+from ton_core import (
+    CONTRACT_CODES,
+    Address,
+    AddressLike,
+    Cell,
+    ContractState,
+    StateInit,
+    TlbScheme,
+    Transaction,
+    WorkchainID,
+    to_cell,
+)
 
-from tonutils.clients.protocol import ClientProtocol
-from tonutils.contracts.codes import CONTRACT_CODES
 from tonutils.contracts.protocol import ContractProtocol
-from tonutils.contracts.versions import ContractVersion
 from tonutils.exceptions import (
     ContractError,
-    StateNotLoadedError,
     ProviderResponseError,
+    StateNotLoadedError,
 )
-from tonutils.types import AddressLike, ContractInfo, ContractState, WorkchainID
-from tonutils.utils import to_cell
+from tonutils.types import ContractInfo
+
+if t.TYPE_CHECKING:
+    from ton_core import ContractVersion
+
+    from tonutils.clients.protocol import ClientProtocol
 
 _R = t.TypeVar("_R")
 _D = t.TypeVar("_D", bound=TlbScheme)
 
-_TContract = t.TypeVar("_TContract", bound="BaseContract")
+_TContract = t.TypeVar("_TContract", bound="BaseContract[t.Any]")
 
 
 class BaseContract(ContractProtocol[_D]):
     """Base implementation for TON smart contract wrappers."""
 
-    _data_model: t.Type[_D]
-    VERSION: t.ClassVar[t.Union[ContractVersion, str]]
+    _data_model: type[_D]
+    VERSION: t.ClassVar[ContractVersion | str]
 
     @classmethod
     def get_default_code(cls) -> Cell:
-        """Return default compiled code `Cell` for this contract version."""
+        """Return default compiled code ``Cell`` for this contract version."""
         try:
             default_code = to_cell(CONTRACT_CODES[cls.VERSION])
         except KeyError:
             raise ContractError(
                 cls, f"No contract code defined for `version` {cls.VERSION!r}."
-            )
+            ) from None
         return default_code
 
     def __init__(
         self,
         client: ClientProtocol,
         address: Address,
-        state_init: t.Optional[StateInit] = None,
-        info: t.Optional[ContractInfo] = None,
+        state_init: StateInit | None = None,
+        info: ContractInfo | None = None,
     ) -> None:
-        """
+        """Initialize the contract wrapper.
+
         :param client: TON client.
         :param address: Contract address.
-        :param state_init: Known code and data, or `None`.
-        :param info: Preloaded on-chain state, or `None`.
+        :param state_init: Known code and data, or ``None``.
+        :param info: Preloaded on-chain state, or ``None``.
         """
         self._client = client
         self._address = address
@@ -68,8 +81,8 @@ class BaseContract(ContractProtocol[_D]):
         return self._address
 
     @property
-    def state_init(self) -> t.Optional[StateInit]:
-        """Locally known `StateInit`, or `None`."""
+    def state_init(self) -> StateInit | None:
+        """Locally known ``StateInit``, or ``None``."""
         return self._state_init
 
     @property
@@ -80,14 +93,14 @@ class BaseContract(ContractProtocol[_D]):
         if not (self._info and self._info.data):
             raise StateNotLoadedError(self, missing="state_data")
         cs = self._info.data.begin_parse()
-        return self._data_model.deserialize(cs)
+        return t.cast("_D", self._data_model.deserialize(cs))
 
     @property
     def info(self) -> ContractInfo:
         """Cached on-chain state snapshot."""
         if self._info is None:
             raise StateNotLoadedError(self, missing="info")
-        return t.cast(ContractInfo, self._info)
+        return self._info
 
     @property
     def balance(self) -> int:
@@ -101,42 +114,42 @@ class BaseContract(ContractProtocol[_D]):
 
     @property
     def is_active(self) -> bool:
-        """`True` if state is `ACTIVE`."""
+        """``True`` if state is ``ACTIVE``."""
         return self.state == ContractState.ACTIVE
 
     @property
     def is_frozen(self) -> bool:
-        """`True` if state is `FROZEN`."""
+        """``True`` if state is ``FROZEN``."""
         return self.state == ContractState.FROZEN
 
     @property
     def is_uninit(self) -> bool:
-        """`True` if state is `UNINIT`."""
+        """``True`` if state is ``UNINIT``."""
         return self.state == ContractState.UNINIT
 
     @property
     def is_nonexit(self) -> bool:
-        """`True` if state is `NONEXIST`."""
+        """``True`` if state is ``NONEXIST``."""
         return self.state == ContractState.NONEXIST
 
     @property
-    def last_transaction_lt(self) -> t.Optional[int]:
-        """Logical time of the last transaction, or `None`."""
+    def last_transaction_lt(self) -> int | None:
+        """Logical time of the last transaction, or ``None``."""
         return self.info.last_transaction_lt
 
     @property
-    def last_transaction_hash(self) -> t.Optional[str]:
-        """Hash of the last transaction as hex string, or `None`."""
+    def last_transaction_hash(self) -> str | None:
+        """Hash of the last transaction as hex string, or ``None``."""
         return self.info.last_transaction_hash
 
     @property
-    def code(self) -> t.Optional[Cell]:
-        """Contract code `Cell`, or `None`."""
+    def code(self) -> Cell | None:
+        """Contract code ``Cell``, or ``None``."""
         return self.info.code
 
     @property
-    def data(self) -> t.Optional[Cell]:
-        """Contract data `Cell`, or `None`."""
+    def data(self) -> Cell | None:
+        """Contract data ``Cell``, or ``None``."""
         return self.info.data
 
     @classmethod
@@ -152,7 +165,7 @@ class BaseContract(ContractProtocol[_D]):
             if e.code in {429, 228, 5556}:
                 raise
             return ContractInfo()
-        except (Exception,):
+        except Exception:
             return ContractInfo()
 
     async def refresh(self) -> None:
@@ -161,15 +174,15 @@ class BaseContract(ContractProtocol[_D]):
 
     @classmethod
     def from_state_init(
-        cls: t.Type[_TContract],
+        cls: type[_TContract],
         client: ClientProtocol,
         state_init: StateInit,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> _TContract:
-        """Construct from a `StateInit`.
+        """Construct from a ``StateInit``.
 
         :param client: TON client.
-        :param state_init: `StateInit` containing code and data.
+        :param state_init: ``StateInit`` containing code and data.
         :param workchain: Target workchain.
         :return: New contract instance.
         """
@@ -178,7 +191,7 @@ class BaseContract(ContractProtocol[_D]):
 
     @classmethod
     def from_code_and_data(
-        cls: t.Type[_TContract],
+        cls: type[_TContract],
         client: ClientProtocol,
         code: Cell,
         data: Cell,
@@ -197,7 +210,7 @@ class BaseContract(ContractProtocol[_D]):
 
     @classmethod
     def from_data(
-        cls: t.Type[_TContract],
+        cls: type[_TContract],
         client: ClientProtocol,
         data: Cell,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
@@ -214,7 +227,7 @@ class BaseContract(ContractProtocol[_D]):
 
     @classmethod
     async def from_address(
-        cls: t.Type[_TContract],
+        cls: type[_TContract],
         client: ClientProtocol,
         address: AddressLike,
         load_state: bool = True,
@@ -237,14 +250,14 @@ class BaseContract(ContractProtocol[_D]):
     async def get_transactions(
         self,
         limit: int = 100,
-        from_lt: t.Optional[int] = None,
-        to_lt: t.Optional[int] = None,
-    ) -> t.List[Transaction]:
+        from_lt: int | None = None,
+        to_lt: int | None = None,
+    ) -> list[Transaction]:
         """Fetch transaction history for this contract.
 
         :param limit: Maximum number of transactions to return.
-        :param from_lt: Upper-bound logical time (inclusive), or `None`.
-        :param to_lt: Lower-bound logical time (exclusive), or `None`.
+        :param from_lt: Upper-bound logical time (inclusive), or ``None``.
+        :param to_lt: Lower-bound logical time (exclusive), or ``None``.
         :return: Transactions ordered from newest to oldest.
         """
         return await self._client.get_transactions(
@@ -257,12 +270,12 @@ class BaseContract(ContractProtocol[_D]):
     async def run_get_method(
         self,
         method_name: str,
-        stack: t.Optional[t.List[t.Any]] = None,
-    ) -> t.List[t.Any]:
+        stack: list[t.Any] | None = None,
+    ) -> list[t.Any]:
         """Execute a get-method on this contract.
 
         :param method_name: Name of the get-method.
-        :param stack: TVM stack arguments, or `None`.
+        :param stack: TVM stack arguments, or ``None``.
         :return: Decoded TVM stack result.
         """
         return await self._client.run_get_method(

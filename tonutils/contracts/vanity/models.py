@@ -3,62 +3,63 @@ from __future__ import annotations
 import base64
 import json
 import typing as t
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
-from pytoniq_core import Cell
+from ton_core import Cell
 
 
 @dataclass
 class VanitySpecial:
-    """Special contract flags for tick/tock execution.
-
-    Attributes:
-        tick: Execute on tick transactions.
-        tock: Execute on tock transactions.
-    """
+    """Special contract flags for tick/tock execution."""
 
     tick: bool
+    """Execute on tick transactions."""
+
     tock: bool
+    """Execute on tock transactions."""
 
 
 @dataclass
 class VanityConfig:
-    """Vanity address generation configuration.
-
-    Attributes:
-        owner: Owner address for the generated contract.
-        start: Required address prefix, or `None`.
-        end: Required address suffix, or `None`.
-        masterchain: Generate masterchain address.
-        non_bounceable: Use non-bounceable address format.
-        testnet: Use testnet address format.
-        case_sensitive: Case-sensitive prefix/suffix matching.
-        only_one: Stop after first match.
-    """
+    """Vanity address generation configuration."""
 
     owner: str
+    """Owner address for the generated contract."""
+
     masterchain: bool
+    """Generate masterchain address."""
+
     non_bounceable: bool
+    """Use non-bounceable address format."""
+
     testnet: bool
+    """Use testnet address format."""
+
     case_sensitive: bool
+    """Case-sensitive prefix/suffix matching."""
+
     only_one: bool
-    start: t.Optional[str] = None
-    end: t.Optional[str] = None
+    """Stop after first match."""
+
+    start: str | None = None
+    """Required address prefix, or ``None``."""
+
+    end: str | None = None
+    """Required address suffix, or ``None``."""
 
 
 @dataclass
 class VanityInit:
-    """Vanity contract initialization parameters.
-
-    Attributes:
-        code: Base64url-encoded contract code BoC.
-        split_depth: Fixed prefix length for split depth, or `None`.
-        special: Tick/tock flags, or `None`.
-    """
+    """Vanity contract initialization parameters."""
 
     code: str
-    split_depth: t.Optional[int] = None
-    special: t.Optional[VanitySpecial] = None
+    """Base64url-encoded contract code BoC."""
+
+    split_depth: int | None = None
+    """Fixed prefix length for split depth, or ``None``."""
+
+    special: VanitySpecial | None = None
+    """Tick/tock flags, or ``None``."""
 
     @property
     def code_cell(self) -> Cell:
@@ -67,9 +68,14 @@ class VanityInit:
         return Cell.one_from_boc(raw)
 
     @classmethod
-    def from_dict(cls, data: t.Dict[str, t.Any]) -> VanityInit:
+    def from_dict(cls, data: dict[str, t.Any]) -> VanityInit:
+        """Create from dictionary."""
         special_raw = data.get("special")
-        special = VanitySpecial(**special_raw) if isinstance(special_raw, dict) else special_raw
+        special = (
+            VanitySpecial(**special_raw)
+            if isinstance(special_raw, dict)
+            else special_raw
+        )
         return cls(
             code=data["code"],
             split_depth=data.get("fixedPrefixLength") or data.get("split_depth"),
@@ -79,30 +85,35 @@ class VanityInit:
 
 @dataclass
 class VanityResult:
-    """Result of a vanity address generation.
-
-    Attributes:
-        address: Generated address string.
-        init: Contract initialization parameters.
-        config: Generation configuration used.
-        timestamp: Unix timestamp of the result.
-    """
+    """Result of a vanity address generation."""
 
     address: str
-    init: VanityInit
-    config: VanityConfig
-    timestamp: float
+    """Generated address string."""
 
-    def to_dict(self) -> t.Dict[str, t.Any]:
+    init: VanityInit
+    """Contract initialization parameters."""
+
+    config: VanityConfig
+    """Generation configuration used."""
+
+    timestamp: float
+    """Unix timestamp of the result."""
+
+    def to_dict(self) -> dict[str, t.Any]:
         """Serialize to a plain dictionary."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: t.Dict[str, t.Any]) -> VanityResult:
+    def from_dict(cls, data: dict[str, t.Any]) -> VanityResult:
+        """Create from dictionary."""
         init_raw = data.get("init", {})
-        init = VanityInit.from_dict(init_raw) if isinstance(init_raw, dict) else init_raw
+        init = (
+            VanityInit.from_dict(init_raw) if isinstance(init_raw, dict) else init_raw
+        )
         config_raw = data.get("config", {})
-        config = VanityConfig(**config_raw) if isinstance(config_raw, dict) else config_raw
+        config = (
+            VanityConfig(**config_raw) if isinstance(config_raw, dict) else config_raw
+        )
         return cls(
             address=data["address"],
             init=init,
@@ -112,4 +123,5 @@ class VanityResult:
 
     @classmethod
     def from_json(cls, json_str: str) -> VanityResult:
+        """Create from JSON string."""
         return cls.from_dict(json.loads(json_str))

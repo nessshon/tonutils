@@ -1,4 +1,10 @@
+from .collection import (
+    BaseTeleCollection,
+    TelegramGiftsCollection,
+    TelegramUsernamesCollection,
+)
 from .item import (
+    BaseTeleItem,
     TelegramGiftItem,
     TelegramUsernameItem,
 )
@@ -8,34 +14,14 @@ from .methods import (
     get_telemint_auction_state_get_method,
     get_telemint_token_name_get_method,
 )
-from .tlb import (
-    TeleCollectionData,
-    TeleItemAuction,
-    TeleItemAuctionConfig,
-    TeleItemAuctionState,
-    TeleItemCancelAuctionBody,
-    TeleItemConfig,
-    TeleItemContent,
-    TeleItemData,
-    TeleItemStartAuctionBody,
-    TeleItemState,
-    TeleItemTokenInfo,
-)
 
 __all__ = [
-    "TeleCollectionData",
-    "TeleItemAuction",
-    "TeleItemAuctionConfig",
-    "TeleItemAuctionState",
-    "TeleItemCancelAuctionBody",
-    "TeleItemConfig",
-    "TeleItemContent",
-    "TeleItemData",
-    "TeleItemStartAuctionBody",
-    "TeleItemState",
-    "TeleItemTokenInfo",
+    "BaseTeleCollection",
+    "BaseTeleItem",
     "TelegramGiftItem",
+    "TelegramGiftsCollection",
     "TelegramUsernameItem",
+    "TelegramUsernamesCollection",
     "get_full_domain_get_method",
     "get_telemint_auction_config_get_method",
     "get_telemint_auction_state_get_method",

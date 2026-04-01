@@ -1,24 +1,26 @@
-import typing as t
-
-from pytoniq_core import Cell, Address, StateInit
+from ton_core import (
+    Address,
+    AddressLike,
+    Cell,
+    ContractVersion,
+    OffchainContent,
+    PublicKey,
+    StateInit,
+    TeleCollectionData,
+    TeleItemConfig,
+    TeleItemData,
+    WorkchainID,
+    to_cell,
+)
 
 from tonutils.contracts.base import BaseContract
 from tonutils.contracts.dns.methods import DNSResolveGetMethod
 from tonutils.contracts.nft.methods import (
     GetCollectionDataGetMethod,
-    GetNFTContentGetMethod,
     GetNFTAddressByIndexGetMethod,
+    GetNFTContentGetMethod,
 )
-from tonutils.contracts.nft.tlb import OffchainContent
 from tonutils.contracts.telegram.methods import GetFullDomainGetMethod
-from tonutils.contracts.telegram.tlb import (
-    TeleCollectionData,
-    TeleItemConfig,
-    TeleItemData,
-)
-from tonutils.contracts.versions import ContractVersion
-from tonutils.types import AddressLike, PublicKey, WorkchainID
-from tonutils.utils import to_cell
 
 
 class BaseTeleCollection(
@@ -32,8 +34,8 @@ class BaseTeleCollection(
     _data_model = TeleCollectionData
 
     @property
-    def owner_address(self) -> t.Optional[Address]:
-        """Always `None` for Telegram collections."""
+    def owner_address(self) -> Address | None:
+        """Always ``None`` for Telegram collections."""
         return None
 
     @property
@@ -48,7 +50,7 @@ class BaseTeleCollection(
 
     @property
     def nft_item_code(self) -> Cell:
-        """Code `Cell` for NFT items in this collection."""
+        """Code ``Cell`` for NFT items in this collection."""
         return self.state_data.item_code
 
     @property
@@ -65,14 +67,14 @@ class BaseTeleCollection(
     def calculate_nft_item_address(
         cls,
         index: int,
-        nft_item_code: t.Union[Cell, str],
+        nft_item_code: Cell | str,
         collection_address: AddressLike,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Address:
         """Calculate NFT item address by index.
 
         :param index: Item index in the collection.
-        :param nft_item_code: Item contract code (`Cell` or hex string).
+        :param nft_item_code: Item contract code (``Cell`` or hex string).
         :param collection_address: Parent collection address.
         :param workchain: Target workchain.
         :return: Calculated item address.
@@ -89,7 +91,7 @@ class TelegramUsernamesCollection(
     GetFullDomainGetMethod,
     DNSResolveGetMethod,
 ):
-    """Telegram Usernames NFT collection."""
+    """Telegram Usernames NFT collection (Telemint)."""
 
     VERSION = ContractVersion.TelegramUsernamesCollection
 
@@ -100,6 +102,6 @@ class TelegramUsernamesCollection(
 
 
 class TelegramGiftsCollection(BaseTeleCollection):
-    """Telegram Gifts NFT collection."""
+    """Telegram Gifts NFT collection (Telemint)."""
 
     VERSION = ContractVersion.TelegramGiftsCollection

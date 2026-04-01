@@ -1,30 +1,28 @@
-import typing as t
-
-from pytoniq_core import Cell, HashMap, WalletMessage, begin_cell
-
-from tonutils.contracts.opcodes import OpCode
-from tonutils.contracts.versions import ContractVersion
-from tonutils.contracts.wallet.base import BaseWallet
-from tonutils.contracts.wallet.configs import (
+from ton_core import (
+    Builder,
+    Cell,
+    ContractVersion,
+    HashMap,
+    OpCode,
+    OutActionSendMsg,
     WalletHighloadV2Config,
+    WalletHighloadV2Data,
+    WalletHighloadV2Params,
     WalletHighloadV3Config,
+    WalletHighloadV3Data,
+    WalletHighloadV3Params,
+    WalletMessage,
+    begin_cell,
 )
+
+from tonutils.contracts.wallet.base import BaseWallet
 from tonutils.contracts.wallet.messages import InternalMessage
 from tonutils.contracts.wallet.methods import (
-    GetPublicKeyGetMethod,
-    ProcessedGetMethod,
-    GetSubwalletIDGetMethod,
     GetLastCleanTimeGetMethod,
+    GetPublicKeyGetMethod,
+    GetSubwalletIDGetMethod,
     GetTimeoutGetMethod,
-)
-from tonutils.contracts.wallet.params import (
-    WalletHighloadV2Params,
-    WalletHighloadV3Params,
-)
-from tonutils.contracts.wallet.tlb import (
-    OutActionSendMsg,
-    WalletHighloadV2Data,
-    WalletHighloadV3Data,
+    ProcessedGetMethod,
 )
 from tonutils.exceptions import ContractError
 
@@ -38,7 +36,7 @@ class WalletHighloadV2(
     GetPublicKeyGetMethod,
     ProcessedGetMethod,
 ):
-    """Highload Wallet v2."""
+    """Highload Wallet v2 -- mass sends via ``HashMap``, up to 254 messages per transaction."""
 
     _data_model = WalletHighloadV2Data
     _config_model = WalletHighloadV2Config
@@ -47,29 +45,32 @@ class WalletHighloadV2(
     MAX_MESSAGES = 254
 
     @staticmethod
-    def _build_messages_dict_cell(messages: t.List[WalletMessage]) -> Cell:
-        """Build `HashMap` cell with indexed messages.
+    def _build_messages_dict_cell(messages: list[WalletMessage]) -> Cell:
+        """Build ``HashMap`` cell with indexed messages.
 
         :param messages: Wallet messages to serialize.
-        :return: Serialized `HashMap` cell.
+        :return: Serialized ``HashMap`` cell.
         """
-        value_serializer = lambda src, dest: dest.store_cell(src.serialize())
+
+        def value_serializer(src: WalletMessage, dest: Builder) -> Builder:
+            return dest.store_cell(src.serialize())
+
         cell_dict = HashMap(key_size=16, value_serializer=value_serializer)
         for index, message in enumerate(messages):
             cell_dict.set_int_key(index, message)
-        return cell_dict.serialize()
+        return cell_dict.serialize() or Cell.empty()
 
     async def _build_msg_cell(
         self,
-        messages: t.List[WalletMessage],
-        params: t.Optional[WalletHighloadV2Params] = None,
+        messages: list[WalletMessage],
+        params: WalletHighloadV2Params | None = None,
     ) -> Cell:
         """Build unsigned message cell.
 
         :param messages: Internal messages to include.
-        :param params: Transaction parameters, or `None`.
+        :param params: Transaction parameters, or ``None``.
         :return: Unsigned message cell.
-        :raises ContractError: If `bounded_id` is out of range.
+        :raises ContractError: If ``bounded_id`` is out of range.
         """
         params = params or self._params_model()
 
@@ -85,7 +86,7 @@ class WalletHighloadV2(
 
         cell = begin_cell()
         cell.store_uint(self.config.subwallet_id, 32)
-        cell.store_uint(params.bounded_id, 64)
+        cell.store_uint(params.bounded_id or 0, 64)
         cell.store_dict(msgs_dict)
         return cell.end_cell()
 
@@ -102,7 +103,7 @@ class WalletHighloadV3R1(
     GetLastCleanTimeGetMethod,
     GetTimeoutGetMethod,
 ):
-    """Highload Wallet v3 Revision 1."""
+    """Highload Wallet v3 Revision 1 -- recursive out-action packing, up to 64516 messages per transaction."""
 
     _data_model = WalletHighloadV3Data
     _config_model = WalletHighloadV3Config
@@ -119,17 +120,17 @@ class WalletHighloadV3R1(
 
         :param actions_cell: Serialized out-actions cell.
         :param params: Transaction parameters.
-        :return: Internal transfer body `Cell`.
+        :return: Internal transfer body ``Cell``.
         """
         cell = begin_cell()
         cell.store_uint(OpCode.INTERNAL_TRANSFER, 32)
-        cell.store_uint(params.query_id, 64)
+        cell.store_uint(params.query_id or 0, 64)
         cell.store_ref(actions_cell)
         return cell.end_cell()
 
     def _build_msg_to_send(
         self,
-        messages: t.List[WalletMessage],
+        messages: list[WalletMessage],
         params: WalletHighloadV3Params,
     ) -> WalletMessage:
         """Build recursive message structure for large batches.
@@ -138,13 +139,13 @@ class WalletHighloadV3R1(
 
         :param messages: Wallet messages to pack.
         :param params: Transaction parameters.
-        :return: Single `WalletMessage` containing all nested messages.
+        :return: Single ``WalletMessage`` containing all nested messages.
         """
         msgs_per_pack = 253
 
         if len(messages) > msgs_per_pack:
             rest = self._build_msg_to_send(messages[msgs_per_pack:], params)
-            messages = messages[:msgs_per_pack] + [rest]
+            messages = [*messages[:msgs_per_pack], rest]
 
         actions_cell, amount = Cell.empty(), 0
         for msg in messages:
@@ -153,7 +154,9 @@ class WalletHighloadV3R1(
             action_cell.store_ref(actions_cell)
             action_cell.store_cell(action.serialize())
             actions_cell = action_cell.end_cell()
-            amount += msg.message.info.value.grams
+            info = msg.message.info
+            if hasattr(info, "value"):
+                amount += info.value.grams
 
         value = amount if params.value_to_send is None else params.value_to_send
         body = self._build_internal_transfer(actions_cell, params)
@@ -162,13 +165,13 @@ class WalletHighloadV3R1(
 
     async def _build_msg_cell(
         self,
-        messages: t.List[WalletMessage],
-        params: t.Optional[WalletHighloadV3Params] = None,
+        messages: list[WalletMessage],
+        params: WalletHighloadV3Params | None = None,
     ) -> Cell:
         """Build unsigned message cell.
 
         :param messages: Internal messages to include.
-        :param params: Transaction parameters, or `None`.
+        :param params: Transaction parameters, or ``None``.
         :return: Unsigned message cell.
         :raises ContractError: If timeout, query_id, or messages are invalid.
         """
@@ -189,7 +192,7 @@ class WalletHighloadV3R1(
             )
         if not messages:
             raise ContractError(
-                self, f"Messages list is empty; at least one message is required."
+                self, "Messages list is empty; at least one message is required."
             )
 
         if len(messages) == 1 and messages[0].message.init is None:
@@ -201,8 +204,8 @@ class WalletHighloadV3R1(
         cell.store_uint(self.config.subwallet_id, 32)
         cell.store_ref(msg_to_send.message.serialize())
         cell.store_uint(params.send_mode, 8)
-        cell.store_uint(params.query_id, 23)
-        cell.store_uint(params.created_at, 64)
+        cell.store_uint(params.query_id or 0, 23)
+        cell.store_uint(params.created_at or 0, 64)
         cell.store_uint(self.config.timeout, 22)
         return cell.end_cell()
 

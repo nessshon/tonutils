@@ -1,18 +1,22 @@
 import typing as t
 
-from pytoniq_core import Address
+from ton_core import (
+    Address,
+    ContractVersion,
+    DNSRecords,
+    OnchainContent,
+    TONDNSAuction,
+    TONDNSItemData,
+)
 
 from tonutils.contracts.base import BaseContract
 from tonutils.contracts.dns.methods import (
-    GetDomainGetMethod,
-    GetAuctionInfoGetMethod,
-    GetLastFillUpTimeGetMethod,
     DNSResolveGetMethod,
+    GetAuctionInfoGetMethod,
+    GetDomainGetMethod,
+    GetLastFillUpTimeGetMethod,
 )
-from tonutils.contracts.dns.tlb import TONDNSItemData, TONDNSAuction, DNSRecords
-from tonutils.contracts.nft.methods import GetNFTDataGetMethod, GetEditorGetMethod
-from tonutils.contracts.nft.tlb import OnchainContent
-from tonutils.contracts.versions import ContractVersion
+from tonutils.contracts.nft.methods import GetEditorGetMethod, GetNFTDataGetMethod
 
 
 class TONDNSItem(
@@ -24,7 +28,7 @@ class TONDNSItem(
     GetLastFillUpTimeGetMethod,
     DNSResolveGetMethod,
 ):
-    """TON DNS domain item."""
+    """TON DNS domain item (TEP-81)."""
 
     _data_model = TONDNSItemData
     VERSION = ContractVersion.TONDNSItem
@@ -37,12 +41,12 @@ class TONDNSItem(
     @property
     def owner_address(self) -> Address:
         """Current domain owner address."""
-        return self.state_data.owner_address
+        return t.cast("Address", self.state_data.owner_address)
 
     @property
     def collection_address(self) -> Address:
         """Parent DNS collection address."""
-        return self.state_data.collection_address
+        return t.cast("Address", self.state_data.collection_address)
 
     @property
     def content(self) -> OnchainContent:
@@ -50,12 +54,12 @@ class TONDNSItem(
         return self.state_data.content
 
     @property
-    def metadata(self) -> t.Dict[t.Union[str, int], t.Any]:
+    def metadata(self) -> dict[str | int, t.Any]:
         """Raw metadata dictionary from content."""
         return self.state_data.content.metadata
 
     @property
-    def dns_records(self) -> t.Dict[t.Union[str, int], t.Any]:
+    def dns_records(self) -> dict[str | int, t.Any]:
         """Parsed DNS records from metadata."""
         return DNSRecords(self.state_data.content.metadata).records
 
@@ -65,8 +69,8 @@ class TONDNSItem(
         return self.state_data.domain
 
     @property
-    def auction(self) -> t.Optional[TONDNSAuction]:
-        """Active auction data, or `None`."""
+    def auction(self) -> TONDNSAuction | None:
+        """Active auction data, or ``None``."""
         return self.state_data.auction
 
     @property

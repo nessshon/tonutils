@@ -1,14 +1,17 @@
-import typing as t
+from ton_core import (
+    Cell,
+    ContractVersion,
+    OutActionSendMsg,
+    PublicKey,
+    WalletMessage,
+    WalletPreprocessedV2Config,
+    WalletPreprocessedV2Data,
+    WalletPreprocessedV2Params,
+    begin_cell,
+    calc_valid_until,
+)
 
-from pytoniq_core import Cell, WalletMessage, begin_cell
-
-from tonutils.contracts.versions import ContractVersion
 from tonutils.contracts.wallet.base import BaseWallet
-from tonutils.contracts.wallet.configs import WalletPreprocessedV2Config
-from tonutils.contracts.wallet.params import WalletPreprocessedV2Params
-from tonutils.contracts.wallet.tlb import OutActionSendMsg, WalletPreprocessedV2Data
-from tonutils.types import PublicKey
-from tonutils.utils import calc_valid_until
 
 
 class WalletPreprocessedV2(
@@ -18,7 +21,7 @@ class WalletPreprocessedV2(
         WalletPreprocessedV2Params,
     ]
 ):
-    """Preprocessed Wallet v2."""
+    """Preprocessed Wallet v2 -- stores out-actions as a ref, up to 255 messages."""
 
     _data_model = WalletPreprocessedV2Data
     _config_model = WalletPreprocessedV2Config
@@ -27,11 +30,11 @@ class WalletPreprocessedV2(
     MAX_MESSAGES = 255
 
     @classmethod
-    def _build_out_actions(cls, messages: t.List[WalletMessage]) -> Cell:
+    def _build_out_actions(cls, messages: list[WalletMessage]) -> Cell:
         """Build out-actions list from wallet messages.
 
         :param messages: Wallet messages to serialize.
-        :return: Out-actions `Cell`.
+        :return: Out-actions ``Cell``.
         """
         actions_cell = Cell.empty()
 
@@ -46,13 +49,13 @@ class WalletPreprocessedV2(
 
     async def _build_msg_cell(
         self,
-        messages: t.List[WalletMessage],
-        params: t.Optional[WalletPreprocessedV2Params] = None,
+        messages: list[WalletMessage],
+        params: WalletPreprocessedV2Params | None = None,
     ) -> Cell:
         """Build unsigned message cell.
 
         :param messages: Internal messages to include.
-        :param params: Transaction parameters, or `None`.
+        :param params: Transaction parameters, or ``None``.
         :return: Unsigned message cell.
         """
         params = params or self._params_model()

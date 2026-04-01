@@ -4,13 +4,11 @@ from .models import (
     VanityResult,
     VanitySpecial,
 )
-from .tlb import VanityDeployBody
 from .vanity import Vanity
 
 __all__ = [
     "Vanity",
     "VanityConfig",
-    "VanityDeployBody",
     "VanityInit",
     "VanityResult",
     "VanitySpecial",

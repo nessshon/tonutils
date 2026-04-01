@@ -1,50 +1,56 @@
 import abc
 import typing as t
 
-from pytoniq_core import (
+from ton_core import (
     Address,
+    AddressLike,
     Cell,
+    ContractVersion,
+    NetworkGlobalID,
+    OpCode,
+    OutActionSendMsg,
+    PrivateKey,
     WalletMessage,
+    WalletV5BetaConfig,
+    WalletV5BetaData,
+    WalletV5BetaParams,
+    WalletV5Config,
+    WalletV5Data,
+    WalletV5Params,
+    WalletV5SubwalletID,
+    WorkchainID,
     begin_cell,
+    calc_valid_until,
+    cell_to_hex,
+    to_nano,
 )
 
-from tonutils.clients.http.provider.tonapi.models import (
-    BlockchainMessagePayload,
-    GaslessConfigResult,
-    GaslessEstimatePayload,
-    GaslessEstimateResult,
-    GaslessSendPayload,
-)
 from tonutils.clients.protocol import ClientProtocol
-from tonutils.contracts.opcodes import OpCode
-from tonutils.contracts.versions import ContractVersion
 from tonutils.contracts.wallet.base import BaseWallet
-from tonutils.contracts.wallet.configs import (
-    WalletV5BetaConfig,
-    WalletV5Config,
-)
 from tonutils.contracts.wallet.messages import (
     ExternalMessage,
     JettonTransferBuilder,
     TONTransferBuilder,
 )
 from tonutils.contracts.wallet.methods import (
-    SeqnoGetMethod,
+    GetExtensionsGetMethod,
     GetPublicKeyGetMethod,
     GetSubwalletIDGetMethod,
-    GetExtensionsGetMethod,
     IsSignatureAllowedGetMethod,
+    SeqnoGetMethod,
 )
-from tonutils.contracts.wallet.params import WalletV5BetaParams, WalletV5Params
-from tonutils.contracts.wallet.tlb import OutActionSendMsg, WalletV5SubwalletID
-from tonutils.contracts.wallet.tlb import WalletV5BetaData, WalletV5Data
 from tonutils.exceptions import ClientError, StateNotLoadedError
-from tonutils.types import AddressLike, NetworkGlobalID, PrivateKey, WorkchainID
-from tonutils.utils import calc_valid_until, cell_to_hex, to_nano
+from tonutils.providers.http.tonapi.models import (
+    BlockchainMessagePayload,
+    GaslessConfigResult,
+    GaslessEstimatePayload,
+    GaslessEstimateResult,
+    GaslessSendPayload,
+)
 
-_C = t.TypeVar("_C", bound=t.Union[WalletV5Config, WalletV5BetaConfig])
-_D = t.TypeVar("_D", bound=t.Union[WalletV5Data, WalletV5BetaData])
-_P = t.TypeVar("_P", bound=t.Union[WalletV5Params, WalletV5BetaParams])
+_C = t.TypeVar("_C", bound=WalletV5Config | WalletV5BetaConfig)
+_D = t.TypeVar("_D", bound=WalletV5Data | WalletV5BetaData)
+_P = t.TypeVar("_P", bound=WalletV5Params | WalletV5BetaParams)
 
 _TWalletV5 = t.TypeVar("_TWalletV5", bound="_WalletV5[t.Any, t.Any, t.Any]")
 
@@ -55,24 +61,24 @@ class _WalletV5(
     GetPublicKeyGetMethod,
     abc.ABC,
 ):
-    """Base implementation for Wallet v5."""
+    """Wallet v5 -- extensions, gasless transfers, up to 255 messages."""
 
     MAX_MESSAGES = 255
 
     @classmethod
     def from_private_key(
-        cls: t.Type[_TWalletV5],
+        cls: type[_TWalletV5],
         client: ClientProtocol,
         private_key: PrivateKey,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
-        config: t.Optional[_C] = None,
+        config: _C | None = None,
     ) -> _TWalletV5:
         """Create wallet from a private key.
 
         :param client: TON client.
         :param private_key: Ed25519 private key.
         :param workchain: Target workchain.
-        :param config: Wallet configuration, or `None`.
+        :param config: Wallet configuration, or ``None``.
         :return: New wallet instance.
         """
         config = config or cls._config_model()
@@ -103,11 +109,11 @@ class _WalletV5(
         return cell.end_cell()
 
     @classmethod
-    def _build_out_actions(cls, messages: t.List[WalletMessage]) -> Cell:
+    def _build_out_actions(cls, messages: list[WalletMessage]) -> Cell:
         """Build out-actions list from wallet messages.
 
         :param messages: Wallet messages to serialize.
-        :return: Out-actions `Cell`.
+        :return: Out-actions ``Cell``.
         """
         actions_cell = Cell.empty()
 
@@ -125,17 +131,17 @@ class _WalletV5(
     def _pack_actions(cls, actions: Cell) -> Cell:
         """Pack out-actions with version-specific format.
 
-        :param actions: Out-actions `Cell`.
-        :return: Packed actions `Cell`.
+        :param actions: Out-actions ``Cell``.
+        :return: Packed actions ``Cell``.
         """
 
     def _gasless_validate_provider(self) -> None:
         """Validate that the client supports gasless transfers.
 
-        :raises ClientError: If the client does not use `TonapiHttpProvider`
+        :raises ClientError: If the client does not use ``TonapiHttpProvider``
             or the network is not mainnet.
         """
-        from tonutils.clients.http.provider.tonapi import TonapiHttpProvider
+        from tonutils.providers.http.tonapi import TonapiHttpProvider
 
         if not isinstance(self.client.provider, TonapiHttpProvider):
             raise ClientError(
@@ -169,13 +175,13 @@ class _WalletV5(
     async def _gasless_build_external_msg(
         self,
         estimate_result: GaslessEstimateResult,
-        seqno: t.Optional[int] = None,
+        seqno: int | None = None,
     ) -> ExternalMessage:
         """Build and sign an external message from gasless estimation result.
 
         :param estimate_result: Gasless estimation result with messages to sign.
-        :param seqno: Sequence number, or `None` to fetch from contract.
-        :return: Signed `ExternalMessage`.
+        :param seqno: Sequence number, or ``None`` to fetch from contract.
+        :return: Signed ``ExternalMessage``.
         """
         estimated_messages = [
             TONTransferBuilder(
@@ -186,7 +192,7 @@ class _WalletV5(
             for msg in estimate_result.messages
         ]
         params = t.cast(
-            _P,
+            "_P",
             self._params_model(
                 seqno=seqno,
                 valid_until=estimate_result.valid_until,
@@ -200,30 +206,30 @@ class _WalletV5(
         destination: AddressLike,
         jetton_amount: int,
         jetton_master_address: AddressLike,
-        response_address: t.Optional[AddressLike] = None,
-        custom_payload: t.Optional[Cell] = None,
-        forward_payload: t.Optional[t.Union[Cell, str]] = None,
+        response_address: AddressLike | None = None,
+        custom_payload: Cell | None = None,
+        forward_payload: Cell | str | None = None,
         forward_amount: int = 1,
         amount: int = to_nano("0.05"),
         query_id: int = 0,
-        bounce: t.Optional[bool] = None,
+        bounce: bool | None = None,
     ) -> GaslessEstimateResult:
         """Estimate a gasless jetton transfer via Tonapi relay.
 
         Builds a jetton transfer message and sends it to the gasless
-        estimation endpoint. Parameters mirror `JettonTransferBuilder`.
+        estimation endpoint. Parameters mirror ``JettonTransferBuilder``.
 
         :param destination: Recipient address.
         :param jetton_amount: Jetton amount in base units.
         :param jetton_master_address: Jetton master address (also used for gas payment).
-        :param response_address: Address for excess funds, or `None` for wallet address.
-        :param custom_payload: Custom payload cell, or `None`.
-        :param forward_payload: Payload to forward (`Cell` or text), or `None`.
+        :param response_address: Address for excess funds, or ``None`` for wallet address.
+        :param custom_payload: Custom payload cell, or ``None``.
+        :param forward_payload: Payload to forward (``Cell`` or text), or ``None``.
         :param forward_amount: Amount to forward in nanotons.
         :param amount: TON amount attached to the jetton transfer message.
         :param query_id: Query identifier.
-        :param bounce: Bounce on error, or `None` for auto-detect.
-        :return: `GaslessEstimateResult` with messages to sign and send.
+        :param bounce: Bounce on error, or ``None`` for auto-detect.
+        :return: ``GaslessEstimateResult`` with messages to sign and send.
         :raises ClientError: If the client or jetton is not supported.
         """
         raw_jetton_master_address = (
@@ -253,7 +259,7 @@ class _WalletV5(
         boc = cell_to_hex(message.message.serialize())
 
         assert self._public_key is not None
-        return await self.client.provider.gasless_estimate(
+        result: GaslessEstimateResult = await self.client.provider.gasless_estimate(
             master_id=raw_jetton_master_address,
             payload=GaslessEstimatePayload(
                 return_emulation=True,
@@ -262,19 +268,20 @@ class _WalletV5(
                 messages=[BlockchainMessagePayload(boc=boc)],
             ),
         )
+        return result
 
     async def gasless_send(
         self,
         estimate_result: GaslessEstimateResult,
-        seqno: t.Optional[int] = None,
+        seqno: int | None = None,
     ) -> None:
         """Sign and send a gasless transfer from estimation result.
 
         Builds an external message from the estimation, signs it,
         and sends via the gasless relay.
 
-        :param estimate_result: Result from `gasless_estimate`.
-        :param seqno: Sequence number, or `None` to fetch from contract.
+        :param estimate_result: Result from ``gasless_estimate``.
+        :param seqno: Sequence number, or ``None`` to fetch from contract.
         """
         assert self._public_key is not None
         external_msg = await self._gasless_build_external_msg(
@@ -296,7 +303,7 @@ class WalletV5Beta(
         WalletV5BetaParams,
     ]
 ):
-    """Wallet v5 Beta."""
+    """Wallet v5 Beta -- packs actions with 0x00 prefix, expanded subwallet ID fields."""
 
     _data_model = WalletV5BetaData
     _config_model = WalletV5BetaConfig
@@ -305,13 +312,13 @@ class WalletV5Beta(
 
     async def _build_msg_cell(
         self,
-        messages: t.List[WalletMessage],
-        params: t.Optional[WalletV5BetaParams] = None,
+        messages: list[WalletMessage],
+        params: WalletV5BetaParams | None = None,
     ) -> Cell:
         """Build unsigned message cell.
 
         :param messages: Internal messages to include.
-        :param params: Transaction parameters, or `None`.
+        :param params: Transaction parameters, or ``None``.
         :return: Unsigned message cell.
         """
         params = params or self._params_model()
@@ -326,7 +333,7 @@ class WalletV5Beta(
             if params.valid_until is not None
             else calc_valid_until(seqno)
         )
-        subwallet_id = t.cast(WalletV5SubwalletID, self.config.subwallet_id)
+        subwallet_id = t.cast("WalletV5SubwalletID", self.config.subwallet_id)
 
         cell = begin_cell()
         cell.store_uint(params.op_code, 32)
@@ -345,8 +352,8 @@ class WalletV5Beta(
     def _pack_actions(cls, actions: Cell) -> Cell:
         """Pack out-actions with v5 Beta format (0x00 prefix).
 
-        :param actions: Out-actions `Cell`.
-        :return: Packed actions `Cell`.
+        :param actions: Out-actions ``Cell``.
+        :return: Packed actions ``Cell``.
         """
         cell = begin_cell()
         cell.store_uint(0x00, 1)
@@ -364,7 +371,7 @@ class WalletV5R1(
     GetExtensionsGetMethod,
     IsSignatureAllowedGetMethod,
 ):
-    """Wallet v5 Revision 1."""
+    """Wallet v5 Revision 1 -- packs actions with 0x01 prefix + extension flag, packed subwallet ID."""
 
     _data_model = WalletV5Data
     _config_model = WalletV5Config
@@ -386,13 +393,13 @@ class WalletV5R1(
 
     async def _build_msg_cell(
         self,
-        messages: t.List[WalletMessage],
-        params: t.Optional[WalletV5Params] = None,
+        messages: list[WalletMessage],
+        params: WalletV5Params | None = None,
     ) -> Cell:
         """Build unsigned message cell.
 
         :param messages: Internal messages to include.
-        :param params: Transaction parameters, or `None`.
+        :param params: Transaction parameters, or ``None``.
         :return: Unsigned message cell.
         """
         params = params or self._params_model()
@@ -407,7 +414,7 @@ class WalletV5R1(
             if params.valid_until is not None
             else calc_valid_until(seqno)
         )
-        subwallet_id = t.cast(WalletV5SubwalletID, self.config.subwallet_id)
+        subwallet_id = t.cast("WalletV5SubwalletID", self.config.subwallet_id)
 
         cell = begin_cell()
         cell.store_uint(params.op_code, 32)
@@ -423,8 +430,8 @@ class WalletV5R1(
     def _pack_actions(cls, actions: Cell) -> Cell:
         """Pack out-actions with v5 R1 format (0x01 prefix + extension flag).
 
-        :param actions: Out-actions `Cell`.
-        :return: Packed actions `Cell`.
+        :param actions: Out-actions ``Cell``.
+        :return: Packed actions ``Cell``.
         """
         cell = begin_cell()
         cell.store_uint(0x01, 1)

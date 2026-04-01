@@ -2,15 +2,21 @@ from __future__ import annotations
 
 import typing as t
 
-from pytoniq_core import Cell, WalletMessage, begin_cell
+from ton_core import (
+    Cell,
+    ContractVersion,
+    WalletMessage,
+    WalletV1Config,
+    WalletV1Data,
+    WalletV1Params,
+    begin_cell,
+)
 
-from tonutils.contracts.versions import ContractVersion
 from tonutils.contracts.wallet.base import BaseWallet
-from tonutils.contracts.wallet.configs import WalletV1Config
-from tonutils.contracts.wallet.methods import SeqnoGetMethod, GetPublicKeyGetMethod
-from tonutils.contracts.wallet.params import WalletV1Params
-from tonutils.contracts.wallet.tlb import WalletV1Data
-from tonutils.types import PublicKey
+from tonutils.contracts.wallet.methods import GetPublicKeyGetMethod, SeqnoGetMethod
+
+if t.TYPE_CHECKING:
+    from ton_core import PublicKey
 
 
 class _WalletV1(
@@ -20,7 +26,7 @@ class _WalletV1(
         WalletV1Params,
     ]
 ):
-    """Base implementation for Wallet v1."""
+    """Wallet v1 -- simplest wallet, no seqno replay protection."""
 
     _data_model = WalletV1Data
     _config_model = WalletV1Config
@@ -29,13 +35,13 @@ class _WalletV1(
 
     async def _build_msg_cell(
         self,
-        messages: t.List[WalletMessage],
-        params: t.Optional[WalletV1Params] = None,
+        messages: list[WalletMessage],
+        params: WalletV1Params | None = None,
     ) -> Cell:
         """Build unsigned message cell.
 
         :param messages: Internal messages to include.
-        :param params: Transaction parameters, or `None`.
+        :param params: Transaction parameters, or ``None``.
         :return: Unsigned message cell.
         """
         params = params or self._params_model()

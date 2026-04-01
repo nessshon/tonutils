@@ -1,6 +1,14 @@
 import typing as t
 
-from pytoniq_core import Address
+from ton_core import (
+    Address,
+    ContractVersion,
+    OffchainContent,
+    TeleItemAuction,
+    TeleItemData,
+    TeleItemState,
+    TeleItemTokenInfo,
+)
 
 from tonutils.contracts.base import BaseContract
 from tonutils.contracts.dns.methods import DNSResolveGetMethod
@@ -8,20 +16,12 @@ from tonutils.contracts.nft.methods import (
     GetNFTDataGetMethod,
     RoyaltyParamsGetMethod,
 )
-from tonutils.contracts.nft.tlb import OffchainContent
 from tonutils.contracts.telegram.methods import (
+    GetFullDomainGetMethod,
     GetTelemintAuctionConfigGetMethod,
     GetTelemintAuctionStateGetMethod,
     GetTelemintTokenNameGetMethod,
-    GetFullDomainGetMethod,
 )
-from tonutils.contracts.telegram.tlb import (
-    TeleItemAuction,
-    TeleItemData,
-    TeleItemTokenInfo,
-    TeleItemState,
-)
-from tonutils.contracts.versions import ContractVersion
 
 
 class BaseTeleItem(
@@ -37,14 +37,14 @@ class BaseTeleItem(
     _data_model = TeleItemData
 
     @property
-    def state(self) -> TeleItemState:
+    def state(self) -> TeleItemState:  # type: ignore[override]
         """Current item state.
 
         :raises ValueError: If state is undefined.
         """
         if self.state_data.state is None:
             raise ValueError("Item has no state — state is undefined.")
-        return t.cast(TeleItemState, self.state_data.state)
+        return self.state_data.state
 
     @property
     def index(self) -> int:
@@ -54,12 +54,12 @@ class BaseTeleItem(
     @property
     def owner_address(self) -> Address:
         """Current owner address."""
-        return self.state.owner_address
+        return t.cast("Address", self.state.owner_address)
 
     @property
     def collection_address(self) -> Address:
         """Parent collection address."""
-        return self.state_data.config.collection_address
+        return t.cast("Address", self.state_data.config.collection_address)
 
     @property
     def content(self) -> OffchainContent:
@@ -72,8 +72,8 @@ class BaseTeleItem(
         return self.state.content.token_info
 
     @property
-    def auction(self) -> t.Optional[TeleItemAuction]:
-        """Active auction data, or `None`."""
+    def auction(self) -> TeleItemAuction | None:
+        """Active auction data, or ``None``."""
         return self.state.auction
 
 
@@ -82,7 +82,7 @@ class TelegramUsernameItem(
     GetFullDomainGetMethod,
     DNSResolveGetMethod,
 ):
-    """Telegram Username NFT item."""
+    """Telegram Username NFT item (Telemint)."""
 
     VERSION = ContractVersion.TelegramUsernameItem
 
@@ -97,12 +97,12 @@ class TelegramUsernameItem(
         return f"{self.state.content.token_info.name}.{self.state.content.token_info.domain}"
 
     @property
-    def dns_records(self) -> t.Dict[t.Union[str, int], t.Any]:
+    def dns_records(self) -> dict[str | int, t.Any]:
         """DNS records associated with this username."""
         return self.state.content.dns.records
 
 
 class TelegramGiftItem(BaseTeleItem):
-    """Telegram Gift NFT item."""
+    """Telegram Gift NFT item (Telemint)."""
 
     VERSION = ContractVersion.TelegramGiftItem

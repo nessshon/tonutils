@@ -1,42 +1,42 @@
 import abc
 import typing as t
 
-from pytoniq_core import Address, Cell, StateInit, begin_cell
+from ton_core import (
+    Address,
+    AddressLike,
+    Cell,
+    ContractVersion,
+    JettonMasterStablecoinData,
+    JettonMasterStandardData,
+    OffchainContent,
+    OnchainContent,
+    StateInit,
+    WorkchainID,
+    begin_cell,
+    cell_hash,
+    to_cell,
+)
 
 from tonutils.contracts.base import BaseContract
 from tonutils.contracts.jetton.methods import (
-    GetWalletAddressGetMethod,
     GetJettonDataGetMethod,
     GetNextAdminAddressGetMethod,
+    GetWalletAddressGetMethod,
 )
-from tonutils.contracts.jetton.tlb import (
-    JettonMasterStablecoinData,
-    JettonMasterStandardData,
-)
-from tonutils.contracts.nft.tlb import OnchainContent, OffchainContent
-from tonutils.contracts.versions import ContractVersion
-from tonutils.types import AddressLike, WorkchainID
-from tonutils.utils import cell_hash, to_cell
 
 _D = t.TypeVar(
     "_D",
-    bound=t.Union[
-        JettonMasterStandardData,
-        JettonMasterStablecoinData,
-    ],
+    bound=JettonMasterStandardData | JettonMasterStablecoinData,
 )
 _C = t.TypeVar(
     "_C",
-    bound=t.Union[
-        OnchainContent,
-        OffchainContent,
-    ],
+    bound=OnchainContent | OffchainContent,
 )
 
 _DStandard = t.TypeVar("_DStandard", bound=JettonMasterStandardData)
 _DStablecoin = t.TypeVar("_DStablecoin", bound=JettonMasterStablecoinData)
 
-_CStandard = t.TypeVar("_CStandard", bound=t.Union[OnchainContent, OffchainContent])
+_CStandard = t.TypeVar("_CStandard", bound=OnchainContent | OffchainContent)
 _CStablecoin = t.TypeVar("_CStablecoin", bound=OnchainContent)
 
 
@@ -47,29 +47,32 @@ class BaseJettonMaster(
     t.Generic[_D, _C],
     abc.ABC,
 ):
-    """Base implementation for Jetton master contracts."""
+    """Base Jetton master contract (TEP-74).
 
-    _data_model: t.Type[_D]
+    Stores Jetton metadata, total supply, admin address, and wallet code.
+    """
+
+    _data_model: type[_D]
 
     @property
     def jetton_wallet_code(self) -> Cell:
-        """Code `Cell` for Jetton wallets managed by this master."""
+        """Code ``Cell`` for Jetton wallets managed by this master."""
         return self.state_data.jetton_wallet_code
 
     @property
-    def admin_address(self) -> t.Optional[Address]:
-        """Admin address, or `None`."""
-        return self.state_data.admin_address
+    def admin_address(self) -> Address | None:
+        """Admin address, or ``None``."""
+        return t.cast("Address | None", self.state_data.admin_address)
 
     @property
     def total_supply(self) -> int:
-        """Total supply in base units."""
+        """Total supply of the Jetton in base units."""
         return self.state_data.total_supply
 
     @property
     def content(self) -> _C:
         """Jetton metadata content."""
-        return self.state_data.content
+        return t.cast("_C", self.state_data.content)
 
     @classmethod
     @abc.abstractmethod
@@ -77,14 +80,15 @@ class BaseJettonMaster(
         cls,
         owner_address: AddressLike,
         jetton_master_address: AddressLike,
-        jetton_wallet_code: t.Union[Cell, str],
+        jetton_wallet_code: Cell,
+        **kwargs: t.Any,
     ) -> Cell:
         """Pack Jetton wallet data cell for address calculation.
 
         :param owner_address: Wallet owner's address.
         :param jetton_master_address: Master contract address.
         :param jetton_wallet_code: Wallet contract code.
-        :return: Packed wallet data `Cell`.
+        :return: Packed wallet data ``Cell``.
         """
 
     @classmethod
@@ -92,18 +96,17 @@ class BaseJettonMaster(
         cls,
         owner_address: AddressLike,
         jetton_master_address: AddressLike,
-        jetton_wallet_code: t.Union[Cell, str],
+        jetton_wallet_code: Cell | str,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Address:
         """Calculate user's Jetton wallet address.
 
         :param owner_address: Wallet owner's address.
         :param jetton_master_address: Master contract address.
-        :param jetton_wallet_code: Wallet contract code (`Cell` or hex string).
+        :param jetton_wallet_code: Wallet contract code (``Cell`` or hex string).
         :param workchain: Target workchain.
         :return: Calculated wallet address.
         """
-
         code = to_cell(jetton_wallet_code)
         data = cls._pack_jetton_wallet_data(
             owner_address=owner_address,
@@ -115,9 +118,9 @@ class BaseJettonMaster(
 
 
 class JettonMasterStandard(BaseJettonMaster[_DStandard, _CStandard]):
-    """Standard Jetton master."""
+    """Standard Jetton master contract (TEP-74)."""
 
-    _data_model = JettonMasterStandardData
+    _data_model: type[_DStandard] = JettonMasterStandardData  # type: ignore[assignment]
     VERSION = ContractVersion.JettonMasterStandard
 
     @classmethod
@@ -126,15 +129,14 @@ class JettonMasterStandard(BaseJettonMaster[_DStandard, _CStandard]):
         owner_address: AddressLike,
         jetton_master_address: AddressLike,
         jetton_wallet_code: Cell,
-        workchain: WorkchainID = WorkchainID.BASECHAIN,
+        **kwargs: t.Any,
     ) -> Cell:
         """Pack standard Jetton wallet data cell.
 
         :param owner_address: Wallet owner's address.
         :param jetton_master_address: Master contract address.
         :param jetton_wallet_code: Wallet contract code.
-        :param workchain: Target workchain.
-        :return: Packed wallet data `Cell`.
+        :return: Packed wallet data ``Cell``.
         """
         cell = begin_cell()
         cell.store_coins(0)
@@ -148,9 +150,9 @@ class JettonMasterStablecoin(
     BaseJettonMaster[_DStablecoin, _CStablecoin],
     GetNextAdminAddressGetMethod,
 ):
-    """Stablecoin Jetton master."""
+    """Stablecoin Jetton master with admin-controlled minting."""
 
-    _data_model = JettonMasterStablecoinData
+    _data_model: type[_DStablecoin] = JettonMasterStablecoinData  # type: ignore[assignment]
     VERSION = ContractVersion.JettonMasterStablecoin
 
     @classmethod
@@ -159,13 +161,14 @@ class JettonMasterStablecoin(
         owner_address: AddressLike,
         jetton_master_address: AddressLike,
         jetton_wallet_code: Cell,
+        **kwargs: t.Any,
     ) -> Cell:
         """Pack stablecoin Jetton wallet data cell.
 
         :param owner_address: Wallet owner's address.
         :param jetton_master_address: Master contract address.
         :param jetton_wallet_code: Wallet contract code.
-        :return: Packed wallet data `Cell`.
+        :return: Packed wallet data ``Cell``.
         """
         cell = begin_cell()
         cell.store_uint(0, 4)
@@ -175,8 +178,8 @@ class JettonMasterStablecoin(
         return cell.end_cell()
 
 
-class JettonMasterStablecoinV2(JettonMasterStablecoin):
-    """Stablecoin v2 Jetton master."""
+class JettonMasterStablecoinV2(JettonMasterStablecoin[_DStablecoin, _CStablecoin]):
+    """Sharded stablecoin master with deterministic wallet addresses."""
 
     _SHARD_DEPTH: int = 8
     VERSION = ContractVersion.JettonMasterStablecoinV2
@@ -199,13 +202,14 @@ class JettonMasterStablecoinV2(JettonMasterStablecoin):
         owner_address: AddressLike,
         jetton_master_address: AddressLike,
         jetton_wallet_code: Cell,
+        **kwargs: t.Any,
     ) -> Cell:
         """Pack stablecoin v2 Jetton wallet data cell.
 
         :param owner_address: Wallet owner's address.
         :param jetton_master_address: Master contract address.
         :param jetton_wallet_code: Wallet contract code.
-        :return: Packed wallet data `Cell`.
+        :return: Packed wallet data ``Cell``.
         """
         cell = begin_cell()
         cell.store_coins(0)
@@ -218,14 +222,14 @@ class JettonMasterStablecoinV2(JettonMasterStablecoin):
         cls,
         owner_address: AddressLike,
         jetton_master_address: AddressLike,
-        jetton_wallet_code: t.Union[Cell, str],
+        jetton_wallet_code: Cell | str,
     ) -> Cell:
-        """Calculate `StateInit` cell for sharded wallet.
+        """Calculate ``StateInit`` cell for sharded wallet.
 
         :param owner_address: Wallet owner's address.
         :param jetton_master_address: Master contract address.
-        :param jetton_wallet_code: Wallet contract code (`Cell` or hex string).
-        :return: `StateInit` cell with shard depth.
+        :param jetton_wallet_code: Wallet contract code (``Cell`` or hex string).
+        :return: ``StateInit`` cell with shard depth.
         """
         code = to_cell(jetton_wallet_code)
         data = cls._pack_jetton_wallet_data(
@@ -247,14 +251,14 @@ class JettonMasterStablecoinV2(JettonMasterStablecoin):
         cls,
         owner_address: AddressLike,
         jetton_master_address: AddressLike,
-        jetton_wallet_code: t.Union[Cell, str],
+        jetton_wallet_code: Cell | str,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
     ) -> Address:
         """Calculate user's sharded Jetton wallet address.
 
         :param owner_address: Wallet owner's address.
         :param jetton_master_address: Master contract address.
-        :param jetton_wallet_code: Wallet contract code (`Cell` or hex string).
+        :param jetton_wallet_code: Wallet contract code (``Cell`` or hex string).
         :param workchain: Target workchain.
         :return: Calculated sharded wallet address.
         """
@@ -271,4 +275,4 @@ class JettonMasterStablecoinV2(JettonMasterStablecoin):
         cell.store_int(workchain.value, 8)
         cell.store_uint(shard_prefix, cls._SHARD_DEPTH)
         cell.store_uint(prefix_less, 256 - cls._SHARD_DEPTH)
-        return cell.end_cell().begin_parse().load_address()
+        return t.cast("Address", cell.end_cell().begin_parse().load_address())
