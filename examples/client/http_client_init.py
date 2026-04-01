@@ -1,11 +1,12 @@
+from ton_core import NetworkGlobalID
+
 from tonutils.clients import (
-    ToncenterClient,
-    TonapiClient,
     ChainstackClient,
     QuicknodeClient,
     TatumClient,
+    TonapiClient,
+    ToncenterClient,
 )
-from tonutils.types import NetworkGlobalID
 
 
 async def main() -> None:
@@ -27,9 +28,9 @@ async def main() -> None:
     )
     async with toncenter_client:
         # Example request:
-        # from pytoniq_core import Address
+        # from ton_core import Address
         # address = Address("UQ...")
-        # info = await toncenter_client.get_contract_info(address)
+        # info = await toncenter_client.get_info(address)
         pass
 
     # Tonapi: TonAPI by Tonkeeper

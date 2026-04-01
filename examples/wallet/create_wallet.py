@@ -2,8 +2,8 @@
 # Example uses WalletV4Config + WalletV4R2.
 # Other wallet versions are listed below — uncomment the pair you need.
 
-from tonutils.clients import ToncenterClient
-from tonutils.contracts import (
+from ton_core import (
+    NetworkGlobalID,
     # WalletV1Config,
     # WalletV2Config,
     # WalletV3Config,
@@ -14,6 +14,8 @@ from tonutils.contracts import (
     # WalletHighloadV3Config,
     # WalletPreprocessedV2Config,
 )
+
+from tonutils.clients import ToncenterClient
 from tonutils.contracts import (
     # WalletV1R1,
     # WalletV1R2,
@@ -30,7 +32,6 @@ from tonutils.contracts import (
     # WalletHighloadV3R1,
     # WalletPreprocessedV2,
 )
-from tonutils.types import NetworkGlobalID
 
 
 def main() -> None:

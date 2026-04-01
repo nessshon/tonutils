@@ -1,11 +1,9 @@
-from pytoniq_core import Address
+from ton_core import Address, NetworkGlobalID, to_nano
 
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import NFTTransferBuilder, WalletV4R2
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import to_nano
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -33,8 +31,8 @@ async def main() -> None:
     # destination: new owner address
     # nft_address: specific NFT item contract address
     # forward_payload: optional message forwarded to new owner (visible in notification)
-    # forward_amount: nanotons sent to new owner (triggers ownership_assigned notification)
-    #   Must be > 0 to notify recipient (minimum 1 nanoton for TEP-62 compliance)
+    # forward_amount: nanotons sent to new owner with ownership_assigned notification (TEP-62)
+    #   Must be > 0 to trigger ownership_assigned to new owner's contract
     # amount: TON attached to NFT item for gas fees (covers transfer + forward)
     #   Typical: 0.05 TON is sufficient, increase if forward_amount is higher
     msg = await wallet.transfer_message(

@@ -1,14 +1,12 @@
-from pytoniq_core import Address
+from ton_core import Address, NetworkGlobalID, to_nano
 
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import (
     JettonTransferBuilder,
     WalletV4R2,
 )
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import to_nano
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -43,8 +41,8 @@ async def main() -> None:
     # jetton_amount: amount in base units (respects token decimals)
     # jetton_master_address: identifies which jetton type to transfer
     # forward_payload: optional message forwarded to recipient (visible in notification)
-    # forward_amount: nanotons sent to recipient (triggers transfer_notification)
-    #   Must be > 0 to notify recipient (minimum 1 nanoton for TEP-74 compliance)
+    # forward_amount: nanotons sent to recipient with transfer_notification (TEP-74)
+    #   Must be > 0 to trigger transfer_notification to recipient's contract
     # amount: TON attached to jetton wallet for gas fees (covers transfer + forward)
     #   Typical: 0.05 TON is sufficient, increase if forward_amount is higher
     msg = await wallet.transfer_message(

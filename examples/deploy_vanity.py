@@ -1,20 +1,22 @@
-from pytoniq_core import Address
+from ton_core import (
+    Address,
+    JettonMasterStablecoinData,
+    NetworkGlobalID,
+    OffchainContent,
+    VanityDeployBody,
+    to_nano,
+)
 
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import (
-    JettonMasterStablecoinData,
     JettonMasterStablecoinV2,
     JettonWalletStablecoinV2,
-    OffchainContent,
     Vanity,
-    VanityDeployBody,
     VanityResult,
     WalletV4R2,
 )
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import to_nano
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -30,7 +32,6 @@ JETTON_MASTER_URI = "https://example.com/jetton.json"
 # Run: python3 src/generator.py --owner {OWNER_ADDRESS} --end {SUFFIX} --case-sensitive
 # Generator results saved to: addresses.jsonl
 VANITY_RESULT = '{"address":"EQ...","init":{"code":"te6cc...","fixedPrefixLength":...}'
-
 
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
@@ -68,7 +69,7 @@ async def main() -> None:
     )
 
     # Parse vanity generator output JSON
-    vanity_result = VanityResult.model_validate_json(VANITY_RESULT)
+    vanity_result = VanityResult.from_json(VANITY_RESULT)
 
     # Create vanity contract wrapper from generator result
     # Vanity contract validates owner, then replaces its code with payload
@@ -106,7 +107,6 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
-
 
 if __name__ == "__main__":
     import asyncio

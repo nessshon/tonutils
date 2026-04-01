@@ -1,17 +1,14 @@
-from pytoniq_core import Address
+from ton_core import Address, NetworkGlobalID, NFTRevokeBody, to_nano
 
 from tonutils.clients import ToncenterClient
-from tonutils.contracts import NFTRevokeBody, WalletV4R2
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import to_nano
+from tonutils.contracts import WalletV4R2
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
 # NFT item address to revoke
 NFT_ITEM_ADDRESS = Address("EQ...")
-
 
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
@@ -46,7 +43,6 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
-
 
 if __name__ == "__main__":
     import asyncio

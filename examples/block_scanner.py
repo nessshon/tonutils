@@ -1,15 +1,16 @@
 import time
-import typing as t
 from pathlib import Path
 
+from ton_core import NetworkGlobalID
+
 from tonutils.clients import LiteBalancer
-from tonutils.tools.block_scanner import (
+from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
+from tonutils.utils.block_scanner import (
     BlockEvent,
     BlockScanner,
     ErrorEvent,
     TransactionsEvent,
 )
-from tonutils.types import NetworkGlobalID, DEFAULT_ADNL_RETRY_POLICY
 
 # Path to the file where the last processed masterchain seqno is persisted
 # Used by scanner.resume() to continue from where it left off after a restart
@@ -31,10 +32,10 @@ class FileStorage:
     Pass an instance to BlockScanner(..., storage=...) to enable resume().
     """
 
-    def __init__(self, path: t.Union[str, Path]) -> None:
+    def __init__(self, path: str | Path) -> None:
         self._path = Path(path)
 
-    async def get_mc_seqno(self) -> t.Optional[int]:
+    async def get_mc_seqno(self) -> int | None:
         """Read the saved seqno from file, or None if missing/invalid."""
         try:
             return int(self._path.read_text(encoding="utf-8").strip())
@@ -62,8 +63,6 @@ scanner = BlockScanner(client, storage=storage)
 
 # Register handlers via decorators. All handlers receive a typed event object.
 # ErrorEvent handler must never raise — exceptions inside it are silently dropped.
-
-
 @scanner.on_error()
 async def handle_error(event: ErrorEvent) -> None:
     """Handle internal scanner errors and failed transaction fetches.
@@ -134,8 +133,7 @@ async def main() -> None:
 
 if __name__ == "__main__":
     import asyncio
+    from contextlib import suppress
 
-    try:
+    with suppress(KeyboardInterrupt):
         asyncio.run(main())
-    except KeyboardInterrupt:
-        pass

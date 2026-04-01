@@ -1,15 +1,16 @@
-from pytoniq_core import Address
+from ton_core import (
+    Address,
+    ChangeDNSRecordBody,
+    DNSCategory,
+    DNSRecordWallet,
+    NetworkGlobalID,
+    to_nano,
+)
 
 from tonutils.clients import ToncenterClient
-from tonutils.contracts import (
-    ChangeDNSRecordBody,
-    DNSRecordWallet,
-    WalletV4R2,
-)
-from tonutils.types import DNSCategory, NetworkGlobalID
-from tonutils.utils import to_nano
+from tonutils.contracts import WalletV4R2
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -39,6 +40,7 @@ async def main() -> None:
     #   DNSCategory.STORAGE           → DNSRecordStorage         (accepts: `BagID`)
     #   DNSCategory.WALLET            → DNSRecordWallet          (accepts: `Address`)
     #   DNSCategory.SITE              → DNSRecordSite            (accepts: `ADNL`)
+    #   DNSCategory.TEXT              → DNSRecordText            (accepts: `str`)
 
     # Construct change DNS record message body
     # category: DNS record category to update

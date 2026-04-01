@@ -1,12 +1,14 @@
+from ton_core import NetworkGlobalID
+
 from tonutils.clients import (
-    ToncenterClient,
-    TonapiClient,
     ChainstackClient,
+    HttpBalancer,
     QuicknodeClient,
     TatumClient,
-    HttpBalancer,
+    TonapiClient,
+    ToncenterClient,
 )
-from tonutils.types import NetworkGlobalID, DEFAULT_HTTP_RETRY_POLICY
+from tonutils.types import DEFAULT_HTTP_RETRY_POLICY
 
 
 async def main() -> None:
@@ -76,9 +78,9 @@ async def main() -> None:
     )
     async with balancer:
         # Example request:
-        # from pytoniq_core import Address
+        # from ton_core import Address
         # address = Address("UQ...")
-        # info = await balancer.get_contract_info(address)
+        # info = await balancer.get_info(address)
         pass
 
 

@@ -1,18 +1,18 @@
-from pytoniq_core import Address
+from ton_core import (
+    Address,
+    DNSRecordDNSNextResolver,
+    DNSRecordSite,
+    DNSRecordStorage,
+    DNSRecordText,
+    DNSRecordWallet,
+    NetworkGlobalID,
+)
 
 from tonutils.clients import ToncenterClient
-from tonutils.contracts import (
-    TONDNSItem,
-    DNSRecordWallet,
-    DNSRecordDNSNextResolver,
-    DNSRecordStorage,
-    DNSRecordSite,
-)
-from tonutils.types import NetworkGlobalID
+from tonutils.contracts import TONDNSItem
 
 # DNS item address to query (e.g., .ton domain NFT)
 DNS_ITEM_ADDRESS = Address("EQ...")
-
 
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
@@ -43,6 +43,9 @@ async def main() -> None:
         # DNSRecordSite: ADNL address for TON Site (hex format)
         elif isinstance(record, DNSRecordSite):
             value = record.value.as_hex
+        # DNSRecordText: arbitrary text record (TEP-81 dns_text#1eda)
+        elif isinstance(record, DNSRecordText):
+            value = record.value
         else:
             continue
 
@@ -50,7 +53,6 @@ async def main() -> None:
         print(f"DNS record `{category}`: {value}")
 
     await client.close()
-
 
 if __name__ == "__main__":
     import asyncio

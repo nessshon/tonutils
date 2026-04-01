@@ -1,11 +1,9 @@
-from pytoniq_core import Address
+from ton_core import Address, NetworkGlobalID, TextCipher
 
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import TextCipher
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -32,7 +30,7 @@ async def main() -> None:
     # Create wallet instance from mnemonic (full access mode)
     # Returns: (wallet, public_key, private_key, mnemonic)
     # Keep private_key for decryption as our_private_key
-    wallet, _, our_private_key, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+    _, _, our_private_key, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
     # Decrypt message using end-to-end encryption (ECDH)
     # Uses elliptic curve Diffie-Hellman for shared secret derivation

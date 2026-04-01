@@ -1,5 +1,6 @@
+from ton_core import DNSCategory, NetworkGlobalID
+
 from tonutils.clients import ToncenterClient
-from tonutils.types import NetworkGlobalID, DNSCategory
 
 # Domain name to resolve (TON DNS format)
 # Supports .ton domains, .t.me domains, and subdomains (e.g., "example.ton", "username.t.me")

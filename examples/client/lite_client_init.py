@@ -1,5 +1,7 @@
+from ton_core import NetworkGlobalID
+
 from tonutils.clients import LiteClient
-from tonutils.types import NetworkGlobalID, DEFAULT_ADNL_RETRY_POLICY
+from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
 
 
 async def main() -> None:
@@ -27,9 +29,9 @@ async def main() -> None:
     )
     async with client:
         # Example request:
-        # from pytoniq_core import Address
+        # from ton_core import Address
         # address = Address("UQ...")
-        # info = await client.get_contract_info(address)
+        # info = await client.get_info(address)
         pass
 
     # Initialize from a private GlobalConfig (recommended for production)

@@ -1,11 +1,9 @@
-from pytoniq_core import Address
+from ton_core import Address, NetworkGlobalID, TextCipher, to_nano
 
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2, get_public_key_get_method
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import to_nano, TextCipher
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 

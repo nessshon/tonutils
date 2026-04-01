@@ -1,11 +1,9 @@
-from pytoniq_core import Address
+from ton_core import Address, NetworkGlobalID, to_amount
 
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import to_amount
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -40,7 +38,7 @@ async def main() -> None:
     # Display wallet information
     print(f"Address: {wallet.address.to_str(is_bounceable=False)}")
 
-    # State: uninit (not deployed), active (deployed), frozen (suspended)
+    # State: nonexist (no data on chain), uninit (not deployed), active (deployed), frozen (insufficient storage fees)
     print(f"State: {wallet.state.value}")
 
     # Balance in nanotons and human-readable TON format

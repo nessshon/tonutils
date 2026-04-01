@@ -1,20 +1,18 @@
-from pytoniq_core import Address
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionContent,
+    NFTCollectionData,
+    OffchainCommonContent,
+    OffchainContent,
+    RoyaltyParams,
+    to_nano,
+)
 
 from tonutils.clients import ToncenterClient
-from tonutils.contracts import (
-    NFTCollectionStandard,
-    NFTCollectionData,
-    NFTItemStandard,
-    NFTCollectionContent,
-    OffchainContent,
-    OffchainCommonContent,
-    RoyaltyParams,
-    WalletV4R2,
-)
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import to_nano
+from tonutils.contracts import NFTCollectionStandard, NFTItemStandard, WalletV4R2
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -30,14 +28,13 @@ COLLECTION_URI = "https://example.com/collection.json"
 # Full item URI = ITEMS_PREFIX_URI + item_index + ".json"
 ITEMS_PREFIX_URI = "https://example.com/items/"
 
-# Royalty percentage in basis points (1/1000)
-# 50 = 5% royalty (50/1000 = 0.05)
+# Royalty numerator for fraction: numerator / denominator
+# 50 / 1000 = 5% royalty
 ROYALTY = 50
 ROYALTY_DENOMINATOR = 1000
 
 # Address to receive royalty payments on secondary sales
 ROYALTY_ADDRESS = Address("UQ...")
-
 
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
@@ -110,7 +107,6 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
-
 
 if __name__ == "__main__":
     import asyncio

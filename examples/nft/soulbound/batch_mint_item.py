@@ -1,18 +1,16 @@
-from pytoniq_core import Address
-
-from tonutils.clients import ToncenterClient
-from tonutils.contracts import (
+from ton_core import (
+    Address,
+    NetworkGlobalID,
     NFTCollectionBatchMintItemBody,
-    NFTCollectionStandard,
-    NFTItemSoulbound,
     NFTItemSoulboundMintRef,
     OffchainItemContent,
-    WalletV4R2,
+    to_nano,
 )
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import to_nano
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionStandard, NFTItemSoulbound, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -33,7 +31,6 @@ NFT_ITEM_OWNERS_AND_AUTHORITIES = [
 
 # Deployed NFT collection contract address
 NFT_COLLECTION_ADDRESS = Address("EQ...")
-
 
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
@@ -81,7 +78,7 @@ async def main() -> None:
     # Send batch mint transaction to collection contract
     # destination: collection contract address
     # amount: TON attached to message (covers gas + forward_amount for all items)
-    #   Formula: 0.025 TON × items_count (scales with batch size)
+    #   Formula: 0.025 TON * items_count (scales with batch size)
     # body: serialized batch mint message
     msg = await wallet.transfer(
         destination=NFT_COLLECTION_ADDRESS,
@@ -103,7 +100,6 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
-
 
 if __name__ == "__main__":
     import asyncio

@@ -1,8 +1,9 @@
-from tonutils.clients import ToncenterClient
-from tonutils.contracts import WalletV4Config, WalletV4R2
-from tonutils.types import NetworkGlobalID, PrivateKey
+from ton_core import NetworkGlobalID, PrivateKey, WalletV4Config
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -12,7 +13,6 @@ MNEMONIC = "word1 word2 word3 ..."
 # - base64 string: base64 encoding
 # - integer: numeric representation
 PRIVATE_KEY = PrivateKey("<your private key>")
-
 
 def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
@@ -35,7 +35,6 @@ def main() -> None:
     # Get wallet address in user-friendly format
     # is_bounceable=False: standard for wallet contracts (UQ...)
     print(f"Wallet address: {wallet.address.to_str(is_bounceable=False)}")
-
 
 if __name__ == "__main__":
     main()

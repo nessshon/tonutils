@@ -1,15 +1,15 @@
-from pytoniq_core import Address
+from ton_core import (
+    Address,
+    JettonChangeContentBody,
+    NetworkGlobalID,
+    OffchainContent,
+    to_nano,
+)
 
 from tonutils.clients import ToncenterClient
-from tonutils.contracts import (
-    JettonChangeContentBody,
-    OffchainContent,
-    WalletV4R2,
-)
-from tonutils.types import NetworkGlobalID
-from tonutils.utils import to_nano
+from tonutils.contracts import WalletV4R2
 
-# 24-word mnemonic phrase (BIP-39 or TON-specific)
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 
@@ -19,7 +19,6 @@ JETTON_MASTER_ADDRESS = Address("EQ...")
 # New jetton metadata URI (TEP-64 off-chain format)
 # Points to JSON with updated jetton metadata (name, symbol, decimals, image)
 JETTON_MASTER_URI = "https://example.com/jetton.json"
-
 
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
@@ -59,7 +58,6 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
-
 
 if __name__ == "__main__":
     import asyncio
