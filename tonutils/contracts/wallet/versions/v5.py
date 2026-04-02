@@ -138,15 +138,14 @@ class _WalletV5(
     def _gasless_validate_provider(self) -> None:
         """Validate that the client supports gasless transfers.
 
-        :raises ClientError: If the client does not use ``TonapiHttpProvider``
+        :raises ClientError: If the provider lacks gasless methods
             or the network is not mainnet.
         """
-        from tonutils.providers.http.tonapi import TonapiHttpProvider
-
-        if not isinstance(self.client.provider, TonapiHttpProvider):
+        provider = self.client.provider
+        required = ("gasless_config", "gasless_estimate", "gasless_send")
+        if not all(hasattr(provider, m) for m in required):
             raise ClientError(
-                "Gasless transfers require `TonapiClient`. "
-                f"Current client uses `{type(self.client.provider).__name__}`."
+                f"Gasless transfers require `TonapiClient`. Current client uses `{type(provider).__name__}`."
             )
         if self.client.network != NetworkGlobalID.MAINNET:
             raise ClientError(

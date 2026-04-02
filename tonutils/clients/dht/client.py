@@ -13,9 +13,9 @@ from ton_core import (
     NetworkGlobalID,
     get_mainnet_global_config,
     get_testnet_global_config,
-    load_global_config,
 )
 
+from tonutils.clients.config import resolve_config
 from tonutils.clients.dht.models import (
     DhtKey,
     DhtNode,
@@ -111,10 +111,7 @@ class DhtClient:
         request_timeout: float = 3.0,
     ) -> DhtClient:
         """Create a client from a global config and a node index."""
-        if isinstance(config, str):
-            config = load_global_config(config)
-        if isinstance(config, dict):
-            config = GlobalConfig.from_dict(config)
+        config = resolve_config(config)
         if config.dht is None:
             raise ClientError("DhtClient.from_config: no DHT section in config")
         nodes = config.dht.nodes

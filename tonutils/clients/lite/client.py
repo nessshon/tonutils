@@ -9,10 +9,10 @@ from ton_core import (
     NetworkGlobalID,
     get_mainnet_global_config,
     get_testnet_global_config,
-    load_global_config,
 )
 
 from tonutils.clients.base import BaseClient
+from tonutils.clients.config import resolve_config
 from tonutils.clients.lite.mixin import LiteMixin
 from tonutils.exceptions import (
     ClientError,
@@ -22,6 +22,7 @@ from tonutils.exceptions import (
 from tonutils.providers.lite import LiteProvider
 from tonutils.transports.limiter import RateLimiter
 from tonutils.types import (
+    DEFAULT_REQUEST_TIMEOUT,
     ClientType,
     RetryPolicy,
 )
@@ -43,7 +44,7 @@ class LiteClient(LiteMixin, BaseClient):
         port: int,
         public_key: BinaryLike,
         connect_timeout: float = 2.0,
-        request_timeout: float = 10.0,
+        request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
         rps_limit: int | None = None,
         rps_period: float = 1.0,
         retry_policy: RetryPolicy | None = None,
@@ -104,7 +105,7 @@ class LiteClient(LiteMixin, BaseClient):
         config: GlobalConfig | dict[str, t.Any] | str,
         index: int,
         connect_timeout: float = 2.0,
-        request_timeout: float = 10.0,
+        request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
         rps_limit: int | None = None,
         rps_period: float = 1.0,
         retry_policy: RetryPolicy | None = None,
@@ -128,10 +129,7 @@ class LiteClient(LiteMixin, BaseClient):
         :return: Configured ``LiteClient`` instance.
         :raises ClientError: If ``index`` is out of range.
         """
-        if isinstance(config, str):
-            config = load_global_config(config)
-        if isinstance(config, dict):
-            config = GlobalConfig.from_dict(config)
+        config = resolve_config(config)
 
         liteservers = config.liteservers
         if not 0 <= index < len(liteservers):
@@ -161,7 +159,7 @@ class LiteClient(LiteMixin, BaseClient):
         *,
         index: int,
         connect_timeout: float = 2.0,
-        request_timeout: float = 10.0,
+        request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
         rps_limit: int | None = None,
         rps_period: float = 1.0,
         retry_policy: RetryPolicy | None = None,

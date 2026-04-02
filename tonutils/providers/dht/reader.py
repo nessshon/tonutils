@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import struct
 import time
 import typing as t
 
@@ -187,7 +188,7 @@ class DhtReaderWorker(BaseWorker):
         while self.running:
             try:
                 raw, addr = await transport.recv_raw()
-            except Exception:
+            except OSError:
                 continue
 
             if len(raw) < 64:
@@ -203,7 +204,7 @@ class DhtReaderWorker(BaseWorker):
 
             try:
                 root = codec.deserialize(plaintext)
-            except Exception:
+            except (ValueError, struct.error):
                 continue
 
             if not root:

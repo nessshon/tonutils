@@ -6,6 +6,7 @@ from ton_core import NetworkGlobalID
 
 from tonutils.clients.http.toncenter import ToncenterClient
 from tonutils.exceptions import NetworkNotSupportedError
+from tonutils.types import DEFAULT_REQUEST_TIMEOUT
 
 if t.TYPE_CHECKING:
     from aiohttp import ClientSession
@@ -21,7 +22,7 @@ class ChainstackClient(ToncenterClient):
         network: NetworkGlobalID,
         *,
         http_provider_url: str,
-        timeout: float = 10.0,
+        timeout: float = DEFAULT_REQUEST_TIMEOUT,
         session: ClientSession | None = None,
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
@@ -62,7 +63,7 @@ class QuicknodeClient(ToncenterClient):
         self,
         *,
         http_provider_url: str,
-        timeout: float = 10.0,
+        timeout: float = DEFAULT_REQUEST_TIMEOUT,
         session: ClientSession | None = None,
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
@@ -104,7 +105,7 @@ class TatumClient(ToncenterClient):
         *,
         api_key: str,
         base_url: str | None = None,
-        timeout: float = 10.0,
+        timeout: float = DEFAULT_REQUEST_TIMEOUT,
         session: ClientSession | None = None,
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,

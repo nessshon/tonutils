@@ -12,10 +12,10 @@ from ton_core import (
     NetworkGlobalID,
     get_mainnet_global_config,
     get_testnet_global_config,
-    load_global_config,
 )
 
 from tonutils.clients.base import BaseClient
+from tonutils.clients.config import resolve_config
 from tonutils.clients.lite.client import LiteClient
 from tonutils.clients.lite.mixin import LiteMixin
 from tonutils.exceptions import (
@@ -31,6 +31,7 @@ from tonutils.exceptions import (
 )
 from tonutils.transports.limiter import RateLimiter
 from tonutils.types import (
+    LITESERVER_RATE_LIMIT_CODES,
     ClientType,
     RetryPolicy,
 )
@@ -167,10 +168,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         :param retry_policy: Retry policy with per-error-code rules, or ``None``.
         :return: Configured ``LiteBalancer`` instance.
         """
-        if isinstance(config, str):
-            config = load_global_config(config)
-        if isinstance(config, dict):
-            config = GlobalConfig.from_dict(config)
+        config = resolve_config(config)
 
         shared_limiter: RateLimiter | None = None
         if rps_limit is not None and not rps_per_client:
@@ -458,7 +456,7 @@ class LiteBalancer(LiteMixin, BaseClient):
                 except RunGetMethodError:
                     raise
                 except ProviderResponseError as e:
-                    is_rate_limit = e.code in {228, 5556}
+                    is_rate_limit = e.code in LITESERVER_RATE_LIMIT_CODES
                     self._mark_error(client, is_rate_limit=is_rate_limit)
                     last_exc = e
                     continue

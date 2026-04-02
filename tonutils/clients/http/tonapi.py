@@ -20,6 +20,7 @@ from tonutils.exceptions import ClientError, RunGetMethodError
 from tonutils.providers.http.tonapi import TonapiHttpProvider
 from tonutils.providers.http.tonapi.models import BlockchainMessagePayload
 from tonutils.types import (
+    DEFAULT_REQUEST_TIMEOUT,
     ClientType,
     ContractInfo,
     RetryPolicy,
@@ -43,7 +44,7 @@ class TonapiClient(BaseClient):
         *,
         api_key: str,
         base_url: str | None = None,
-        timeout: float = 10.0,
+        timeout: float = DEFAULT_REQUEST_TIMEOUT,
         session: ClientSession | None = None,
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,

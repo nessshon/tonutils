@@ -11,9 +11,9 @@ from ton_core import (
     NetworkGlobalID,
     get_mainnet_global_config,
     get_testnet_global_config,
-    load_global_config,
 )
 
+from tonutils.clients.config import resolve_config
 from tonutils.clients.dht.models import (
     Bucket,
     Continuation,
@@ -25,7 +25,13 @@ from tonutils.clients.dht.models import (
     affinity,
     normalize_key,
 )
-from tonutils.exceptions import ClientError, DhtValueNotFoundError, NotConnectedError
+from tonutils.exceptions import (
+    ClientError,
+    DhtValueNotFoundError,
+    NotConnectedError,
+    ProviderError,
+    TransportError,
+)
 
 if t.TYPE_CHECKING:
     from tonutils.providers.dht import DhtProvider
@@ -80,10 +86,7 @@ class DhtNetwork:
         request_timeout: float = 3.0,
     ) -> DhtNetwork:
         """Create a network instance from a global config."""
-        if isinstance(config, str):
-            config = load_global_config(config)
-        if isinstance(config, dict):
-            config = GlobalConfig.from_dict(config)
+        config = resolve_config(config)
         if config.dht is None:
             raise ClientError("DhtNetwork.from_config: no DHT section in config")
         return cls(
@@ -242,7 +245,7 @@ class DhtNetwork:
 
                 try:
                     result = await self._provider.find_value_on_node(node, target, k)
-                except Exception:
+                except (OSError, ProviderError, TransportError, asyncio.TimeoutError):
                     continue
 
                 if isinstance(result, DhtValue):

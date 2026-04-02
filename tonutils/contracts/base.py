@@ -21,7 +21,7 @@ from tonutils.exceptions import (
     ProviderResponseError,
     StateNotLoadedError,
 )
-from tonutils.types import ContractInfo
+from tonutils.types import HTTP_RATE_LIMIT_CODES, LITESERVER_RATE_LIMIT_CODES, ContractInfo
 
 if t.TYPE_CHECKING:
     from ton_core import ContractVersion
@@ -164,7 +164,7 @@ class BaseContract(ContractProtocol[_D]):
         try:
             return await client.get_info(address)
         except ProviderResponseError as e:
-            if e.code in {429, 228, 5556}:
+            if e.code in HTTP_RATE_LIMIT_CODES | LITESERVER_RATE_LIMIT_CODES:
                 raise
             return ContractInfo()
         except Exception:

@@ -13,11 +13,11 @@ from tonutils.exceptions import (
     ProviderError,
     ProviderResponseError,
     ProviderTimeoutError,
-    RetryLimitError,
     TransportError,
 )
 from tonutils.transports.limiter import RateLimiter
-from tonutils.types import BaseModel
+from tonutils.transports.retry import send_with_retry
+from tonutils.types import DEFAULT_REQUEST_TIMEOUT, BaseModel
 
 _M = TypeVar("_M", bound=BaseModel)
 
@@ -32,7 +32,7 @@ class HttpTransport:
         self,
         *,
         base_url: str,
-        timeout: float = 10.0,
+        timeout: float = DEFAULT_REQUEST_TIMEOUT,
         session: aiohttp.ClientSession | None = None,
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
@@ -109,36 +109,10 @@ class HttpTransport:
         :param json_data: JSON body.
         :return: Parsed response payload.
         """
-        attempts: dict[int, int] = {}
-
-        while True:
-            try:
-                return await self._send_once(
-                    method,
-                    path,
-                    params=params,
-                    json_data=json_data,
-                )
-            except ProviderResponseError as e:  # noqa: PERF203
-                policy = self._retry_policy
-                if policy is None:
-                    raise
-
-                rule = policy.rule_for(e.code, e.message)
-                if rule is None:
-                    raise
-
-                key = id(rule)
-                attempts[key] = attempts.get(key, 0) + 1
-
-                if attempts[key] >= rule.max_retries:
-                    raise RetryLimitError(
-                        attempts=attempts[key],
-                        max_attempts=rule.max_retries,
-                        last_error=e,
-                    ) from e
-
-                await asyncio.sleep(rule.delay_for_attempt(attempts[key] - 1))
+        return await send_with_retry(
+            lambda: self._send_once(method, path, params=params, json_data=json_data),
+            self._retry_policy,
+        )
 
     async def connect(self) -> None:
         """Initialize the HTTP session if not already connected."""

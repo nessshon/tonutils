@@ -32,16 +32,16 @@ from tonutils.exceptions import (
     ClientError,
     NotConnectedError,
     ProviderError,
-    ProviderResponseError,
     ProviderTimeoutError,
-    RetryLimitError,
     RunGetMethodError,
 )
 from tonutils.providers.lite.pinger import PingerWorker
 from tonutils.providers.lite.reader import ReaderWorker
 from tonutils.providers.lite.updater import UpdaterWorker
 from tonutils.transports.adnl.tcp import AdnlTcpTransport
+from tonutils.transports.retry import send_with_retry
 from tonutils.types import (
+    DEFAULT_REQUEST_TIMEOUT,
     ContractInfo,
     MasterchainInfo,
     RetryPolicy,
@@ -62,7 +62,7 @@ class LiteProvider:
         self,
         node: LiteServerConfig,
         connect_timeout: float = 2.0,
-        request_timeout: float = 10.0,
+        request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
         limiter: RateLimiter | None = None,
         retry_policy: RetryPolicy | None = None,
     ) -> None:
@@ -241,33 +241,10 @@ class LiteProvider:
         :param priority: Use priority slot in the limiter.
         :return: Decoded response dictionary.
         """
-        attempts: dict[int, int] = {}
-
-        while True:
-            try:
-                return await self._send_once_adnl_query(query, priority=priority)
-
-            except ProviderResponseError as e:  # noqa: PERF203
-                policy = self._retry_policy
-                if policy is None:
-                    raise
-
-                rule = policy.rule_for(e.code, e.message)
-                if rule is None:
-                    raise
-
-                key = id(rule)
-                n = attempts.get(key, 0) + 1
-                attempts[key] = n
-
-                if n >= rule.max_retries:
-                    raise RetryLimitError(
-                        attempts=n,
-                        max_attempts=rule.max_retries,
-                        last_error=e,
-                    ) from e
-
-                await asyncio.sleep(rule.delay_for_attempt(n - 1))
+        return await send_with_retry(
+            lambda: self._send_once_adnl_query(query, priority=priority),
+            self._retry_policy,
+        )
 
     async def send_liteserver_query(
         self,

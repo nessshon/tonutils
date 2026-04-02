@@ -5,7 +5,13 @@ import typing as t
 
 from ton_core import get_random
 
-from tonutils.exceptions import ClientError, NotConnectedError, ProviderTimeoutError
+from tonutils.exceptions import (
+    ClientError,
+    NotConnectedError,
+    ProviderError,
+    ProviderTimeoutError,
+    TransportError,
+)
 from tonutils.providers.dht.codec import DhtCodec
 from tonutils.providers.dht.reader import DhtReaderWorker
 from tonutils.transports.adnl.udp import AdnlUdpTransport
@@ -14,8 +20,6 @@ if t.TYPE_CHECKING:
     from ton_core import DhtNodeConfig
 
     from tonutils.clients.dht.models import DhtNode, DhtValue
-
-__all__ = ["DhtProvider"]
 
 
 class DhtProvider:
@@ -177,7 +181,7 @@ class DhtProvider:
 
             return adnl_id, dht_node
 
-        except Exception:
+        except (OSError, TransportError, ProviderError, asyncio.TimeoutError):
             return None
 
     async def close(self) -> None:

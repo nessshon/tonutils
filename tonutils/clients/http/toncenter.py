@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import typing as t
 
 from ton_core import (
@@ -25,6 +26,7 @@ from tonutils.providers.http.toncenter.models import (
     SendBocPayload,
 )
 from tonutils.types import (
+    DEFAULT_REQUEST_TIMEOUT,
     ClientType,
     ContractInfo,
     RetryPolicy,
@@ -48,7 +50,7 @@ class ToncenterClient(BaseClient):
         *,
         api_key: str | None = None,
         base_url: str | None = None,
-        timeout: float = 10.0,
+        timeout: float = DEFAULT_REQUEST_TIMEOUT,
         session: ClientSession | None = None,
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
@@ -166,7 +168,7 @@ class ToncenterClient(BaseClient):
             if raw is not None:
                 try:
                     h = base64.b64decode(raw).hex()
-                except Exception:
+                except (ValueError, binascii.Error):
                     pass
                 else:
                     if h != "00" * 32:

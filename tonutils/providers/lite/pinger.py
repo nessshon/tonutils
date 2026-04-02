@@ -5,6 +5,7 @@ import typing as t
 
 from ton_core import get_random
 
+from tonutils.exceptions import ProviderError, TransportError
 from tonutils.transports.worker import BaseWorker
 
 if t.TYPE_CHECKING:
@@ -87,5 +88,5 @@ class PingerWorker(BaseWorker):
             if self.provider.connected:
                 try:
                     await self.ping_once()
-                except Exception:
+                except (OSError, ProviderError, TransportError, asyncio.TimeoutError):
                     continue

@@ -1,3 +1,4 @@
+import struct
 import typing as t
 
 from tonutils.exceptions import ProviderResponseError
@@ -49,7 +50,7 @@ class ReaderWorker(BaseWorker):
                 continue
             try:
                 root = provider.tl_schemas.deserialize(frame[32:], boxed=True)
-            except Exception:
+            except (ValueError, struct.error):
                 continue
             msg = root[0]
             if isinstance(msg, dict):

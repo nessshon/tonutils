@@ -13,7 +13,7 @@ from tonutils.providers.http.toncenter.models import (
     SendBocPayload,
 )
 from tonutils.transports.http import HttpTransport
-from tonutils.types import RetryPolicy
+from tonutils.types import DEFAULT_REQUEST_TIMEOUT, RetryPolicy
 
 
 class ToncenterHttpProvider(HttpTransport):
@@ -25,7 +25,7 @@ class ToncenterHttpProvider(HttpTransport):
         *,
         api_key: str | None = None,
         base_url: str | None = None,
-        timeout: float = 10.0,
+        timeout: float = DEFAULT_REQUEST_TIMEOUT,
         session: aiohttp.ClientSession | None = None,
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,

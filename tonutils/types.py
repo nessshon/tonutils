@@ -10,7 +10,13 @@ from tonutils.exceptions import CDN_CHALLENGE_MARKERS
 
 __all__ = [
     "DEFAULT_ADNL_RETRY_POLICY",
+    "DEFAULT_CONNECT_TIMEOUT",
     "DEFAULT_HTTP_RETRY_POLICY",
+    "DEFAULT_REQUEST_TIMEOUT",
+    "HTTP_RATE_LIMIT_CODES",
+    "HTTP_TRANSIENT_CODES",
+    "LITESERVER_BLOCK_NOT_IN_DB_CODE",
+    "LITESERVER_RATE_LIMIT_CODES",
     "BaseModel",
     "ClientType",
     "ContractInfo",
@@ -18,6 +24,25 @@ __all__ = [
     "RetryPolicy",
     "RetryRule",
 ]
+
+
+DEFAULT_REQUEST_TIMEOUT: float = 10.0
+"""Default timeout in seconds for a single request."""
+
+DEFAULT_CONNECT_TIMEOUT: float = 2.0
+"""Default timeout in seconds for connect/handshake."""
+
+LITESERVER_RATE_LIMIT_CODES: frozenset[int] = frozenset({228, 5556})
+"""Lite-server error codes indicating rate limiting."""
+
+LITESERVER_BLOCK_NOT_IN_DB_CODE: int = 651
+"""Lite-server error code for 'block is not in db'."""
+
+HTTP_RATE_LIMIT_CODES: frozenset[int] = frozenset({429})
+"""HTTP status codes indicating rate limiting."""
+
+HTTP_TRANSIENT_CODES: frozenset[int] = frozenset({502, 503, 504})
+"""HTTP status codes for transient gateway/service failures."""
 
 
 @dataclass(init=False)
@@ -186,6 +211,9 @@ class RetryPolicy:
     rules: tuple[RetryRule, ...]
     """Retry rules evaluated in order."""
 
+    total_timeout: float | None = None
+    """Maximum wall-clock time in seconds for all retries combined, or ``None`` for unlimited."""
+
     def rule_for(self, code: int, message: t.Any) -> RetryRule | None:
         """Return the first matching rule, or ``None``.
 
@@ -201,40 +229,36 @@ class RetryPolicy:
 
 DEFAULT_HTTP_RETRY_POLICY = RetryPolicy(
     rules=(
-        # rate limit exceed
         RetryRule(
-            codes=frozenset({429}),
+            codes=HTTP_RATE_LIMIT_CODES,
             max_retries=3,
             base_delay=0.3,
             max_delay=3.0,
         ),
-        # transient gateway/service failures
         RetryRule(
-            codes=frozenset({502, 503, 504}),
+            codes=HTTP_TRANSIENT_CODES,
             max_retries=3,
             base_delay=0.5,
             max_delay=5.0,
         ),
-        # CDN/protection/challenge pages (Cloudflare, etc.)
         RetryRule(
             max_retries=3,
             base_delay=1.0,
             max_delay=8.0,
             markers=tuple(CDN_CHALLENGE_MARKERS.keys()),
         ),
-    )
+    ),
+    total_timeout=30.0,
 )
 """Default retry policy for HTTP queries."""
 
 DEFAULT_ADNL_RETRY_POLICY = RetryPolicy(
     rules=(
-        # rate limit exceed
-        RetryRule(codes=frozenset({228, 5556}), max_retries=3),
-        # block (...) is not in db
-        RetryRule(codes=frozenset({651}), max_retries=4),
-        # backend node timeout
-        RetryRule(codes=frozenset({502}), max_retries=5),
-    )
+        RetryRule(codes=LITESERVER_RATE_LIMIT_CODES, max_retries=3),
+        RetryRule(codes=frozenset({LITESERVER_BLOCK_NOT_IN_DB_CODE}), max_retries=4),
+        RetryRule(codes=HTTP_TRANSIENT_CODES, max_retries=5),
+    ),
+    total_timeout=30.0,
 )
 """Default retry policy for ADNL queries."""
 
