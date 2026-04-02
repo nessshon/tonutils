@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tonutils"
-description = "Python SDK for The Open Network — lite servers (ADNL) and HTTP API providers."
+description = "Python SDK for TON Blockchain — wallets, contracts, and more via ADNL and HTTP APIs."
 requires-python = ">=3.10,<3.15"
 authors = [
     { name = "nessshon" },
@@ -13,8 +13,8 @@ maintainers = [
     { name = "nessshon" },
 ]
 dependencies = [
-    "aiohttp>=3.7.0",
-    "pytoniq-core~=0.1.46",
+    "aiohttp>=3.9.0",
+    "ton-core>=0.3.4",
 ]
 keywords = [
     "ADNL",
@@ -60,9 +60,90 @@ include = ["tonutils", "tonutils.*"]
 tonutils = ["py.typed"]
 
 [tool.setuptools.dynamic]
-version = { attr = "tonutils.__init__.__version__" }
+version = { attr = "tonutils.__meta__.__version__" }
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    # pydocstyle
+    "D",
+    # pycodestyle
+    "E",
+    "W",
+    # pyflakes
+    "F",
+    # isort
+    "I",
+    # flake8-bugbear
+    "B",
+    # flake8-comprehensions
+    "C4",
+    # pyupgrade
+    "UP",
+    # flake8-simplify
+    "SIM",
+    # type-checking imports
+    "TCH",
+    # perflint
+    "PERF",
+    # flake8-debugger
+    "T10",
+    # flake8-print
+    "T20",
+    # flake8-pie
+    "PIE",
+    # pylint errors
+    "PLE",
+    # flake8-return
+    "RET",
+    # ruff-specific
+    "RUF",
+    # flake8-bandit (security)
+    "S",
+]
+ignore = [
+    # docstring in public module
+    "D100",
+    # docstring in public package
+    "D104",
+    # docstring in magic method
+    "D105",
+    # docstring in __init__
+    "D107",
+    # blank line before class docstring (conflicts D211)
+    "D203",
+    # multi-line summary second line (conflicts D212)
+    "D213",
+    # assert usage (acceptable in non-web SDK for internal invariants)
+    "S101",
+    # binding to all interfaces (required for UDP transport)
+    "S104",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"examples/*" = ["T201", "D"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["tonutils"]
+
+[tool.ruff.format]
+quote-style = "double"
 
 [tool.mypy]
 python_version = "3.10"
-follow_imports = "skip"
-ignore_missing_imports = true
+strict = true
+pretty = true
+show_error_codes = true
+show_error_context = true
+namespace_packages = true
+follow_imports_for_stubs = true
+warn_unreachable = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-cast",
+    "truthy-bool",
+]
