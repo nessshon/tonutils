@@ -1,2 +1,2 @@
-aiohttp>=3.7.0
-pytoniq-core~=0.1.46
+aiohttp>=3.9.0
+ton-core>=0.3.4
