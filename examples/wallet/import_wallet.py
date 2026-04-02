@@ -14,6 +14,7 @@ MNEMONIC = "word1 word2 word3 ..."
 # - integer: numeric representation
 PRIVATE_KEY = PrivateKey("<your private key>")
 
+
 def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
@@ -35,6 +36,7 @@ def main() -> None:
     # Get wallet address in user-friendly format
     # is_bounceable=False: standard for wallet contracts (UQ...)
     print(f"Wallet address: {wallet.address.to_str(is_bounceable=False)}")
+
 
 if __name__ == "__main__":
     main()

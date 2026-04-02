@@ -14,9 +14,7 @@ DOMAIN = "foundation.ton"
 async def main() -> None:
     # Step 1: Resolve ADNL address from TON DNS
     # Initialize HTTP client for TON blockchain interaction
-    client = ToncenterClient(
-        network=NetworkGlobalID.MAINNET, rps_limit=1, rps_period=1.2
-    )
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET, rps_limit=1, rps_period=1.2)
     await client.connect()
 
     # Resolve SITE DNS record — it contains the ADNL address

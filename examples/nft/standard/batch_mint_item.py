@@ -30,6 +30,7 @@ NFT_ITEM_OWNERS = [
 # Deployed NFT collection contract address
 NFT_COLLECTION_ADDRESS = Address("EQ...")
 
+
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
@@ -49,9 +50,7 @@ async def main() -> None:
 
     # Build initialization data for each NFT item
     # Iterates through owners with sequential indices starting from MINT_FROM_INDEX
-    for nft_item_index, owner_address in enumerate(
-        NFT_ITEM_OWNERS, start=MINT_FROM_INDEX
-    ):
+    for nft_item_index, owner_address in enumerate(NFT_ITEM_OWNERS, start=MINT_FROM_INDEX):
         # Create off-chain content structure
         # suffix_uri: appended to collection's base URI to form full metadata URL
         # Example: "0.json", "1.json", "2.json" for sequential items
@@ -97,6 +96,7 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
+
 
 if __name__ == "__main__":
     import asyncio

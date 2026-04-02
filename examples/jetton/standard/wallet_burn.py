@@ -14,6 +14,7 @@ JETTON_MASTER_ADDRESS = Address("EQ...")
 # Multiply by 10^decimals for whole tokens (e.g., 1 * 10^9 = 1 jetton with 9 decimals)
 JETTON_AMOUNT_TO_BURN = to_nano(1, decimals=9)
 
+
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
@@ -61,6 +62,7 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
+
 
 if __name__ == "__main__":
     import asyncio

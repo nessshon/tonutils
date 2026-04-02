@@ -13,6 +13,7 @@ OWNER_ADDRESS = Address("UQ...")
 # Deployed NFT collection contract address to transfer
 NFT_COLLECTION_ADDRESS = Address("EQ...")
 
+
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
@@ -47,6 +48,7 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
+
 
 if __name__ == "__main__":
     import asyncio

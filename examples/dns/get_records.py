@@ -14,6 +14,7 @@ from tonutils.contracts import TONDNSItem
 # DNS item address to query (e.g., .ton domain NFT)
 DNS_ITEM_ADDRESS = Address("EQ...")
 
+
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
@@ -53,6 +54,7 @@ async def main() -> None:
         print(f"DNS record `{category}`: {value}")
 
     await client.close()
+
 
 if __name__ == "__main__":
     import asyncio

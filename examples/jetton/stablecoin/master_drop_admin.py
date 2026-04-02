@@ -10,6 +10,7 @@ MNEMONIC = "word1 word2 word3 ..."
 # Deployed jetton master contract address
 JETTON_MASTER_ADDRESS = Address("EQ...")
 
+
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
@@ -45,6 +46,7 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
+
 
 if __name__ == "__main__":
     import asyncio

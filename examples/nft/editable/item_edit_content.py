@@ -21,6 +21,7 @@ NFT_ITEM_ADDRESS = Address("EQ...")
 # Example: if prefix is "https://example.com/items/", suffix "0.json" → "https://example.com/items/0.json"
 SUFFIX_URI = "0.json"
 
+
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
@@ -59,6 +60,7 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
+
 
 if __name__ == "__main__":
     import asyncio

@@ -13,6 +13,7 @@ NFT_ITEM_ADDRESS = Address("EQ...")
 # New editor address
 EDITOR_ADDRESS = Address("UQ...")
 
+
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
@@ -51,6 +52,7 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
+
 
 if __name__ == "__main__":
     import asyncio

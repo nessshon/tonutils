@@ -36,6 +36,7 @@ ROYALTY_DENOMINATOR = 1000
 # Address to receive royalty payments (required by TEP-66, even though SBT are non-transferable per TEP-85)
 ROYALTY_ADDRESS = Address("UQ...")
 
+
 async def main() -> None:
     # Initialize HTTP client for TON blockchain interaction
     # NetworkGlobalID.MAINNET (-239) for production
@@ -107,6 +108,7 @@ async def main() -> None:
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
+
 
 if __name__ == "__main__":
     import asyncio
