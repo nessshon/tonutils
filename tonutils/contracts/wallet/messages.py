@@ -297,10 +297,7 @@ class JettonTransferBuilder(BaseMessageBuilder):
         :raises ValueError: If both or neither wallet/master addresses given.
         """
         if (jetton_wallet_address is None) == (jetton_master_address is None):
-            raise ValueError(
-                "You must pass exactly one of "
-                "`jetton_wallet_address` or `jetton_master_address`."
-            )
+            raise ValueError("You must pass exactly one of `jetton_wallet_address` or `jetton_master_address`.")
         if isinstance(forward_payload, str):
             forward_payload = TextCommentBody(forward_payload).serialize()
         self.destination = destination

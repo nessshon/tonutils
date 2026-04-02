@@ -182,9 +182,7 @@ class LiteProvider:
         async with self._connect_lock:
             await self._do_close()
 
-    async def _send_once_adnl_query(
-        self, query: bytes, *, priority: bool
-    ) -> dict[str, t.Any]:
+    async def _send_once_adnl_query(self, query: bytes, *, priority: bool) -> dict[str, t.Any]:
         """Send a single ADNL query without retry.
 
         :param query: Encoded ADNL TL-query bytes.
@@ -262,14 +260,14 @@ class LiteProvider:
                 n = attempts.get(key, 0) + 1
                 attempts[key] = n
 
-                if n >= rule.attempts:
+                if n >= rule.max_retries:
                     raise RetryLimitError(
                         attempts=n,
-                        max_attempts=rule.attempts,
+                        max_attempts=rule.max_retries,
                         last_error=e,
                     ) from e
 
-                await asyncio.sleep(rule.delay(n - 1))
+                await asyncio.sleep(rule.delay_for_attempt(n - 1))
 
     async def send_liteserver_query(
         self,
@@ -710,9 +708,7 @@ class LiteProvider:
         :raises ClientError: If ``count`` exceeds 16.
         """
         if count > 16:
-            raise ClientError(
-                "get_transactions supports up to 16 transactions per request"
-            )
+            raise ClientError("get_transactions supports up to 16 transactions per request")
 
         data = {
             "count": count,
@@ -735,8 +731,7 @@ class LiteProvider:
             curr_hash = cell.get_hash(0).hex()
             if curr_hash != prev_tr_hash:
                 raise ProviderError(
-                    "getTransactions failed: transaction hash mismatch "
-                    f"(expected {prev_tr_hash}, got {curr_hash})"
+                    f"getTransactions failed: transaction hash mismatch (expected {prev_tr_hash}, got {curr_hash})"
                 )
 
             tx_or_cell = Transaction.deserialize(cell.begin_parse())
@@ -862,9 +857,7 @@ def build_contract_state_info(
                 info.data_raw = cell_to_hex(state_init.data)
 
         info.state = ContractState(
-            "uninit"
-            if simple_account.state.type_ == "uninitialized"
-            else simple_account.state.type_
+            "uninit" if simple_account.state.type_ == "uninitialized" else simple_account.state.type_
         )
 
     lt = shard_account.last_trans_lt
@@ -874,11 +867,7 @@ def build_contract_state_info(
     if th:
         info.last_transaction_hash = th.hex()
 
-    if (
-        info.last_transaction_lt is None
-        and info.last_transaction_hash is None
-        and info.state == ContractState.UNINIT
-    ):
+    if info.last_transaction_lt is None and info.last_transaction_hash is None and info.state == ContractState.UNINIT:
         info.state = ContractState.NONEXIST
 
     return info

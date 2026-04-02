@@ -281,11 +281,7 @@ class BlockScanner:
 
         if prev_ref.type_ == "prev_blk_info":
             prev: ExtBlkRef = prev_ref.prev
-            prev_shard = (
-                self._parent_shard(shard_tip.shard)
-                if info.after_split
-                else shard_tip.shard
-            )
+            prev_shard = self._parent_shard(shard_tip.shard) if info.after_split else shard_tip.shard
 
             await self._enqueue_missing_blocks(
                 shard_tip=BlockIdExt(
@@ -374,9 +370,7 @@ class BlockScanner:
         else:
             next_seqno = saved_seqno + 1
             mc_block = (
-                last_mc_block
-                if next_seqno >= last_mc_block.seqno
-                else await self._lookup_mc_block(seqno=next_seqno)
+                last_mc_block if next_seqno >= last_mc_block.seqno else await self._lookup_mc_block(seqno=next_seqno)
             )
 
         await self._run(mc_block)

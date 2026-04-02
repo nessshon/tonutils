@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import typing as t
 
 __all__ = [
     "CDN_CHALLENGE_MARKERS",
+    "TVM_EXIT_CODES",
     "BalancerError",
     "ClientError",
     "ContractError",
@@ -22,6 +25,21 @@ __all__ = [
 
 class TonutilsError(Exception):
     """Base exception for tonutils."""
+
+    def __init__(self, *args: t.Any, hint: str | None = None) -> None:
+        """Initialize the error.
+
+        :param hint: Actionable suggestion for the developer.
+        """
+        super().__init__(*args)
+        self.hint = hint
+
+    def __str__(self) -> str:
+        """Return message with hint appended if present."""
+        msg = super().__str__()
+        if self.hint:
+            return f"{msg}\n  Hint: {self.hint}"
+        return msg
 
 
 class TransportError(TonutilsError):
@@ -74,7 +92,10 @@ class NotConnectedError(TonutilsError, RuntimeError):
 
         op = f"cannot `{operation}`: " if operation else ""
         where = f" ({endpoint})" if endpoint else ""
-        super().__init__(f"{op}{component} is not connected{where}")
+        super().__init__(
+            f"{op}{component} is not connected{where}",
+            hint="Use `async with` context manager or call `.connect()` first.",
+        )
 
 
 class ProviderTimeoutError(ProviderError, asyncio.TimeoutError):
@@ -128,7 +149,10 @@ class RetryLimitError(ProviderError):
         self.max_attempts = int(max_attempts)
         self.last_error = last_error
         ratio = f"{self.attempts}/{self.max_attempts}"
-        super().__init__(f"retry limit reached {ratio}: {last_error}")
+        super().__init__(
+            f"retry limit reached {ratio}: {last_error}",
+            hint="Adjust RetryPolicy limits or check endpoint availability.",
+        )
 
 
 class NetworkNotSupportedError(ClientError, KeyError):
@@ -142,10 +166,7 @@ class NetworkNotSupportedError(ClientError, KeyError):
         """
         self.network = network
         self.provider = provider
-        super().__init__(
-            f"No default for network {network!r} in {provider}. "
-            "Provide connection details explicitly."
-        )
+        super().__init__(f"No default for network {network!r} in {provider}. Provide connection details explicitly.")
 
 
 class DhtValueNotFoundError(ClientError):
@@ -163,17 +184,18 @@ class DhtValueNotFoundError(ClientError):
 class ContractError(ClientError):
     """Contract wrapper operation failed."""
 
-    def __init__(self, target: t.Any, details: str) -> None:
+    def __init__(self, target: t.Any, details: str, *, hint: str | None = None) -> None:
         """Initialize the contract error.
 
         :param target: Contract class or instance that failed.
         :param details: Failure description.
+        :param hint: Actionable suggestion for the developer.
         """
         self.target = target
         self.details = details
 
         name = target.__name__ if isinstance(target, type) else target.__class__.__name__
-        super().__init__(f"{name} failed: {details}")
+        super().__init__(f"{name} failed: {details}", hint=hint)
 
 
 class StateNotLoadedError(ContractError):
@@ -187,7 +209,11 @@ class StateNotLoadedError(ContractError):
         """
         self.missing = missing
         name = contract.__class__.__name__
-        super().__init__(contract, f"{missing} is not loaded. Call {name}.refresh().")
+        super().__init__(
+            contract,
+            f"{missing} is not loaded. Call {name}.refresh().",
+            hint="Load on-chain state first: `await contract.refresh()`.",
+        )
 
 
 class RunGetMethodError(ClientError):
@@ -203,10 +229,70 @@ class RunGetMethodError(ClientError):
         self.address = address
         self.exit_code = int(exit_code)
         self.method_name = method_name
+
+        reason = TVM_EXIT_CODES.get(self.exit_code, "unknown error")
         super().__init__(
-            f"get-method `{method_name}` failed: exit code {self.exit_code} ({address})"
+            f"get-method `{method_name}` failed: exit code {self.exit_code} — {reason} ({address})",
+            hint=_tvm_hint(self.exit_code, method_name),
         )
 
+
+def _tvm_hint(exit_code: int, method_name: str) -> str | None:
+    """Return an actionable hint for the given TVM exit code.
+
+    :param exit_code: TVM exit code.
+    :param method_name: Name of the get-method that failed.
+    :return: Hint string, or ``None`` if no hint is available.
+    """
+    hints: dict[int, str] = {
+        2: "Check the arguments passed to `run_get_method` stack.",
+        4: "Input value is too large or division by zero occurred.",
+        5: "An argument is out of its expected range; check input values.",
+        7: "Stack arguments have wrong types; check `run_get_method` stack format.",
+        8: "Result cell exceeds 1023 bits or 4 refs; contract may need a redesign.",
+        9: "Input data is shorter than the contract expects; check BoC encoding.",
+        11: (
+            f"Method `{method_name}` may not exist on this contract. "
+            "Verify the contract is deployed and supports this method."
+        ),
+        13: "Contract ran out of gas. Increase gas limit or simplify the query.",
+        -14: "Contract ran out of gas. Increase gas limit or simplify the query.",
+    }
+    return hints.get(exit_code)
+
+
+TVM_EXIT_CODES: dict[int, str] = {
+    0: "success",
+    1: "alternative success",
+    2: "stack underflow",
+    3: "stack overflow",
+    4: "integer overflow or division by zero",
+    5: "integer out of expected range",
+    6: "invalid opcode",
+    7: "type check error",
+    8: "cell overflow (>1023 bits or >4 refs)",
+    9: "cell underflow (not enough data in slice)",
+    10: "dictionary error",
+    11: "unknown error (often: method not found)",
+    12: "fatal error",
+    13: "out of gas",
+    -14: "out of gas (negated)",
+    14: "virtualization error (reserved, never thrown)",
+    32: "invalid action list",
+    33: "action list too long (>255 actions)",
+    34: "invalid or unsupported action",
+    35: "invalid source address in outbound message",
+    36: "invalid destination address",
+    37: "not enough TON for action/forward fees",
+    38: "not enough extra currencies",
+    39: "outbound message does not fit into a cell",
+    40: "cannot process message (insufficient funds or too large)",
+    41: "library reference is null",
+    42: "library change action error",
+    43: "library limits exceeded (max cells or Merkle depth)",
+    50: "account state size exceeded limits",
+}
+"""Mapping of standard TVM exit codes to human-readable descriptions."""
 
 CDN_CHALLENGE_MARKERS: dict[str, str] = {
     # Cloudflare

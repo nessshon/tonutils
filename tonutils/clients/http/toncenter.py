@@ -322,11 +322,7 @@ class ToncenterClient(BaseClient):
                 out.append(norm_stack_num(payload))
             elif tag in ("cell", "tvm.Cell", "slice", "tvm.Slice"):
                 val = (payload or {}).get("bytes")
-                out.append(
-                    norm_stack_cell(val)
-                    if isinstance(val, (Cell, Slice, str))
-                    else None
-                )
+                out.append(norm_stack_cell(val) if isinstance(val, (Cell, Slice, str)) else None)
             elif tag in ("tuple", "list"):
                 elements = (payload or {}).get("elements") or []
                 out.append([ToncenterClient._decode_entry(el) for el in elements])

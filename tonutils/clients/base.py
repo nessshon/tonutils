@@ -202,15 +202,7 @@ class BaseClient(abc.ABC):
         domain: str | bytes,
         category: DNSCategory,
         dns_root_address: AddressLike | None = None,
-    ) -> (
-        Cell
-        | DNSRecordDNSNextResolver
-        | DNSRecordSite
-        | DNSRecordStorage
-        | DNSRecordText
-        | DNSRecordWallet
-        | None
-    ):
+    ) -> Cell | DNSRecordDNSNextResolver | DNSRecordSite | DNSRecordStorage | DNSRecordText | DNSRecordWallet | None:
         """Resolve a TON DNS record.
 
         :param domain: Domain name string or encoded DNS bytes.
@@ -235,9 +227,7 @@ class BaseClient(abc.ABC):
             stack=[domain_cell.to_slice(), category.value],
         )
         if len(res) < 2:
-            raise ProviderError(
-                f"dnsresolve failed: invalid response (expected 2 stack items, got {len(res)})"
-            )
+            raise ProviderError(f"dnsresolve failed: invalid response (expected 2 stack items, got {len(res)})")
 
         blen = len(domain) * 8
         rlen = t.cast("int", res[0])
@@ -248,9 +238,7 @@ class BaseClient(abc.ABC):
             return None
 
         if rlen % 8 != 0 or rlen > blen:
-            raise ProviderError(
-                f"dnsresolve failed: invalid resolved length {rlen} bits (domain {blen} bits)"
-            )
+            raise ProviderError(f"dnsresolve failed: invalid resolved length {rlen} bits (domain {blen} bits)")
         if rlen == blen:
             # noinspection PyProtectedMember
             tcls = DNSRecords._DNS_RECORDS_CLASSES.get(category.name.lower())

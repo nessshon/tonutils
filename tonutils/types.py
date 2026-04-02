@@ -117,16 +117,19 @@ class RetryRule:
     If both are set, both conditions must match.
     """
 
-    attempts: int = 3
-    """Maximum retry attempts (>= 1)."""
+    max_retries: int = 3
+    """Maximum number of retries (>= 1)."""
 
     base_delay: float = 0.3
     """Initial delay in seconds (>= 0)."""
 
-    cap_delay: float = 3.0
-    """Maximum delay in seconds (>= base_delay)."""
+    max_delay: float = 3.0
+    """Upper bound for the delay after backoff (>= base_delay)."""
 
-    codes: tuple[int, ...] | None = None
+    backoff_factor: float = 2.0
+    """Multiplier applied to delay on each retry."""
+
+    codes: frozenset[int] | None = None
     """Error codes this rule applies to, or ``None``."""
 
     markers: tuple[str, ...] | None = None
@@ -137,14 +140,14 @@ class RetryRule:
 
         :raises ValueError: If constraints on fields are violated.
         """
-        if self.attempts < 1:
-            raise ValueError("attempts must be >= 1")
+        if self.max_retries < 1:
+            raise ValueError("max_retries must be >= 1")
         if self.base_delay < 0:
             raise ValueError("base_delay must be >= 0")
-        if self.cap_delay < 0:
-            raise ValueError("cap_delay must be >= 0")
-        if self.cap_delay < self.base_delay:
-            raise ValueError("cap_delay must be >= base_delay")
+        if self.max_delay < self.base_delay:
+            raise ValueError("max_delay must be >= base_delay")
+        if self.backoff_factor < 1.0:
+            raise ValueError("backoff_factor must be >= 1.0")
         if self.markers:
             norm = tuple(m.strip().lower() for m in self.markers if m and m.strip())
             object.__setattr__(self, "markers", norm or None)
@@ -166,17 +169,14 @@ class RetryRule:
 
         return True
 
-    def delay(self, attempt_index: int) -> float:
-        """Calculate delay before retry using exponential back-off.
+    def delay_for_attempt(self, attempt: int) -> float:
+        """Calculate delay for the given attempt number.
 
-        :param attempt_index: Zero-based attempt index.
-        :return: Delay in seconds.
-        :raises ValueError: If attempt_index < 0.
+        :param attempt: Zero-based attempt index.
+        :return: Delay in seconds, capped by ``max_delay``.
         """
-        if attempt_index < 0:
-            raise ValueError("attempt_index must be >= 0")
-        d = self.base_delay * (2**attempt_index)
-        return d if d < self.cap_delay else self.cap_delay
+        delay = self.base_delay * (self.backoff_factor**attempt)
+        return min(delay, self.max_delay)
 
 
 @dataclass(slots=True, frozen=True)
@@ -203,23 +203,23 @@ DEFAULT_HTTP_RETRY_POLICY = RetryPolicy(
     rules=(
         # rate limit exceed
         RetryRule(
-            codes=(429,),
-            attempts=3,
+            codes=frozenset({429}),
+            max_retries=3,
             base_delay=0.3,
-            cap_delay=3.0,
+            max_delay=3.0,
         ),
         # transient gateway/service failures
         RetryRule(
-            codes=(502, 503, 504),
-            attempts=3,
+            codes=frozenset({502, 503, 504}),
+            max_retries=3,
             base_delay=0.5,
-            cap_delay=5.0,
+            max_delay=5.0,
         ),
         # CDN/protection/challenge pages (Cloudflare, etc.)
         RetryRule(
-            attempts=3,
+            max_retries=3,
             base_delay=1.0,
-            cap_delay=8.0,
+            max_delay=8.0,
             markers=tuple(CDN_CHALLENGE_MARKERS.keys()),
         ),
     )
@@ -229,11 +229,11 @@ DEFAULT_HTTP_RETRY_POLICY = RetryPolicy(
 DEFAULT_ADNL_RETRY_POLICY = RetryPolicy(
     rules=(
         # rate limit exceed
-        RetryRule(codes=(228, 5556), attempts=3),
+        RetryRule(codes=frozenset({228, 5556}), max_retries=3),
         # block (...) is not in db
-        RetryRule(codes=(651,), attempts=4),
+        RetryRule(codes=frozenset({651}), max_retries=4),
         # backend node timeout
-        RetryRule(codes=(502,), attempts=5),
+        RetryRule(codes=frozenset({502}), max_retries=5),
     )
 )
 """Default retry policy for ADNL queries."""

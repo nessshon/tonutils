@@ -46,11 +46,7 @@ class _WalletV1(
         """
         params = params or self._params_model()
 
-        seqno = (
-            params.seqno
-            if params.seqno is not None
-            else self.state_data.seqno if self.is_active else 0
-        )
+        seqno = params.seqno if params.seqno is not None else self.state_data.seqno if self.is_active else 0
 
         cell = begin_cell()
         cell.store_uint(seqno, 32)

@@ -66,10 +66,11 @@ class BlockchainAccountTransactionsResult(BaseModel):
         raw_txs = data.get("transactions")
         if raw_txs is None:
             return cls()
-        return cls(transactions=[
-            BlockchainAccountTransaction.from_dict(item) if isinstance(item, dict) else item
-            for item in raw_txs
-        ])
+        return cls(
+            transactions=[
+                BlockchainAccountTransaction.from_dict(item) if isinstance(item, dict) else item for item in raw_txs
+            ]
+        )
 
 
 @dataclass
@@ -120,8 +121,7 @@ class GaslessConfigResult(BaseModel):
         :return: Parsed instance.
         """
         jettons = [
-            _GaslessGasJetton(**item) if isinstance(item, dict) else item
-            for item in data.get("gas_jettons", [])
+            _GaslessGasJetton(**item) if isinstance(item, dict) else item for item in data.get("gas_jettons", [])
         ]
         return cls(relay_address=data["relay_address"], gas_jettons=jettons)
 

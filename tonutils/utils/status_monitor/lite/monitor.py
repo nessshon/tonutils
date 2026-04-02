@@ -231,9 +231,7 @@ class LiteServerMonitor(BaseMonitor[LiteClient, LiteServerStatus]):
         """Binary-search for the earliest archived block timestamp."""
         try:
             now = int(time.time())
-            result = await self._find_archive_depth(
-                client, now, self._archive_cache.get(index)
-            )
+            result = await self._find_archive_depth(client, now, self._archive_cache.get(index))
             self._archive_cache[index] = result
             await self._set_status(index, archive_from=result)
         except Exception as e:

@@ -71,11 +71,7 @@ class VanityInit:
     def from_dict(cls, data: dict[str, t.Any]) -> VanityInit:
         """Create from dictionary."""
         special_raw = data.get("special")
-        special = (
-            VanitySpecial(**special_raw)
-            if isinstance(special_raw, dict)
-            else special_raw
-        )
+        special = VanitySpecial(**special_raw) if isinstance(special_raw, dict) else special_raw
         return cls(
             code=data["code"],
             split_depth=data.get("fixedPrefixLength") or data.get("split_depth"),
@@ -107,13 +103,9 @@ class VanityResult:
     def from_dict(cls, data: dict[str, t.Any]) -> VanityResult:
         """Create from dictionary."""
         init_raw = data.get("init", {})
-        init = (
-            VanityInit.from_dict(init_raw) if isinstance(init_raw, dict) else init_raw
-        )
+        init = VanityInit.from_dict(init_raw) if isinstance(init_raw, dict) else init_raw
         config_raw = data.get("config", {})
-        config = (
-            VanityConfig(**config_raw) if isinstance(config_raw, dict) else config_raw
-        )
+        config = VanityConfig(**config_raw) if isinstance(config_raw, dict) else config_raw
         return cls(
             address=data["address"],
             init=init,

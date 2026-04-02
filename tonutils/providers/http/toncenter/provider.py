@@ -87,9 +87,7 @@ class ToncenterHttpProvider(HttpTransport):
             await self.send_http_request("GET", "/getConfigAll"),
         )
 
-    async def get_address_information(
-        self, address: str
-    ) -> GetAddressInformationResult:
+    async def get_address_information(self, address: str) -> GetAddressInformationResult:
         """Fetch contract state information.
 
         :param address: Contract address string.

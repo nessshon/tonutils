@@ -65,9 +65,7 @@ class RateLimiter:
                     self._refill()
 
                     # Check if token available (priority always takes; non-priority only if no priority waiting)
-                    if self._tokens >= 1.0 and (
-                        priority or self._priority_waiters == 0
-                    ):
+                    if self._tokens >= 1.0 and (priority or self._priority_waiters == 0):
                         self._tokens -= 1.0
                         self._cond.notify_all()
                         return

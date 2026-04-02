@@ -392,9 +392,7 @@ class DhtNetwork:
         """Store ADNL address in the DHT."""
         if not self.connected:
             raise NotConnectedError(component="DhtNetwork", operation="store_address")
-        value_tl, target = self._provider.codec.build_store_address(
-            address_list, ttl, owner_key
-        )
+        value_tl, target = self._provider.codec.build_store_address(address_list, ttl, owner_key)
         return await self.store(value_tl, target)
 
     async def store_overlay_nodes(
@@ -405,11 +403,7 @@ class DhtNetwork:
     ) -> int:
         """Store overlay nodes list in the DHT."""
         if not self.connected:
-            raise NotConnectedError(
-                component="DhtNetwork", operation="store_overlay_nodes"
-            )
+            raise NotConnectedError(component="DhtNetwork", operation="store_overlay_nodes")
         raw_key = normalize_key(overlay_key)
-        value_tl, target = self._provider.codec.build_store_overlay(
-            raw_key, nodes_list, ttl
-        )
+        value_tl, target = self._provider.codec.build_store_overlay(raw_key, nodes_list, ttl)
         return await self.store(value_tl, target)

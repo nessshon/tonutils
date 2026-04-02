@@ -126,11 +126,7 @@ class GetAddressInformationResult(BaseModel):
         :return: Parsed instance.
         """
         result_raw = data.get("result", {})
-        result = (
-            _AddressInformation.from_dict(result_raw)
-            if isinstance(result_raw, dict)
-            else result_raw
-        )
+        result = _AddressInformation.from_dict(result_raw) if isinstance(result_raw, dict) else result_raw
         return cls(result=result)
 
 
@@ -157,10 +153,7 @@ class GetTransactionsResult(BaseModel):
         raw_list = data.get("result")
         if raw_list is None:
             return cls()
-        return cls(result=[
-            Transaction.from_dict(item) if isinstance(item, dict) else item
-            for item in raw_list
-        ])
+        return cls(result=[Transaction.from_dict(item) if isinstance(item, dict) else item for item in raw_list])
 
 
 @dataclass

@@ -51,16 +51,8 @@ class _WalletV4(
         """
         params = params or self._params_model()
 
-        seqno = (
-            params.seqno
-            if params.seqno is not None
-            else self.state_data.seqno if self.is_active else 0
-        )
-        valid_until = (
-            params.valid_until
-            if params.valid_until is not None
-            else calc_valid_until(seqno)
-        )
+        seqno = params.seqno if params.seqno is not None else self.state_data.seqno if self.is_active else 0
+        valid_until = params.valid_until if params.valid_until is not None else calc_valid_until(seqno)
 
         cell = begin_cell()
         cell.store_uint(self.config.subwallet_id, 32)

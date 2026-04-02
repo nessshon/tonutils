@@ -246,18 +246,10 @@ class TonapiClient(BaseClient):
                 out.append(norm_stack_num(item.get("num")))  # type: ignore[arg-type]
             elif tpe == "cell":
                 val = item.get("cell")
-                out.append(
-                    norm_stack_cell(val)
-                    if isinstance(val, (Cell, Slice, str))
-                    else None
-                )
+                out.append(norm_stack_cell(val) if isinstance(val, (Cell, Slice, str)) else None)
             elif tpe == "slice":
                 val = item.get("slice")
-                out.append(
-                    norm_stack_cell(val)
-                    if isinstance(val, (Cell, Slice, str))
-                    else None
-                )
+                out.append(norm_stack_cell(val) if isinstance(val, (Cell, Slice, str)) else None)
             elif tpe in ("tuple", "list"):
                 out.append(TonapiClient._decode_stack(item.get(tpe) or []))
 

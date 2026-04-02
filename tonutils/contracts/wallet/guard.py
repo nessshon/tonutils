@@ -36,6 +36,7 @@ class SeqnoGuard:
             raise ContractError(
                 wallet,
                 "Wallet does not support `seqno` get-method.",
+                hint="SeqnoGuard works with v1-v5 wallets. Highload wallets use query_id instead of seqno.",
             )
         self._wallet = wallet
         self._lock = asyncio.Lock()
@@ -52,8 +53,9 @@ class SeqnoGuard:
             await asyncio.sleep(self._poll_interval)
         raise ContractError(
             self._wallet,
-            f"seqno did not change within {self._timeout}s "
-            f"(stuck at {current_seqno}).",
+            f"seqno did not change within {self._timeout}s (stuck at {current_seqno}).",
+            hint="Transaction may have expired or failed. "
+            "Check wallet balance, valid_until, and contract state on-chain.",
         )
 
     async def _send(self, coro: t.Awaitable[ExternalMessage]) -> ExternalMessage:

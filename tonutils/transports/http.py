@@ -59,11 +59,7 @@ class HttpTransport:
         self._session = session
         self._owns_session = session is None
 
-        self._limiter = (
-            RateLimiter(max_rate=rps_limit, period=rps_period)
-            if rps_limit is not None
-            else None
-        )
+        self._limiter = RateLimiter(max_rate=rps_limit, period=rps_period) if rps_limit is not None else None
         self._retry_policy = retry_policy
         self._connect_lock = asyncio.Lock()
 
@@ -94,9 +90,7 @@ class HttpTransport:
         try:
             result = model.from_dict(data)
         except (TypeError, KeyError, ValueError) as e:
-            raise ProviderError(
-                f"invalid response: {model.__name__} validation failed"
-            ) from e
+            raise ProviderError(f"invalid response: {model.__name__} validation failed") from e
         return t.cast("_M", result)
 
     async def send_http_request(
@@ -137,14 +131,14 @@ class HttpTransport:
                 key = id(rule)
                 attempts[key] = attempts.get(key, 0) + 1
 
-                if attempts[key] >= rule.attempts:
+                if attempts[key] >= rule.max_retries:
                     raise RetryLimitError(
                         attempts=attempts[key],
-                        max_attempts=rule.attempts,
+                        max_attempts=rule.max_retries,
                         last_error=e,
                     ) from e
 
-                await asyncio.sleep(rule.delay(attempts[key] - 1))
+                await asyncio.sleep(rule.delay_for_attempt(attempts[key] - 1))
 
     async def connect(self) -> None:
         """Initialize the HTTP session if not already connected."""
@@ -276,11 +270,7 @@ class HttpTransport:
         :param url: Request URL.
         :return: ``ProviderResponseError`` if a proxy marker is found, otherwise ``None``.
         """
-        body = (
-            " ".join(str(v) for v in data.values())
-            if isinstance(data, dict)
-            else str(data)
-        ).lower()
+        body = (" ".join(str(v) for v in data.values()) if isinstance(data, dict) else str(data)).lower()
 
         for marker, message in CDN_CHALLENGE_MARKERS.items():
             if marker in body:

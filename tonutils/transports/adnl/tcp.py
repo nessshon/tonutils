@@ -113,12 +113,7 @@ class AdnlTcpTransport:
         )
         data = aes_ctr_encrypt(init_cipher, rand)
 
-        return bytes(
-            self.server.get_key_id()
-            + self.client.ed25519_public.encode()
-            + checksum
-            + data
-        )
+        return bytes(self.server.get_key_id() + self.client.ed25519_public.encode() + checksum + data)
 
     async def _flush(self) -> None:
         """Flush the TCP write buffer.
@@ -188,9 +183,7 @@ class AdnlTcpTransport:
             except asyncio.IncompleteReadError as exc:
                 raise self._error("handshake", "remote closed") from exc
             except asyncio.TimeoutError as exc:
-                raise self._error(
-                    "handshake", f"timeout after {self.connect_timeout}s"
-                ) from exc
+                raise self._error("handshake", f"timeout after {self.connect_timeout}s") from exc
 
             self._connected = True
             self._reader_task = asyncio.create_task(

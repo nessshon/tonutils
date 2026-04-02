@@ -119,8 +119,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         return tuple(
             state.client
             for state in self._states
-            if state.client.connected
-            and (state.retry_after is None or state.retry_after <= now)
+            if state.client.connected and (state.retry_after is None or state.retry_after <= now)
         )
 
     @property
@@ -130,8 +129,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         return tuple(
             state.client
             for state in self._states
-            if not state.client.connected
-            or (state.retry_after is not None and state.retry_after > now)
+            if not state.client.connected or (state.retry_after is not None and state.retry_after > now)
         )
 
     @classmethod
@@ -180,11 +178,7 @@ class LiteBalancer(LiteMixin, BaseClient):
 
         clients: list[LiteClient] = []
         for ls in config.liteservers:
-            limiter = (
-                RateLimiter(rps_limit, rps_period)
-                if rps_per_client and rps_limit is not None
-                else shared_limiter
-            )
+            limiter = RateLimiter(rps_limit, rps_period) if rps_per_client and rps_limit is not None else shared_limiter
             client_rps_limit = rps_limit if rps_per_client else None
 
             clients.append(
@@ -284,7 +278,10 @@ class LiteBalancer(LiteMixin, BaseClient):
             self._ensure_health_task()
             return
 
-        raise BalancerError("all lite-servers failed to establish connection")
+        raise BalancerError(
+            "all lite-servers failed to establish connection",
+            hint="Check network connectivity or try a different global config.",
+        )
 
     async def close(self) -> None:
         """Stop the health check task and close all clients."""
@@ -328,7 +325,10 @@ class LiteBalancer(LiteMixin, BaseClient):
         alive = list(self.alive_clients)
 
         if not alive:
-            raise BalancerError("no alive lite-servers available")
+            raise BalancerError(
+                "no alive lite-servers available",
+                hint="Servers may be overloaded or unreachable. Wait and retry, or add more servers.",
+            )
 
         height_candidates: list[
             tuple[
@@ -351,11 +351,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         if height_candidates:
             max_seqno = max(item[0] for item in height_candidates)
             same_height = [item for item in height_candidates if item[0] == max_seqno]
-            with_ping = [
-                item
-                for item in same_height
-                if item[1] is not None and item[2] is not None
-            ]
+            with_ping = [item for item in same_height if item[1] is not None and item[2] is not None]
             if with_ping:
                 with_ping.sort(key=lambda x: (x[1], x[2]))
                 return with_ping[0][3]
@@ -386,11 +382,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         for state in self._states:
             if state.client is client:
                 state.error_count += 1
-                base = (
-                    self._retry_after_base
-                    if is_rate_limit
-                    else self._retry_after_base / 2
-                )
+                base = self._retry_after_base if is_rate_limit else self._retry_after_base / 2
                 cooldown = min(
                     base * (2 ** (state.error_count - 1)),
                     self._retry_after_max,
@@ -422,11 +414,7 @@ class LiteBalancer(LiteMixin, BaseClient):
         try:
             while True:
                 await asyncio.sleep(self._health_interval)
-                tasks = [
-                    _recon(client)
-                    for client in self.dead_clients
-                    if not client.connected
-                ]
+                tasks = [_recon(client) for client in self.dead_clients if not client.connected]
                 await asyncio.gather(*tasks, return_exceptions=True)
         except asyncio.CancelledError:
             return
@@ -484,9 +472,13 @@ class LiteBalancer(LiteMixin, BaseClient):
 
             if last_exc is not None:
                 raise BalancerError(
-                    f"lite failover exhausted after {attempts} attempt(s): {last_exc}"
+                    f"lite failover exhausted after {attempts} attempt(s): {last_exc}",
+                    hint="Reduce request rate or add more lite-servers to the balancer.",
                 ) from last_exc
-            raise BalancerError("no alive lite-servers available")
+            raise BalancerError(
+                "no alive lite-servers available",
+                hint="Servers may be overloaded or unreachable. Wait and retry, or add more servers.",
+            )
 
         try:
             return await asyncio.wait_for(_run(), timeout=self._request_timeout)

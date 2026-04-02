@@ -69,11 +69,7 @@ class TONDNSCollection(
         :param workchain: Target workchain.
         :return: Calculated domain item address.
         """
-        index = (
-            index_or_domain
-            if isinstance(index_or_domain, int)
-            else string_hash(index_or_domain)
-        )
+        index = index_or_domain if isinstance(index_or_domain, int) else string_hash(index_or_domain)
         code = to_cell(nft_item_code)
         data = begin_cell()
         data.store_uint(index, 256)

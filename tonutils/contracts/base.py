@@ -47,7 +47,9 @@ class BaseContract(ContractProtocol[_D]):
             default_code = to_cell(CONTRACT_CODES[cls.VERSION])
         except KeyError:
             raise ContractError(
-                cls, f"No contract code defined for `version` {cls.VERSION!r}."
+                cls,
+                f"No contract code defined for `version` {cls.VERSION!r}.",
+                hint="Register code in CONTRACT_CODES or check the VERSION class variable.",
             ) from None
         return default_code
 

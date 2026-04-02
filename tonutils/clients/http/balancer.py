@@ -115,8 +115,7 @@ class HttpBalancer(BaseClient):
         return tuple(
             state.client
             for state in self._states
-            if state.client.connected
-            and (state.retry_after is None or state.retry_after <= now)
+            if state.client.connected and (state.retry_after is None or state.retry_after <= now)
         )
 
     @property
@@ -124,27 +123,17 @@ class HttpBalancer(BaseClient):
         """Clients currently in cooldown."""
         now = time.monotonic()
         return tuple(
-            state.client
-            for state in self._states
-            if state.retry_after is not None and state.retry_after > now
+            state.client for state in self._states if state.retry_after is not None and state.retry_after > now
         )
 
     def _init_clients(self, clients: list[BaseClient]) -> None:
         """Validate and register HTTP clients."""
         for client in clients:
             if client.TYPE != ClientType.HTTP:
-                raise ClientError(
-                    "HttpBalancer can work only with HTTP clients, "
-                    f"got {client.__class__.__name__}."
-                )
+                raise ClientError(f"HttpBalancer can work only with HTTP clients, got {client.__class__.__name__}.")
 
-            if (
-                isinstance(client, QuicknodeClient)
-                and self.network == NetworkGlobalID.TESTNET
-            ):
-                raise ClientError(
-                    "QuickNode HTTP client does not support testnet network."
-                )
+            if isinstance(client, QuicknodeClient) and self.network == NetworkGlobalID.TESTNET:
+                raise ClientError("QuickNode HTTP client does not support testnet network.")
 
             client.network = self.network
             state = HttpClientState(client=client)
@@ -183,16 +172,15 @@ class HttpBalancer(BaseClient):
 
         if not height_candidates:
             raise BalancerError(
-                "http balancer has no available clients (all in cooldown or not connected)"
+                "http balancer has no available clients (all in cooldown or not connected)",
+                hint="Check API keys, network config, or increase retry delays.",
             )
 
         height_candidates.sort(key=lambda x: (x[0], x[1]))
         best_wait, best_err, _ = height_candidates[0]
 
         equal_states: list[HttpClientState] = [
-            state
-            for (w, e, state) in height_candidates
-            if w == best_wait and e == best_err
+            state for (w, e, state) in height_candidates if w == best_wait and e == best_err
         ]
 
         if len(equal_states) == 1:
@@ -224,11 +212,7 @@ class HttpBalancer(BaseClient):
         for state in self._states:
             if state.client is client:
                 state.error_count += 1
-                base = (
-                    self._retry_after_base
-                    if is_rate_limit
-                    else self._retry_after_base / 2
-                )
+                base = self._retry_after_base if is_rate_limit else self._retry_after_base / 2
                 cooldown = min(
                     base * (2 ** (state.error_count - 1)),
                     self._retry_after_max,
@@ -284,11 +268,13 @@ class HttpBalancer(BaseClient):
 
             if last_exc is None:
                 raise BalancerError(
-                    "http balancer has no available clients (all in cooldown or not connected)"
+                    "http balancer has no available clients (all in cooldown or not connected)",
+                    hint="Check API keys, network config, or increase retry delays.",
                 )
 
             raise BalancerError(
-                f"http failover exhausted after {attempts} attempt(s): {last_exc}"
+                f"http failover exhausted after {attempts} attempt(s): {last_exc}",
+                hint="Reduce request rate or add more backends to the balancer.",
             ) from last_exc
 
         try:

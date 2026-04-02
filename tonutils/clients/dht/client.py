@@ -119,9 +119,7 @@ class DhtClient:
             raise ClientError("DhtClient.from_config: no DHT section in config")
         nodes = config.dht.nodes
         if not 0 <= index < len(nodes):
-            raise ClientError(
-                f"DhtClient.from_config: node index {index} out of range (0..{len(nodes) - 1})."
-            )
+            raise ClientError(f"DhtClient.from_config: node index {index} out of range (0..{len(nodes) - 1}).")
         node = nodes[index]
         return cls(
             host=node.host,
@@ -208,9 +206,7 @@ class DhtClient:
     async def find_value(self, key: DhtKey) -> DhtValue | list[DhtNode] | None:
         """Single-node, non-iterative find_value."""
         node = self._require_connected("find_value")
-        return await self._provider.find_value_on_node(
-            node, key.key_id, self._provider.k
-        )
+        return await self._provider.find_value_on_node(node, key.key_id, self._provider.k)
 
     async def get_signed_address_list(self) -> dict[str, t.Any]:
         """Retrieve the signed address list from the node."""

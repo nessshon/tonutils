@@ -116,9 +116,7 @@ class DhtProvider:
         tasks = [self._connect_initial_node(node) for node in self._config_nodes]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        connected_nodes: list[tuple[bytes, DhtNode]] = [
-            r for r in results if isinstance(r, tuple) and len(r) == 2
-        ]
+        connected_nodes: list[tuple[bytes, DhtNode]] = [r for r in results if isinstance(r, tuple) and len(r) == 2]
 
         if connected_nodes:
             self._connected = True
@@ -157,9 +155,7 @@ class DhtProvider:
                 "query": query_payload,
             }
 
-            query_fut: asyncio.Future[t.Any] = (
-                asyncio.get_running_loop().create_future()
-            )
+            query_fut: asyncio.Future[t.Any] = asyncio.get_running_loop().create_future()
             self._pending[query_id.hex()] = query_fut
 
             try:
@@ -356,11 +352,7 @@ class DhtProvider:
 
         if tl_type == "dht.valueFound":
             dht_value = self._codec.parse_value(resp.get("value", {}))
-            if (
-                dht_value is not None
-                and not dht_value.expired
-                and self._codec.verify_value(dht_value, key)
-            ):
+            if dht_value is not None and not dht_value.expired and self._codec.verify_value(dht_value, key):
                 return dht_value
             return None
 

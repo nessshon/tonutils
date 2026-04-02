@@ -103,15 +103,7 @@ class ClientProtocol(t.Protocol):
         domain: str | bytes,
         category: DNSCategory,
         dns_root_address: AddressLike | None = None,
-    ) -> (
-        Cell
-        | DNSRecordDNSNextResolver
-        | DNSRecordSite
-        | DNSRecordStorage
-        | DNSRecordText
-        | DNSRecordWallet
-        | None
-    ):
+    ) -> Cell | DNSRecordDNSNextResolver | DNSRecordSite | DNSRecordStorage | DNSRecordText | DNSRecordWallet | None:
         """Resolve a TON DNS record for a domain and category.
 
         :param domain: Domain name string or bytes.

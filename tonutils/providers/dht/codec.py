@@ -457,11 +457,7 @@ class DhtCodec:
                 pub_key = raw
 
         update_rule_data = data.get("update_rule", {})
-        rule_type = (
-            update_rule_data.get("@type", "")
-            if isinstance(update_rule_data, dict)
-            else ""
-        )
+        rule_type = update_rule_data.get("@type", "") if isinstance(update_rule_data, dict) else ""
         try:
             update_rule = DhtUpdateRule(rule_type)
         except ValueError:

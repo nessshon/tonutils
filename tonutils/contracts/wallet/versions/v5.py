@@ -150,8 +150,7 @@ class _WalletV5(
             )
         if self.client.network != NetworkGlobalID.MAINNET:
             raise ClientError(
-                "Gasless transfers are only supported on MAINNET. "
-                f"Current network: `{self.client.network!r}`."
+                f"Gasless transfers are only supported on MAINNET. Current network: `{self.client.network!r}`."
             )
 
     @staticmethod
@@ -323,16 +322,8 @@ class WalletV5Beta(
         """
         params = params or self._params_model()
 
-        seqno = (
-            params.seqno
-            if params.seqno is not None
-            else self.state_data.seqno if self.is_active else 0
-        )
-        valid_until = (
-            params.valid_until
-            if params.valid_until is not None
-            else calc_valid_until(seqno)
-        )
+        seqno = params.seqno if params.seqno is not None else self.state_data.seqno if self.is_active else 0
+        valid_until = params.valid_until if params.valid_until is not None else calc_valid_until(seqno)
         subwallet_id = t.cast("WalletV5SubwalletID", self.config.subwallet_id)
 
         cell = begin_cell()
@@ -404,16 +395,8 @@ class WalletV5R1(
         """
         params = params or self._params_model()
 
-        seqno = (
-            params.seqno
-            if params.seqno is not None
-            else self.state_data.seqno if self.is_active else 0
-        )
-        valid_until = (
-            params.valid_until
-            if params.valid_until is not None
-            else calc_valid_until(seqno)
-        )
+        seqno = params.seqno if params.seqno is not None else self.state_data.seqno if self.is_active else 0
+        valid_until = params.valid_until if params.valid_until is not None else calc_valid_until(seqno)
         subwallet_id = t.cast("WalletV5SubwalletID", self.config.subwallet_id)
 
         cell = begin_cell()

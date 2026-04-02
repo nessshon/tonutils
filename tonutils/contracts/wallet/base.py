@@ -156,8 +156,8 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
         if self._private_key is None:
             raise ContractError(
                 self,
-                f"Cannot sign message: "
-                f"`private_key` is not set for wallet `{self.VERSION!r}`.",
+                f"Cannot sign message: `private_key` is not set for wallet `{self.VERSION!r}`.",
+                hint="Use .from_mnemonic() or .from_private_key() to create a wallet with signing capability.",
             )
 
         signed_msg = await self._build_msg_cell(messages, params)
@@ -257,12 +257,7 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
         :return: Signed ``ExternalMessage``.
         """
         resolved: list[WalletMessage] = [
-            (
-                message
-                if isinstance(message, WalletMessage)
-                else await message.build(self)
-            )
-            for message in messages
+            (message if isinstance(message, WalletMessage) else await message.build(self)) for message in messages
         ]
         await self.refresh()
         self._validate_message_count(resolved)
@@ -379,9 +374,8 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
         if len(messages) > cls.MAX_MESSAGES:
             raise ContractError(
                 cls.__name__,
-                f"For `{cls.VERSION!r}`, "
-                f"maximum messages amount is {cls.MAX_MESSAGES}, "
-                f"but got {len(messages)}.",
+                f"For `{cls.VERSION!r}`, maximum messages amount is {cls.MAX_MESSAGES}, but got {len(messages)}.",
+                hint="Split into multiple sends or use a wallet version with higher limit (e.g. v5 supports 255).",
             )
 
     @classmethod
@@ -397,8 +391,7 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
         if mnemonic_length not in VALID_MNEMONIC_LENGTHS:
             raise ContractError(
                 cls,
-                f"Invalid mnemonic length: {mnemonic_length}. "
-                f"Expected one of {VALID_MNEMONIC_LENGTHS}.",
+                f"Invalid mnemonic length: {mnemonic_length}. Expected one of {VALID_MNEMONIC_LENGTHS}.",
             )
 
     @classmethod
@@ -414,8 +407,7 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
             mnemonic_words = [w.strip().lower() for w in mnemonic]
         if len(mnemonic_words) not in VALID_MNEMONIC_LENGTHS:
             raise ValueError(
-                f"Invalid mnemonic length: {len(mnemonic_words)}. "
-                f"Expected one of {sorted(VALID_MNEMONIC_LENGTHS)}."
+                f"Invalid mnemonic length: {len(mnemonic_words)}. Expected one of {sorted(VALID_MNEMONIC_LENGTHS)}."
             )
 
         invalid = [(i + 1, w) for i, w in enumerate(mnemonic_words) if w not in words]

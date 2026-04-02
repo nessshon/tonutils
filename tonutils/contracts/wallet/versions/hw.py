@@ -180,20 +180,15 @@ class WalletHighloadV3R1(
         if not (5 <= self.config.timeout <= (1 << 22) - 1):
             raise ContractError(
                 self,
-                f"Invalid timeout: {self.config.timeout} s. "
-                f"Expected {5}..{(1 << 22) - 1} s "
-                f"(unsigned {22}-bit field).",
+                f"Invalid timeout: {self.config.timeout} s. Expected {5}..{(1 << 22) - 1} s (unsigned {22}-bit field).",
             )
         if params.query_id and not (0 <= params.query_id < (1 << 23)):
             raise ContractError(
                 self,
-                f"Invalid query_id: {params.query_id}. "
-                f"Expected 0..{(1 << 23) - 1} (unsigned 23-bit).",
+                f"Invalid query_id: {params.query_id}. Expected 0..{(1 << 23) - 1} (unsigned 23-bit).",
             )
         if not messages:
-            raise ContractError(
-                self, "Messages list is empty; at least one message is required."
-            )
+            raise ContractError(self, "Messages list is empty; at least one message is required.")
 
         if len(messages) == 1 and messages[0].message.init is None:
             msg_to_send = messages[0]
