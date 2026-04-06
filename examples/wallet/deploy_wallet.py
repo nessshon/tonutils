@@ -29,8 +29,9 @@ async def main() -> None:
     # is_bounceable=False: standard for wallet contracts (UQ...)
     print(f"Wallet address: {wallet.address.to_str(is_bounceable=False)}")
 
-    # Transaction hash for tracking on blockchain explorers
-    # Use tonviewer.com or tonscan.org to view transaction
+    # Normalized hash of the signed external message (computed locally before sending)
+    # Not a blockchain transaction hash — use it to track whether the message
+    # was accepted on-chain (e.g. via explorers, API queries, or your own checks)
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()

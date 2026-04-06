@@ -96,8 +96,9 @@ async def main() -> None:
         )
         print(f"NFT item address ({nft_item_index}): {nft_item_address.to_str()}")
 
-    # Transaction hash for tracking on blockchain explorers
-    # Use tonviewer.com or tonscan.org to view transaction
+    # Normalized hash of the signed external message (computed locally before sending)
+    # Not a blockchain transaction hash — use it to track whether the message
+    # was accepted on-chain (e.g. via explorers, API queries, or your own checks)
     print(f"Transaction hash: {msg.normalized_hash}")
 
     await client.close()
