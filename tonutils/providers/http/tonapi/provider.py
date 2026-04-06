@@ -33,7 +33,7 @@ class TonapiHttpProvider(HttpTransport):
         self,
         network: NetworkGlobalID,
         *,
-        api_key: str,
+        api_key: str | None = None,
         base_url: str | None = None,
         timeout: float = DEFAULT_REQUEST_TIMEOUT,
         session: aiohttp.ClientSession | None = None,
@@ -46,15 +46,15 @@ class TonapiHttpProvider(HttpTransport):
         """Initialize the Tonapi HTTP provider.
 
         :param network: Target TON network.
-        :param api_key: Tonapi API key.
+        :param api_key: API key, or ``None`` for keyless access with default rate limits.
         :param base_url: Custom endpoint base URL, or ``None``.
         :param timeout: Request timeout in seconds.
         :param session: External aiohttp session, or ``None``.
-        :param headers: Default headers for owned session.
-        :param cookies: Default cookies for owned session.
-        :param rps_limit: Requests-per-period limit, or ``None``.
-        :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Retry policy with per-error-code rules, or ``None``.
+        :param headers: Extra headers merged into every request.
+        :param cookies: Extra cookies merged into every request.
+        :param rps_limit: Requests-per-period cap, or ``None`` for automatic defaults.
+        :param rps_period: Rate-limit window in seconds.
+        :param retry_policy: Retry policy with per-status rules, or ``None``.
         """
         urls = {
             NetworkGlobalID.MAINNET: "https://tonapi.io/v2",
@@ -64,7 +64,7 @@ class TonapiHttpProvider(HttpTransport):
         base_url = base_url or urls.get(network)
         if base_url is None:
             raise NetworkNotSupportedError(network, provider="Tonapi")
-        headers = {**(headers or {}), "Authorization": f"Bearer {api_key}"}
+        headers = {**(headers or {}), **({"Authorization": f"Bearer {api_key}"} if api_key else {})}
 
         super().__init__(
             base_url=base_url,

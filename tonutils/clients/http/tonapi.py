@@ -29,6 +29,9 @@ from tonutils.types import (
 if t.TYPE_CHECKING:
     from aiohttp import ClientSession
 
+_DEFAULT_RPS_LIMIT = 1
+_DEFAULT_RPS_PERIOD = 4.0
+
 
 class TonapiClient(BaseClient):
     """TON blockchain client using Tonapi REST API.
@@ -42,30 +45,34 @@ class TonapiClient(BaseClient):
         self,
         network: NetworkGlobalID,
         *,
-        api_key: str,
+        api_key: str | None = None,
         base_url: str | None = None,
         timeout: float = DEFAULT_REQUEST_TIMEOUT,
         session: ClientSession | None = None,
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
         rps_limit: int | None = None,
-        rps_period: float = 1.0,
+        rps_period: float | None = None,
         retry_policy: RetryPolicy | None = None,
     ) -> None:
         """Initialize the Tonapi client.
 
         :param network: Target TON network.
-        :param api_key: Tonapi API key.
+        :param api_key: API key, or ``None`` for keyless access with default rate limits.
             You can get an API key on the Tonconsole website: https://tonconsole.com/.
         :param base_url: Custom endpoint base URL, or ``None``.
         :param timeout: Request timeout in seconds.
         :param session: External aiohttp session, or ``None``.
-        :param headers: Default headers for owned session.
-        :param cookies: Default cookies for owned session.
-        :param rps_limit: Requests-per-period limit, or ``None``.
-        :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Retry policy with per-error-code rules, or ``None``.
+        :param headers: Extra headers merged into every request.
+        :param cookies: Extra cookies merged into every request.
+        :param rps_limit: Requests-per-period cap, or ``None`` for automatic defaults.
+        :param rps_period: Rate-limit window in seconds, or ``None`` for automatic defaults.
+        :param retry_policy: Retry policy with per-status rules, or ``None``.
         """
+        if not api_key and rps_limit is None:
+            rps_limit = _DEFAULT_RPS_LIMIT
+            rps_period = rps_period or _DEFAULT_RPS_PERIOD
+
         self.network: NetworkGlobalID = network
         self._provider: TonapiHttpProvider = TonapiHttpProvider(
             api_key=api_key,
@@ -76,7 +83,7 @@ class TonapiClient(BaseClient):
             headers=headers,
             cookies=cookies,
             rps_limit=rps_limit,
-            rps_period=rps_period,
+            rps_period=rps_period or 1.0,
             retry_policy=retry_policy,
         )
 

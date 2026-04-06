@@ -40,16 +40,16 @@ class HttpTransport:
         rps_period: float = 1.0,
         retry_policy: RetryPolicy | None = None,
     ) -> None:
-        """Initialize the HTTP provider.
+        """Initialize the HTTP transport.
 
         :param base_url: Base endpoint URL without trailing slash.
         :param timeout: Request timeout in seconds.
         :param session: External aiohttp session, or ``None``.
-        :param headers: Default headers for owned session.
-        :param cookies: Default cookies for owned session.
-        :param rps_limit: Requests-per-period limit, or ``None``.
-        :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Retry policy with per-error-code rules, or ``None``.
+        :param headers: Extra headers merged into every request.
+        :param cookies: Extra cookies merged into every request.
+        :param rps_limit: Requests-per-period cap, or ``None``.
+        :param rps_period: Rate-limit window in seconds.
+        :param retry_policy: Retry policy with per-status rules, or ``None``.
         """
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout

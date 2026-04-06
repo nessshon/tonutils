@@ -36,15 +36,15 @@ class ToncenterHttpProvider(HttpTransport):
         """Initialize the Toncenter HTTP provider.
 
         :param network: Target TON network.
-        :param api_key: Toncenter API key, or ``None``.
+        :param api_key: API key, or ``None`` for keyless access with default rate limits.
         :param base_url: Custom endpoint base URL, or ``None``.
         :param timeout: Request timeout in seconds.
         :param session: External aiohttp session, or ``None``.
-        :param headers: Default headers for owned session.
-        :param cookies: Default cookies for owned session.
-        :param rps_limit: Requests-per-period limit, or ``None``.
-        :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Retry policy with per-error-code rules, or ``None``.
+        :param headers: Extra headers merged into every request.
+        :param cookies: Extra cookies merged into every request.
+        :param rps_limit: Requests-per-period cap, or ``None`` for automatic defaults.
+        :param rps_period: Rate-limit window in seconds.
+        :param retry_policy: Retry policy with per-status rules, or ``None``.
         """
         urls = {
             NetworkGlobalID.MAINNET: "https://toncenter.com/api/v2",

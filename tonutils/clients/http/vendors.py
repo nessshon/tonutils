@@ -27,7 +27,7 @@ class ChainstackClient(ToncenterClient):
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
         rps_limit: int | None = None,
-        rps_period: float = 1.0,
+        rps_period: float | None = None,
         retry_policy: RetryPolicy | None = None,
     ) -> None:
         """Initialize the Chainstack client.
@@ -37,11 +37,11 @@ class ChainstackClient(ToncenterClient):
             You can obtain a personal endpoint on the Chainstack website: https://chainstack.com/.
         :param timeout: Request timeout in seconds.
         :param session: External aiohttp session, or ``None``.
-        :param headers: Default headers for owned session.
-        :param cookies: Default cookies for owned session.
-        :param rps_limit: Requests-per-period limit, or ``None``.
-        :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Retry policy with per-error-code rules, or ``None``.
+        :param headers: Extra headers merged into every request.
+        :param cookies: Extra cookies merged into every request.
+        :param rps_limit: Requests-per-period cap, or ``None`` for automatic defaults.
+        :param rps_period: Rate-limit window in seconds, or ``None`` for automatic defaults.
+        :param retry_policy: Retry policy with per-status rules, or ``None``.
         """
         super().__init__(
             network=network,
@@ -68,7 +68,7 @@ class QuicknodeClient(ToncenterClient):
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
         rps_limit: int | None = None,
-        rps_period: float = 1.0,
+        rps_period: float | None = None,
         retry_policy: RetryPolicy | None = None,
     ) -> None:
         """Initialize the QuickNode client.
@@ -77,11 +77,11 @@ class QuicknodeClient(ToncenterClient):
             You can obtain a personal endpoint on the QuickNode website: https://www.quicknode.com/.
         :param timeout: Request timeout in seconds.
         :param session: External aiohttp session, or ``None``.
-        :param headers: Default headers for owned session.
-        :param cookies: Default cookies for owned session.
-        :param rps_limit: Requests-per-period limit, or ``None``.
-        :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Retry policy with per-error-code rules, or ``None``.
+        :param headers: Extra headers merged into every request.
+        :param cookies: Extra cookies merged into every request.
+        :param rps_limit: Requests-per-period cap, or ``None`` for automatic defaults.
+        :param rps_period: Rate-limit window in seconds, or ``None`` for automatic defaults.
+        :param retry_policy: Retry policy with per-status rules, or ``None``.
         """
         super().__init__(
             network=NetworkGlobalID.MAINNET,
@@ -110,7 +110,7 @@ class TatumClient(ToncenterClient):
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
         rps_limit: int | None = None,
-        rps_period: float = 1.0,
+        rps_period: float | None = None,
         retry_policy: RetryPolicy | None = None,
     ) -> None:
         """Initialize the Tatum client.
@@ -121,11 +121,11 @@ class TatumClient(ToncenterClient):
         :param base_url: Custom endpoint base URL, or ``None``.
         :param timeout: Request timeout in seconds.
         :param session: External aiohttp session, or ``None``.
-        :param headers: Default headers for owned session.
-        :param cookies: Default cookies for owned session.
-        :param rps_limit: Requests-per-period limit, or ``None``.
-        :param rps_period: Rate limit period in seconds.
-        :param retry_policy: Retry policy with per-error-code rules, or ``None``.
+        :param headers: Extra headers merged into every request.
+        :param cookies: Extra cookies merged into every request.
+        :param rps_limit: Requests-per-period cap, or ``None`` for automatic defaults.
+        :param rps_period: Rate-limit window in seconds, or ``None`` for automatic defaults.
+        :param retry_policy: Retry policy with per-status rules, or ``None``.
         """
         urls = {
             NetworkGlobalID.MAINNET: "https://ton-mainnet.gateway.tatum.io",
