@@ -50,6 +50,7 @@ pip install tonutils
 - [NFT Transfer](https://github.com/nessshon/tonutils/blob/main/examples/wallet/nft_transfer.py)
 - [Batch Transfer](https://github.com/nessshon/tonutils/blob/main/examples/wallet/batch_transfer.py)
 - [Gasless Transfer](https://github.com/nessshon/tonutils/blob/main/examples/wallet/gasless_transfer.py)
+- [Sequential Transfer](https://github.com/nessshon/tonutils/blob/main/examples/wallet/sequential_transfer.py)
 - [Encrypt Message](https://github.com/nessshon/tonutils/blob/main/examples/wallet/encrypt_message.py)
 - [Decrypt Message](https://github.com/nessshon/tonutils/blob/main/examples/wallet/decrypt_message.py)
 
