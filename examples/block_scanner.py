@@ -5,7 +5,7 @@ from ton_core import NetworkGlobalID
 
 from tonutils.clients import LiteBalancer
 from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
-from tonutils.utils.block_scanner import (
+from tonutils.tools.block_scanner import (
     BlockEvent,
     BlockScanner,
     ErrorEvent,
