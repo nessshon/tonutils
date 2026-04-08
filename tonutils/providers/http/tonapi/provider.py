@@ -155,9 +155,9 @@ class TonapiHttpProvider(HttpTransport):
         return self._model(
             BlockchainAccountMethodResult,
             await self.send_http_request(
-                "GET",
+                "POST",
                 f"/blockchain/accounts/{address}/methods/{method_name}",
-                params={"args": args} if args else None,
+                json_data={"args": args or []},
             ),
         )
 

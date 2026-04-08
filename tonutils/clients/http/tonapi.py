@@ -9,6 +9,7 @@ from ton_core import (
     NetworkGlobalID,
     Slice,
     Transaction,
+    cell_to_b64,
     cell_to_hex,
     norm_stack_cell,
     norm_stack_num,
@@ -16,7 +17,7 @@ from ton_core import (
 )
 
 from tonutils.clients.base import BaseClient
-from tonutils.exceptions import ClientError, RunGetMethodError
+from tonutils.exceptions import ClientError, ProviderResponseError, RunGetMethodError
 from tonutils.providers.http.tonapi import TonapiHttpProvider
 from tonutils.providers.http.tonapi.models import BlockchainMessagePayload
 from tonutils.types import (
@@ -135,7 +136,12 @@ class TonapiClient(BaseClient):
         :param address: Raw (non-user-friendly) address string.
         :return: ``ContractInfo`` snapshot.
         """
-        result = await self.provider.blockchain_account(address)
+        try:
+            result = await self.provider.blockchain_account(address)
+        except ProviderResponseError as e:
+            if e.code == 404:
+                return ContractInfo(state=ContractState.NONEXIST)
+            raise
 
         contract_info = ContractInfo(
             balance=result.balance,
@@ -213,23 +219,25 @@ class TonapiClient(BaseClient):
         return self._decode_stack(result.stack or [])
 
     @staticmethod
-    def _encode_stack(items: list[t.Any]) -> list[str]:
-        """Encode Python values to hex strings for the Tonapi query parameter.
+    def _encode_stack(items: list[t.Any]) -> list[dict[str, str]]:
+        """Encode Python values to typed Tonapi stack records.
 
         :param items: Python stack values.
-        :return: Hex-encoded strings.
+        :return: List of ``{"type": ..., "value": ...}`` dicts.
         """
-        out: list[str] = []
+        out: list[dict[str, str]] = []
 
         for item in items:
-            if isinstance(item, int):
-                out.append(hex(item))
+            if item is None:
+                out.append({"type": "null", "value": ""})
+            elif isinstance(item, int):
+                out.append({"type": "int257", "value": hex(item)})
             elif isinstance(item, Address):
-                out.append(cell_to_hex(item.to_cell()))
+                out.append({"type": "slice", "value": item.to_str(is_user_friendly=False)})
             elif isinstance(item, Cell):
-                out.append(cell_to_hex(item))
+                out.append({"type": "cell_boc_base64", "value": cell_to_b64(item)})
             elif isinstance(item, Slice):
-                out.append(cell_to_hex(item.to_cell()))
+                out.append({"type": "slice_boc_hex", "value": cell_to_hex(item.to_cell())})
 
         return out
 
@@ -248,7 +256,7 @@ class TonapiClient(BaseClient):
 
             tpe = item.get("type", "")
 
-            if tpe == "null":
+            if tpe in ("null", "nan"):
                 out.append(None)
             elif tpe == "num":
                 out.append(norm_stack_num(item.get("num")))  # type: ignore[arg-type]
