@@ -36,7 +36,7 @@ if t.TYPE_CHECKING:
     from aiohttp import ClientSession
 
 _DEFAULT_RPS_LIMIT = 1
-_DEFAULT_RPS_PERIOD = 1.2
+_DEFAULT_RPS_PERIOD = 1.3
 
 
 class ToncenterClient(BaseClient):
