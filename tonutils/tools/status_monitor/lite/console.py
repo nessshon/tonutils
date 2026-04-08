@@ -1,7 +1,7 @@
 from typing import ClassVar
 
-from tonutils.utils.status_monitor.console import Console
-from tonutils.utils.status_monitor.lite.models import BlockInfo, LiteServerStatus
+from tonutils.tools.status_monitor.console import Console
+from tonutils.tools.status_monitor.lite.models import BlockInfo, LiteServerStatus
 
 __all__ = ["LiteConsole"]
 

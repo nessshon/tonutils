@@ -9,7 +9,7 @@ from ton_core import (
     WorkchainID,
 )
 
-from tonutils.utils.block_scanner.events import (
+from tonutils.tools.block_scanner.events import (
     BlockEvent,
     ErrorEvent,
     TransactionsEvent,
@@ -19,7 +19,7 @@ if t.TYPE_CHECKING:
     from ton_core import ExtBlkRef
 
     from tonutils.clients import LiteBalancer, LiteClient
-    from tonutils.utils.block_scanner.storage import BlockScannerStorageProtocol
+    from tonutils.tools.block_scanner.storage import BlockScannerStorageProtocol
 
 ShardKey = tuple[int, int]
 SeenShardSeqno = dict[ShardKey, int]

@@ -8,7 +8,7 @@ import typing as t
 from contextlib import suppress
 
 if t.TYPE_CHECKING:
-    from tonutils.utils.status_monitor.console import Console
+    from tonutils.tools.status_monitor.console import Console
 
 _C = t.TypeVar("_C")
 _S = t.TypeVar("_S")

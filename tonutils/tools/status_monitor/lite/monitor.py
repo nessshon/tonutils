@@ -12,13 +12,13 @@ from ton_core import (
 )
 
 from tonutils.clients import LiteClient
-from tonutils.utils.status_monitor.base import BaseMonitor
-from tonutils.utils.status_monitor.lite.console import LiteConsole
-from tonutils.utils.status_monitor.lite.models import (
+from tonutils.tools.status_monitor.base import BaseMonitor
+from tonutils.tools.status_monitor.lite.console import LiteConsole
+from tonutils.tools.status_monitor.lite.models import (
     BlockInfo,
     LiteServerStatus,
 )
-from tonutils.utils.status_monitor.models import ServerInfo
+from tonutils.tools.status_monitor.models import ServerInfo
 
 if t.TYPE_CHECKING:
     from ton_core import GlobalConfig

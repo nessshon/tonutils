@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from tonutils.utils.status_monitor.models import ServerInfo
+from tonutils.tools.status_monitor.models import ServerInfo
 
 __all__ = ["BlockInfo", "LiteServerStatus"]
 

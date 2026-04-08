@@ -13,8 +13,8 @@ from ton_core import (
 )
 
 from tonutils.__meta__ import __version__
+from tonutils.tools.status_monitor import DhtMonitor, LiteServerMonitor
 from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
-from tonutils.utils.status_monitor import DhtMonitor, LiteServerMonitor
 
 NETWORK_MAP: dict[str, NetworkGlobalID] = {
     "mainnet": NetworkGlobalID.MAINNET,

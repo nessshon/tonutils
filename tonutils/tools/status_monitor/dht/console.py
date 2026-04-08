@@ -1,7 +1,7 @@
 from typing import ClassVar
 
-from tonutils.utils.status_monitor.console import Console
-from tonutils.utils.status_monitor.dht.models import DhtNodeStatus
+from tonutils.tools.status_monitor.console import Console
+from tonutils.tools.status_monitor.dht.models import DhtNodeStatus
 
 __all__ = ["DhtConsole"]
 
