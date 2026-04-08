@@ -53,6 +53,13 @@ tonutils = "tonutils.cli:main"
 Homepage = "https://github.com/nessshon/tonutils/"
 Examples = "https://github.com/nessshon/tonutils/tree/main/examples/"
 
+[project.optional-dependencies]
+test = [
+    "environs>=11.0",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.25",
+]
+
 [tool.setuptools.packages.find]
 include = ["tonutils", "tonutils.*"]
 
@@ -61,6 +68,12 @@ tonutils = ["py.typed"]
 
 [tool.setuptools.dynamic]
 version = { attr = "tonutils.__meta__.__version__" }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_test_loop_scope = "session"
+asyncio_default_fixture_loop_scope = "session"
+testpaths = ["tests"]
 
 [tool.ruff]
 target-version = "py310"
@@ -126,6 +139,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "examples/*" = ["T201", "D"]
+"tests/*" = ["D", "S101"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["tonutils"]
