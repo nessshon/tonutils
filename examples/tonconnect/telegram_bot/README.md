@@ -54,12 +54,12 @@ docker-compose up --build
 ## Documentation
 
 A detailed walkthrough of each module and the bot architecture is available in the
-[TON Connect Telegram bot cookbook](https://nessshon.github.io/tonutils/cookbook/tonconnect-telegram/).
+[TON Connect Telegram bot cookbook](https://old-tonutils.ness.su/cookbook/tonconnect-telegram/).
 
 ## Resources
 
 * [TON Connect Documentation and Specifications](https://github.com/ton-blockchain/ton-connect)
-* [tonutils TON Connect Documentation](https://nessshon.github.io/tonutils/cookbook/tonconnect-integration/)
+* [tonutils TON Connect Documentation](https://old-tonutils.ness.su/cookbook/tonconnect-integration/)
 * [aiogram Documentation](https://docs.aiogram.dev/)
 
 ## License
