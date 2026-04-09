@@ -440,15 +440,8 @@ class LiteBalancer(LiteMixin, BaseClient):
                 attempts += 1
 
                 if not client.provider.connected:
-                    try:
-                        await asyncio.wait_for(
-                            client.provider.reconnect(),
-                            timeout=self._connect_timeout,
-                        )
-                    except Exception as e:
-                        self._mark_error(client, is_rate_limit=False)
-                        last_exc = e
-                        continue
+                    self._mark_error(client, is_rate_limit=False)
+                    continue
 
                 try:
                     result = await func(client.provider)
