@@ -1,7 +1,7 @@
 # 📦 Tonutils
 
 [![TON](https://img.shields.io/badge/TON-grey?logo=TON&logoColor=40AEF0)](https://ton.org)
-[![PyPI](https://img.shields.io/pypi/v/tonutils.svg?color=FFE873&labelColor=3776AB)](https://pypi.python.org/pypi/tonutils)
+![PyPI](https://img.shields.io/badge/PyPI-0.5.8-FFE873?labelColor=3776AB)
 ![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.12-black?color=FFE873&labelColor=3776AB)
 [![License](https://img.shields.io/github/license/nessshon/tonutils)](LICENSE)
 
@@ -42,7 +42,7 @@ pip install "tonutils[pytoniq]<2.0"
 ## Documentation
 
 Find all guides and references here:  
-[nessshon.github.io/tonutils](https://nessshon.github.io/tonutils/)
+[old-tonutils.ness.su](https://old-tonutils.ness.su/)
 
 ## Donations
 
