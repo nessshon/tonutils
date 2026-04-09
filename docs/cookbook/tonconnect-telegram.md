@@ -399,5 +399,5 @@ Full source code is available at: [tonconnect-demo-bot](https://github.com/nesss
 ## See also
 
 * [TON Connect Documentation and Specifications](https://github.com/ton-blockchain/ton-connect)
-* [tonutils TON Connect Documentation](https://nessshon.github.io/tonutils/cookbook/tonconnect-integration/)
+* [tonutils TON Connect Documentation](https://old-tonutils.ness.su/cookbook/tonconnect-integration/)
 * [aiogram Documentation](https://docs.aiogram.dev/)

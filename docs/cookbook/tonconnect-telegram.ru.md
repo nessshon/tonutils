@@ -397,5 +397,5 @@ TC_MANIFEST=https://ваш-домен/manifest.json
 ## См. Также
 
 * [Документация и спецификации TON Connect](https://github.com/ton-blockchain/ton-connect)
-* [Документация tonutils TON Connect](https://nessshon.github.io/tonutils/cookbook/tonconnect-integration/)
+* [Документация tonutils TON Connect](https://old-tonutils.ness.su/cookbook/tonconnect-integration/)
 * [Документация aiogram](https://docs.aiogram.dev/)
