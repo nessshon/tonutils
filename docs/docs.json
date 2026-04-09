@@ -1,0 +1,70 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "palm",
+  "name": "Tonutils",
+  "description": "Python SDK for TON Blockchain — wallets, contracts, and more via ADNL and HTTP APIs.",
+  "logo": {
+    "light": "/assets/logo/light.svg",
+    "dark": "/assets/logo/dark.svg",
+    "href": "/"
+  },
+  "favicon": "/assets/favicon.svg",
+  "colors": {
+    "primary": "#0098EA",
+    "light": "#F7F9FB",
+    "dark": "#1E2337"
+  },
+  "fonts": {
+    "family": "Inter"
+  },
+  "appearance": {
+    "default": "system",
+    "strict": false
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs",
+    "codeblocks": {
+      "theme": {
+        "light": "github-light-default",
+        "dark": "dark-plus"
+      }
+    }
+  },
+  "metadata": {
+    "og:site_name": "Tonutils — Python SDK for TON",
+    "og:description": "Python SDK for TON Blockchain — wallets, contracts, and more via ADNL and HTTP APIs.",
+    "og:locale": "en_US"
+  },
+  "feedback": {
+    "thumbsRating": true
+  },
+  "contextual": {
+    "options": ["copy", "claude", "mcp"]
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "AI Docs",
+      "href": "/llms.txt"
+    },
+    "links": [
+      {
+        "type": "github",
+        "href": "https://github.com/nessshon/tonutils"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/nessshon/tonutils"
+    }
+  },
+  "navigation": {
+    "pages": [
+      "index"
+    ]
+  },
+  "seo": {
+    "indexing": "navigable"
+  }
+}
