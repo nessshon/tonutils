@@ -1,4 +1,4 @@
-aiohttp>=3.7.0,<=3.12.2
+aiohttp>=3.7.0
 aiolimiter~=1.2.1
 cachetools~=5.5.0
 pytoniq-core>=0.1.44
