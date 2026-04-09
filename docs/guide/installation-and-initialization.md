@@ -38,8 +38,7 @@ All API clients in the `tonutils.client` library support request rate management
 **[toncenter.com](https://toncenter.com)** — fast and reliable HTTP API for The Open Network.
 
 !!! note
-API key is optional, but for better performance it is recommended to obtain one
-via  [@tonapibot](https://t.me/tonapibot).
+    API key is optional, but for better performance it is recommended to obtain one via  [@tonapibot](https://t.me/tonapibot).
 
 ```python
 from tonutils.client import ToncenterV2Client
@@ -62,7 +61,7 @@ client_v3 = ToncenterV3Client(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 **[tonapi.io](https://tonapi.io)** — REST API to the TON blockchain explorer.
 
 !!! note
-Requires an API key from [tonconsole.com](https://tonconsole.com).
+    Requires an API key from [tonconsole.com](https://tonconsole.com).
 
 ```python
 from tonutils.client import TonapiClient
@@ -79,7 +78,7 @@ client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 **[quicknode.com](https://quicknode.com)** — low-latency HTTP API access to TON via global infrastructure.
 
 !!! note
-Requires an API URL from [quicknode.com](https://quicknode.com).
+    Requires an API URL from [quicknode.com](https://quicknode.com).
 
     Quicknode does not support testnet!
 
@@ -97,7 +96,7 @@ client = QuicknodeClient(HTTP_PROVIDER_URL, rps=1)
 **[tatum.io](https://tatum.io)** — RPCs and APIs powering Web3.
 
 !!! note
-Requires an API key from [tatum.io](https://tatum.io).
+    Requires an API key from [tatum.io](https://tatum.io).
 
 ```python
 from tonutils.client import TatumClient
@@ -116,8 +115,7 @@ client = TatumClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 **[pytoniq](https://github.com/yungwine/pytoniq)** — library for direct interaction with Lite servers.
 
 !!! note
-For better performance, provide your own config, which can be obtained from
-the [liteserver bot](https://t.me/liteserver_bot).
+    For better performance, provide your own config, which can be obtained from the [liteserver bot](https://t.me/liteserver_bot).
 
 ```python
 from tonutils.client import LiteserverClient

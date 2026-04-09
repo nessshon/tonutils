@@ -39,8 +39,7 @@ pip install "tonutils[pytoniq]<2.0"
 **[toncenter.com](https://toncenter.com)** — быстрый и надёжный HTTP API для The Open Network.
 
 !!! note
-API-ключ не обязателен, но для лучшей производительности рекомендуется получить его
-через [@tonapibot](https://t.me/tonapibot).
+    API-ключ не обязателен, но для лучшей производительности рекомендуется получить его через [@tonapibot](https://t.me/tonapibot).
 
 ```python
 from tonutils.client import ToncenterV2Client
@@ -63,7 +62,7 @@ client_v3 = ToncenterV3Client(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 **[tonapi.io](https://tonapi.io)** — REST API для работы с обозревателем блокчейна TON.
 
 !!! note
-Требуется API-ключ с сайта [tonconsole.com](https://tonconsole.com).
+    Требуется API-ключ с сайта [tonconsole.com](https://tonconsole.com).
 
 ```python
 from tonutils.client import TonapiClient
@@ -80,7 +79,7 @@ client = TonapiClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 **[quicknode.com](https://quicknode.com)** — HTTP API с низкой задержкой к TON через глобальную инфраструктуру.
 
 !!! note
-Требуется URL API с сайта [quicknode.com](https://quicknode.com).
+    Требуется URL API с сайта [quicknode.com](https://quicknode.com).
 
     Quicknode не поддерживает тестовую сеть!
 
@@ -98,7 +97,7 @@ client = QuicknodeClient(HTTP_PROVIDER_URL, rps=1)
 **[tatum.io](https://tatum.io)** — RPC и API для Web3.
 
 !!! note
-Требуется API-ключ с сайта [tatum.io](https://tatum.io).
+    Требуется API-ключ с сайта [tatum.io](https://tatum.io).
 
 ```python
 from tonutils.client import TatumClient
@@ -117,8 +116,7 @@ client = TatumClient(api_key=API_KEY, is_testnet=IS_TESTNET, rps=1)
 **[pytoniq](https://github.com/yungwine/pytoniq)** — библиотека для прямого взаимодействия с лайт-серверами.
 
 !!! note
-Для лучшей производительности рекомендуется указать собственную конфигурацию, которую можно получить
-через [бота liteserver](https://t.me/liteserver_bot).
+    Для лучшей производительности рекомендуется указать собственную конфигурацию, которую можно получить через [бота liteserver](https://t.me/liteserver_bot).
 
 ```python
 from tonutils.client import LiteserverClient
