@@ -19,6 +19,7 @@ env = Env()
 env.read_env()
 
 RPS_LIMIT = 10
+LITE_RPS_LIMIT = 50
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
@@ -48,7 +49,7 @@ async def lite_client() -> AsyncIterator[BaseClient]:
     async with LiteClient.from_network_config(
         NETWORK,
         index=LITE_INDEX,
-        rps_limit=RPS_LIMIT,
+        rps_limit=LITE_RPS_LIMIT,
         retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     ) as client:
         yield client
@@ -64,7 +65,7 @@ async def http_balancer(tonapi_client: BaseClient, toncenter_client: BaseClient)
 async def lite_balancer() -> AsyncIterator[BaseClient]:
     async with LiteBalancer.from_network_config(
         NETWORK,
-        rps_limit=RPS_LIMIT,
+        rps_limit=LITE_RPS_LIMIT,
         retry_policy=DEFAULT_ADNL_RETRY_POLICY,
     ) as client:
         yield client
