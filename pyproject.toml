@@ -52,6 +52,7 @@ tonutils = "tonutils.cli:main"
 [project.urls]
 Homepage = "https://github.com/nessshon/tonutils/"
 Examples = "https://github.com/nessshon/tonutils/tree/main/examples/"
+Documentation = "https://tonutils.ness.su"
 
 [project.optional-dependencies]
 test = [
