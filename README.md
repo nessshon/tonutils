@@ -42,7 +42,7 @@ pip install "tonutils[pytoniq]<2.0"
 ## Documentation
 
 Find all guides and references here:  
-[old-tonutils.ness.su](https://old-tonutils.ness.su/)
+[old-tonutils.ness.uz](https://old-tonutils.ness.uz/)
 
 ## Donations
 

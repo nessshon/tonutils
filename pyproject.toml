@@ -41,7 +41,7 @@ pytoniq = ["pytoniq~=0.1.42"]
 
 [project.urls]
 "Homepage" = "https://github.com/nessshon/tonutils"
-"Documentation" = "https://old-tonutils.ness.su"
+"Documentation" = "https://old-tonutils.ness.uz"
 "Examples" = "https://github.com/nessshon/tonutils/tree/main/examples"
 "Source" = "https://github.com/nessshon/tonutils"
 "TON" = "https://ton.org"

@@ -37,7 +37,7 @@ async def connect_wallet(context: Context, user_id: int) -> None:
     )
 
     qrcode_url = (
-        f"https://qrcode.ness.su/create?"
+        f"https://qrcode.ness.uz/create?"
         f"box_size=20&border=7&image_padding=20"
         f"&data={base64.b64encode(connect_url.encode()).decode()}"
         f"&image_url={base64.b64encode(selected_wallet.image.encode()).decode()}"
