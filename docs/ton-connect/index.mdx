@@ -1,0 +1,103 @@
+---
+title: TON Connect
+description: Python SDK for the TON Connect protocol — wallet connections, transactions, data signing, and proof verification.
+sidebarTitle: Overview
+---
+
+**ton-connect** is a Python SDK implementing the [TON Connect](https://github.com/ton-connect) protocol for dApp backends and bots. It handles wallet connections over the HTTP bridge, transaction and sign-data requests, and cryptographic verification of wallet responses — everything a server-side application needs to talk to TON wallets.
+
+<Note>
+  The package is standalone and does not require `tonutils`. It replaces the former `tonutils.tonconnect` module.
+</Note>
+
+## Features
+
+- **Wallet Connection** — connect wallets, restore and manage per-user sessions.
+- **Send Transaction** — build, send, and track transaction requests.
+- **Sign Data** — request signatures over text, binary, and cell payloads.
+- **TON Proof** — verify wallet ownership on your backend.
+- **Storage** — file, in-memory, or any custom key-value backend.
+- **TonConnect-UI Interop** — import and export sessions created by TonConnect-UI frontends.
+
+## Installation
+
+```bash
+pip install ton-connect
+```
+
+| Requirement | Version |
+| ----------- | ------- |
+| Python      | 3.10+   |
+
+## Quick Start
+
+```python
+import asyncio
+
+from ton_core import NetworkGlobalID
+
+from ton_connect import AppWalletsLoader, FileStorage, TonConnect
+
+MANIFEST_URL = "https://example.com/tonconnect-manifest.json"
+SESSION_KEY = "user-123"
+
+
+async def main() -> None:
+    storage = FileStorage("./tonconnect-storage.json")
+    loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+
+    tc = TonConnect(
+        storage=storage,
+        manifest_url=MANIFEST_URL,
+        app_wallets=loader.get_wallets(),
+    )
+    connector = tc.create_connector(SESSION_KEY)
+
+    # Resume a previously saved session if one exists
+    restored = await connector.restore()
+
+    if not restored:
+        request = connector.make_connect_request()
+        url = await connector.connect(request=request, network=NetworkGlobalID.TESTNET)
+        print(f"Connect URL: {url}")
+
+        wallet, error = await connector.wait_connect()
+        if error:
+            print(f"Connection failed: {error}")
+            return
+
+    print(f"Address: {connector.account.address.to_str(is_bounceable=False)}")
+
+    await tc.close_all()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Guide
+
+<CardGroup cols={2}>
+  <Card title="Installation and Initialization" icon="screwdriver-wrench" href="/ton-connect/installation-and-initialization">
+    Manifest, storage backends, wallet catalogue, and the TonConnect manager.
+  </Card>
+  <Card title="Connect Wallet" icon="wallet" href="/ton-connect/connect-wallet">
+    Connect links, TON Proof, session restore, import, and export.
+  </Card>
+  <Card title="Send Transaction" icon="paper-plane" href="/ton-connect/send-transaction">
+    Build transaction payloads and handle wallet responses.
+  </Card>
+  <Card title="Sign Data" icon="signature" href="/ton-connect/sign-data">
+    Request signatures over text, binary, and cell payloads.
+  </Card>
+</CardGroup>
+
+## Reference
+
+- [Event Handling](/ton-connect/event-handling) — react to connect, transaction, and sign-data events with registered handlers.
+- [Backend Verification](/ton-connect/backend-verification) — verify TON Proof and sign-data results server-side.
+- [Errors](/ton-connect/errors) — exception hierarchy and wallet RPC error codes.
+
+<Card title="GitHub" icon="github" href="https://github.com/nessshon/ton-connect">
+  Source code, examples, and issue tracker.
+</Card>

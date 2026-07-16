@@ -1,0 +1,232 @@
+---
+title: Vanity Addresses
+description: Generate and deploy contracts and wallets at custom TON addresses with a chosen prefix or suffix.
+---
+
+This guide explains how to create vanity addresses on the TON blockchain — contracts or wallets with custom patterns (for example, specific starting or ending characters) that make the address visually distinctive.
+
+## Introduction
+
+Vanity addresses are often used for branding, better recognizability, or aesthetic purposes. A contract address on TON is a hash of its initial code and data, so a vanity address is found by brute force: a generator iterates salt values inside a special vanity contract's initial code until the resulting address matches the desired pattern. The vanity contract is then deployed at that address and immediately replaces its own code and data with those of the target contract.
+
+## Vanity Contract Address
+
+To deploy a contract (for example, a jetton master) at a vanity address, first generate the address, then deploy through the vanity contract.
+
+### Generate the Address
+
+Clone the generator repository:
+
+```bash
+git clone https://github.com/ton-org/vanity
+```
+
+Run the generator:
+
+```bash
+python3 src/generator.py --owner {OWNER_ADDRESS} --end {SUFFIX} --case-sensitive
+```
+
+- Replace `{OWNER_ADDRESS}` with the wallet address from which the deployment will be made. Only the owner can deploy through the generated vanity contract.
+- Replace `{SUFFIX}` with the desired ending of the address. Use `--start` instead of (or in addition to) `--end` for a prefix constraint.
+
+Matches are appended to `addresses.jsonl` — one JSON object per line containing the found `address`, the contract `init` (code and fixed prefix length), the generation `config`, and a `timestamp`. Copy the matching line; the deployment script parses it with `VanityResult.from_json`.
+
+### Deploy the Contract
+
+The script below deploys a stablecoin jetton master at the generated vanity address. It builds the target contract's initial state, wraps its code and data in a `VanityDeployBody`, and sends it to the vanity contract together with the vanity `state_init`. The vanity contract validates the owner and replaces its own code and data with the payload, becoming the actual jetton master.
+
+```python
+from ton_core import (
+    Address,
+    JettonMasterStablecoinData,
+    NetworkGlobalID,
+    OffchainContent,
+    VanityDeployBody,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import (
+    JettonMasterStablecoinV2,
+    JettonWalletStablecoinV2,
+    Vanity,
+    VanityResult,
+    WalletV4R2,
+)
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Jetton admin address (controls minting and metadata)
+ADMIN_ADDRESS = Address("UQ...")
+
+# Jetton metadata URI (TEP-64 off-chain format)
+JETTON_MASTER_URI = "https://example.com/jetton.json"
+
+# Vanity contract result JSON from the generator (one line of addresses.jsonl)
+VANITY_RESULT = '{"address":"EQ...","init":{"code":"te6cc...","fixedPrefixLength":...}'
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Create wallet instance from mnemonic (full access mode)
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Get stablecoin jetton wallet code
+    jetton_wallet_code = JettonWalletStablecoinV2.get_default_code()
+
+    # Configure jetton metadata
+    jetton_master_content = OffchainContent(uri=JETTON_MASTER_URI)
+
+    # Compose stablecoin jetton master initial data
+    jetton_master_data = JettonMasterStablecoinData(
+        admin_address=ADMIN_ADDRESS,
+        content=jetton_master_content,
+        jetton_wallet_code=jetton_wallet_code,
+    )
+
+    # Create the target contract instance from initial data
+    # Note: jetton_master.address here is NOT the final vanity address
+    jetton_master = JettonMasterStablecoinV2.from_data(
+        client=client,
+        data=jetton_master_data.serialize(),
+    )
+
+    # Parse vanity generator output JSON
+    vanity_result = VanityResult.from_json(VANITY_RESULT)
+
+    # Create vanity contract wrapper from generator result
+    # Vanity contract validates owner, then replaces its code with payload
+    vanity = Vanity.from_result(
+        client=client,
+        result=vanity_result,
+    )
+
+    # Create vanity deploy message body with the target code and data
+    body = VanityDeployBody(
+        code=jetton_master.state_init.code,
+        data=jetton_master.state_init.data,
+    )
+
+    # Deploy jetton master via vanity contract
+    msg = await wallet.transfer(
+        destination=vanity.address,
+        amount=to_nano(0.05),
+        body=body.serialize(),
+        state_init=vanity.state_init,
+    )
+
+    print(f"Jetton master address: {vanity_result.address}")
+
+    # Normalized hash of the signed external message (computed locally before
+    # sending) — not the on-chain transaction hash. Use it to track whether
+    # the message was accepted on-chain
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Vanity Wallet Address
+
+<Note>
+  The mnemonic phrase and wallet ID generated by this tool are only compatible with `WalletV3R2`.
+</Note>
+
+To create a vanity wallet address using GPU acceleration, follow these steps.
+
+### Check Requirements
+
+NVIDIA GPU (driver version 555.* or later).
+
+### Download Binary
+
+Download the `gpu-generator-linux` binary from the [latest release](https://github.com/ton-offline-storage/address-generator/releases).
+
+### Run the Generator
+
+To start the generator with interactive input:
+
+```bash
+./gpu-generator-linux
+```
+
+To run the generator with predefined constraints directly from the command line:
+
+```bash
+./gpu-generator-linux -q "start[*][T][O][N] | end[1][2][3]"
+```
+
+Follow the on-screen instructions to monitor progress and view results. After a successful match, the tool displays the mnemonic phrase and the wallet ID for use with a `WalletV3R2` wallet.
+
+**Constraints Syntax**
+
+- **Allowed characters**: `A-Z`, `a-z`, `0-9`, `_`, `-`
+- **Start constraint** (after `UQ` prefix, third character): `start[A][P][P][L][E]` or `start[*][T][O][N]`
+- **End constraint**: `end[T][O][N]` or `end[Tt][Oo][Nn]`
+- **Combined constraints**: `start[*][T][O][N] & end[T][O][N]`
+- **Multiple variants (OR)**: `start[*][T][O][N] & end[T][O][N] | start[D][D][D] | end[0][0][0]`
+
+**Performance Reference**
+
+| Hardware              | 5 chars | 6 chars  | 7 chars   | 8 chars   |
+| --------------------- | ------- | -------- | --------- | --------- |
+| Intel i5-8350U        | 4 min   | 4 h 40 m | 12.5 days | > 2 years |
+| AMD Ryzen 5 3600      | 26 sec  | 30 min   | 31.5 h    | 84 days   |
+| NVIDIA GTX 1650 SUPER | 2 sec   | 2 min    | 2 h       | 5.5 days  |
+| NVIDIA RTX 4090       | under 1 sec | 13 sec | 13.5 min | 14.5 h  |
+
+### Use the Generated Wallet
+
+Import the wallet with the generated mnemonic and wallet ID. The wallet ID is passed as `subwallet_id` in a `WalletV3Config`:
+
+```python
+from ton_core import NetworkGlobalID, WalletV3Config
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV3R2
+
+# Mnemonic phrase from the generator
+MNEMONIC = "word1 word2 word3 ..."
+
+# Wallet ID from the generator
+WALLET_ID = 0
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    wallet, public_key, private_key, mnemonic = WalletV3R2.from_mnemonic(
+        client,
+        MNEMONIC,
+        config=WalletV3Config(subwallet_id=WALLET_ID),
+    )
+
+    print(f"Address: {wallet.address.to_str()}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## See Also
+
+- [Vanity Contract Generator](https://github.com/ton-org/vanity)
+- [Vanity Wallet Generator](https://github.com/ton-offline-storage/address-generator)
+
+<Card title="Vanity Deployment Example" icon="github" href="https://github.com/nessshon/tonutils/blob/main/examples/deploy_vanity.py">
+  Full runnable vanity contract deployment script on GitHub.
+</Card>

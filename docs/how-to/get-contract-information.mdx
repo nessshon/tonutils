@@ -1,0 +1,53 @@
+---
+title: Get Contract Information
+description: Retrieve contract balance, state, code, data, and last transaction metadata.
+---
+
+This example shows how to retrieve full contract details, including balance, state, code, data, and last transaction metadata, using the `get_info` method available on every client.
+
+## Example
+
+```python
+from ton_core import NetworkGlobalID
+
+from tonutils.clients import ToncenterClient
+
+# Contract address to inspect
+CONTRACT_ADDRESS = "EQ..."
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    info = await client.get_info(CONTRACT_ADDRESS)
+
+    print(f"Balance: {info.balance}")
+    print(f"State: {info.state}")
+    print(f"Has code: {info.code is not None}")
+    print(f"Has data: {info.data is not None}")
+    print(f"Last Transaction LT: {info.last_transaction_lt}")
+    print(f"Last Transaction Hash: {info.last_transaction_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## ContractInfo Fields Overview
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code_raw` | `str \| None` | Hex-encoded BoC of the contract code, or `None` if absent. |
+| `data_raw` | `str \| None` | Hex-encoded BoC of the contract data, or `None` if absent. |
+| `balance` | `int` | Current balance of the contract in nanotons. |
+| `state` | `ContractState` | Contract lifecycle state (enum from `ton_core`): `ACTIVE` (deployed and operational), `FROZEN` (frozen due to storage-fee debt), `UNINIT` (address exists but code is not deployed), `NONEXIST` (no balance or state). |
+| `code` | `Cell \| None` | Contract code parsed from `code_raw`, or `None` if absent (property). |
+| `data` | `Cell \| None` | Contract data parsed from `data_raw`, or `None` if absent (property). |
+| `last_transaction_lt` | `int \| None` | Logical time (LT) of the most recent transaction, or `None`. |
+| `last_transaction_hash` | `str \| None` | Hash of the most recent transaction, or `None`. |
+| `state_init` | `StateInit` | `StateInit` combining `code` and `data` (property). |

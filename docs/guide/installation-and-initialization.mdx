@@ -1,0 +1,338 @@
+---
+title: Installation and Initialization
+description: Install tonutils and choose the right client — HTTP API providers, native ADNL lite clients, or balancers.
+---
+
+This page explains how to install the `tonutils` library and select the appropriate client depending on your needs.
+
+## Installation
+
+```bash
+pip install tonutils
+```
+
+Requires Python 3.10 or later. Native ADNL lite clients are included — no optional dependencies needed.
+
+## Available Clients
+
+All clients share a common interface and are asynchronous context managers. Use `async with client:` or call `await client.connect()` / `await client.close()` explicitly. The network is selected with `NetworkGlobalID.MAINNET` or `NetworkGlobalID.TESTNET` from `ton_core`.
+
+Common constructor parameters:
+
+| Parameter      | Description                                                                                          |
+| -------------- | ---------------------------------------------------------------------------------------------------- |
+| `network`      | Target TON network: `NetworkGlobalID.MAINNET` or `NetworkGlobalID.TESTNET`.                          |
+| `rps_limit`    | Requests-per-period cap; match your API key tier. `None` means no client-side limit, except on keyless HTTP clients, which fall back to conservative defaults. |
+| `rps_period`   | Rate-limit window in seconds (default: 1 second).                                                    |
+| `timeout`      | Total request timeout in seconds (HTTP clients).                                                     |
+| `retry_policy` | Optional `RetryPolicy` with per-error rules. `None` disables retries.                                |
+
+Lite clients additionally accept:
+
+| Parameter         | Description                                                                       |
+| ----------------- | --------------------------------------------------------------------------------- |
+| `connect_timeout` | Timeout in seconds for a single connect/handshake attempt.                        |
+| `request_timeout` | Timeout in seconds for a single request (for balancers: total time including all failover attempts). |
+
+<Tip>
+  Ready-made retry policies are available in `tonutils.types`: `DEFAULT_HTTP_RETRY_POLICY` for HTTP clients and `DEFAULT_ADNL_RETRY_POLICY` for lite clients. Both are recommended for stability.
+</Tip>
+
+## HTTP Clients
+
+### Toncenter
+
+**[toncenter.com](https://toncenter.com)** — official TON Center API (v2).
+
+<Note>
+  API key is optional — without a key the client is limited to 1 request per 1.3 seconds. Obtain a key via [@toncenter](https://t.me/toncenter) for higher limits.
+</Note>
+
+```python
+from ton_core import NetworkGlobalID
+from tonutils.clients import ToncenterClient
+
+client = ToncenterClient(
+    network=NetworkGlobalID.MAINNET,
+    api_key="<your api key>",  # optional
+    rps_limit=1,
+)
+
+async with client:
+    ...
+```
+
+### Tonapi
+
+**[tonapi.io](https://tonapi.io)** — Tonapi by Tonkeeper.
+
+<Note>
+  API key is optional — without a key the client falls back to a conservative default rate limit (1 request per 4 seconds). Get a key at [tonconsole.com](https://tonconsole.com) for higher limits.
+</Note>
+
+```python
+from ton_core import NetworkGlobalID
+from tonutils.clients import TonapiClient
+
+client = TonapiClient(
+    network=NetworkGlobalID.MAINNET,
+    api_key="<your api key>",
+    rps_limit=10,
+)
+
+async with client:
+    ...
+```
+
+### Chainstack
+
+**[chainstack.com](https://chainstack.com)** — enterprise blockchain infrastructure.
+
+<Note>
+  Requires a personal endpoint URL, obtained on the Chainstack website.
+</Note>
+
+```python
+from ton_core import NetworkGlobalID
+from tonutils.clients import ChainstackClient
+
+client = ChainstackClient(
+    network=NetworkGlobalID.MAINNET,
+    http_provider_url="https://your-endpoint",
+    rps_limit=50,
+)
+
+async with client:
+    ...
+```
+
+### QuickNode
+
+**[quicknode.com](https://www.quicknode.com)** — high-performance RPC.
+
+<Note>
+  Requires a personal endpoint URL, obtained on the QuickNode website. QuickNode supports mainnet only — there is no `network` parameter.
+</Note>
+
+```python
+from tonutils.clients import QuicknodeClient
+
+client = QuicknodeClient(
+    http_provider_url="https://your-endpoint",
+    rps_limit=50,
+)
+
+async with client:
+    ...
+```
+
+### Tatum
+
+**[tatum.io](https://tatum.io)** — multi-chain API platform.
+
+<Note>
+  Requires an API key from [tatum.io](https://tatum.io).
+</Note>
+
+```python
+from ton_core import NetworkGlobalID
+from tonutils.clients import TatumClient
+
+client = TatumClient(
+    network=NetworkGlobalID.MAINNET,
+    api_key="<your api key>",
+    rps_limit=20,
+)
+
+async with client:
+    ...
+```
+
+## HTTP Balancer
+
+`HttpBalancer` distributes requests across multiple HTTP clients. It selects the best available client based on limiter readiness and error rates, and falls back to round-robin when all clients are equally available. The `network` parameter is applied to every wrapped client, overriding their own setting (`QuicknodeClient` is rejected on testnet); `request_timeout` caps the total time of one operation including all failover attempts.
+
+```python
+from ton_core import NetworkGlobalID
+from tonutils.clients import HttpBalancer, TonapiClient, ToncenterClient
+from tonutils.types import DEFAULT_HTTP_RETRY_POLICY
+
+toncenter = ToncenterClient(
+    network=NetworkGlobalID.MAINNET,
+    api_key="<your api key>",
+    rps_limit=1,
+    retry_policy=DEFAULT_HTTP_RETRY_POLICY,
+)
+tonapi = TonapiClient(
+    network=NetworkGlobalID.MAINNET,
+    api_key="<your api key>",
+    rps_limit=10,
+    retry_policy=DEFAULT_HTTP_RETRY_POLICY,
+)
+
+balancer = HttpBalancer(
+    network=NetworkGlobalID.MAINNET,
+    clients=[toncenter, tonapi],
+    request_timeout=12.0,
+)
+
+async with balancer:
+    ...
+```
+
+## Lite Clients
+
+`LiteClient` talks to a single lite server directly over ADNL TCP. There are three ways to create one.
+
+<Note>
+  Avoid `rps_limit=1` with lite clients — parallel background queries are used to track masterchain updates. Private lite-server configs (available from [Tonconsole](https://tonconsole.com) or the [dTON bot](https://t.me/dtontech_bot)) are recommended for production; public servers may be unstable under load.
+</Note>
+
+<Tabs>
+  <Tab title="Direct parameters">
+    Use when you have specific server credentials from a private provider. `ip` accepts a signed 32-bit integer or an IPv4 string; `public_key` accepts hex, base64, or bytes.
+
+    ```python
+    from ton_core import NetworkGlobalID
+    from tonutils.clients import LiteClient
+    from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
+
+    client = LiteClient(
+        network=NetworkGlobalID.MAINNET,
+        ip=-1234567890,
+        port=12345,
+        public_key="ABCdef0123=...",
+        rps_limit=100,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
+    )
+
+    async with client:
+        ...
+    ```
+  </Tab>
+  <Tab title="From config">
+    Initialize from a private global config (recommended for production). `config` accepts a dict, a file path, or a `GlobalConfig`; `index` selects the lite server within the config's `liteservers` array.
+
+    ```python
+    from ton_core import NetworkGlobalID
+    from tonutils.clients import LiteClient
+    from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
+
+    client = LiteClient.from_config(
+        network=NetworkGlobalID.MAINNET,
+        config={},  # your provider's config
+        index=0,
+        rps_limit=50,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
+    )
+
+    async with client:
+        ...
+    ```
+  </Tab>
+  <Tab title="From network config">
+    Fetches the lite-server list automatically from the public TON global config. Free, no credentials needed.
+
+    ```python
+    from ton_core import NetworkGlobalID
+    from tonutils.clients import LiteClient
+    from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
+
+    client = LiteClient.from_network_config(
+        network=NetworkGlobalID.MAINNET,
+        index=0,
+        rps_limit=50,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
+    )
+
+    async with client:
+        ...
+    ```
+  </Tab>
+</Tabs>
+
+## Lite Balancer
+
+`LiteBalancer` manages multiple lite clients with automatic failover. It selects the best client based on masterchain height and ping RTT, falling back to round-robin when all clients are equally available.
+
+<Tabs>
+  <Tab title="Explicit clients">
+    Compose the balancer from `LiteClient` instances created with private server credentials.
+
+    ```python
+    from ton_core import NetworkGlobalID
+    from tonutils.clients import LiteBalancer, LiteClient
+    from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
+
+    client_a = LiteClient(
+        network=NetworkGlobalID.MAINNET,
+        ip=-1234567890,
+        port=12345,
+        public_key="Abc123...",
+        rps_limit=50,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
+    )
+    client_b = LiteClient(
+        network=NetworkGlobalID.MAINNET,
+        ip=-987654321,
+        port=54321,
+        public_key="Zyx987...",
+        rps_limit=50,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
+    )
+
+    balancer = LiteBalancer(
+        network=NetworkGlobalID.MAINNET,
+        clients=[client_a, client_b],
+        connect_timeout=2,
+        request_timeout=12,
+    )
+
+    async with balancer:
+        ...
+    ```
+  </Tab>
+  <Tab title="From config">
+    Automatically creates a `LiteClient` for each server in a private config. `rps_per_client=False` (default) shares one rate limiter across all clients; `True` gives each client its own limiter.
+
+    ```python
+    from ton_core import NetworkGlobalID
+    from tonutils.clients import LiteBalancer
+    from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
+
+    balancer = LiteBalancer.from_config(
+        network=NetworkGlobalID.MAINNET,
+        config={},  # your provider's config
+        rps_limit=100,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
+    )
+
+    async with balancer:
+        ...
+    ```
+  </Tab>
+  <Tab title="From network config">
+    Uses all lite servers from the public TON global config. Free, no credentials needed.
+
+    ```python
+    from ton_core import NetworkGlobalID
+    from tonutils.clients import LiteBalancer
+    from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
+
+    balancer = LiteBalancer.from_network_config(
+        network=NetworkGlobalID.MAINNET,
+        rps_limit=50,
+        connect_timeout=1,
+        request_timeout=10,
+        retry_policy=DEFAULT_ADNL_RETRY_POLICY,
+    )
+
+    async with balancer:
+        ...
+    ```
+  </Tab>
+</Tabs>
+
+<Card title="Client Examples" icon="github" href="https://github.com/nessshon/tonutils/tree/main/examples/client">
+  Full runnable initialization scripts for every client and balancer on GitHub.
+</Card>

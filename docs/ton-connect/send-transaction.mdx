@@ -1,0 +1,184 @@
+---
+title: Send Transaction
+description: Request the connected wallet to sign and broadcast transactions, and track the result.
+---
+
+A connected wallet can be asked to sign and broadcast transactions: build a typed payload, send it over the bridge, and the user approves it in their wallet app. All snippets assume a connected `connector` — see [Connect Wallet](/ton-connect/connect-wallet).
+
+## Building the Request
+
+A request is a `SendTransactionPayload` containing one or more `SendTransactionMessage` entries:
+
+```python
+from ton_core import Address, to_nano
+
+from ton_connect.models import SendTransactionMessage, SendTransactionPayload
+
+payload = SendTransactionPayload(
+    messages=[
+        SendTransactionMessage(
+            address=Address("UQ..."),
+            amount=to_nano(0.01),
+            payload="Hello from ton-connect!",
+        ),
+    ],
+)
+```
+
+`SendTransactionMessage` fields:
+
+| Field | Description |
+| --- | --- |
+| `address` | Destination address — `Address` or raw string. |
+| `amount` | Transfer amount in nanotons (`int`; 1 TON = 1,000,000,000 nanotons). |
+| `payload` | Optional message body. Pass a `Cell` for structured bodies (jetton transfers, contract calls) or a `str`, which is automatically wrapped as a text comment. |
+| `state_init` | Optional contract `StateInit`, e.g. when the transfer deploys a contract. |
+| `extra_currency` | Optional extra currency map (`dict[int, str]`). Requires wallet support. |
+
+`SendTransactionPayload` fields:
+
+| Field | Description |
+| --- | --- |
+| `network` | Target network. Defaults to the network passed to `connect()`. |
+| `from_address` | Sender address override. Defaults to the connected account's address. |
+| `valid_until` | Unix timestamp after which the wallet rejects the transaction. Defaults to now + 5 minutes; also used as the request timeout, and the wallet UI shows it as a countdown. |
+| `messages` | List of outgoing messages. |
+
+## Sending
+
+`send_transaction()` sends the request to the wallet and returns a `request_id` immediately — the user still has to approve it in their wallet app:
+
+```python
+request_id = await connector.send_transaction(payload)
+```
+
+Before sending, the connector automatically verifies that the connected wallet declares the `SendTransaction` feature, supports the number of messages in the payload (each wallet advertises a `max_messages` limit, typically 4), and supports extra currencies if any message uses them. A failed check raises `WalletNotSupportFeatureError`; calling without a connected wallet raises `WalletNotConnectedError`.
+
+## Waiting for the Result
+
+`wait_transaction(request_id)` blocks until the wallet signs and submits the transaction (or rejects it, or the request times out) and returns a `(result, error)` tuple:
+
+```python
+result, error = await connector.wait_transaction(request_id)
+
+if error:
+    print(f"Transaction failed: {error}")
+else:
+    print(f"Transaction boc : {result.boc}")
+    print(f"Transaction hash: {result.normalized_hash}")
+```
+
+`result.boc` is the signed external message BoC returned by the wallet. `result.normalized_hash` is the locally computed normalized external-message hash — it can be used to look the transaction up in explorers and indexers, but it is not the on-chain transaction hash.
+
+Common errors are `UserRejectsError` (the user declined in the wallet UI) and `RequestTimeoutError` (no response before `valid_until`) — see [Errors](/ton-connect/errors) for the full list. To stop waiting for a pending request (for example, when the user navigates away), call `connector.drop_request(request_id)`.
+
+## Complete Example
+
+```python
+from ton_core import Address, NetworkGlobalID, to_nano
+
+from ton_connect import AppWalletsLoader, FileStorage, TonConnect
+from ton_connect.models import (
+    SendTransactionMessage,
+    SendTransactionPayload,
+)
+
+# Setup constants — see Installation and Initialization
+MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/ton-connect/main/assets/tonconnect-manifest.json"
+SESSION_KEY = "user-123"
+STORAGE_PATH = "./tonconnect-storage.json"
+
+# Recipient, optional text comment, and amount in nanotons
+DESTINATION_ADDRESS = Address("UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0")
+TRANSFER_COMMENT = "Hello from ton-connect!"
+TRANSFER_AMOUNT = to_nano(0.01)
+
+
+async def main() -> None:
+    storage = FileStorage(STORAGE_PATH)
+    app_wallets_loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+
+    tc = TonConnect(
+        storage=storage,
+        manifest_url=MANIFEST_URL,
+        app_wallets=app_wallets_loader.get_wallets(),
+    )
+    connector = tc.create_connector(SESSION_KEY)
+
+    # Try to restore a previously saved connection before starting a new one
+    restored = await connector.restore()
+
+    if not restored:
+        request = connector.make_connect_request()
+        await connector.connect(
+            request=request,
+            network=NetworkGlobalID.TESTNET,
+        )
+
+        tonkeeper = app_wallets_loader.get_wallet("tonkeeper")
+        tonkeeper_url = connector.make_connect_url(request, tonkeeper)
+        print(f"Tonkeeper URL: {tonkeeper_url}")
+
+        wallet, error = await connector.wait_connect()
+
+        if error:
+            print(f"Connection failed: {error}")
+            return
+
+    address = connector.account.address.to_str(is_bounceable=False)
+    print(f"Address: {address}")
+
+    # Build the transaction payload
+    payload = SendTransactionPayload(
+        messages=[
+            SendTransactionMessage(
+                address=DESTINATION_ADDRESS,
+                amount=TRANSFER_AMOUNT,
+                payload=TRANSFER_COMMENT,
+            ),
+        ],
+    )
+
+    # Send the transaction request to the connected wallet
+    # Returns a request_id immediately — the user approves in their wallet app
+    request_id = await connector.send_transaction(payload)
+    print("Transaction sent, waiting for confirmation...")
+
+    # Block until the wallet signs and submits the transaction (or rejects/times out)
+    result, error = await connector.wait_transaction(request_id)
+
+    if error:
+        print(f"Transaction failed: {error}")
+    else:
+        print(f"Transaction boc : {result.boc}")
+        print(f"Transaction hash: {result.normalized_hash}")
+
+    # Close all active bridge connections
+    await tc.close_all()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Batch Transfers
+
+A single request can contain several messages — the wallet signs and sends them in one transaction. Add more `SendTransactionMessage` entries to the `messages` list:
+
+```python
+payload = SendTransactionPayload(
+    messages=[
+        SendTransactionMessage(address=Address("UQ..."), amount=to_nano(0.01)),
+        SendTransactionMessage(address=Address("UQ..."), amount=to_nano(0.02)),
+        SendTransactionMessage(address=Address("UQ..."), amount=to_nano(0.03)),
+    ],
+)
+```
+
+The number of messages is limited by the wallet's advertised `max_messages`, checked by `send_transaction()` as described in [Sending](#sending).
+
+<Card title="Send Request Examples" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples/send_request">
+Full source code of the transaction flow on GitHub
+</Card>

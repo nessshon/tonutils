@@ -1,0 +1,747 @@
+---
+title: Wallet Operations
+description: Create, import, deploy, and inspect wallets, and send TON, jettons, and NFTs with tonutils.
+---
+
+This section provides a complete guide to managing wallets using the `tonutils` library. It covers key operations such as:
+
+- Creating and deploying wallets
+- Importing wallets from mnemonic or private key
+- Reading on-chain wallet information
+- Sending transactions (TON, NFTs, jettons)
+- Performing batch and sequential transfers
+- Sending gasless (relayed) jetton transfers
+- Encrypting and decrypting on-chain messages
+
+## Supported Wallets
+
+The library supports multiple wallet versions and types, all importable from `tonutils.contracts`:
+
+| Class | Type | Max messages | Recommended for |
+| --- | --- | --- | --- |
+| `WalletV1R1` | Standard | 1 | — |
+| `WalletV1R2` | Standard | 1 | — |
+| `WalletV1R3` | Standard | 1 | — |
+| `WalletV2R1` | Standard | 4 | — |
+| `WalletV2R2` | Standard | 4 | — |
+| `WalletV3R1` | Standard | 4 | — |
+| `WalletV3R2` | Standard | 4 | General use |
+| `WalletV4R1` | Standard | 4 | — |
+| `WalletV4R2` | Standard | 4 | General use |
+| `WalletV5Beta` | Standard | 255 | — |
+| `WalletV5R1` | Standard | 255 | General use (preferred): full feature support, including gasless transfers |
+| `WalletHighloadV2` | Highload | 254 | — |
+| `WalletHighloadV3R1` | Highload | 64516 (254 × 254) | Services and exchanges |
+| `WalletPreprocessedV2` | Preprocessed | 255 | Large-scale batch transfers where gas optimization is critical |
+
+## Create Wallet
+
+To create a new wallet, use the `.create()` classmethod of the wallet class you select. It returns a 4-tuple: the wallet instance, its **public key**, **private key**, and a freshly generated **mnemonic** phrase. Each wallet class takes an optional `config=` argument (`WalletV4Config`, `WalletV5Config`, etc. from `ton_core`), where you can customize `subwallet_id` to derive multiple wallets from the same mnemonic.
+
+```python
+from ton_core import NetworkGlobalID, WalletV4Config
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+
+def main() -> None:
+    # Initialize HTTP client for TON blockchain interaction
+    # NetworkGlobalID.MAINNET (-239) for production
+    # NetworkGlobalID.TESTNET (-3) for testing
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+
+    # Wallet configuration (default settings)
+    # Can customize subwallet_id for multiple wallets from same mnemonic
+    config = WalletV4Config()
+
+    # Create new wallet with fresh mnemonic and keypair
+    # Returns: (wallet, public_key, private_key, mnemonic)
+    wallet, public_key, private_key, mnemonic = WalletV4R2.create(client, config=config)
+
+    # Get wallet address in user-friendly format
+    # is_bounceable=False: standard for wallet contracts (UQ...)
+    address = wallet.address.to_str(is_bounceable=False)
+
+    # Output wallet credentials
+    print(f"Address: {address}")
+    print(f"Mnemonic: {' '.join(mnemonic)}")
+    print(f"Public Key: {public_key.as_int}")
+    print(f"Private Key: {private_key.as_b64}")
+    print(f"Keypair: {private_key.keypair.as_b64}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+<Note>
+To use a different wallet version, swap the class and its config together: for example `WalletV5R1` with `WalletV5Config`, or `WalletHighloadV3R1` with `WalletHighloadV3Config`. Configs are imported from `ton_core`.
+</Note>
+
+## Import Wallet
+
+You can import a wallet either from a **mnemonic** phrase or directly from a **private key**. `from_mnemonic()` returns the same 4-tuple as `.create()`; `from_private_key()` returns only the wallet instance.
+
+### From Mnemonic
+
+Mnemonics can be 24 words (TON-native) or 12/18/24 words (BIP-39 import).
+
+```python
+from ton_core import NetworkGlobalID, WalletV4Config
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+
+def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+
+    # Wallet configuration (default settings)
+    config = WalletV4Config()
+
+    # Create wallet from mnemonic phrase
+    # Returns: (wallet, public_key, private_key, mnemonic)
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC, config=config)
+
+    # is_bounceable=False: standard for wallet contracts (UQ...)
+    print(f"Wallet address: {wallet.address.to_str(is_bounceable=False)}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### From Private Key
+
+`PrivateKey` from `ton_core` accepts the key in multiple formats: raw `bytes`, a hex string, a base64 string, or an integer.
+
+```python
+from ton_core import NetworkGlobalID, PrivateKey, WalletV4Config
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Private key can be provided in multiple formats:
+# - bytes: raw binary representation
+# - hex string: hexadecimal encoding
+# - base64 string: base64 encoding
+# - integer: numeric representation
+PRIVATE_KEY = PrivateKey("<your private key>")
+
+
+def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+
+    # Wallet configuration (default settings)
+    config = WalletV4Config()
+
+    # Create wallet from existing private key
+    wallet = WalletV4R2.from_private_key(client, PRIVATE_KEY, config=config)
+
+    # is_bounceable=False: standard for wallet contracts (UQ...)
+    print(f"Wallet address: {wallet.address.to_str(is_bounceable=False)}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Deploy Wallet
+
+Wallets deploy automatically on their first outgoing transaction. To deploy explicitly, reconstruct the wallet from a mnemonic and send a small amount to its own address — after the transaction, the wallet transitions from `uninit` to `active` status.
+
+```python
+from ton_core import NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Create wallet instance from mnemonic
+    # Returns: (wallet, public_key, private_key, mnemonic)
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Deploy wallet by sending any transaction
+    # Sending 0.05 TON to self deploys the wallet contract
+    # Wallet auto-deploys on first outgoing transaction if in uninit status
+    msg = await wallet.transfer(destination=wallet.address, amount=to_nano(0.05))
+
+    print(f"Wallet address: {wallet.address.to_str(is_bounceable=False)}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+<Info>
+`wallet.transfer(...)` returns an `ExternalMessage`. Its `normalized_hash` is computed locally before sending — it is **not** the on-chain transaction hash. Use it to track whether the message was accepted on-chain via explorers or API queries.
+</Info>
+
+## Wallet Information
+
+To inspect a wallet without signing anything, initialize it from an address with `.from_address()` (read-only mode). Call `await wallet.refresh()` to fetch the latest on-chain state before reading properties.
+
+```python
+from ton_core import Address, NetworkGlobalID, to_amount
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Address of the wallet you want to inspect
+WALLET_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Initialize wallet from existing address (read-only mode)
+    # Use this when you only need to query wallet state without signing
+    wallet = await WalletV4R2.from_address(client, WALLET_ADDRESS)
+
+    # Fetch latest on-chain state from blockchain
+    # Updates: balance, state, last_transaction_lt, last_transaction_hash
+    await wallet.refresh()
+
+    # Convert balance from nanotons to TON with 4 decimal precision
+    ton_balance = to_amount(wallet.balance, precision=4)
+
+    print(f"Address: {wallet.address.to_str(is_bounceable=False)}")
+
+    # State: nonexist, uninit (not deployed), active (deployed), frozen
+    print(f"State: {wallet.state.value}")
+
+    # Balance in nanotons and human-readable TON format
+    print(f"Balance: {wallet.balance} ({ton_balance} TON)")
+
+    # Logical time and hash of the last transaction
+    print(f"Last transaction lt: {wallet.last_transaction_lt}")
+    print(f"Last transaction hash: {wallet.last_transaction_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+<Tip>
+If you also need to send transactions, initialize the wallet from a mnemonic instead — `.refresh()` and the state properties work the same way. For arbitrary contracts, see [Get Contract Information](/how-to/get-contract-information).
+</Tip>
+
+## Transfers
+
+### Send TON
+
+Use `wallet.transfer()` to send TON with an optional text comment.
+
+```python
+from ton_core import Address, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Destination address (recipient)
+DESTINATION_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Create wallet instance from mnemonic (full access mode)
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Send TON with optional text comment
+    msg = await wallet.transfer(
+        destination=DESTINATION_ADDRESS,
+        amount=to_nano(0.01),  # Convert 0.01 TON to nanotons (10,000,000)
+        body="Hello from tonutils!",
+    )
+
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+**Parameters:**
+
+- `destination` — recipient address (`Address`).
+- `amount` — amount in nanotons; use `to_nano()` to convert from TON (`int`).
+- `body` — optional text comment, visible in explorers and the recipient wallet (`str` or `Cell`).
+
+### Send NFT
+
+NFT transfers use `NFTTransferBuilder` with `wallet.transfer_message()`. The sending wallet must be the current owner of the NFT.
+
+```python
+from ton_core import Address, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTTransferBuilder, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# NFT item address (specific NFT token)
+NFT_ITEM_ADDRESS = Address("EQ...")
+
+# Destination address (new NFT owner)
+DESTINATION_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the current owner of the NFT
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Transfer NFT to new owner
+    msg = await wallet.transfer_message(
+        NFTTransferBuilder(
+            destination=DESTINATION_ADDRESS,
+            nft_address=NFT_ITEM_ADDRESS,
+            forward_payload="Hello from tonutils!",
+            forward_amount=1,  # 1 nanoton triggers ownership_assigned notification
+            amount=to_nano(0.05),  # 0.05 TON for gas (covers NFT transfer fees)
+        )
+    )
+
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+**Parameters:**
+
+- `destination` — new owner address (`Address`).
+- `nft_address` — NFT item contract address (`Address`).
+- `forward_payload` — optional message forwarded to the new owner, visible in the notification (`str` or `Cell`).
+- `forward_amount` — nanotons sent to the new owner with the `ownership_assigned` notification (TEP-62); must be greater than 0 to trigger the notification (`int`).
+- `amount` — TON attached to the NFT item for gas fees; 0.05 TON is typically sufficient, increase it if `forward_amount` is higher (`int`).
+
+### Send Jetton
+
+Jetton transfers use `JettonTransferBuilder` with `wallet.transfer_message()`. The wallet must hold a jetton balance in its jetton wallet.
+
+```python
+from ton_core import Address, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import JettonTransferBuilder, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Destination address (jetton recipient)
+DESTINATION_ADDRESS = Address("UQ...")
+
+# Jetton master contract address (identifies the token type)
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+# Jetton amount in base units (respects token decimals)
+# Example: 1 USDT (6 decimals) -> 1 * 10^6 = 1,000,000
+JETTON_AMOUNT_TO_SEND = to_nano(1, decimals=6)
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must have jetton balance in its jetton wallet
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Transfer jettons to recipient
+    msg = await wallet.transfer_message(
+        JettonTransferBuilder(
+            destination=DESTINATION_ADDRESS,
+            jetton_amount=JETTON_AMOUNT_TO_SEND,
+            jetton_master_address=JETTON_MASTER_ADDRESS,
+            forward_payload="Hello from tonutils!",
+            forward_amount=1,  # 1 nanoton triggers transfer_notification
+            amount=to_nano(0.05),  # 0.05 TON for gas (covers jetton transfer fees)
+        )
+    )
+
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+**Parameters:**
+
+- `destination` — recipient address that receives the jettons (`Address`).
+- `jetton_amount` — amount in base units, respecting the token's decimals (`int`).
+- `jetton_master_address` — jetton master contract address identifying the token (`Address`).
+- `forward_payload` — optional message forwarded to the recipient, visible in the notification (`str` or `Cell`).
+- `forward_amount` — nanotons sent to the recipient with the `transfer_notification` (TEP-74); must be greater than 0 to trigger the notification (`int`).
+- `amount` — TON attached to the jetton wallet for gas fees; 0.05 TON is typically sufficient (`int`).
+
+<Note>
+Jetton amounts respect the token's decimals, which are not always 9. For USDT-like jettons with 6 decimals, convert with `to_nano(1, decimals=6)`.
+</Note>
+
+## Batch Transfers
+
+Send multiple transfers in a single transaction by passing a list of builders to `wallet.batch_transfer_message()`. You can mix `TONTransferBuilder`, `NFTTransferBuilder`, and `JettonTransferBuilder` in one batch.
+
+```python
+from ton_core import Address, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import TONTransferBuilder, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Send multiple transfers in a single transaction (batch transfer)
+    # Can mix TONTransferBuilder, NFTTransferBuilder, and JettonTransferBuilder
+    msg = await wallet.batch_transfer_message(
+        [
+            TONTransferBuilder(
+                destination=Address("UQ..."),
+                amount=to_nano(0.01),
+                body="Hello from tonutils!",
+            ),
+            TONTransferBuilder(
+                destination=Address("UQ..."),
+                amount=to_nano(0.01),
+                body="Hello from tonutils!",
+            ),
+            TONTransferBuilder(
+                destination=Address("UQ..."),
+                amount=to_nano(0.01),
+                body="Hello from tonutils!",
+            ),
+        ]
+    )
+
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+<Note>
+Message limits per wallet version are listed in [Supported Wallets](#supported-wallets); exceeding the limit raises an error.
+</Note>
+
+## Sequential Transfers
+
+Standard wallets reject a transaction whose seqno has already been used. If you send several transfers in quick succession, the second one can reuse the same on-chain seqno and fail. Wrap the wallet in `SeqnoGuard` to send safely in sequence — it waits for the on-chain seqno to advance after each send before allowing the next.
+
+```python
+from ton_core import Address, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import SeqnoGuard, TONTransferBuilder, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Destination addresses (recipients)
+DESTINATION_1 = Address("UQ...")
+DESTINATION_2 = Address("UQ...")
+DESTINATION_3 = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Wrap wallet in SeqnoGuard for safe sequential sends
+    # timeout: max seconds to wait for seqno to advance (default: 30.0)
+    # poll_interval: delay between seqno polls in seconds (default: 1.5)
+    guard = SeqnoGuard(wallet, timeout=30.0, poll_interval=1.0)
+
+    # Send TON transfers sequentially — each confirmed before the next
+    # guard.transfer() has the same signature as wallet.transfer()
+    msg1 = await guard.transfer(
+        destination=DESTINATION_1,
+        amount=to_nano(0.01),
+        body="First transfer",
+    )
+    print(f"Transaction hash: {msg1.normalized_hash}")
+
+    msg2 = await guard.transfer(
+        destination=DESTINATION_2,
+        amount=to_nano(0.02),
+        body="Second transfer",
+    )
+    print(f"Transaction hash: {msg2.normalized_hash}")
+
+    # guard.transfer_message() has the same signature as wallet.transfer_message()
+    # Accepts any message builder: TONTransferBuilder, JettonTransferBuilder, NFTTransferBuilder
+    msg3 = await guard.transfer_message(
+        TONTransferBuilder(
+            destination=DESTINATION_3,
+            amount=to_nano(0.03),
+            body="Third transfer via builder",
+        )
+    )
+    print(f"Transaction hash: {msg3.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Gasless Transfers
+
+Gasless transfers let a wallet send jettons without holding TON for gas: a relay pays the TON fees, and its commission is deducted from the sender's jetton balance. The flow is two steps — `gasless_estimate()` to build and price the transfer, then `gasless_send()` to sign and relay it.
+
+Gasless transfers require **`TonapiClient` on mainnet** and are only available for **WalletV5** (`WalletV5R1` and `WalletV5Beta`).
+
+```python
+from ton_core import Address, NetworkGlobalID, to_nano
+
+from tonutils.clients import TonapiClient
+from tonutils.contracts import WalletV5R1
+
+# Tonapi API key (required for gasless transfers)
+API_KEY = "YOUR_API_KEY"
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Jetton master contract address (identifies the token type)
+# This jetton is used both for the transfer and for gas payment
+# Supported jettons: check https://tonapi.io/v2/gasless/config via Tonapi
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+# Destination address (jetton recipient)
+DESTINATION_ADDRESS = Address("UQ...")
+
+# Jetton amount in base units (respects token decimals)
+# Example: 1 USDT (6 decimals) -> 1 * 10^6 = 1,000,000
+JETTON_AMOUNT_TO_SEND = to_nano(1, decimals=6)
+
+
+async def main() -> None:
+    # Gasless transfers are only supported via TonapiClient on MAINNET
+    client = TonapiClient(network=NetworkGlobalID.MAINNET, api_key=API_KEY)
+    await client.connect()
+
+    # Gasless transfers are only available for WalletV5 (R1 and Beta)
+    wallet, _, _, _ = WalletV5R1.from_mnemonic(client, MNEMONIC)
+
+    # Step 1: Estimate the gasless transfer
+    # Parameters mirror JettonTransferBuilder
+    estimate = await wallet.gasless_estimate(
+        destination=DESTINATION_ADDRESS,
+        jetton_amount=JETTON_AMOUNT_TO_SEND,
+        jetton_master_address=JETTON_MASTER_ADDRESS,
+    )
+
+    # Step 2: Review the estimation result before sending
+    # estimate.commission — relay fee in nanocoins (deducted from jetton balance)
+    # estimate.relay_address — address of the relay paying gas
+    # estimate.valid_until — unix timestamp, transaction expires after this time
+    # estimate.messages — messages to sign (built by the relay)
+    # estimate.emulation — full transaction emulation with trace and risk analysis
+    print(f"Commission: {estimate.commission} nanocoins")
+    print(f"Valid until: {estimate.valid_until}")
+
+    # Step 3: Sign and send via gasless relay
+    await wallet.gasless_send(estimate)
+    print("Gasless transfer sent!")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+<Note>
+A Tonapi API key is required — get one at [tonconsole.com](https://tonconsole.com/). Always review `estimate.commission`, `estimate.valid_until`, and the emulation result before calling `gasless_send()`; once sent, the transaction is irreversible.
+</Note>
+
+The same flow is also available as a standalone recipe: [Send Gasless Transaction](/how-to/send-gasless-transaction).
+
+## Encrypted Messages
+
+The library supports end-to-end encrypted comments using elliptic curve Diffie-Hellman (ECDH): only the sender and the recipient can decrypt the message.
+
+### Encrypt
+
+Fetch the recipient's public key with `get_public_key_get_method()`, encrypt the text with `TextCipher.encrypt()`, and send the resulting body with a regular transfer. The recipient's wallet must be deployed (`active` state) and expose the `get_public_key` get-method.
+
+```python
+from ton_core import Address, NetworkGlobalID, TextCipher, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2, get_public_key_get_method
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Destination address (recipient)
+# Recipient must have a deployed wallet with an accessible public key
+DESTINATION_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Keep private_key for encryption as our_private_key
+    wallet, _, our_private_key, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Retrieve recipient's public key from blockchain
+    # Calls get_public_key() get-method on recipient's wallet contract
+    their_public_key = await get_public_key_get_method(
+        client=client,
+        address=DESTINATION_ADDRESS,
+    )
+
+    # Encrypt message using end-to-end encryption (ECDH)
+    body = TextCipher.encrypt(
+        payload="Hello from tonutils!",
+        sender_address=wallet.address,
+        our_private_key=our_private_key,
+        their_public_key=their_public_key,
+    )
+
+    # Send TON with encrypted message body
+    msg = await wallet.transfer(
+        destination=DESTINATION_ADDRESS,
+        amount=to_nano(0.01),
+        body=body,
+    )
+
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+**Parameters:**
+
+- `payload` — plaintext message to encrypt (`str`).
+- `sender_address` — sender's address, used as a salt for message-key derivation and verification; the recipient must pass the same address to decrypt (`Address`).
+- `our_private_key` — sender's private key for ECDH (`PrivateKey`).
+- `their_public_key` — recipient's public key for ECDH (`PublicKey`).
+
+### Decrypt
+
+Decrypt an incoming encrypted comment with `TextCipher.decrypt()`. The sender's public key is recovered from the encrypted payload (it is stored XORed with the recipient's public key), so only the sender's address and the recipient's private key are needed.
+
+```python
+from ton_core import Address, NetworkGlobalID, TextCipher
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Sender address (original message sender)
+# Used for verification during decryption
+SENDER_ADDRESS = Address("UQ...")
+
+# Encrypted payload from transaction body (opcode 0x2167DA4B)
+# Can be provided in multiple formats:
+# - bytes / hex string / base64 string: cipher text payload only
+# - Cell: full message body from BOC (opcode + cipher text payload)
+ENCRYPTED_PAYLOAD = "<encrypted payload>"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+
+    # Keep private_key for decryption as our_private_key
+    _, _, our_private_key, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Decrypt message using end-to-end encryption (ECDH)
+    decrypted_comment = TextCipher.decrypt(
+        payload=ENCRYPTED_PAYLOAD,
+        sender_address=SENDER_ADDRESS,
+        our_private_key=our_private_key,
+    )
+
+    print(f"Decrypted message: {decrypted_comment}")
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+**Parameters:**
+
+- `payload` — encrypted message as `bytes`, hex string, base64 string (cipher text only), or a `Cell` containing the opcode `0x2167DA4B` and cipher text.
+- `sender_address` — original sender's address, used for verification (`Address`).
+- `our_private_key` — recipient's private key for ECDH decryption (`PrivateKey`).
+
+For more details, see [Send Encrypted Message](/how-to/send-encrypted-message).
+
+<Card title="Wallet Examples" icon="github" href="https://github.com/nessshon/tonutils/tree/main/examples/wallet">
+Full runnable wallet example scripts on GitHub.
+</Card>

@@ -1,0 +1,354 @@
+---
+title: Connect Wallet
+description: Restore sessions, generate connect links, authenticate users with TON Proof, and import or export TonConnect UI sessions.
+---
+
+This page covers the wallet connection flow: restore, connect links, TON Proof, and TonConnect UI session import/export. All snippets assume the setup from [Installation and Initialization](/ton-connect/installation-and-initialization) — a `TonConnect` instance and a `connector` created with `tc.create_connector(SESSION_KEY)`.
+
+## Restoring a Session
+
+`restore()` resumes a previously saved session from storage and returns `True` if an active one was found:
+
+```python
+restored = await connector.restore()
+
+if restored:
+    print(f"Address: {connector.account.address.to_str(is_bounceable=False)}")
+```
+
+Always call `restore()` first — starting a new connection while one is already active raises `WalletAlreadyConnectedError`.
+
+## Connecting a Wallet
+
+A connection starts with a `ConnectRequest` built by `make_connect_request()`, which is then passed to `connect()`. The call opens a bridge connection and returns the standard `tc://` universal link that any TonConnect-compatible wallet can open:
+
+```python
+from ton_core import NetworkGlobalID
+
+request = connector.make_connect_request()
+
+url = await connector.connect(
+    request=request,
+    network=NetworkGlobalID.TESTNET,
+)
+print(f"Connect URL: {url}")
+```
+
+The `network` parameter is a guard: if the wallet that approves the request is connected to a different chain, the connection fails with `WalletWrongNetworkError` (returned as the error from `wait_connect()`). Pass `None` to accept any network.
+
+<Note>
+The library returns plain URL strings. Rendering them as a QR code (or as a button in a Telegram bot) is up to your application — any QR library works on the returned string.
+</Note>
+
+### Wallet-Specific Links
+
+`make_connect_url()` builds a link based on a specific wallet's universal URL, so it opens directly in that wallet app instead of showing a chooser:
+
+```python
+tonkeeper = app_wallets_loader.get_wallet("tonkeeper")
+tonkeeper_url = connector.make_connect_url(request, tonkeeper)
+print(f"Tonkeeper URL: {tonkeeper_url}")
+```
+
+Bridge connections are not affected by which link you display — the connector listens on the bridges of all loaded wallets, so you can show several wallet-specific links for the same request.
+
+## Waiting for the Connection
+
+`wait_connect()` blocks until the wallet approves or rejects the request and returns a `(wallet, error)` tuple — exactly one of the two is `None`:
+
+```python
+wallet, error = await connector.wait_connect()
+
+if error:
+    print(f"Connection failed: {error}")
+else:
+    print(f"Connected to: {connector.app_wallet.name}")
+    print(f"Address: {connector.account.address.to_str(is_bounceable=False)}")
+    print(f"Network: {connector.account.network.name}")
+```
+
+After a successful connection, `connector.account` exposes the wallet's `address`, `network`, `public_key`, and `state_init`; `connector.app_wallet` is the matched wallet descriptor.
+
+If the user never responds, the pending connect times out after `connect()`'s `timeout` (default `Connector.DEFAULT_CONNECT_TIMEOUT`, 15 minutes) and `wait_connect()` returns `(None, RequestTimeoutError)`. To cancel a pending connect early (for example, when the user closes the dialog), call `connector.drop_connect()`.
+
+Complete flow:
+
+```python
+from ton_core import NetworkGlobalID
+
+from ton_connect import AppWalletsLoader, FileStorage, TonConnect
+
+# Setup constants — see Installation and Initialization
+MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/ton-connect/main/assets/tonconnect-manifest.json"
+SESSION_KEY = "user-123"
+STORAGE_PATH = "./tonconnect-storage.json"
+
+
+async def main() -> None:
+    storage = FileStorage(STORAGE_PATH)
+    app_wallets_loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+
+    tc = TonConnect(
+        storage=storage,
+        manifest_url=MANIFEST_URL,
+        app_wallets=app_wallets_loader.get_wallets(),
+    )
+    connector = tc.create_connector(SESSION_KEY)
+
+    # Try to restore a previously saved connection before starting a new one
+    restored = await connector.restore()
+
+    if restored:
+        print("Session restored")
+        print(f"Address: {connector.account.address.to_str(is_bounceable=False)}")
+    else:
+        # Build a connect request with only the address item (no TonProof)
+        request = connector.make_connect_request()
+
+        # Initiate connection and get the standard tc:// universal link
+        standard_url = await connector.connect(
+            request=request,
+            network=NetworkGlobalID.TESTNET,
+        )
+        print(f"Connect URL: {standard_url}")
+
+        # Wallet-specific universal link — opens directly in the target wallet app
+        tonkeeper = app_wallets_loader.get_wallet("tonkeeper")
+        tonkeeper_url = connector.make_connect_url(request, tonkeeper)
+        print(f"Tonkeeper URL: {tonkeeper_url}")
+
+        # Block until the wallet responds (approve or reject)
+        wallet, error = await connector.wait_connect()
+
+        if error:
+            print(f"Connection failed: {error}")
+            return
+
+        print(f"Connected to: {connector.app_wallet.name}")
+        print(f"Address: {connector.account.address.to_str(is_bounceable=False)}")
+        print(f"Network: {connector.account.network.name}")
+
+    # Close all active bridge connections
+    await tc.close_all()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Connecting with TON Proof
+
+A plain connection only tells you which address the wallet claims. TON Proof adds cryptographic proof of ownership: your backend issues a challenge payload, the wallet signs it together with your app domain, and you verify the signature after connecting.
+
+```python
+from nacl.exceptions import BadSignatureError
+from ton_core import NetworkGlobalID
+
+from ton_connect import (
+    AppWalletsLoader,
+    FileStorage,
+    TonConnect,
+    VerifyTonProof,
+    create_ton_proof_payload,
+    verify_ton_proof_payload,
+)
+from ton_connect.models import TonProofPayloadDto
+
+# Setup constants — see Installation and Initialization
+MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/ton-connect/main/assets/tonconnect-manifest.json"
+SESSION_KEY = "user-123"
+STORAGE_PATH = "./tonconnect-storage.json"
+
+# Secret key for HMAC-signing the TonProof challenge payload
+TON_PROOF_SECRET = "your-secret-key"
+
+# Domain your app is served from — must match your tonconnect-manifest.json
+APP_DOMAIN = "github.com"
+
+
+async def main() -> None:
+    storage = FileStorage(STORAGE_PATH)
+    app_wallets_loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+
+    tc = TonConnect(
+        storage=storage,
+        manifest_url=MANIFEST_URL,
+        app_wallets=app_wallets_loader.get_wallets(),
+    )
+    connector = tc.create_connector(SESSION_KEY)
+
+    # Step 1: Generate a challenge payload before showing the connect link
+    # ttl: challenge lifetime in seconds — wallet must connect within this window
+    ton_proof_payload = create_ton_proof_payload(
+        secret_key=TON_PROOF_SECRET,
+        ttl=15 * 60,  # 15 minutes
+    )
+
+    # Step 2: Include the payload in the connect request
+    # This instructs the wallet to return a signed TonProof alongside the address
+    request = connector.make_connect_request(ton_proof_payload=ton_proof_payload)
+
+    standard_url = await connector.connect(
+        request=request,
+        network=NetworkGlobalID.TESTNET,
+    )
+    print(f"Connect URL: {standard_url}")
+
+    tonkeeper = app_wallets_loader.get_wallet("tonkeeper")
+    tonkeeper_url = connector.make_connect_url(request, tonkeeper)
+    print(f"Tonkeeper URL: {tonkeeper_url}")
+
+    wallet, error = await connector.wait_connect()
+
+    if error:
+        print(f"Connection failed: {error}")
+        return
+
+    address = connector.account.address.to_str(is_bounceable=False)
+    print(f"Connected to: {connector.app_wallet.name}")
+    print(f"Address: {address}")
+    print(f"Network: {connector.account.network.name}")
+
+    try:
+        # Step 3: Verify the challenge payload before checking the proof itself
+        # Ensures the payload was issued by your backend and hasn't expired
+        verify_ton_proof_payload(
+            secret_key=TON_PROOF_SECRET,
+            ton_proof_payload=wallet.ton_proof.payload,
+        )
+
+        # Step 4: Verify the TonProof returned by the wallet
+        proof_payload = TonProofPayloadDto(
+            address=wallet.account.address,
+            network=wallet.account.network,
+            public_key=wallet.account.public_key,
+            wallet_state_init=wallet.account.state_init,
+            proof=wallet.ton_proof,
+        )
+        await VerifyTonProof(proof_payload).verify(
+            allowed_domains=[APP_DOMAIN],
+            valid_auth_time=15 * 60,  # 15 minutes
+        )
+        print("TonProof verified")
+    except BadSignatureError as e:
+        print(f"TonProof verification failed: {e}")
+
+        # Disconnect the wallet if the proof is invalid
+        await connector.disconnect()
+
+    # Close all active bridge connections
+    await tc.close_all()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+Both verification steps raise `nacl.exceptions.BadSignatureError` on failure, so wrap them in a single `try/except` and disconnect the wallet if the proof does not check out. `VerifyTonProof(...).verify()` performs five cryptographic checks — the full list, and how to verify a proof received from a frontend as a raw dict, is in [Backend Verification](/ton-connect/backend-verification#verifying-ton-proof).
+
+<Warning>
+`TON_PROOF_SECRET` must never leave your backend — it is what proves the challenge was issued by you.
+</Warning>
+
+## Disconnecting
+
+`disconnect()` notifies the wallet, removes the session from storage, and closes the bridge connection. It raises `WalletNotConnectedError` if no wallet is connected:
+
+```python
+from ton_connect.exceptions import WalletNotConnectedError
+
+try:
+    await connector.disconnect()
+except WalletNotConnectedError:
+    print("No wallet connected")
+```
+
+## Importing a Connection
+
+A session established by a JS frontend using TonConnect UI can be taken over by the Python backend — no new connect flow, no second wallet approval. TonConnect UI keeps its session under two `localStorage` keys:
+
+| Key | Contents |
+| --- | -------- |
+| `ton-connect-storage_bridge-connection` | A dict with the connect event payload, session key pair, and bridge URL. |
+| `ton-connect-storage_http-bridge-gateway` | The `lastEventId` of the SSE stream. |
+
+`lastEventId` is optional in the `ActiveConnection` model, but it is needed to resume the SSE stream where it left off and avoid replaying old events — merge it into the connection dict before importing. Validate the merged dict into a typed `ActiveConnection` and reconstruct a connector with `tc.from_connection(...)`, which stores the connection under the given session key and restores the wallet session:
+
+```python
+from ton_connect import AppWalletsLoader, FileStorage, TonConnect
+from ton_connect.models import ActiveConnection
+
+# Setup constants — see Installation and Initialization
+MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/ton-connect/main/assets/tonconnect-manifest.json"
+SESSION_KEY = "user-123"
+STORAGE_PATH = "./tonconnect-storage.json"
+
+# Value of the ton-connect-storage_bridge-connection key ("..." shortened)
+BRIDGE_CONNECTION = {
+    "type": "http",
+    "connectEvent": {
+        "id": 1771782910,
+        "event": "connect",
+        "payload": {"items": ["..."], "device": {"...": "..."}},
+    },
+    "session": {
+        "sessionKeyPair": {"publicKey": "...", "secretKey": "..."},
+        "walletPublicKey": "...",
+        "bridgeUrl": "https://bridge.tonapi.io/bridge",
+    },
+    "lastWalletEventId": 1771782910,
+    "nextRpcRequestId": 0,
+}
+
+# Value of the ton-connect-storage_http-bridge-gateway key
+BRIDGE_LAST_EVENT_ID = "1770180433054700"
+
+
+async def main() -> None:
+    tc = TonConnect(
+        storage=FileStorage(STORAGE_PATH),
+        manifest_url=MANIFEST_URL,
+        app_wallets=AppWalletsLoader(include_wallets=["tonkeeper"]).get_wallets(),
+    )
+
+    # Merge the SSE stream position into the connection dict
+    connection = {**BRIDGE_CONNECTION, "lastEventId": BRIDGE_LAST_EVENT_ID}
+    active_connection = ActiveConnection.model_validate(connection)
+
+    # Reconstruct a connector from the existing connection — no new connect flow
+    connector = await tc.from_connection(active_connection, SESSION_KEY)
+    print(f"Address: {connector.account.address.to_str(is_bounceable=False)}")
+
+    await tc.close_all()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+From here the connector behaves like any other connected session — `connector.account`, `send_transaction`, `sign_data`, and `disconnect` all work as usual.
+
+## Exporting a Connection
+
+The inverse operation returns the stored session as an `ActiveConnection`, or `None` if there is no active connection:
+
+```python
+active_connection = await connector.to_connection()
+```
+
+To hand the session to another process or store it elsewhere, serialize it with `active_connection.dump()` — it uses the camelCase aliases of the TonConnect UI storage format (`connectEvent`, `lastEventId`, ...), not the Python field names.
+
+<CardGroup cols={2}>
+  <Card title="Connect Wallet Examples" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples/connect_wallet">
+    Full source code of the connect flows on GitHub.
+  </Card>
+  <Card title="import_connection.py" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples/import_connection.py">
+    Full import example with real exported storage values.
+  </Card>
+</CardGroup>

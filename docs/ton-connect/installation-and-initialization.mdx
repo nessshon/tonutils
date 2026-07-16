@@ -1,0 +1,162 @@
+---
+title: TON Connect Installation and Initialization
+sidebarTitle: Installation and Initialization
+description: Install ton-connect, create the manifest, choose a storage backend, load wallet apps, and set up the TonConnect manager.
+---
+
+Everything needed before connecting a wallet: package installation, the application manifest, session storage, the wallet catalogue, and the `TonConnect` manager with per-user connectors. All other pages assume this setup.
+
+## Installation
+
+```bash
+pip install ton-connect
+```
+
+Requires Python 3.10 or later.
+
+## Creating the Manifest
+
+`tonconnect-manifest.json` describes your application to the wallet. When a user connects, the wallet fetches this file to display your app's name and icon on the confirmation screen. Create it according to the [official guidelines](https://docs.ton.org/applications/ton-connect/core-concepts#manifest) and host it at a publicly reachable HTTPS URL:
+
+```json
+{
+  "url": "https://example.com",
+  "name": "Example App",
+  "iconUrl": "https://example.com/icon.png",
+  "termsOfUseUrl": "https://example.com/terms",
+  "privacyPolicyUrl": "https://example.com/privacy"
+}
+```
+
+`url`, `name`, and `iconUrl` are required; `termsOfUseUrl` and `privacyPolicyUrl` are optional.
+
+<Note>
+  The manifest domain is what the user sees in the wallet and what backend verification checks against: TON Proof and sign-data results carry the app domain, and [Backend Verification](/ton-connect/backend-verification) validates it against your allowlist.
+</Note>
+
+## Storage
+
+Session data is persisted through a small key-value interface, `StorageProtocol`:
+
+```python
+class StorageProtocol(t.Protocol):
+    async def set_item(self, key: str, value: t.Any) -> None: ...
+
+    async def get_item(self, key: str) -> t.Any | None: ...
+
+    async def remove_item(self, key: str) -> None: ...
+```
+
+It is a `typing.Protocol` — any object with these three async methods works, no subclassing required. Values are arbitrary JSON-serializable objects (dicts), not pre-encoded strings.
+
+Two implementations ship with the package:
+
+- `FileStorage(path)` — persists sessions to a JSON file. Suitable for single-process apps; sessions survive restarts.
+- `MemoryStorage()` — keeps sessions in a plain dict. Suitable for tests and short-lived scripts; all sessions are lost on restart.
+
+For distributed or database-backed setups, implement the protocol over your own store:
+
+<Accordion title="Custom storage example">
+  A Redis-backed implementation (the `redis` part is illustrative — any async key-value store works the same way):
+
+  ```python
+  import json
+  import typing as t
+
+  import redis.asyncio as redis
+
+
+  class RedisStorage:
+      def __init__(self, client: redis.Redis, prefix: str = "tonconnect:") -> None:
+          self.client = client
+          self.prefix = prefix
+
+      async def set_item(self, key: str, value: t.Any) -> None:
+          await self.client.set(self.prefix + key, json.dumps(value))
+
+      async def get_item(self, key: str) -> t.Any | None:
+          raw = await self.client.get(self.prefix + key)
+          return json.loads(raw) if raw is not None else None
+
+      async def remove_item(self, key: str) -> None:
+          await self.client.delete(self.prefix + key)
+  ```
+
+  Serialize values yourself if the store only accepts strings — the library passes and expects plain Python objects.
+</Accordion>
+
+## Loading Wallet Apps
+
+`AppWalletsLoader` fetches the wallet catalogue (Tonkeeper, MyTonWallet, etc.) from the TON registry, with a memory cache and an optional local file fallback:
+
+```python
+from ton_connect import AppWalletsLoader
+
+loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+app_wallets = loader.get_wallets()
+```
+
+| Parameter           | Description                                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| `source`            | Remote URL or local path to the wallets JSON (default: `https://config.ton.org/wallets-v2.json`). |
+| `include_wallets`   | App names to include, or `None` for all.                                                       |
+| `exclude_wallets`   | App names to exclude, or `None`.                                                               |
+| `order_wallets`     | Desired ordering of app names, or `None`.                                                      |
+| `require_sign_data` | If `True`, only include wallets that support the `SignData` feature.                           |
+| `fallback_path`     | Local fallback file path, or `None`. Fetched data is saved here and reloaded when the remote source is unreachable. |
+| `cache_ttl`         | Cache lifetime in seconds, or `None` for no expiry.                                            |
+| `timeout`           | HTTP fetch timeout in seconds (default: `5.0`).                                                |
+
+`get_wallets()` is synchronous and returns `list[AppWallet]`; `get_wallet(app_name)` returns a single descriptor or `None`. Only wallets with an SSE bridge URL are kept — others cannot receive requests from a backend. If the remote source fails and no usable fallback exists, `FetchWalletsError` is raised.
+
+<Tip>
+  Set `fallback_path` in production so a registry outage does not prevent your app from starting.
+</Tip>
+
+## Initializing TON Connect
+
+`TonConnect` is the manager that holds shared configuration and creates per-user connectors:
+
+```python
+from ton_connect import AppWalletsLoader, FileStorage, TonConnect
+
+MANIFEST_URL = "https://example.com/tonconnect-manifest.json"
+
+storage = FileStorage("./tonconnect-storage.json")
+loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+
+tc = TonConnect(
+    storage=storage,
+    manifest_url=MANIFEST_URL,
+    app_wallets=loader.get_wallets(),
+)
+```
+
+| Parameter      | Description                                                                     |
+| -------------- | -------------------------------------------------------------------------------- |
+| `storage`      | Key-value storage backend implementing `StorageProtocol`.                        |
+| `manifest_url` | Publicly reachable URL of your `tonconnect-manifest.json`.                       |
+| `app_wallets`  | Wallet descriptors (`list[AppWallet]`) used as bridge connection sources.        |
+| `headers`      | Extra HTTP headers for bridge requests, or `None`.                               |
+| `**context`    | Arbitrary context values, available in event handlers via `connector[key]`.      |
+
+## Creating a Connector
+
+Each user session gets its own `Connector` with an isolated storage namespace:
+
+```python
+connector = tc.create_connector(SESSION_KEY)
+
+restored = await connector.restore()
+```
+
+- `create_connector(session_key)` is synchronous. `session_key` is the per-user identity — any unique string, typically a Telegram user id (`str(user_id)`).
+- `await connector.restore()` resumes a previously saved session from storage; it returns `True` if an active connection was found. Call it before starting a new connection flow.
+- `tc.connectors` is a read-only dict of active connectors keyed by session key.
+- On application shutdown, call `await tc.close_all()` to close all bridge connections.
+
+Continue with [Connect Wallet](/ton-connect/connect-wallet) to build the connection flow.
+
+<Card title="Examples" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples">
+  Full runnable scripts: connect, transactions, sign data, and verification.
+</Card>

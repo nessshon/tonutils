@@ -1,0 +1,704 @@
+---
+title: Jetton Operations
+description: Deploy, mint, burn, and administer Stablecoin V2 and Standard jettons with tonutils.
+---
+
+This section covers working with jettons: **Stablecoin Jettons** (the sharded Stablecoin V2 contract with admin-controlled minting — the successor of the V1 contract used by tokens such as USD₮ and NOT) and **Standard Jettons** (the classic TEP-74 implementation). Each subsection is a full runnable script: deployment, minting, burning, and administration.
+
+## Stablecoin Jetton
+
+### Deploy Jetton Master
+
+Any funded wallet can deploy the master contract; the `ADMIN_ADDRESS` set in the initial data controls minting and metadata afterward.
+
+```python
+from ton_core import (
+    Address,
+    JettonMasterStablecoinData,
+    JettonTopUpBody,
+    NetworkGlobalID,
+    OffchainContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import (
+    JettonMasterStablecoinV2,
+    JettonWalletStablecoinV2,
+    WalletV4R2,
+)
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# Jetton admin address (controls minting and metadata)
+ADMIN_ADDRESS = Address("UQ...")
+
+# Jetton metadata URI (TEP-64 off-chain format)
+# Points to JSON with jetton metadata (name, symbol, decimals, image)
+JETTON_MASTER_URI = "https://example.com/jetton.json"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Get stablecoin jetton wallet code
+    jetton_wallet_code = JettonWalletStablecoinV2.get_default_code()
+
+    # Configure jetton metadata (off-chain format)
+    jetton_master_content = OffchainContent(uri=JETTON_MASTER_URI)
+
+    # Compose stablecoin jetton master initial data
+    jetton_master_data = JettonMasterStablecoinData(
+        admin_address=ADMIN_ADDRESS,
+        content=jetton_master_content,
+        jetton_wallet_code=jetton_wallet_code,
+    )
+
+    # Create the master contract instance from initial data
+    # The address is derived deterministically from code + data hash
+    jetton_master = JettonMasterStablecoinV2.from_data(
+        client=client,
+        data=jetton_master_data.serialize(),
+    )
+
+    # Empty top-up body used for jetton master deployment
+    body = JettonTopUpBody()
+
+    # Deploy the jetton master contract via a state_init message
+    msg = await wallet.transfer(
+        destination=jetton_master.address,
+        amount=to_nano(0.05),
+        body=body.serialize(),
+        state_init=jetton_master.state_init,
+    )
+
+    print(f"Jetton master address: {jetton_master.address.to_str()}")
+
+    # Normalized hash of the signed external message (computed locally
+    # before sending) — not the on-chain transaction hash
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Mint Jetton
+
+Only the jetton admin can mint; the outer `forward_amount` is the TON attached to deploy and fund the recipient's jetton wallet, while the inner one (1 nanoton) triggers the transfer notification.
+
+```python
+from ton_core import (
+    Address,
+    JettonInternalTransferBody,
+    JettonMintBody,
+    NetworkGlobalID,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# Recipient address (regular wallet, not jetton wallet)
+DESTINATION_ADDRESS = Address("UQ...")
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+# Amount of jettons to mint in base units
+# Multiply by 10^decimals for whole tokens (e.g., 1 * 10^9 = 1 jetton with 9 decimals)
+JETTON_AMOUNT_TO_MINT = to_nano(1, decimals=9)
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the jetton admin to mint successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Internal transfer sent from the jetton master to the recipient's jetton wallet
+    # forward_amount: nanotons forwarded to recipient (1 nanoton triggers transfer_notification)
+    internal_transfer = JettonInternalTransferBody(
+        jetton_amount=JETTON_AMOUNT_TO_MINT,
+        response_address=wallet.address,
+        forward_amount=1,
+    )
+
+    # Mint message body (stablecoin-specific implementation)
+    # forward_amount: TON attached to deploy/fund the recipient's jetton wallet
+    body = JettonMintBody(
+        internal_transfer=internal_transfer,
+        destination=DESTINATION_ADDRESS,
+        forward_amount=to_nano(0.1),
+    )
+
+    # amount must cover forward_amount + gas fees
+    msg = await wallet.transfer(
+        destination=JETTON_MASTER_ADDRESS,
+        amount=to_nano(0.125),
+        body=body.serialize(),
+    )
+
+    print(f"Jetton master address: {JETTON_MASTER_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Burn Jetton
+
+<Note>
+Burn is supported in stablecoin V2 contracts only. The original stablecoin V1 contract (e.g. USD₮) does not implement the burn opcode.
+</Note>
+
+Any jetton holder can burn its own balance; the message goes to the holder's jetton wallet (resolved via the master's `get_wallet_address` get-method), not to the jetton master.
+
+```python
+from ton_core import Address, JettonBurnBody, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2, get_wallet_address_get_method
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+# Amount of jettons to burn in base units
+JETTON_AMOUNT_TO_BURN = to_nano(1, decimals=9)
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must own jettons to burn successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Get the owner's jetton wallet address via the master's get_wallet_address get-method
+    jetton_wallet_address = await get_wallet_address_get_method(
+        client=client,
+        address=JETTON_MASTER_ADDRESS,
+        owner_address=wallet.address,
+    )
+
+    # Burn message body
+    # response_address: address to receive excess TON and burn confirmation
+    body = JettonBurnBody(
+        jetton_amount=JETTON_AMOUNT_TO_BURN,
+        response_address=wallet.address,
+    )
+
+    # Send the burn message to the owner's jetton wallet (not the jetton master)
+    msg = await wallet.transfer(
+        destination=jetton_wallet_address,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"Jetton wallet address: {jetton_wallet_address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Change Admin
+
+Only the current admin can transfer admin rights to a new address.
+
+```python
+from ton_core import Address, JettonChangeAdminBody, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# New admin address (will control jetton minting and metadata)
+ADMIN_ADDRESS = Address("UQ...")
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the current jetton admin to change admin successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Change admin message body (stablecoin-specific implementation)
+    body = JettonChangeAdminBody(admin_address=ADMIN_ADDRESS)
+
+    msg = await wallet.transfer(
+        destination=JETTON_MASTER_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"Jetton master address: {JETTON_MASTER_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Drop Admin
+
+<Warning>
+Dropping the admin is irreversible. The admin address is set to null, and no one can mint tokens or change metadata afterward.
+</Warning>
+
+Only the current admin can drop admin rights, which sets the admin address to null.
+
+```python
+from ton_core import Address, JettonDropAdminBody, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the current jetton admin to drop admin successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Drop admin message body: removes the admin address from the jetton master
+    body = JettonDropAdminBody()
+
+    msg = await wallet.transfer(
+        destination=JETTON_MASTER_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"Jetton master address: {JETTON_MASTER_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Change Content
+
+Only the current admin can replace the jetton metadata URI.
+
+```python
+from ton_core import (
+    Address,
+    JettonChangeContentBody,
+    NetworkGlobalID,
+    OffchainContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+# New jetton metadata URI (TEP-64 off-chain format)
+JETTON_MASTER_URI = "https://example.com/jetton.json"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the current jetton admin to change content successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Configure new jetton metadata (off-chain format)
+    jetton_master_content = OffchainContent(uri=JETTON_MASTER_URI)
+
+    # Change content message body (stablecoin-specific implementation)
+    body = JettonChangeContentBody(content=jetton_master_content)
+
+    msg = await wallet.transfer(
+        destination=JETTON_MASTER_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"Jetton master address: {JETTON_MASTER_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Standard Jetton
+
+### Deploy Jetton Master
+
+<Note>
+`JettonMasterStandardData` also accepts `OnchainContent` from `ton_core` (a dictionary of TEP-64 metadata fields) for fully on-chain metadata instead of `OffchainContent`.
+</Note>
+
+Any funded wallet can deploy the master contract; the `ADMIN_ADDRESS` set in the initial data controls minting and metadata afterward.
+
+```python
+from ton_core import (
+    Address,
+    JettonMasterStandardData,
+    JettonTopUpBody,
+    NetworkGlobalID,
+    OffchainContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import JettonMasterStandard, JettonWalletStandard, WalletV4R2
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# Jetton admin address (controls minting and metadata)
+ADMIN_ADDRESS = Address("UQ...")
+
+# Jetton metadata URI (TEP-64 off-chain format)
+JETTON_MASTER_URI = "https://example.com/jetton.json"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Get default jetton wallet code
+    jetton_wallet_code = JettonWalletStandard.get_default_code()
+
+    # Configure jetton metadata (off-chain format)
+    jetton_master_content = OffchainContent(uri=JETTON_MASTER_URI)
+
+    # Compose jetton master initial data
+    jetton_master_data = JettonMasterStandardData(
+        admin_address=ADMIN_ADDRESS,
+        content=jetton_master_content,
+        jetton_wallet_code=jetton_wallet_code,
+    )
+
+    # Create the master contract instance from initial data
+    # The address is derived deterministically from code + data hash
+    jetton_master: JettonMasterStandard = JettonMasterStandard.from_data(
+        client=client,
+        data=jetton_master_data.serialize(),
+    )
+
+    # Empty top-up body used for jetton master deployment
+    body = JettonTopUpBody()
+
+    # Deploy the jetton master contract via a state_init message
+    msg = await wallet.transfer(
+        destination=jetton_master.address,
+        amount=to_nano(0.05),
+        body=body.serialize(),
+        state_init=jetton_master.state_init,
+    )
+
+    print(f"Jetton master address: {jetton_master.address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Mint Jetton
+
+Only the jetton admin can mint; the outer `forward_amount` is the TON attached to deploy and fund the recipient's jetton wallet, while the inner one (1 nanoton) triggers the transfer notification.
+
+```python
+from ton_core import (
+    Address,
+    JettonInternalTransferBody,
+    JettonStandardMintBody,
+    NetworkGlobalID,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# Recipient address (regular wallet, not jetton wallet)
+DESTINATION_ADDRESS = Address("UQ...")
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+# Amount of jettons to mint in base units
+JETTON_AMOUNT_TO_MINT = to_nano(1, decimals=9)
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the jetton admin to mint successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Internal transfer sent from the jetton master to the recipient's jetton wallet
+    # forward_amount: nanotons forwarded to recipient (1 nanoton triggers transfer_notification)
+    internal_transfer = JettonInternalTransferBody(
+        jetton_amount=JETTON_AMOUNT_TO_MINT,
+        response_address=wallet.address,
+        forward_amount=1,
+    )
+
+    # Mint message body
+    # forward_amount: TON attached to deploy/fund the recipient's jetton wallet
+    body = JettonStandardMintBody(
+        internal_transfer=internal_transfer,
+        destination=DESTINATION_ADDRESS,
+        forward_amount=to_nano(0.05),
+    )
+
+    # amount must cover forward_amount + gas fees
+    msg = await wallet.transfer(
+        destination=JETTON_MASTER_ADDRESS,
+        amount=to_nano(0.075),
+        body=body.serialize(),
+    )
+
+    print(f"Jetton master address: {JETTON_MASTER_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Change Admin
+
+Only the current admin can transfer admin rights to a new address.
+
+```python
+from ton_core import Address, JettonStandardChangeAdminBody, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# New admin address (will control jetton minting and metadata)
+ADMIN_ADDRESS = Address("UQ...")
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the current jetton admin to change admin successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Change admin message body
+    body = JettonStandardChangeAdminBody(admin_address=ADMIN_ADDRESS)
+
+    msg = await wallet.transfer(
+        destination=JETTON_MASTER_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"Jetton master address: {JETTON_MASTER_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Change Content
+
+Only the current admin can replace the jetton metadata URI.
+
+```python
+from ton_core import (
+    Address,
+    JettonStandardChangeContentBody,
+    NetworkGlobalID,
+    OffchainContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+# New jetton metadata URI (TEP-64 off-chain format)
+JETTON_MASTER_URI = "https://example.com/jetton.json"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the current jetton admin to change content successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Configure new jetton metadata (off-chain format)
+    jetton_master_content = OffchainContent(uri=JETTON_MASTER_URI)
+
+    # Change content message body
+    body = JettonStandardChangeContentBody(content=jetton_master_content)
+
+    msg = await wallet.transfer(
+        destination=JETTON_MASTER_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"Jetton master address: {JETTON_MASTER_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Burn Jetton
+
+Any jetton holder can burn its own balance; the message goes to the holder's jetton wallet (resolved via the master's `get_wallet_address` get-method), not to the jetton master.
+
+```python
+from ton_core import Address, JettonBurnBody, NetworkGlobalID, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2, get_wallet_address_get_method
+
+# Mnemonic phrase used to derive the wallet's private key
+MNEMONIC = "word1 word2 word3 ..."
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+# Amount of jettons to burn in base units
+JETTON_AMOUNT_TO_BURN = to_nano(1, decimals=9)
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must own jettons to burn successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Get the owner's jetton wallet address via the master's get_wallet_address get-method
+    jetton_wallet_address = await get_wallet_address_get_method(
+        client=client,
+        address=JETTON_MASTER_ADDRESS,
+        owner_address=wallet.address,
+    )
+
+    # Burn message body
+    # response_address: address to receive excess TON and burn confirmation
+    body = JettonBurnBody(
+        jetton_amount=JETTON_AMOUNT_TO_BURN,
+        response_address=wallet.address,
+    )
+
+    # Send the burn message to the owner's jetton wallet (not the jetton master)
+    msg = await wallet.transfer(
+        destination=jetton_wallet_address,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"Jetton wallet address: {jetton_wallet_address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+<Card title="Jetton Examples" icon="github" href="https://github.com/nessshon/tonutils/tree/main/examples/jetton">
+Full runnable jetton example scripts on GitHub.
+</Card>

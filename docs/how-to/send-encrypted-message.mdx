@@ -1,0 +1,109 @@
+---
+title: Send Encrypted Message
+description: Send a TON transfer with an end-to-end encrypted comment and decrypt it on the receiving side.
+---
+
+This example shows how to send a **TON transfer with an encrypted comment**. The comment is encrypted end-to-end (ECDH) so that only the sender and the intended recipient can read it.
+
+## Encrypt and Send
+
+Retrieve the recipient's public key from their deployed wallet contract with `get_public_key_get_method`, encrypt the comment with `TextCipher.encrypt`, and send it as the transfer body.
+
+```python
+from ton_core import Address, NetworkGlobalID, TextCipher, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2, get_public_key_get_method
+
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
+
+# Destination address (recipient)
+# Recipient must have a deployed wallet contract with a public key
+# accessible via the get_public_key get-method
+DESTINATION_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Keep private_key for encryption as our_private_key
+    wallet, _, our_private_key, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Retrieve recipient's public key from the blockchain
+    # Raises an error if the wallet is uninit or lacks the get_public_key method
+    their_public_key = await get_public_key_get_method(
+        client=client,
+        address=DESTINATION_ADDRESS,
+    )
+
+    # Encrypt the message; only the sender and the recipient can decrypt it
+    body = TextCipher.encrypt(
+        payload="Hello from tonutils!",
+        sender_address=wallet.address,
+        our_private_key=our_private_key,
+        their_public_key=their_public_key,
+    )
+
+    msg = await wallet.transfer(
+        destination=DESTINATION_ADDRESS,
+        amount=to_nano(0.01),
+        body=body,
+    )
+
+    # Normalized hash of the signed external message (computed locally) —
+    # not the on-chain transaction hash
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Decrypt
+
+Use `TextCipher.decrypt` with the recipient's private key and the original sender's address. The encrypted payload (message body with opcode `0x2167DA4B`) can be provided as raw `bytes`, a hex string, a base64 string, or a full body `Cell` parsed from BoC.
+
+```python
+from ton_core import Address, NetworkGlobalID, TextCipher
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Recipient's mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
+
+# Original sender's address (used for verification)
+SENDER_ADDRESS = Address("UQ...")
+
+# Encrypted payload extracted from the transaction body
+ENCRYPTED_PAYLOAD = "<encrypted payload>"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+
+    # Keep private_key for decryption as our_private_key
+    _, _, our_private_key, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    decrypted_comment = TextCipher.decrypt(
+        payload=ENCRYPTED_PAYLOAD,
+        sender_address=SENDER_ADDRESS,
+        our_private_key=our_private_key,
+    )
+
+    print(f"Decrypted message: {decrypted_comment}")
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+The same example also appears in [Encrypted Messages](/guide/examples/wallet-operations#encrypted-messages) among the other wallet operations.

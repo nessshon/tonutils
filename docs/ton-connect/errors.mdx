@@ -1,0 +1,62 @@
+---
+title: Errors
+description: Reference of TonConnect exception types and wallet RPC error codes.
+---
+
+All exceptions derive from `TonConnectError` (importable from `ton_connect.exceptions`), which carries `.code` (numeric RPC error code, `0` unless mapped), `.message` (description), and `.info` (extended explanation, or `None`). Errors surface in two ways: as the `error` element of the tuples returned by `wait_connect()` / `wait_transaction()` / `wait_sign_data()` and the `error` argument of [event handlers](/ton-connect/event-handling), or raised directly by methods such as `connect()` and `disconnect()`.
+
+## Connection and Feature Errors
+
+Raised or delivered by the library itself:
+
+| Exception | Description |
+| --------- | ----------- |
+| `WalletAlreadyConnectedError` | `connect()` was called while a wallet is already connected. Disconnect first. |
+| `WalletNotConnectedError` | `send_transaction()`, `sign_data()`, or `disconnect()` was called while no wallet is connected. |
+| `WalletMissingRequiredFeaturesError` | The connected wallet does not declare the minimum required features. Delivered as the `error` of the connect result. |
+| `WalletNotSupportFeatureError` | The wallet does not support the requested feature — for example, more messages than its `maxMessages`, extra currencies, or the requested sign-data type. |
+| `WalletWrongNetworkError` | The wallet is connected to a different network than the one passed to `connect(network=...)`. Delivered as the `error` of the connect result. |
+| `FetchWalletsError` | `AppWalletsLoader` could not fetch or parse the wallets list. |
+
+## Wallet Error Codes
+
+Errors reported by the wallet over the bridge are mapped from their RPC code to typed exceptions:
+
+| Code | Exception | Meaning |
+| ---- | --------- | ------- |
+| 0 | `UnknownError` | An unknown error occurred in the wallet while processing the request. |
+| 1 | `BadRequestError` | The request is malformed or contains invalid parameters. |
+| 2 | `ManifestNotFoundError` | The wallet could not fetch `tonconnect-manifest.json` at the given `manifest_url`. |
+| 3 | `ManifestContentError` | The manifest content is invalid or improperly formatted. |
+| 100 | `UnknownAppError` | The app sent an RPC request while not connected to the wallet. |
+| 300 | `UserRejectsError` | The user declined the connection or rejected the request in the wallet. |
+| 400 | `MethodNotSupportedError` | The wallet does not support the requested RPC method. |
+| 500 | `RequestTimeoutError` | The user did not respond within the time limit. Also produced locally when a connect or request timeout expires. |
+
+Unmapped codes produce a plain `TonConnectError` with `.code` set. To map a code yourself, `TonConnectErrors.from_code(code, message)` returns the corresponding typed exception instance.
+
+## Handling Errors
+
+Check the `error` element of the result tuple and branch on the exception type:
+
+```python
+from ton_connect.exceptions import RequestTimeoutError, UserRejectsError
+
+request_id = await connector.send_transaction(payload)
+result, error = await connector.wait_transaction(request_id)
+
+if error is None:
+    print(f"Transaction hash: {result.normalized_hash}")
+elif isinstance(error, UserRejectsError):
+    print("User rejected the transaction.")
+elif isinstance(error, RequestTimeoutError):
+    print("User did not respond in time.")
+else:
+    print(f"Transaction failed [{error.code}]: {error.message}")
+```
+
+The same pattern applies to `wait_connect()` and `wait_sign_data()`, and to the `error` argument of event handlers.
+
+<Note>
+  Backend verification failures (`VerifyTonProof`, `VerifySignData`, `verify_ton_proof_payload`) raise `nacl.exceptions.BadSignatureError`, not `TonConnectError`. See [Backend Verification](/ton-connect/backend-verification).
+</Note>

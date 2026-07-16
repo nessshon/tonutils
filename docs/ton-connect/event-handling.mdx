@@ -1,0 +1,236 @@
+---
+title: Event Handling
+description: React to wallet connections, transactions, and errors with registered event handlers instead of awaiting results inline.
+---
+
+Besides awaiting results inline with `wait_connect()` / `wait_transaction()` / `wait_sign_data()`, the library can dispatch results to registered handlers — the natural style for long-lived services such as Telegram bots, where many users hold sessions concurrently. Both styles work at the same time: every result resolves the pending `wait_*` call and dispatches the corresponding event.
+
+## Event Types
+
+Events are members of a single `Event` enum:
+
+```python
+from ton_connect import Event
+```
+
+| Event | Fires when |
+| ----- | ---------- |
+| `Event.CONNECT` | A connect attempt resolves: the wallet approved the connection (`error` is `None`), or it failed — user rejection, wrong network, missing required features, or timeout (`error` is set). |
+| `Event.DISCONNECT` | The wallet reports a disconnect over the bridge — for example, the user disconnects from the wallet side (`error` is `None`) or the wallet sends a disconnect error (`error` is set). Calling `connector.disconnect()` does not dispatch this event. |
+| `Event.TRANSACTION` | A `send_transaction` request resolves: signed and submitted (`result` is set) or rejected/timed out (`error` is set). |
+| `Event.SIGN_DATA` | A `sign_data` request resolves: signed (`result` is set) or rejected/timed out (`error` is set). |
+| `Event.MESSAGE` | Any raw wallet message arrives, before the connector processes it — connect and disconnect events and RPC responses alike. Useful for logging and debugging. |
+| `Event.ERROR` | A bridge/provider-level error occurs, or an exception is raised inside another event handler. |
+
+There is no separate error-event enum. Errors that belong to a specific action are delivered as the `error` argument of that action's handler (`CONNECT`, `DISCONNECT`, `TRANSACTION`, `SIGN_DATA`); `Event.ERROR` only receives errors that cannot be attributed to a pending request.
+
+## Registering Handlers
+
+Register a handler with the `@tc.on(...)` decorator or the `tc.register(...)` method. One handler is stored per event — registering again replaces the previous handler.
+
+```python
+from ton_connect import Connector, Event, TonConnect
+from ton_connect.exceptions import TonConnectError
+
+tc = TonConnect(...)
+
+@tc.on(Event.CONNECT)
+async def on_connect(connector: Connector, error: TonConnectError | None) -> None:
+    ...
+
+# Equivalent without the decorator:
+tc.register(Event.CONNECT, on_connect)
+```
+
+<Warning>
+  Register all handlers **before** calling `tc.create_connector(...)`. Handlers are copied into each connector at creation time, so handlers registered afterwards do not apply to connectors that already exist.
+</Warning>
+
+Each event has a fixed handler signature. The first argument is always the `Connector` that dispatched the event:
+
+```python
+@tc.on(Event.CONNECT)
+async def on_connect(connector: Connector, error: TonConnectError | None) -> None: ...
+
+@tc.on(Event.DISCONNECT)
+async def on_disconnect(connector: Connector, error: TonConnectError | None) -> None: ...
+
+@tc.on(Event.TRANSACTION)
+async def on_transaction(
+    connector: Connector,
+    request_id: int,
+    result: SendTransactionResult | None,
+    error: TonConnectError | None,
+) -> None: ...
+
+@tc.on(Event.SIGN_DATA)
+async def on_sign_data(
+    connector: Connector,
+    request_id: int,
+    result: SignDataResult | None,
+    error: TonConnectError | None,
+) -> None: ...
+
+@tc.on(Event.MESSAGE)
+async def on_message(connector: Connector, message: WalletMessage) -> None: ...
+
+@tc.on(Event.ERROR)
+async def on_error(connector: Connector, error: TonConnectError) -> None: ...
+```
+
+`SendTransactionResult`, `SignDataResult`, and `WalletMessage` are importable from `ton_connect.models`. For `TRANSACTION` and `SIGN_DATA`, exactly one of `result` and `error` is set.
+
+<Note>
+  An exception raised inside a handler is caught, wrapped in `TonConnectError` if needed, and dispatched to the `Event.ERROR` handler. Exceptions raised inside the `ERROR` handler itself are swallowed.
+</Note>
+
+## Passing Context
+
+Handlers receive only the connector and event data, so application state (database sessions, user objects) is attached as context. Context is a plain key-value store, readable and writable through item access.
+
+Global context — shared by all connectors:
+
+```python
+tc = TonConnect(
+    storage=storage,
+    manifest_url=MANIFEST_URL,
+    app_wallets=app_wallets,
+    db=db,  # any extra keyword arguments become context
+)
+tc["greeting"] = "Hello"  # or set keys later
+```
+
+Per-connector context — merged on top of the global context at creation:
+
+```python
+connector = tc.create_connector(session_key, user_id=123)
+```
+
+Inside a handler, read context from the connector:
+
+```python
+@tc.on(Event.CONNECT)
+async def on_connect(connector: Connector, error: TonConnectError | None) -> None:
+    user_id = connector["user_id"]
+    db = connector["db"]
+```
+
+Connectors also support item assignment (`connector["key"] = value`) to update their own context. Accessing a missing key raises `KeyError`.
+
+## Connection Lifecycle
+
+| Method | Description |
+| ------ | ----------- |
+| `await connector.pause()` | Pause SSE listening on the bridge without dropping the session. |
+| `await connector.unpause()` | Resume SSE listening. |
+| `await connector.close()` | Close the connector's bridge connections and cancel pending requests, without notifying the wallet. The session in storage stays intact. |
+| `await tc.close_all()` | Close all active connectors and clear the connector registry. |
+| `tc.connectors` | Read-only copy of the active connectors keyed by session key. |
+| `connector.resume_connect(timeout)` | After a process restart, re-create the pending connect future so `wait_connect()` works again. `timeout` is the remaining time in seconds. |
+| `connector.resume_request(request_id, event, timeout)` | After a process restart, re-create a pending request future (`event` is `Event.TRANSACTION` or `Event.SIGN_DATA`) so `wait_transaction()` / `wait_sign_data()` work again. |
+| `await connector.to_connection()` | Export the stored session as an `ActiveConnection`, or `None` if there is no active connection. See [Exporting a Connection](/ton-connect/connect-wallet#exporting-a-connection). |
+
+`resume_connect` and `resume_request` make pending requests restart-safe: persist the `request_id`, event type, and deadline before your process exits, then re-create the connector, call `await connector.restore()`, and resume waiting.
+
+## Complete Example
+
+A minimal event-driven flow: the `CONNECT` handler sends a transaction as soon as the wallet connects, the `TRANSACTION` handler reports the result, and the `ERROR` handler logs anything unattributed.
+
+```python
+import asyncio
+
+from ton_core import Address, to_nano
+
+from ton_connect import AppWalletsLoader, Connector, Event, FileStorage, TonConnect
+from ton_connect.exceptions import TonConnectError
+from ton_connect.models import (
+    SendTransactionMessage,
+    SendTransactionPayload,
+    SendTransactionResult,
+)
+
+MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/ton-connect/main/assets/tonconnect-manifest.json"
+SESSION_KEY = "user-123"
+STORAGE_PATH = "./tonconnect-storage.json"
+
+DESTINATION_ADDRESS = Address("UQ...")
+TRANSFER_AMOUNT = to_nano(0.01)
+
+storage = FileStorage(STORAGE_PATH)
+app_wallets_loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+
+tc = TonConnect(
+    storage=storage,
+    manifest_url=MANIFEST_URL,
+    app_wallets=app_wallets_loader.get_wallets(),
+)
+
+# Signals main() that the flow finished
+done = asyncio.Event()
+
+
+@tc.on(Event.CONNECT)
+async def on_connect(connector: Connector, error: TonConnectError | None) -> None:
+    if error:
+        print(f"Connection failed: {error}")
+        done.set()
+        return
+
+    address = connector.account.address.to_str(is_bounceable=False)
+    print(f"Connected: {address}")
+
+    payload = SendTransactionPayload(
+        messages=[
+            SendTransactionMessage(
+                address=DESTINATION_ADDRESS,
+                amount=TRANSFER_AMOUNT,
+                payload="Hello from ton-connect!",
+            ),
+        ],
+    )
+    await connector.send_transaction(payload)
+    print("Transaction sent, approve it in the wallet...")
+
+
+@tc.on(Event.TRANSACTION)
+async def on_transaction(
+    connector: Connector,
+    request_id: int,
+    result: SendTransactionResult | None,
+    error: TonConnectError | None,
+) -> None:
+    if error:
+        print(f"Transaction failed: {error}")
+    else:
+        print(f"Transaction hash: {result.normalized_hash}")
+    done.set()
+
+
+@tc.on(Event.ERROR)
+async def on_error(connector: Connector, error: TonConnectError) -> None:
+    print(f"Error: {error}")
+
+
+async def main() -> None:
+    # Handlers above are already registered, so the connector inherits them
+    connector = tc.create_connector(SESSION_KEY)
+
+    if not await connector.restore():
+        request = connector.make_connect_request()
+        url = await connector.connect(request=request)
+        print(f"Connect URL: {url}")
+    else:
+        # Session already active — trigger the flow manually
+        await on_connect(connector, None)
+
+    await done.wait()
+    await tc.close_all()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+<Card title="TON Connect Examples" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples">
+  Full runnable scripts for all TON Connect flows on GitHub.
+</Card>

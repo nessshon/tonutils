@@ -1,15 +1,29 @@
 ---
-title: Getting Started
-description: Python SDK for TON Blockchain — wallets, contracts, and more via ADNL and HTTP APIs.
+title: Overview
+description: Python SDK for the TON blockchain — wallets, contracts, and more via ADNL and HTTP APIs.
 ---
 
-<Note>
-  Work in progress. Guides and references coming soon — stay tuned!
-</Note>
+**Tonutils** is a high-level, object-oriented Python SDK for the TON blockchain. It provides wallets, transfers, smart contracts, and on-chain tools over both native lite servers (ADNL) and popular HTTP API providers.
 
 <Info>
-  Looking for versions below 2.0? The [legacy documentation](https://old-tonutils.ness.su) is still available.
+  Looking for versions below 2.0? The [legacy documentation](https://old-tonutils.ness.uz) is still available.
 </Info>
+
+<Tip>
+  For a better understanding of TON internal architecture and core principles, review the [official TON documentation](https://docs.ton.org).
+</Tip>
+
+## Features
+
+- **Providers** — HTTP APIs ([Toncenter](https://toncenter.com), [Tonapi](https://tonapi.io), [Chainstack](https://chainstack.com), [QuickNode](https://www.quicknode.com), [Tatum](https://tatum.io)) and native ADNL lite clients, plus balancers with automatic failover for both.
+- **Wallets** — create, import, and deploy all standard wallet versions (V1–V5, Highload, Preprocessed).
+- **Transfers** — TON, jettons, and NFTs, including batch, gasless, and encrypted transfers.
+- **Contracts** — deploy, mint, and manage jetton, NFT, and DNS contracts.
+- **Tools** — block scanner, lite server and DHT status monitors, and a CLI.
+
+<Note>
+  TON Connect is no longer part of tonutils. It lives in the separate [`ton-connect`](https://pypi.org/project/ton-connect/) package, documented in the [TON Connect](/ton-connect) section of this site.
+</Note>
 
 ## Installation
 
@@ -21,6 +35,31 @@ pip install tonutils
 | ----------- | ------- |
 | Python      | 3.10+   |
 
-<Card title="Examples" icon="github" href="https://github.com/nessshon/tonutils/tree/main/examples">
-  Wallets, transfers, Jettons, NFTs, and more.
+## Explore
+
+<CardGroup cols={2}>
+  <Card title="Guide" icon="rocket" href="/guide/installation-and-initialization">
+    Install the library and initialize HTTP or lite clients.
+  </Card>
+  <Card title="Usage Examples" icon="wallet" href="/guide/examples/wallet-operations">
+    Wallets, transfers, jettons, NFTs, and DNS operations.
+  </Card>
+  <Card title="How To" icon="wrench" href="/how-to/get-contract-information">
+    Focused recipes for common on-chain tasks.
+  </Card>
+  <Card title="Tools" icon="radar" href="/tools/block-scanner">
+    Block scanner, status monitors, and the CLI.
+  </Card>
+</CardGroup>
+
+<Card title="TON Connect" icon="plug" href="/ton-connect">
+  Connect wallets, send transactions, and verify proofs with the `ton-connect` package.
 </Card>
+
+<Card title="Examples" icon="github" href="https://github.com/nessshon/tonutils/tree/main/examples">
+  Full runnable scripts: wallets, transfers, jettons, NFTs, and more.
+</Card>
+
+## Contribution
+
+Contributions are welcome. If you have ideas for improvements or have identified a bug, create an issue or submit a pull request on [GitHub](https://github.com/nessshon/tonutils/pulls).

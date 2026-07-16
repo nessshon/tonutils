@@ -1,0 +1,179 @@
+---
+title: Backend Verification
+description: Verify TON Proof and signed data payloads on your Python backend, independently of how the wallet was connected.
+---
+
+The verification utilities work standalone: a frontend (for example, a JS app using TonConnect UI) connects the wallet and sends the resulting proof or signature to your Python backend, which validates it cryptographically. Never trust a client-reported address — only a verified TON Proof or signed-data payload proves that the user actually controls the private key of the declared address.
+
+## Verifying TON Proof
+
+TON Proof is connection-time authentication: the wallet signs a message bound to its address, your app's domain, a timestamp, and a backend-issued payload nonce. The frontend sends your backend a dict in this shape:
+
+```json
+{
+  "address": "0:83ae019a23a8162beaa5cb0ebdc56668b2eac6c6ba51808812915b206a152dc5",
+  "network": "-239",
+  "publicKey": "79c446597dbf81b9987e9059de95dc557bcd9e2c431a6db1677768783d0b99f7",
+  "walletStateInit": "te6cck...",
+  "proof": {
+    "timestamp": 1754535788,
+    "domain": {
+      "lengthBytes": 10,
+      "value": "github.com"
+    },
+    "signature": "d8GGkz...CQ==",
+    "payload": "f85774c9762007d20000000068941ae3"
+  }
+}
+```
+
+| Field | Description |
+| ----- | ----------- |
+| `address` | Raw wallet address (`workchain:hash` format). |
+| `network` | `"-239"` for mainnet, `"-3"` for testnet. |
+| `publicKey` | Wallet's Ed25519 public key (hex). |
+| `walletStateInit` | Base64-encoded wallet `StateInit` — lets the backend derive and verify the public key even for wallets not yet deployed on-chain. |
+| `proof.timestamp` | Unix timestamp (seconds) when the wallet signed — checked against `valid_auth_time`. |
+| `proof.domain` | App domain the wallet signed for — must be in `allowed_domains`. |
+| `proof.signature` | Ed25519 signature over the assembled `ton-proof-item-v2` message (base64). |
+| `proof.payload` | Nonce issued by your backend — ties the proof to your specific auth request. |
+
+Validate the dict into a typed DTO with `TonProofPayloadDto.model_validate(...)` and verify it with `VerifyTonProof`. Verification performs five checks and raises `nacl.exceptions.BadSignatureError` if any fails:
+
+1. The public key extracted from `walletStateInit` matches the `publicKey` field.
+2. The address derived from `walletStateInit` matches the `address` field.
+3. The timestamp is within the `valid_auth_time` window (prevents replay).
+4. The domain is in `allowed_domains` (prevents cross-app reuse).
+5. The Ed25519 signature over the `ton-proof-item-v2` message is valid.
+
+```python
+from ton_connect import VerifyTonProof
+from ton_connect.models import TonProofPayloadDto
+
+# Payload received from the frontend after wallet connection via TonConnect
+PAYLOAD = {
+    "address": "0:83ae019a23a8162beaa5cb0ebdc56668b2eac6c6ba51808812915b206a152dc5",
+    "network": "-239",
+    "publicKey": "79c446597dbf81b9987e9059de95dc557bcd9e2c431a6db1677768783d0b99f7",
+    "walletStateInit": "te6cck...",
+    "proof": {
+        "timestamp": 1754535788,
+        "domain": {
+            "lengthBytes": 10,
+            "value": "github.com",
+        },
+        "signature": "d8GGkz...CQ==",
+        "payload": "f85774c9762007d20000000068941ae3",
+    },
+}
+
+
+async def main() -> None:
+    # Parse and validate the raw payload dict into a typed DTO
+    payload = TonProofPayloadDto.model_validate(PAYLOAD)
+
+    # Raises BadSignatureError if any check fails
+    # allowed_domains: list of domains your backend accepts — reject anything else
+    # valid_auth_time: max age of the proof in seconds (15 min is typical)
+    await VerifyTonProof(payload).verify(
+        allowed_domains=["github.com"],
+        valid_auth_time=15 * 60,  # 15 minutes
+    )
+    print("TonProof verified")
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+<Note>
+  The public key can only be extracted locally from `walletStateInit` for known standard wallet contracts (V1-V5). For wallet contracts the library does not recognize, pass an async resolver as `get_wallet_public_key` to `verify(...)` — it receives the wallet `Address` and should return the `PublicKey` (for example, by calling the contract's `get_public_key` get method on-chain) or `None`.
+</Note>
+
+## Verifying Signed Data
+
+Unlike TON Proof, `signData` is called explicitly to sign off-chain content — agreeing to terms, authorizing actions, and similar. The frontend sends a flat dict with the signature fields at the top level:
+
+```json
+{
+  "address": "0:83ae019a23a8162beaa5cb0ebdc56668b2eac6c6ba51808812915b206a152dc5",
+  "network": "-239",
+  "publicKey": "79c446597dbf81b9987e9059de95dc557bcd9e2c431a6db1677768783d0b99f7",
+  "walletStateInit": "te6cck...",
+  "signature": "D802oc...DA==",
+  "timestamp": 1754503448,
+  "domain": "github.com",
+  "payload": {"type": "text", "text": "Hello from ton-connect!"}
+}
+```
+
+`payload` is the data the user signed; supported types are `text`, `binary`, and `cell`. Verification follows the same pattern with `SignDataPayloadDto` and `VerifySignData`, performing the same five checks. The canonical signing message varies by payload type: text and binary use SHA-256, cell payloads use a TL-B cell hash with a CRC32 schema fingerprint.
+
+```python
+from ton_connect import VerifySignData
+from ton_connect.models import SignDataPayloadDto
+
+# Payload received from the frontend after the user signs data via TonConnect
+PAYLOAD = {
+    "address": "0:83ae019a23a8162beaa5cb0ebdc56668b2eac6c6ba51808812915b206a152dc5",
+    "network": "-239",
+    "publicKey": "79c446597dbf81b9987e9059de95dc557bcd9e2c431a6db1677768783d0b99f7",
+    "walletStateInit": "te6cck...",
+    "signature": "D802oc...DA==",
+    "timestamp": 1754503448,
+    "domain": "github.com",
+    "payload": {"type": "text", "text": "Hello from ton-connect!"},
+}
+
+
+async def main() -> None:
+    # Parse and validate the raw payload dict into a typed DTO
+    payload = SignDataPayloadDto.model_validate(PAYLOAD)
+
+    # Raises BadSignatureError if any check fails
+    # valid_auth_time: max age of the signature in seconds (keep short, 5 min typical)
+    await VerifySignData(payload).verify(
+        allowed_domains=["github.com"],
+        valid_auth_time=5 * 60,  # 5 minutes
+    )
+    print("SignData verified")
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Challenge Payloads
+
+A TON Proof is only meaningful when its `payload` nonce was issued by your backend. Otherwise an attacker could replay a valid proof the user produced for another service. The library provides an HMAC-based challenge that requires no server-side session state:
+
+```python
+from ton_connect import create_ton_proof_payload, verify_ton_proof_payload
+
+SECRET_KEY = "your-secret-key"  # keep this on your backend
+
+# Before connecting: issue a challenge and pass it to the frontend,
+# which includes it in the connect request
+ton_proof_payload = create_ton_proof_payload(secret_key=SECRET_KEY, ttl=15 * 60)
+
+# After connecting: check the nonce that came back inside the proof
+# Raises BadSignatureError if the HMAC is invalid or the payload has expired
+verify_ton_proof_payload(secret_key=SECRET_KEY, ton_proof_payload=proof_payload_from_wallet)
+```
+
+The payload contains random bytes, an expiry timestamp, and an HMAC-SHA256 signature under your secret key. `verify_ton_proof_payload` confirms the nonce was issued by your backend and is still within its TTL, which binds the proof to your service and prevents replay. Run it before `VerifyTonProof(...).verify(...)`.
+
+For the full connect-time flow where the same Python process both connects the wallet and verifies the proof, see [Connect Wallet](/ton-connect/connect-wallet#connecting-with-ton-proof).
+
+<CardGroup cols={2}>
+  <Card title="check_ton_proof.py" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples/check_ton_proof.py">
+    Standalone TON Proof verification example on GitHub.
+  </Card>
+  <Card title="check_sign_data.py" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples/check_sign_data.py">
+    Standalone signed-data verification example on GitHub.
+  </Card>
+</CardGroup>

@@ -1,0 +1,80 @@
+---
+title: Create Multiple Wallets
+description: Derive multiple wallet addresses from a single mnemonic using subwallet_id.
+---
+
+This example shows how to generate **multiple wallet addresses** from a single mnemonic by changing the `subwallet_id` in the wallet config. Each `subwallet_id` produces a unique address under the same seed phrase.
+
+## Example
+
+```python
+from ton_core import NetworkGlobalID, WalletV4Config
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
+
+# Subwallet ID
+SUBWALLET_ID = 698983191
+
+
+def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+
+    config = WalletV4Config(subwallet_id=SUBWALLET_ID)
+    wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(
+        client, MNEMONIC, config=config
+    )
+
+    print(f"Address: {wallet.address.to_str(is_bounceable=False)}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Explanation
+
+- `subwallet_id` — a 32-bit integer used to derive distinct wallet addresses from the same mnemonic. It is part of the wallet config (`WalletV3Config`, `WalletV4Config`, etc. from `ton_core`), passed to `.from_mnemonic()` / `.from_private_key()` / `.create()` via the `config=` argument.
+- **Use cases**:
+
+    - Splitting funds across logical accounts.
+    - Managing separate balances.
+    - Creating derived wallets for contract operations.
+
+## Important Notes
+
+- `subwallet_id` **is not supported** in:
+
+    - `WalletV1*`
+    - `WalletV2*`
+    - `WalletPreprocessedV2`
+
+- **Default value**: for all wallet types with an integer `subwallet_id` (`WalletV3*`, `WalletV4*`, `WalletHighloadV2`, `WalletHighloadV3R1`) the default is `698983191` (`DEFAULT_SUBWALLET_ID` from `ton_core`).
+
+- `WalletV5R1` and `WalletV5Beta` use a structured identifier instead of a plain integer: `WalletV5SubwalletID` from `ton_core`, with fields `subwallet_number` (default `0`), `workchain` (`WorkchainID`, default basechain), `version` (default `0`), and `network` (`NetworkGlobalID`, default mainnet). If `subwallet_id` is left unset in the config, the library fills it in using the client's network. `WalletV5R1` packs the fields into a 32-bit integer XORed with the network global ID; `WalletV5Beta` stores the four fields separately in the wallet data:
+
+    ```python
+    from ton_core import NetworkGlobalID, WalletV5Config, WalletV5SubwalletID
+
+    from tonutils.contracts import WalletV5R1
+
+    config = WalletV5Config(
+        subwallet_id=WalletV5SubwalletID(
+            subwallet_number=1,
+            network=NetworkGlobalID.MAINNET,
+        )
+    )
+    wallet, *_ = WalletV5R1.from_mnemonic(client, MNEMONIC, config=config)
+    ```
+
+    Default packed values (`WalletV5R1`):
+
+    | network | workchain | version | subwallet_number | packed wallet_id |
+    |---------|-----------|---------|------------------|------------------|
+    | -239    | 0         | 0       | 0                | 2147483409       |
+    | -239    | -1        | 0       | 0                | 8388369          |
+    | -3      | 0         | 0       | 0                | 2147483645       |
+    | -3      | -1        | 0       | 0                | 8388605          |

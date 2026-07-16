@@ -1,0 +1,269 @@
+---
+title: DNS Operations
+description: Resolve TON DNS domains, read and update DNS records, and resolve ADNL addresses via DHT.
+---
+
+TON DNS maps human-readable domains such as `example.ton` or `username.t.me` to on-chain values: wallet addresses, TON Site ADNL addresses, TON Storage bags, and subdomain resolvers. Each domain is an NFT item whose owner controls its DNS records. This section covers resolving domains, reading records from a DNS item, updating records, and resolving a site's ADNL address to network endpoints via DHT.
+
+## Resolve a Domain
+
+Use `client.dnsresolve()` to resolve a domain to a record of a specific category. Resolution starts from the DNS root contract (taken from blockchain config parameter 4) and follows next-resolver records automatically, so `.ton` domains, `.t.me` domains, and subdomains all work.
+
+**Parameters:**
+
+- `domain` — domain name to query, e.g. `"example.ton"` or `"username.t.me"`; pre-encoded DNS bytes are also accepted (`str | bytes`).
+- `category` — DNS record type to retrieve (`DNSCategory`): `WALLET`, `SITE`, `STORAGE`, `DNS_NEXT_RESOLVER`, `TEXT`, or `ALL` (category `0`, requests all records and returns a raw `Cell`).
+- `dns_root_address` — custom DNS root address; defaults to the one from blockchain config (`Address`, optional).
+
+The method returns a parsed record object (`DNSRecordWallet`, `DNSRecordSite`, etc.), a raw `Cell` if the record cannot be parsed, or `None` if the record is not set.
+
+```python
+from ton_core import DNSCategory, NetworkGlobalID
+
+from tonutils.clients import ToncenterClient
+
+# Domain name to resolve (TON DNS format)
+# Supports .ton domains, .t.me domains, and subdomains (e.g., "example.ton", "username.t.me")
+DOMAIN = "ness.ton"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Resolve DNS record for the specified domain and category
+    wallet_record = await client.dnsresolve(
+        domain=DOMAIN,
+        category=DNSCategory.WALLET,
+    )
+
+    # Display resolved wallet address
+    # is_bounceable=False: standard for wallet contracts (UQ...)
+    print(f"Linked wallet: {wallet_record.value.to_str(is_bounceable=False)}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Get DNS Records
+
+To read all records stored in a domain, load the DNS item contract with `TONDNSItem.from_address()` and iterate over its `dns_records` dictionary. Each value is a typed record object; check its type to interpret the value correctly.
+
+```python
+from ton_core import (
+    Address,
+    DNSRecordDNSNextResolver,
+    DNSRecordSite,
+    DNSRecordStorage,
+    DNSRecordText,
+    DNSRecordWallet,
+    NetworkGlobalID,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import TONDNSItem
+
+# DNS item address to query (e.g., .ton domain NFT)
+DNS_ITEM_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Load DNS item contract from the blockchain
+    # Fetches current state and DNS records from on-chain data
+    dns_item = await TONDNSItem.from_address(
+        client=client,
+        address=DNS_ITEM_ADDRESS,
+    )
+
+    # dns_records: dict mapping category names to record objects
+    for category, record in dns_item.dns_records.items():
+        # DNSRecordDNSNextResolver: resolver address for subdomain resolution
+        if isinstance(record, DNSRecordDNSNextResolver):
+            value = record.value.to_str()
+        # DNSRecordWallet: wallet address linked to domain (non-bounceable format)
+        elif isinstance(record, DNSRecordWallet):
+            value = record.value.to_str(is_bounceable=False)
+        # DNSRecordStorage: TON Storage BagID (hex format, uppercase)
+        elif isinstance(record, DNSRecordStorage):
+            value = record.value.as_hex.upper()
+        # DNSRecordSite: ADNL address for TON Site (hex format)
+        elif isinstance(record, DNSRecordSite):
+            value = record.value.as_hex
+        # DNSRecordText: arbitrary text record (dns_text#1eda)
+        elif isinstance(record, DNSRecordText):
+            value = record.value
+        else:
+            continue
+
+        print(f"DNS record `{category}`: {value}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Set DNS Records
+
+To update a record, send a `ChangeDNSRecordBody` to the DNS item contract from the wallet that owns the domain. Each category expects a specific record type and value type:
+
+| Category | Record type | Value type |
+| --- | --- | --- |
+| `DNSCategory.DNS_NEXT_RESOLVER` | `DNSRecordDNSNextResolver` | `Address` |
+| `DNSCategory.STORAGE` | `DNSRecordStorage` | `BagID` |
+| `DNSCategory.WALLET` | `DNSRecordWallet` | `Address` |
+| `DNSCategory.SITE` | `DNSRecordSite` | `ADNL` |
+| `DNSCategory.TEXT` | `DNSRecordText` | `str` |
+
+<Note>
+The transaction must be sent from the wallet that owns the DNS item, otherwise the contract rejects the change.
+</Note>
+
+The example below sets a wallet record; substitute the category and record type from the table to set other records.
+
+```python
+from ton_core import (
+    Address,
+    ChangeDNSRecordBody,
+    DNSCategory,
+    DNSRecordWallet,
+    NetworkGlobalID,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# DNS item address to update (e.g., .ton domain NFT)
+# Wallet must be domain owner to change DNS records
+DNS_ITEM_ADDRESS = Address("EQ...")
+
+# Wallet address to set as DNS record value
+WALLET_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Create wallet instance from mnemonic (full access mode)
+    # Returns: (wallet, public_key, private_key, mnemonic)
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Construct change DNS record message body
+    # category: DNS record category to update
+    # record: DNS record value (wallet address for WALLET category)
+    body = ChangeDNSRecordBody(
+        category=DNSCategory.WALLET,
+        record=DNSRecordWallet(WALLET_ADDRESS),
+    )
+
+    # Send change DNS record transaction to the DNS item contract
+    msg = await wallet.transfer(
+        destination=DNS_ITEM_ADDRESS,
+        amount=to_nano(0.05),
+        body=body.serialize(),
+    )
+
+    print(f"DNS item address: {DNS_ITEM_ADDRESS.to_str()}")
+
+    # Normalized hash of the signed external message (computed locally before sending)
+    # Not a blockchain transaction hash — use it to track whether the message
+    # was accepted on-chain (e.g. via explorers, API queries, or your own checks)
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Resolve ADNL Address via DHT
+
+A TON Site's `SITE` record contains an ADNL address, not an IP address. To find the actual network endpoints, query the TON DHT with `DhtNetwork`, initialized from the network's global config via `from_network_config()`. `find_addresses()` returns the address list and the public key of the node behind the ADNL address, and raises `DhtValueNotFoundError` (from `tonutils.exceptions`) if the ADNL address is not found in the DHT.
+
+```python
+from ton_core import DNSCategory, NetworkGlobalID
+
+from tonutils.clients import ToncenterClient
+from tonutils.clients.dht import DhtNetwork
+from tonutils.exceptions import DhtValueNotFoundError
+
+# Domain name to resolve ADNL address for (must have a SITE record)
+DOMAIN = "foundation.ton"
+
+
+async def main() -> None:
+    # Step 1: Resolve ADNL address from TON DNS
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET, rps_limit=1, rps_period=1.2)
+    await client.connect()
+
+    # Resolve SITE DNS record — it contains the ADNL address
+    site_record = await client.dnsresolve(
+        domain=DOMAIN,
+        category=DNSCategory.SITE,
+    )
+
+    await client.close()
+
+    if site_record is None:
+        print(f"No SITE record found for {DOMAIN}")
+        return
+
+    adnl = site_record.value
+    print(f"Domain:       {DOMAIN}")
+    print(f"ADNL address: {adnl}")
+
+    # Step 2: Resolve ADNL address to IP addresses via DHT
+    # Initialize DHT network client from mainnet global config
+    dht = DhtNetwork.from_network_config(NetworkGlobalID.MAINNET)
+    await dht.connect()
+
+    print("\nSearching for addresses in DHT...")
+
+    try:
+        addr_list, pub_key = await dht.find_addresses(adnl)
+    except DhtValueNotFoundError:
+        print("ADNL address not found in DHT")
+        await dht.close()
+        return
+
+    print(f"Public key:   {pub_key.hex()}")
+    print(f"Addresses:    {len(addr_list.addrs)} found")
+
+    for addr in addr_list.addrs:
+        print(f"  {addr.endpoint}")
+
+    await dht.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+<Note>
+DNS resolution issues multiple sequential get-method calls (one per resolver hop plus a config fetch), so the example lowers the client's request rate with `rps_limit=1, rps_period=1.2` to stay within the free Toncenter rate limits.
+</Note>
+
+<Card title="DNS Examples" icon="github" href="https://github.com/nessshon/tonutils/tree/main/examples/dns">
+Full runnable scripts for all DNS operations on GitHub.
+</Card>

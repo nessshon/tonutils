@@ -1,0 +1,99 @@
+---
+title: Get Jetton Wallet Address
+description: Obtain a jetton wallet address via the master's get-method or by calculating it locally.
+---
+
+There are two ways to obtain the address of a jetton wallet: call the `get_wallet_address` get-method on the jetton master, or calculate the address locally from the wallet code.
+
+## Using Get-Method
+
+Works for any jetton master (Standard and Stablecoin) — the contract itself resolves the wallet address.
+
+```python
+from ton_core import Address, NetworkGlobalID
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import get_wallet_address_get_method
+
+# Wallet owner's address
+OWNER_ADDRESS = Address("UQ...")
+
+# Deployed jetton master contract address
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    jetton_wallet_address = await get_wallet_address_get_method(
+        client=client,
+        address=JETTON_MASTER_ADDRESS,
+        owner_address=OWNER_ADDRESS,
+    )
+    print(jetton_wallet_address.to_str())
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Calculating Locally
+
+No network calls — the address is derived from the owner's address, the master address, and the jetton wallet code.
+
+<Note>
+Prepare the jetton wallet contract code by following [Get Contract Code and Data](/how-to/get-contract-code-and-data). `jetton_wallet_code` accepts a `Cell` or a hex-encoded BoC string. If the jetton uses the default code, `JettonWalletStandard.get_default_code()` / `JettonWalletStablecoinV2.get_default_code()` return it directly.
+</Note>
+
+### Standard Jetton
+
+```python
+from tonutils.contracts import JettonMasterStandard
+
+
+def main() -> None:
+    owner_address = "UQ..."
+    jetton_master_address = "EQ..."
+    jetton_wallet_code = "..."
+
+    jetton_wallet_address = JettonMasterStandard.calculate_user_jetton_wallet_address(
+        owner_address=owner_address,
+        jetton_master_address=jetton_master_address,
+        jetton_wallet_code=jetton_wallet_code,
+    )
+    print(jetton_wallet_address.to_str())
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Stablecoin Jetton
+
+Use `JettonMasterStablecoinV2` for sharded V2 contracts, or `JettonMasterStablecoin` for V1 contracts (e.g. USD₮, NOT).
+
+```python
+from tonutils.contracts import JettonMasterStablecoinV2
+
+
+def main() -> None:
+    owner_address = "UQ..."
+    jetton_master_address = "EQ..."
+    jetton_wallet_code = "..."
+
+    jetton_wallet_address = JettonMasterStablecoinV2.calculate_user_jetton_wallet_address(
+        owner_address=owner_address,
+        jetton_master_address=jetton_master_address,
+        jetton_wallet_code=jetton_wallet_code,
+    )
+    print(jetton_wallet_address.to_str())
+
+
+if __name__ == "__main__":
+    main()
+```

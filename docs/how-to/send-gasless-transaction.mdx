@@ -1,0 +1,81 @@
+---
+title: Send Gasless Transaction
+description: Send a gasless jetton transfer via the Tonapi relay, paying fees in jettons instead of TON.
+---
+
+This example demonstrates how to send a **gasless** jetton transfer. A relay pays the TON gas on behalf of the sender, and the commission is deducted from the sender's jetton balance.
+
+<Note>
+Gasless transfers use the relayer feature provided by [tonapi.io](https://tonapi.io) and require a `TonapiClient` with an API key from [tonconsole.com](https://tonconsole.com). They are only supported on **mainnet** and only for **WalletV5** (`WalletV5R1` and `WalletV5Beta`).
+</Note>
+
+## Example
+
+```python
+from ton_core import Address, NetworkGlobalID, to_nano
+
+from tonutils.clients import TonapiClient
+from tonutils.contracts import WalletV5R1
+
+# Tonapi API key (required for gasless transfers)
+# Get one at https://tonconsole.com/
+API_KEY = "YOUR_API_KEY"
+
+# Mnemonic phrase
+MNEMONIC = "word1 word2 word3 ..."
+
+# Jetton master contract address
+# This jetton is used both for the transfer and for gas payment
+# Supported jettons: check https://tonapi.io/v2/gasless/config
+JETTON_MASTER_ADDRESS = Address("EQ...")
+
+# Destination address (jetton recipient)
+DESTINATION_ADDRESS = Address("UQ...")
+
+# Jetton amount in base units (respects token decimals)
+# Example: 1 USDT (6 decimals) -> 1 * 10^6 = 1,000,000
+JETTON_AMOUNT_TO_SEND = to_nano(1, decimals=6)
+
+
+async def main() -> None:
+    client = TonapiClient(network=NetworkGlobalID.MAINNET, api_key=API_KEY)
+    await client.connect()
+
+    wallet, _, _, _ = WalletV5R1.from_mnemonic(client, MNEMONIC)
+
+    # Step 1: Estimate the gasless transfer
+    # Builds a jetton transfer message, validates provider and jetton support,
+    # and sends it to the Tonapi gasless estimation endpoint.
+    # Parameters mirror JettonTransferBuilder.
+    estimate = await wallet.gasless_estimate(
+        destination=DESTINATION_ADDRESS,
+        jetton_amount=JETTON_AMOUNT_TO_SEND,
+        jetton_master_address=JETTON_MASTER_ADDRESS,
+    )
+
+    # Step 2: Review the estimation result before sending
+    # estimate.commission — relay fee (deducted from the jetton balance)
+    # estimate.relay_address — address of the relay paying gas
+    # estimate.valid_until — unix timestamp, the transaction expires after this time
+    # estimate.messages — messages to sign (built by the relay)
+    # estimate.emulation — transaction emulation with trace and risk analysis
+    print(f"Commission: {estimate.commission} nanocoins")
+    print(f"Relay: {estimate.relay_address}")
+    print(f"Valid until: {estimate.valid_until}")
+
+    # Step 3: Sign and send via the gasless relay
+    await wallet.gasless_send(estimate)
+    print("Gasless transfer sent!")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+Always verify the estimated commission and emulation result before calling `gasless_send` — once sent, the transaction is irreversible.
+
+The same example also appears in [Gasless Transfers](/guide/examples/wallet-operations#gasless-transfers) among the other wallet operations.

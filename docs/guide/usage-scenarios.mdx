@@ -1,0 +1,187 @@
+---
+title: Usage Scenarios
+description: Practical examples — creating and importing wallets, sending transactions, reading contract data, and calling get-methods.
+---
+
+This section is a condensed tour of the `tonutils` library: creating and importing wallets, sending transactions, retrieving contract data, and calling get-methods. The snippets here are fragments for orientation — each topic has a full runnable version under [Usage Examples](/guide/examples/wallet-operations).
+
+## Working with Wallets
+
+### Creating a Wallet
+
+```python
+from ton_core import NetworkGlobalID, WalletV4Config
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+client = ToncenterClient(network=NetworkGlobalID.TESTNET)
+
+# Wallet configuration (default settings)
+# Customize subwallet_id to derive multiple wallets from the same mnemonic
+config = WalletV4Config()
+
+wallet, public_key, private_key, mnemonic = WalletV4R2.create(client, config=config)
+
+print(f"Address: {wallet.address.to_str(is_bounceable=False)}")
+print(f"Mnemonic: {' '.join(mnemonic)}")
+```
+
+**Result:**
+
+- `wallet` — an instance of `WalletV4R2`, ready to use.
+- `public_key` — the wallet's public key (`PublicKey`).
+- `private_key` — the wallet's private key (`PrivateKey`).
+- `mnemonic` — list of 24 words (`list[str]`).
+
+### Importing a Wallet
+
+From a mnemonic phrase:
+
+```python
+wallet, public_key, private_key, mnemonic = WalletV4R2.from_mnemonic(client, MNEMONIC)
+```
+
+**Parameters:**
+
+- `MNEMONIC` — can be provided in one of two formats:
+    - a string of space-separated words.
+    - a list of words.
+
+Or from an existing private key:
+
+```python
+from ton_core import PrivateKey
+
+wallet = WalletV4R2.from_private_key(client, PrivateKey("<your private key>"))
+```
+
+**Parameters:**
+
+- `private_key` — a `PrivateKey`, constructed from raw bytes, a hex string, a base64 string, or an integer.
+
+<Card title="Wallet Examples" icon="github" href="https://github.com/nessshon/tonutils/tree/main/examples/wallet">
+  Full runnable scripts for creating, importing, and inspecting wallets on GitHub.
+</Card>
+
+## Sending Transactions
+
+### Single Transaction
+
+```python
+from ton_core import Address, to_nano
+
+msg = await wallet.transfer(
+    destination=Address("UQ..."),
+    amount=to_nano(0.01),
+    body="Hello from tonutils!",
+)
+print(f"Transaction hash: {msg.normalized_hash}")
+```
+
+**Parameters:**
+
+- `destination` — the recipient: a string with the address or an `Address` object.
+- `amount` — amount in nanotons (`int`); use `to_nano()` to convert from TON (1 TON = 10^9 nanotons).
+- `body` — comment as a string or custom data as a `Cell`.
+
+**Result:**
+
+An `ExternalMessage`. Its `normalized_hash` is the normalized hash of the signed external message, computed locally before sending — it is not the on-chain transaction hash. Use it to track whether the message was accepted on-chain (via explorers or API queries).
+
+### Batch Transfer
+
+Allows sending multiple transfers in a single transaction:
+
+```python
+from ton_core import Address, to_nano
+
+from tonutils.contracts import TONTransferBuilder
+
+msg = await wallet.batch_transfer_message(
+    [
+        TONTransferBuilder(
+            destination=Address("UQ..."),
+            amount=to_nano(0.01),
+            body="Hello from tonutils!",
+        ),
+        TONTransferBuilder(
+            destination=Address("UQ..."),
+            amount=to_nano(0.02),
+            body="Hello from tonutils!",
+        ),
+    ]
+)
+print(f"Transaction hash: {msg.normalized_hash}")
+```
+
+**Result:**
+
+An `ExternalMessage` (see [Single Transaction](#single-transaction) for the meaning of `normalized_hash`).
+
+<Note>
+  V3 and V4 wallets support up to 4 messages per transaction. For more messages, use `WalletV5R1`, `WalletHighloadV3R1`, or `WalletPreprocessedV2`.
+</Note>
+
+### Send Mode
+
+The `send_mode` parameter controls how the outgoing message is sent — for example, mode `128` carries the entire remaining balance of the wallet.
+
+```python
+await wallet.transfer(
+    destination="UQ...",
+    amount=0,
+    send_mode=128,
+)
+```
+
+<Note>
+  For more details on available send modes, see the [official TON documentation](https://docs.ton.org/foundations/messages/modes).
+</Note>
+
+## Contract Information
+
+### Contract Balance
+
+```python
+from ton_core import to_amount
+
+balance = (await client.get_info("UQ...")).balance
+print(f"Balance: {balance} ({to_amount(balance)} TON)")
+```
+
+**Result:**
+
+An integer (`int`) representing the contract balance in nanotons. Use `to_amount()` to convert nanotons to TON.
+
+### Contract Data
+
+```python
+info = await client.get_info("UQ...")
+```
+
+**Result:**
+
+A `ContractInfo` object; see [ContractInfo Fields Overview](/how-to/get-contract-information#contractinfo-fields-overview) for the full field reference.
+
+## Calling a Contract Method
+
+The `run_get_method` function allows invoking a contract's get-method.
+
+```python
+result = await client.run_get_method(
+    address="UQ...",
+    method_name="get_my_data",
+    stack=[0],
+)
+```
+
+**Parameters:**
+
+- `address` — contract address as a string or an `Address` object.
+- `method_name` — name of the get-method to call (`str`).
+- `stack` — list of arguments, or `None` for no arguments.
+
+**Result:**
+
+A list of values returned from the method's execution stack.

@@ -1,0 +1,1196 @@
+---
+title: NFT Operations
+description: Deploy Standard, Editable, and Soulbound NFT collections, mint and batch mint items, and manage content, editorship, and ownership with tonutils.
+---
+
+This section covers working with NFT collections: **Standard**, **Editable**, and **Soulbound**. It includes collection deployment, minting, batch minting, content editing, and administrative operations such as changing collection ownership.
+
+<Note>
+Transferring an NFT to a new owner is a wallet operation. See [Send NFT](/guide/examples/wallet-operations#send-nft).
+</Note>
+
+## Standard Collection
+
+A standard collection (TEP-62) mints immutable NFT items. Collection and item metadata use the TEP-64 off-chain format: the collection stores a base URI, and each item stores a suffix appended to it.
+
+### Deploy Collection
+
+Compose the collection data from `NFTCollectionData` and deploy the contract by sending a message with its `state_init`. The collection address is derived deterministically from the code and data, so it is known before deployment.
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionContent,
+    NFTCollectionData,
+    OffchainCommonContent,
+    OffchainContent,
+    RoyaltyParams,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionStandard, NFTItemStandard, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Collection owner address (controls collection)
+OWNER_ADDRESS = Address("UQ...")
+
+# Collection metadata URI (TEP-64 off-chain format)
+COLLECTION_URI = "https://example.com/collection.json"
+
+# Common prefix for individual NFT item metadata URIs
+# Full item URI = ITEMS_PREFIX_URI + item suffix (e.g., "0.json")
+ITEMS_PREFIX_URI = "https://example.com/items/"
+
+# Royalty fraction: numerator / denominator (50 / 1000 = 5%)
+ROYALTY = 50
+ROYALTY_DENOMINATOR = 1000
+
+# Address to receive royalty payments on secondary sales
+ROYALTY_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Get default NFT item code
+    nft_item_code = NFTItemStandard.get_default_code()
+
+    royalty_params = RoyaltyParams(
+        royalty=ROYALTY,
+        denominator=ROYALTY_DENOMINATOR,
+        address=ROYALTY_ADDRESS,
+    )
+
+    nft_collection_content = NFTCollectionContent(
+        content=OffchainContent(uri=COLLECTION_URI),
+        common_content=OffchainCommonContent(prefix_uri=ITEMS_PREFIX_URI),
+    )
+
+    nft_collection_data = NFTCollectionData(
+        owner_address=OWNER_ADDRESS,
+        content=nft_collection_content,
+        royalty_params=royalty_params,
+        nft_item_code=nft_item_code,
+    )
+
+    # Collection address is derived from code + data (predictable before deployment)
+    nft_collection = NFTCollectionStandard.from_data(
+        client=client,
+        data=nft_collection_data.serialize(),
+    )
+
+    # Deploy the collection via state_init message
+    msg = await wallet.transfer(
+        destination=nft_collection.address,
+        amount=to_nano(0.05),
+        state_init=nft_collection.state_init,
+    )
+
+    print(f"NFT collection address: {nft_collection.address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+**Parameters:**
+
+- `owner_address` — collection owner; only this address can mint items (`Address`).
+- `content` — collection-level metadata URI and the common prefix for item metadata URIs (`NFTCollectionContent`).
+- `royalty_params` — royalty share as `royalty / denominator` and the royalty destination address (`RoyaltyParams`).
+- `nft_item_code` — code cell used to deploy each NFT item (`Cell`).
+
+### Mint NFT
+
+Minting sends an `NFTCollectionMintItemBody` message to the collection contract. The sending wallet must be the collection owner. The item address is calculated locally from the index, item code, and collection address.
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionMintItemBody,
+    NFTItemStandardMintRef,
+    OffchainItemContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionStandard, NFTItemStandard, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# NFT item owner address (receives minted NFT)
+OWNER_ADDRESS = Address("UQ...")
+
+# Deployed NFT collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+# Unique index for NFT item within collection (0, 1, 2, ...)
+NFT_ITEM_INDEX = 0
+
+# Metadata suffix appended to collection's ITEMS_PREFIX_URI
+NFT_ITEM_SUFFIX_URI = "0.json"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the collection owner to mint successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    nft_item_code = NFTItemStandard.get_default_code()
+
+    # Item initialization data: initial owner + metadata suffix
+    nft_item_ref = NFTItemStandardMintRef(
+        owner_address=OWNER_ADDRESS,
+        content=OffchainItemContent(suffix_uri=NFT_ITEM_SUFFIX_URI),
+    )
+
+    body = NFTCollectionMintItemBody(
+        item_index=NFT_ITEM_INDEX,
+        item_ref=nft_item_ref.serialize(),
+        forward_amount=to_nano(0.01),  # Forwarded to the new item for storage rent
+    )
+
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        amount=to_nano(0.025),  # Covers gas + forward_amount
+        body=body.serialize(),
+    )
+
+    # Item address is derived from: item_index + nft_item_code + collection_address
+    nft_item_address = NFTCollectionStandard.calculate_nft_item_address(
+        index=NFT_ITEM_INDEX,
+        nft_item_code=nft_item_code,
+        collection_address=NFT_COLLECTION_ADDRESS,
+    )
+
+    print(f"NFT item address: {nft_item_address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+**Parameters:**
+
+- `item_index` — unique index within the collection; used for address calculation (`int`).
+- `item_ref` — serialized item initialization data: owner and content (`Cell`).
+- `forward_amount` — nanotons forwarded to the newly deployed item to cover initial storage fees; 0.01 TON is typical (`int`).
+
+### Batch Mint NFT
+
+Batch minting deploys multiple items in a single transaction with `NFTCollectionBatchMintItemBody`. Items receive sequential indices starting from `from_index`.
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionBatchMintItemBody,
+    NFTItemStandardMintRef,
+    OffchainItemContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionStandard, NFTItemStandard, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Starting index for batch minting
+MINT_FROM_INDEX = 0
+
+# Owner addresses for batch-minted items; each address receives one NFT
+NFT_ITEM_OWNERS = [
+    Address("UQ..."),
+    Address("UQ..."),
+    Address("UQ..."),
+]
+
+# Deployed NFT collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the collection owner to mint successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    nft_item_code = NFTItemStandard.get_default_code()
+    nft_items_count = len(NFT_ITEM_OWNERS)
+    nft_items_refs = []
+
+    # Build initialization data for each item with sequential indices
+    for nft_item_index, owner_address in enumerate(NFT_ITEM_OWNERS, start=MINT_FROM_INDEX):
+        nft_item_ref = NFTItemStandardMintRef(
+            owner_address=owner_address,
+            content=OffchainItemContent(suffix_uri=f"{nft_item_index}.json"),
+        )
+        nft_items_refs.append(nft_item_ref.serialize())
+
+    body = NFTCollectionBatchMintItemBody(
+        items_refs=nft_items_refs,
+        from_index=MINT_FROM_INDEX,
+        forward_amount=to_nano(0.01),  # Forwarded to each newly deployed item
+    )
+
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        amount=to_nano(0.025) * nft_items_count,  # Scales with batch size
+        body=body.serialize(),
+    )
+
+    for nft_item_index in range(MINT_FROM_INDEX, MINT_FROM_INDEX + nft_items_count):
+        nft_item_address = NFTCollectionStandard.calculate_nft_item_address(
+            index=nft_item_index,
+            nft_item_code=nft_item_code,
+            collection_address=NFT_COLLECTION_ADDRESS,
+        )
+        print(f"NFT item address ({nft_item_index}): {nft_item_address.to_str()}")
+
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+**Parameters:**
+
+- `items_refs` — list of serialized initialization data for all items (`list[Cell]`).
+- `from_index` — starting index; items get sequential indices from this value (`int`).
+- `forward_amount` — nanotons forwarded to each newly deployed item (`int`).
+
+## Editable Collection
+
+An editable collection allows updating collection content, royalty parameters, and item metadata after deployment. Each item stores an editor address that is authorized to modify its content.
+
+### Deploy Collection
+
+Deployment is identical to a standard collection; the only changes are the contract classes — `NFTCollectionEditable` and `NFTItemEditable`:
+
+```python
+from tonutils.contracts import NFTCollectionEditable, NFTItemEditable, WalletV4R2
+
+nft_item_code = NFTItemEditable.get_default_code()
+
+nft_collection = NFTCollectionEditable.from_data(
+    client=client,
+    data=nft_collection_data.serialize(),
+)
+```
+
+<Accordion title="Full example">
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionContent,
+    NFTCollectionData,
+    OffchainCommonContent,
+    OffchainContent,
+    RoyaltyParams,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionEditable, NFTItemEditable, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Collection owner address (can mint items and edit metadata)
+OWNER_ADDRESS = Address("UQ...")
+
+# Collection metadata URI (TEP-64 off-chain format)
+COLLECTION_URI = "https://example.com/collection.json"
+
+# Common prefix for individual NFT item metadata URIs
+ITEMS_PREFIX_URI = "https://example.com/items/"
+
+# Royalty fraction: numerator / denominator (50 / 1000 = 5%)
+ROYALTY = 50
+ROYALTY_DENOMINATOR = 1000
+
+# Address to receive royalty payments on secondary sales
+ROYALTY_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Get default Editable NFT item code
+    nft_item_code = NFTItemEditable.get_default_code()
+
+    royalty_params = RoyaltyParams(
+        royalty=ROYALTY,
+        denominator=ROYALTY_DENOMINATOR,
+        address=ROYALTY_ADDRESS,
+    )
+
+    nft_collection_content = NFTCollectionContent(
+        content=OffchainContent(uri=COLLECTION_URI),
+        common_content=OffchainCommonContent(prefix_uri=ITEMS_PREFIX_URI),
+    )
+
+    nft_collection_data = NFTCollectionData(
+        owner_address=OWNER_ADDRESS,
+        content=nft_collection_content,
+        royalty_params=royalty_params,
+        nft_item_code=nft_item_code,
+    )
+
+    nft_collection = NFTCollectionEditable.from_data(
+        client=client,
+        data=nft_collection_data.serialize(),
+    )
+
+    msg = await wallet.transfer(
+        destination=nft_collection.address,
+        amount=to_nano(0.05),
+        state_init=nft_collection.state_init,
+    )
+
+    print(f"NFT collection address: {nft_collection.address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+</Accordion>
+
+### Mint NFT
+
+Editable items use `NFTItemEditableMintRef`, which adds an `editor_address` authorized to modify the item metadata after minting.
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionMintItemBody,
+    NFTItemEditableMintRef,
+    OffchainItemContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionEditable, NFTItemEditable, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# NFT item owner address (receives minted Editable NFT)
+OWNER_ADDRESS = Address("UQ...")
+
+# Editor address (can modify NFT metadata after minting)
+EDITOR_ADDRESS = Address("UQ...")
+
+# Deployed NFT collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+# Unique index for NFT item within collection (0, 1, 2, ...)
+NFT_ITEM_INDEX = 0
+
+# Metadata suffix appended to collection's ITEMS_PREFIX_URI
+NFT_ITEM_SUFFIX_URI = f"{NFT_ITEM_INDEX}.json"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the collection owner to mint successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    nft_item_code = NFTItemEditable.get_default_code()
+
+    # Item initialization data: initial owner + editor + metadata suffix
+    nft_item_ref = NFTItemEditableMintRef(
+        owner_address=OWNER_ADDRESS,
+        editor_address=EDITOR_ADDRESS,
+        content=OffchainItemContent(suffix_uri=NFT_ITEM_SUFFIX_URI),
+    )
+
+    body = NFTCollectionMintItemBody(
+        item_index=NFT_ITEM_INDEX,
+        item_ref=nft_item_ref.serialize(),
+        forward_amount=to_nano(0.01),
+    )
+
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        amount=to_nano(0.025),
+        body=body.serialize(),
+    )
+
+    nft_item_address = NFTCollectionEditable.calculate_nft_item_address(
+        index=NFT_ITEM_INDEX,
+        nft_item_code=nft_item_code,
+        collection_address=NFT_COLLECTION_ADDRESS,
+    )
+
+    print(f"NFT item address: {nft_item_address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Batch Mint NFT
+
+Batch minting works the same as in a standard collection; the only changes are the Editable classes and `NFTItemEditableMintRef`, which sets an `editor_address` for each item:
+
+```python
+from ton_core import NFTItemEditableMintRef
+
+from tonutils.contracts import NFTCollectionEditable, NFTItemEditable
+
+nft_item_ref = NFTItemEditableMintRef(
+    owner_address=owner_address,
+    editor_address=editor_address,
+    content=OffchainItemContent(suffix_uri=f"{nft_item_index}.json"),
+)
+```
+
+<Accordion title="Full example">
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionBatchMintItemBody,
+    NFTItemEditableMintRef,
+    OffchainItemContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionEditable, NFTItemEditable, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Starting index for batch minting
+MINT_FROM_INDEX = 0
+
+# (owner_address, editor_address) pairs; each pair produces one item
+NFT_ITEM_OWNERS_AND_EDITORS = [
+    (Address("UQ..."), Address("UQ...")),
+    (Address("UQ..."), Address("UQ...")),
+    (Address("UQ..."), Address("UQ...")),
+]
+
+# Deployed NFT collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the collection owner to mint successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    nft_item_code = NFTItemEditable.get_default_code()
+    nft_items_count = len(NFT_ITEM_OWNERS_AND_EDITORS)
+    nft_items_refs = []
+
+    for nft_item_index, (owner_address, editor_address) in enumerate(
+        NFT_ITEM_OWNERS_AND_EDITORS, start=MINT_FROM_INDEX
+    ):
+        nft_item_ref = NFTItemEditableMintRef(
+            owner_address=owner_address,
+            editor_address=editor_address,
+            content=OffchainItemContent(suffix_uri=f"{nft_item_index}.json"),
+        )
+        nft_items_refs.append(nft_item_ref.serialize())
+
+    body = NFTCollectionBatchMintItemBody(
+        items_refs=nft_items_refs,
+        from_index=MINT_FROM_INDEX,
+        forward_amount=to_nano(0.01),
+    )
+
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        amount=to_nano(0.025) * nft_items_count,
+        body=body.serialize(),
+    )
+
+    for nft_item_index in range(MINT_FROM_INDEX, MINT_FROM_INDEX + nft_items_count):
+        nft_item_address = NFTCollectionEditable.calculate_nft_item_address(
+            index=nft_item_index,
+            nft_item_code=nft_item_code,
+            collection_address=NFT_COLLECTION_ADDRESS,
+        )
+        print(f"NFT item address ({nft_item_index}): {nft_item_address.to_str()}")
+
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+</Accordion>
+
+### Edit NFT Content
+
+Send an `NFTEditContentBody` message to the NFT item contract. The sending wallet must be the item's editor.
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTEditContentBody,
+    OffchainItemContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Editable NFT item address to update
+NFT_ITEM_ADDRESS = Address("EQ...")
+
+# New metadata suffix appended to collection's ITEMS_PREFIX_URI
+SUFFIX_URI = "0.json"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the item's editor to edit content successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    body = NFTEditContentBody(
+        content=OffchainItemContent(suffix_uri=SUFFIX_URI),
+    )
+
+    msg = await wallet.transfer(
+        destination=NFT_ITEM_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"NFT item address: {NFT_ITEM_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Change NFT Editorship
+
+Send an `NFTTransferEditorshipBody` message to the NFT item contract. The sending wallet must be the current editor.
+
+```python
+from ton_core import Address, NetworkGlobalID, NFTTransferEditorshipBody, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Editable NFT item address to transfer editorship
+NFT_ITEM_ADDRESS = Address("EQ...")
+
+# New editor address
+EDITOR_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the current editor to transfer editorship successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    body = NFTTransferEditorshipBody(
+        editor_address=EDITOR_ADDRESS,
+        response_address=wallet.address,  # Receives excess TON
+    )
+
+    msg = await wallet.transfer(
+        destination=NFT_ITEM_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"NFT item address: {NFT_ITEM_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Edit Collection Content
+
+Send an `NFTCollectionChangeContentBody` message to the collection contract to replace the collection metadata and royalty parameters. The sending wallet must be the collection owner.
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionChangeContentBody,
+    NFTCollectionContent,
+    OffchainCommonContent,
+    OffchainContent,
+    RoyaltyParams,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Deployed NFT collection contract address to update
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+# New collection metadata URI (TEP-64 off-chain format)
+COLLECTION_URI = "https://example.com/collection.json"
+
+# New common prefix for individual NFT item metadata URIs
+ITEMS_PREFIX_URI = "https://example.com/items/"
+
+# Royalty fraction: numerator / denominator (50 / 1000 = 5%)
+ROYALTY = 50
+ROYALTY_DENOMINATOR = 1000
+
+# New address to receive royalty payments on secondary sales
+ROYALTY_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the collection owner to change content successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    royalty_params = RoyaltyParams(
+        royalty=ROYALTY,
+        denominator=ROYALTY_DENOMINATOR,
+        address=ROYALTY_ADDRESS,
+    )
+
+    nft_collection_content = NFTCollectionContent(
+        content=OffchainContent(uri=COLLECTION_URI),
+        common_content=OffchainCommonContent(prefix_uri=ITEMS_PREFIX_URI),
+    )
+
+    body = NFTCollectionChangeContentBody(
+        content=nft_collection_content,
+        royalty_params=royalty_params,
+    )
+
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"NFT collection address: {NFT_COLLECTION_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Change Collection Owner
+
+Send an `NFTCollectionChangeOwnerBody` message to the collection contract. The sending wallet must be the current owner.
+
+```python
+from ton_core import Address, NetworkGlobalID, NFTCollectionChangeOwnerBody, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# New owner address
+OWNER_ADDRESS = Address("UQ...")
+
+# Deployed NFT collection contract address to transfer
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the current owner to change ownership successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    body = NFTCollectionChangeOwnerBody(owner_address=OWNER_ADDRESS)
+
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"NFT collection address: {NFT_COLLECTION_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+## Soulbound Collection
+
+Soulbound tokens (SBT, TEP-85) are non-transferable NFTs bound to their owner. Each item stores an authority address that can revoke it; the owner can destroy it.
+
+<Note>
+There is no separate soulbound collection class. Use `NFTCollectionStandard` with the soulbound item code from `NFTItemSoulbound.get_default_code()`.
+</Note>
+
+### Deploy Collection
+
+Deployment is identical to a standard collection; the only change is that the item code comes from `NFTItemSoulbound`:
+
+```python
+from tonutils.contracts import NFTCollectionStandard, NFTItemSoulbound, WalletV4R2
+
+nft_item_code = NFTItemSoulbound.get_default_code()
+```
+
+<Accordion title="Full example">
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionContent,
+    NFTCollectionData,
+    OffchainCommonContent,
+    OffchainContent,
+    RoyaltyParams,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionStandard, NFTItemSoulbound, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Collection owner address (controls collection)
+OWNER_ADDRESS = Address("UQ...")
+
+# Collection metadata URI (TEP-64 off-chain format)
+COLLECTION_URI = "https://example.com/collection.json"
+
+# Common prefix for individual NFT item metadata URIs
+ITEMS_PREFIX_URI = "https://example.com/items/"
+
+# Royalty fraction: numerator / denominator (50 / 1000 = 5%)
+ROYALTY = 50
+ROYALTY_DENOMINATOR = 1000
+
+# Address to receive royalty payments
+# Required by TEP-66, even though SBT are non-transferable per TEP-85
+ROYALTY_ADDRESS = Address("UQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    # Get default Soulbound NFT item code
+    nft_item_code = NFTItemSoulbound.get_default_code()
+
+    royalty_params = RoyaltyParams(
+        royalty=ROYALTY,
+        denominator=ROYALTY_DENOMINATOR,
+        address=ROYALTY_ADDRESS,
+    )
+
+    nft_collection_content = NFTCollectionContent(
+        content=OffchainContent(uri=COLLECTION_URI),
+        common_content=OffchainCommonContent(prefix_uri=ITEMS_PREFIX_URI),
+    )
+
+    nft_collection_data = NFTCollectionData(
+        owner_address=OWNER_ADDRESS,
+        content=nft_collection_content,
+        royalty_params=royalty_params,
+        nft_item_code=nft_item_code,
+    )
+
+    nft_collection = NFTCollectionStandard.from_data(
+        client=client,
+        data=nft_collection_data.serialize(),
+    )
+
+    msg = await wallet.transfer(
+        destination=nft_collection.address,
+        amount=to_nano(0.05),
+        state_init=nft_collection.state_init,
+    )
+
+    print(f"NFT collection address: {nft_collection.address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+</Accordion>
+
+### Mint NFT
+
+Soulbound items use `NFTItemSoulboundMintRef`, which adds an `authority_address` that can later revoke the item.
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionMintItemBody,
+    NFTItemSoulboundMintRef,
+    OffchainItemContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionStandard, NFTItemSoulbound, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# NFT item owner address (receives minted Soulbound NFT)
+OWNER_ADDRESS = Address("UQ...")
+
+# Authority address (can revoke the Soulbound NFT)
+AUTHORITY_ADDRESS = Address("UQ...")
+
+# Deployed NFT collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+# Unique index for NFT item within collection (0, 1, 2, ...)
+NFT_ITEM_INDEX = 0
+
+# Metadata suffix appended to collection's ITEMS_PREFIX_URI
+NFT_ITEM_SUFFIX_URI = "0.json"
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the collection owner to mint successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    nft_item_code = NFTItemSoulbound.get_default_code()
+
+    # Item initialization data: initial owner + authority + metadata suffix
+    nft_item_ref = NFTItemSoulboundMintRef(
+        owner_address=OWNER_ADDRESS,
+        authority_address=AUTHORITY_ADDRESS,
+        content=OffchainItemContent(suffix_uri=NFT_ITEM_SUFFIX_URI),
+    )
+
+    body = NFTCollectionMintItemBody(
+        item_index=NFT_ITEM_INDEX,
+        item_ref=nft_item_ref.serialize(),
+        forward_amount=to_nano(0.01),
+    )
+
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        amount=to_nano(0.025),
+        body=body.serialize(),
+    )
+
+    nft_item_address = NFTCollectionStandard.calculate_nft_item_address(
+        index=NFT_ITEM_INDEX,
+        nft_item_code=nft_item_code,
+        collection_address=NFT_COLLECTION_ADDRESS,
+    )
+
+    print(f"NFT item address: {nft_item_address.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Batch Mint NFT
+
+Batch minting works the same as in a standard collection; the only changes are the Soulbound item code and `NFTItemSoulboundMintRef`, which sets an `authority_address` for each item:
+
+```python
+from ton_core import NFTItemSoulboundMintRef
+
+from tonutils.contracts import NFTCollectionStandard, NFTItemSoulbound
+
+nft_item_ref = NFTItemSoulboundMintRef(
+    owner_address=owner_address,
+    authority_address=authority_address,
+    content=OffchainItemContent(suffix_uri=f"{nft_item_index}.json"),
+)
+```
+
+<Accordion title="Full example">
+
+```python
+from ton_core import (
+    Address,
+    NetworkGlobalID,
+    NFTCollectionBatchMintItemBody,
+    NFTItemSoulboundMintRef,
+    OffchainItemContent,
+    to_nano,
+)
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import NFTCollectionStandard, NFTItemSoulbound, WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# Starting index for batch minting
+MINT_FROM_INDEX = 0
+
+# (owner_address, authority_address) pairs; each pair produces one item
+NFT_ITEM_OWNERS_AND_AUTHORITIES = [
+    (Address("UQ..."), Address("UQ...")),
+    (Address("UQ..."), Address("UQ...")),
+    (Address("UQ..."), Address("UQ...")),
+]
+
+# Deployed NFT collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the collection owner to mint successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    nft_item_code = NFTItemSoulbound.get_default_code()
+    nft_items_count = len(NFT_ITEM_OWNERS_AND_AUTHORITIES)
+    nft_items_refs = []
+
+    for nft_item_index, (owner_address, authority_address) in enumerate(
+        NFT_ITEM_OWNERS_AND_AUTHORITIES, start=MINT_FROM_INDEX
+    ):
+        nft_item_ref = NFTItemSoulboundMintRef(
+            owner_address=owner_address,
+            authority_address=authority_address,
+            content=OffchainItemContent(suffix_uri=f"{nft_item_index}.json"),
+        )
+        nft_items_refs.append(nft_item_ref.serialize())
+
+    body = NFTCollectionBatchMintItemBody(
+        items_refs=nft_items_refs,
+        from_index=MINT_FROM_INDEX,
+        forward_amount=to_nano(0.01),
+    )
+
+    msg = await wallet.transfer(
+        destination=NFT_COLLECTION_ADDRESS,
+        amount=to_nano(0.025) * nft_items_count,
+        body=body.serialize(),
+    )
+
+    for nft_item_index in range(MINT_FROM_INDEX, MINT_FROM_INDEX + nft_items_count):
+        nft_item_address = NFTCollectionStandard.calculate_nft_item_address(
+            index=nft_item_index,
+            nft_item_code=nft_item_code,
+            collection_address=NFT_COLLECTION_ADDRESS,
+        )
+        print(f"NFT item address ({nft_item_index}): {nft_item_address.to_str()}")
+
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+</Accordion>
+
+### Revoke NFT
+
+Send an `NFTRevokeBody` message to the SBT item contract. Per TEP-85, only the item's authority can revoke it; revocation sets the on-chain revoked timestamp.
+
+```python
+from ton_core import Address, NetworkGlobalID, NFTRevokeBody, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# NFT item address to revoke
+NFT_ITEM_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the NFT authority to revoke successfully
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    body = NFTRevokeBody()
+
+    msg = await wallet.transfer(
+        destination=NFT_ITEM_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"NFT item address: {NFT_ITEM_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Destroy NFT
+
+Send an `NFTDestroyBody` message to the SBT item contract. Per TEP-85, only the item's owner can destroy it.
+
+```python
+from ton_core import Address, NetworkGlobalID, NFTDestroyBody, to_nano
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import WalletV4R2
+
+# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+MNEMONIC = "word1 word2 word3 ..."
+
+# NFT item address to destroy
+NFT_ITEM_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    # Wallet must be the NFT owner to destroy successfully (per TEP-85)
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+
+    body = NFTDestroyBody()
+
+    msg = await wallet.transfer(
+        destination=NFT_ITEM_ADDRESS,
+        body=body.serialize(),
+        amount=to_nano(0.05),
+    )
+
+    print(f"NFT item address: {NFT_ITEM_ADDRESS.to_str()}")
+    print(f"Transaction hash: {msg.normalized_hash}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+<Card title="NFT Examples" icon="github" href="https://github.com/nessshon/tonutils/tree/main/examples/nft">
+Full runnable scripts for all NFT operations on GitHub.
+</Card>

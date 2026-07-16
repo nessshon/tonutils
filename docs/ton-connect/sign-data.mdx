@@ -1,0 +1,208 @@
+---
+title: Sign Data
+description: Request the connected wallet to sign off-chain data and verify the returned signature.
+---
+
+The `signData` method asks the connected wallet to sign arbitrary off-chain content — recording agreement to terms of service, authorizing an off-chain action — and returns an Ed25519 signature you can verify and store; nothing is sent on-chain. All snippets assume a connected `connector` — see [Connect Wallet](/ton-connect/connect-wallet).
+
+## Payload Types
+
+Three payload models are supported:
+
+| Payload | Fields | Use for |
+| --- | --- | --- |
+| `SignDataPayloadText` | `text` | Human-readable UTF-8 text shown to the user in the wallet UI. |
+| `SignDataPayloadBinary` | `raw_bytes` | Opaque binary data. |
+| `SignDataPayloadCell` | `tlb_schema`, `cell` | Structured on-chain-style data described by a TL-B schema. |
+
+```python
+from ton_core import Cell
+
+from ton_connect.models import (
+    SignDataPayloadBinary,
+    SignDataPayloadCell,
+    SignDataPayloadText,
+)
+
+text_payload = SignDataPayloadText(text="I agree to the Terms of Service")
+binary_payload = SignDataPayloadBinary(raw_bytes=b"arbitrary bytes")
+cell_payload = SignDataPayloadCell(
+    tlb_schema="message#_ text:string = Message;",
+    cell=Cell.one_from_boc("te6..."),
+)
+```
+
+Wallets advertise which payload types they support as part of their `SignData` feature. `sign_data()` automatically verifies that the connected wallet declares the feature and supports the payload's type, raising `WalletNotSupportFeatureError` otherwise.
+
+## Requesting a Signature
+
+`sign_data(payload)` sends the request and returns a `request_id` immediately; `wait_sign_data(request_id)` blocks until the wallet responds and returns a `(result, error)` tuple:
+
+```python
+from ton_connect.models import SignDataPayloadText
+
+payload = SignDataPayloadText(text="I agree to the Terms of Service")
+
+request_id = await connector.sign_data(payload)
+result, error = await connector.wait_sign_data(request_id)
+
+if error:
+    print(f"Signing failed: {error}")
+else:
+    print(f"Signature: {result.signature.as_hex}")
+    print(f"Signed at: {result.timestamp}")
+```
+
+The result fields:
+
+| Field | Description |
+| --- | --- |
+| `signature` | Ed25519 signature (64 bytes); `signature.as_hex` gives the hex string. |
+| `address` | Signer wallet address. |
+| `timestamp` | Unix timestamp when the wallet produced the signature. |
+| `domain` | App domain the wallet signed for. |
+| `payload` | The payload the user signed. |
+
+Common errors are `UserRejectsError` and `RequestTimeoutError` — see [Errors](/ton-connect/errors). A pending request can be canceled with `connector.drop_request(request_id)`.
+
+## Verifying the Signature
+
+Never trust a signature without verifying it. Build a `SignDataPayloadDto` from the connected account and the result, then run `VerifySignData`. Any failed check raises `nacl.exceptions.BadSignatureError`:
+
+```python
+from nacl.exceptions import BadSignatureError
+
+from ton_connect import VerifySignData
+from ton_connect.models import SignDataPayloadDto
+
+try:
+    sign_data_payload = SignDataPayloadDto(
+        address=connector.account.address,
+        network=connector.account.network,
+        public_key=connector.account.public_key,
+        wallet_state_init=connector.account.state_init,
+        signature=result.signature,
+        timestamp=result.timestamp,
+        domain=result.domain,
+        payload=result.payload,
+    )
+    await VerifySignData(sign_data_payload).verify(
+        allowed_domains=["your-app-domain.com"],
+        valid_auth_time=5 * 60,  # 5 minutes
+    )
+    print("SignData verified")
+except BadSignatureError as e:
+    print(f"SignData verification failed: {e}")
+```
+
+Verification performs five cryptographic checks — the full list, and how to verify a signature received from a frontend as a raw dict, is in [Backend Verification](/ton-connect/backend-verification#verifying-signed-data).
+
+## Complete Example
+
+```python
+from nacl.exceptions import BadSignatureError
+from ton_core import NetworkGlobalID
+
+from ton_connect import AppWalletsLoader, FileStorage, TonConnect, VerifySignData
+from ton_connect.models import (
+    SignDataPayloadDto,
+    SignDataPayloadText,
+)
+
+# Setup constants — see Installation and Initialization
+MANIFEST_URL = "https://raw.githubusercontent.com/nessshon/ton-connect/main/assets/tonconnect-manifest.json"
+SESSION_KEY = "user-123"
+STORAGE_PATH = "./tonconnect-storage.json"
+
+# Domain your app is served from — must match your tonconnect-manifest.json
+APP_DOMAIN = "github.com"
+
+# Text the user will be asked to sign in their wallet UI
+SIGN_TEXT = "I agree to the Terms of Service"
+
+
+async def main() -> None:
+    storage = FileStorage(STORAGE_PATH)
+    app_wallets_loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+
+    tc = TonConnect(
+        storage=storage,
+        manifest_url=MANIFEST_URL,
+        app_wallets=app_wallets_loader.get_wallets(),
+    )
+    connector = tc.create_connector(SESSION_KEY)
+
+    # Try to restore a previously saved connection before starting a new one
+    restored = await connector.restore()
+
+    if not restored:
+        request = connector.make_connect_request()
+        await connector.connect(
+            request=request,
+            network=NetworkGlobalID.TESTNET,
+        )
+
+        tonkeeper = app_wallets_loader.get_wallet("tonkeeper")
+        tonkeeper_url = connector.make_connect_url(request, tonkeeper)
+        print(f"Tonkeeper URL: {tonkeeper_url}")
+
+        wallet, error = await connector.wait_connect()
+
+        if error:
+            print(f"Connection failed: {error}")
+            return
+
+    address = connector.account.address.to_str(is_bounceable=False)
+    print(f"Address: {address}")
+
+    # Build the sign data payload
+    payload = SignDataPayloadText(text=SIGN_TEXT)
+
+    # Send the sign data request to the connected wallet
+    # Returns a request_id immediately — the user approves in their wallet app
+    request_id = await connector.sign_data(payload)
+    print("Sign request sent, waiting for confirmation...")
+
+    # Block until the wallet signs the data (or rejects/times out)
+    result, error = await connector.wait_sign_data(request_id)
+
+    if error:
+        print(f"Signing failed: {error}")
+        return
+
+    print(f"Signature: {result.signature.as_hex}")
+    print(f"Signed at: {result.timestamp}")
+
+    try:
+        # Verify the signature returned by the wallet
+        sign_data_payload = SignDataPayloadDto(
+            address=connector.account.address,
+            network=connector.account.network,
+            public_key=connector.account.public_key,
+            wallet_state_init=connector.account.state_init,
+            signature=result.signature,
+            timestamp=result.timestamp,
+            domain=result.domain,
+            payload=result.payload,
+        )
+        await VerifySignData(sign_data_payload).verify(
+            allowed_domains=[APP_DOMAIN],
+            valid_auth_time=5 * 60,  # 5 minutes
+        )
+        print("SignData verified")
+    except BadSignatureError as e:
+        print(f"SignData verification failed: {e}")
+
+    # Close all active bridge connections
+    await tc.close_all()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+<Card title="Send Request Examples" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples/send_request">
+Full source code of the sign data flow on GitHub
+</Card>

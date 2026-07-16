@@ -1,0 +1,238 @@
+---
+title: Block Scanner
+description: Subscribe to new TON blocks and transactions in real time over a lite client, with resumable scanning.
+---
+
+`BlockScanner` from `tonutils.tools.block_scanner` follows the masterchain, discovers every new shard block by walking back from the shard tips each masterchain block references, and emits typed events for each block and its transactions. Use it to build indexers, payment trackers, or any service that needs a live stream of on-chain activity.
+
+## Requirements
+
+The scanner works over the native ADNL protocol and accepts only a `LiteClient` or `LiteBalancer` — HTTP clients are not supported. Connect the client before starting the scanner:
+
+```python
+from ton_core import NetworkGlobalID
+from tonutils.clients import LiteBalancer
+from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
+
+client = LiteBalancer.from_network_config(
+    network=NetworkGlobalID.MAINNET,
+    rps_limit=100,
+    retry_policy=DEFAULT_ADNL_RETRY_POLICY,
+)
+```
+
+<Note>
+  Public lite servers may be unstable under load. For continuous scanning, use a private lite-server config with `LiteBalancer.from_config`. Reduce `rps_limit` if you hit rate limits; increase it for faster scanning on dedicated nodes.
+</Note>
+
+## Storage
+
+To survive restarts, give the scanner a storage object that persists the last processed masterchain seqno. Storage is any object matching `BlockScannerStorageProtocol` — two async methods:
+
+| Method                 | Description                                                |
+| ---------------------- | ---------------------------------------------------------- |
+| `get_mc_seqno()`       | Return the last processed masterchain seqno, or `None`.    |
+| `set_mc_seqno(seqno)`  | Persist the last processed masterchain seqno.              |
+
+The scanner calls `set_mc_seqno` after each fully processed masterchain block; `resume()` reads the saved value with `get_mc_seqno` and continues from the next block. A minimal file-backed implementation:
+
+```python
+from pathlib import Path
+
+
+class FileStorage:
+    """Persists the last processed masterchain seqno to a plain-text file."""
+
+    def __init__(self, path: str | Path) -> None:
+        self._path = Path(path)
+
+    async def get_mc_seqno(self) -> int | None:
+        try:
+            return int(self._path.read_text(encoding="utf-8").strip())
+        except (OSError, ValueError):
+            return None
+
+    async def set_mc_seqno(self, seqno: int) -> None:
+        self._path.write_text(f"{seqno}\n", encoding="utf-8")
+```
+
+Any backend works — a database row or a Redis key implement the same two methods. Storage is optional; without it the scanner runs, but `resume()` raises `RuntimeError`.
+
+## Handlers
+
+Create the scanner and register handlers with decorators (or pass them as `on_block=` / `on_transactions=` / `on_error=` constructor arguments):
+
+```python
+scanner = BlockScanner(client, storage=storage)
+
+
+@scanner.on_block()
+async def handle_block(event: BlockEvent) -> None: ...
+
+
+@scanner.on_transactions()
+async def handle_transactions(event: TransactionsEvent) -> None: ...
+
+
+@scanner.on_error()
+async def handle_error(event: ErrorEvent) -> None: ...
+```
+
+For each shard block, `BlockEvent` is emitted first, then `TransactionsEvent` with that block's transactions. Transactions are fetched only when an `on_transactions` handler is registered. Exceptions raised inside `on_block` / `on_transactions` handlers are routed to the error handler; the `on_error` handler must never raise — exceptions inside it are silently dropped.
+
+All events are frozen dataclasses sharing three base fields:
+
+| Field      | Type                         | Description                            |
+| ---------- | ---------------------------- | -------------------------------------- |
+| `client`   | `LiteBalancer \| LiteClient` | The client the scanner runs on.        |
+| `mc_block` | `BlockIdExt`                 | Masterchain block being processed.     |
+| `context`  | `Mapping[str, Any]`          | Shared user context (extra keyword arguments passed to `BlockScanner(...)`). |
+
+Event-specific fields:
+
+**`BlockEvent`** — a shard block discovered by the scanner:
+
+- `block` — shard block identifier (`BlockIdExt` with `workchain`, `shard`, `seqno`, `root_hash`, `file_hash`).
+
+**`TransactionsEvent`** — transactions fetched for a shard block:
+
+- `block` — shard block identifier (`BlockIdExt`).
+- `transactions` — list of `Transaction` objects from this block.
+
+**`ErrorEvent`** — an error raised during scanning or handler execution:
+
+- `error` — the raised exception.
+- `event` — the related event, or `None`.
+- `handler` — the handler (or client call) that raised, or `None`.
+- `block` — the related shard block, or `None` for masterchain-level errors.
+
+## Lifecycle
+
+The scanner offers three entry points; each runs until `stop()` is called:
+
+| Method                                | Description                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------------- |
+| `await scanner.start()`               | Start from the current last masterchain block.                              |
+| `await scanner.resume()`              | Continue from the seqno saved in storage. Requires `storage=` and a prior run. |
+| `await scanner.start_from(...)`       | Start from an explicit point: exactly one of `seqno=`, `lt=`, or `utime=`.  |
+| `await scanner.stop()`                | Request the scanning loop to stop.                                          |
+
+Call `stop()` in a `finally` block so the loop shuts down cleanly, then close the client.
+
+## Full Example
+
+```python
+import time
+from pathlib import Path
+
+from ton_core import NetworkGlobalID
+
+from tonutils.clients import LiteBalancer
+from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
+from tonutils.tools.block_scanner import (
+    BlockEvent,
+    BlockScanner,
+    ErrorEvent,
+    TransactionsEvent,
+)
+
+# Path to the file where the last processed masterchain seqno is persisted
+STORAGE_PATH = "block_scanner.mc_seqno"
+
+# Maximum requests per second sent to lite-servers
+RPS_LIMIT = 100
+
+# How far back to start scanning when using start_from(utime=...)
+START_FROM_OFFSET = 7 * 24 * 60 * 60  # 1 week ago
+
+
+class FileStorage:
+    """File-backed storage for BlockScanner resume support."""
+
+    def __init__(self, path: str | Path) -> None:
+        self._path = Path(path)
+
+    async def get_mc_seqno(self) -> int | None:
+        try:
+            return int(self._path.read_text(encoding="utf-8").strip())
+        except (OSError, ValueError):
+            return None
+
+    async def set_mc_seqno(self, seqno: int) -> None:
+        self._path.write_text(f"{seqno}\n", encoding="utf-8")
+
+
+client = LiteBalancer.from_network_config(
+    network=NetworkGlobalID.MAINNET,
+    rps_limit=RPS_LIMIT,
+    retry_policy=DEFAULT_ADNL_RETRY_POLICY,
+)
+
+# File-backed storage enables scanner.resume() across process restarts
+storage = FileStorage(STORAGE_PATH)
+
+scanner = BlockScanner(client, storage=storage)
+
+
+# ErrorEvent handler must never raise — exceptions inside it are silently dropped
+@scanner.on_error()
+async def handle_error(event: ErrorEvent) -> None:
+    where = f"mc_seqno={event.mc_block.seqno}"
+    if event.block is not None:
+        where += f", shard_seqno={event.block.seqno}"
+    print(f"[error] {where}: {type(event.error).__name__}: {event.error}")
+
+
+@scanner.on_block()
+async def handle_block(event: BlockEvent) -> None:
+    # Emitted once per shard block before the corresponding TransactionsEvent
+    print(
+        f"Block: wc={event.block.workchain}, "
+        f"shard={event.block.shard:016x}, "
+        f"shard_seqno={event.block.seqno}, "
+        f"mc_seqno={event.mc_block.seqno}"
+    )
+
+
+@scanner.on_transactions()
+async def handle_transactions(event: TransactionsEvent) -> None:
+    # Emitted after handle_block for the same shard block
+    print(
+        f"Transactions: shard_seqno={event.block.seqno}, "
+        f"mc_seqno={event.mc_block.seqno}, "
+        f"count={len(event.transactions)}"
+    )
+
+
+async def main() -> None:
+    # Connect to lite-servers before starting the scanner
+    await client.connect()
+
+    try:
+        # Option 1: Start from the current last masterchain block
+        # await scanner.start()
+
+        # Option 2: Resume from the last saved seqno in storage
+        # await scanner.resume()
+
+        # Option 3: Start from an explicit point in time
+        # start_from() accepts exactly one of: seqno=, lt=, or utime=
+        from_utime = int(time.time()) - START_FROM_OFFSET
+        await scanner.start_from(utime=from_utime)
+    finally:
+        # Always stop the scanner and close the client on exit
+        await scanner.stop()
+        await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+    from contextlib import suppress
+
+    with suppress(KeyboardInterrupt):
+        asyncio.run(main())
+```
+
+<Card title="Block Scanner Example" icon="github" href="https://github.com/nessshon/tonutils/blob/main/examples/block_scanner.py">
+  Full runnable block scanner script on GitHub.
+</Card>

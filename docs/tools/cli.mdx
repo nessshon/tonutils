@@ -1,0 +1,53 @@
+---
+title: Command-Line Interface
+description: Command-line tools bundled with tonutils — version info and live lite-server and DHT status monitors.
+---
+
+Installing `tonutils` adds a `tonutils` command with a version flag and live terminal monitors for TON network infrastructure.
+
+## Version
+
+```bash
+tonutils -v
+```
+
+Prints the installed tonutils version.
+
+## Status Monitors
+
+```bash
+tonutils status ls         # monitor lite servers
+tonutils status dht        # monitor DHT nodes
+```
+
+`tonutils status` without a subcommand runs the lite-server monitor.
+
+`tonutils status ls` polls every lite server from the network config and renders a live table: server software version and time, ping / connect / request round-trip times, latest masterchain and basechain blocks (seqno and transaction count), earliest available archive timestamp, and the most recent error, if any.
+
+`tonutils status dht` does the same for DHT nodes: ADNL key ID, address-list version, ping / connect / `dht.findNode` round-trip times, neighbor count, and the most recent error.
+
+Both monitors run until interrupted with `Ctrl+C`.
+
+## Options
+
+| Option          | Commands   | Description                          |
+| --------------- | ---------- | ------------------------------------ |
+| `-n, --network` | `ls` `dht` | `mainnet` (default) or `testnet`     |
+| `-c, --config`  | `ls` `dht` | Config file path or URL              |
+| `-r, --rps`     | `ls`       | Requests per second (default: `100`) |
+| `--retry`       | `ls`       | Enable the default ADNL retry policy |
+
+Without `-c`, the public global config for the selected network is used.
+
+**Examples:**
+
+```bash
+# Monitor testnet lite servers
+tonutils status ls -n testnet
+
+# Monitor lite servers from a private config with retries
+tonutils status ls -c /path/to/config.json --retry
+
+# Monitor DHT nodes from a config URL
+tonutils status dht -c https://ton.org/global-config.json
+```

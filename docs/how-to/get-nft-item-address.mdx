@@ -1,0 +1,240 @@
+---
+title: Get NFT Item Address
+description: Resolve an NFT item address by index via the collection get-method or calculate it locally, including TON DNS domains and Telegram collections.
+---
+
+There are several ways to obtain the address of an NFT item: call the collection's `get_nft_address_by_index` get-method on-chain, or calculate the address locally from the item index, item code, and collection address.
+
+## Standard Collections
+
+### Using Get-Method
+
+Use `get_nft_address_by_index_get_method()` to call `get_nft_address_by_index` on the collection contract.
+
+```python
+from ton_core import Address, NetworkGlobalID
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import get_nft_address_by_index_get_method
+
+# NFT item index within the collection
+NFT_ITEM_INDEX = 1
+
+# Deployed NFT collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    nft_item_address = await get_nft_address_by_index_get_method(
+        client=client,
+        address=NFT_COLLECTION_ADDRESS,
+        index=NFT_ITEM_INDEX,
+    )
+    print(f"NFT item address: {nft_item_address.to_str()}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Calculating Locally
+
+Use `NFTCollectionStandard.calculate_nft_item_address()` to derive the address without any network calls. The address is the hash of the item's initial state, built from the index, the item contract code, and the collection address.
+
+<Note>
+Obtain the NFT item contract code by following [Get Contract Code and Data](/how-to/get-contract-code-and-data). `nft_item_code` accepts a `Cell` or a hex-encoded BoC string. For collections deployed with the default tonutils item code, `NFTItemStandard.get_default_code()` returns it directly.
+</Note>
+
+```python
+from ton_core import Address
+
+from tonutils.contracts import NFTCollectionStandard
+
+# NFT item index within the collection
+NFT_ITEM_INDEX = 1
+
+# NFT item contract code (hex-encoded BoC string or Cell)
+NFT_ITEM_CODE = "..."
+
+# Deployed NFT collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+
+def main() -> None:
+    nft_item_address = NFTCollectionStandard.calculate_nft_item_address(
+        index=NFT_ITEM_INDEX,
+        nft_item_code=NFT_ITEM_CODE,
+        collection_address=NFT_COLLECTION_ADDRESS,
+    )
+    print(f"NFT item address: {nft_item_address.to_str()}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## TON DNS Domains
+
+<Note>
+The item index of a TON DNS domain is `string_hash(domain_name)` — the SHA-256 hash of the domain name without the zone suffix (e.g. `"temp"` for `temp.ton`). See [Use FunC Hash Functions](/how-to/use-func-hash-functions).
+</Note>
+
+### Using Get-Method
+
+Compute the domain index with `string_hash()` and pass it to the same get-method helper.
+
+```python
+from ton_core import Address, NetworkGlobalID, string_hash
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import get_nft_address_by_index_get_method
+
+# Domain name without the zone suffix (e.g. "temp" for temp.ton)
+DOMAIN_NAME = "temp"
+
+# TON DNS collection contract address
+DNS_COLLECTION_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    domain_index = string_hash(DOMAIN_NAME)
+    nft_item_address = await get_nft_address_by_index_get_method(
+        client=client,
+        address=DNS_COLLECTION_ADDRESS,
+        index=domain_index,
+    )
+    print(f"NFT item address: {nft_item_address.to_str()}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Calculating Locally
+
+`TONDNSCollection.calculate_nft_item_address()` accepts either the domain name string (the index is derived automatically) or a precomputed numeric index.
+
+<Note>
+Obtain the DNS item contract code by following [Get Contract Code and Data](/how-to/get-contract-code-and-data).
+</Note>
+
+```python
+from ton_core import Address
+
+from tonutils.contracts import TONDNSCollection
+
+# Domain name without the zone suffix (e.g. "temp" for temp.ton)
+DOMAIN_NAME = "temp"
+
+# DNS item contract code (hex-encoded BoC string or Cell)
+NFT_ITEM_CODE = "..."
+
+# TON DNS collection contract address
+DNS_COLLECTION_ADDRESS = Address("EQ...")
+
+
+def main() -> None:
+    nft_item_address = TONDNSCollection.calculate_nft_item_address(
+        index_or_domain=DOMAIN_NAME,
+        nft_item_code=NFT_ITEM_CODE,
+        collection_address=DNS_COLLECTION_ADDRESS,
+    )
+    print(f"NFT item address: {nft_item_address.to_str()}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Telegram Gifts and Anonymous Numbers
+
+<Note>
+The item index of a Telemint token is `string_hash(telemint_token_name)` — the SHA-256 hash of the token name (e.g. the number `"8888888"` or a username). See [Use FunC Hash Functions](/how-to/use-func-hash-functions).
+</Note>
+
+### Using Get-Method
+
+```python
+from ton_core import Address, NetworkGlobalID, string_hash
+
+from tonutils.clients import ToncenterClient
+from tonutils.contracts import get_nft_address_by_index_get_method
+
+# Telemint token name (e.g. anonymous number or gift slug)
+TELEMINT_TOKEN_NAME = "8888888"
+
+# Telemint collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+
+async def main() -> None:
+    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
+    await client.connect()
+
+    token_index = string_hash(TELEMINT_TOKEN_NAME)
+    nft_item_address = await get_nft_address_by_index_get_method(
+        client=client,
+        address=NFT_COLLECTION_ADDRESS,
+        index=token_index,
+    )
+    print(f"NFT item address: {nft_item_address.to_str()}")
+
+    await client.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+### Calculating Locally
+
+Telemint items store their initial data in a different layout than standard collections, so use the Telegram collection classes: `TelegramGiftsCollection` for gifts and anonymous numbers, `TelegramUsernamesCollection` for `t.me` usernames. Both share the same `calculate_nft_item_address()` implementation.
+
+<Note>
+Obtain the Telemint item contract code by following [Get Contract Code and Data](/how-to/get-contract-code-and-data).
+</Note>
+
+```python
+from ton_core import Address, string_hash
+
+from tonutils.contracts import TelegramGiftsCollection
+
+# Telemint token name (e.g. anonymous number or gift slug)
+TELEMINT_TOKEN_NAME = "8888888"
+
+# Telemint item contract code (hex-encoded BoC string or Cell)
+NFT_ITEM_CODE = "..."
+
+# Telemint collection contract address
+NFT_COLLECTION_ADDRESS = Address("EQ...")
+
+
+def main() -> None:
+    token_index = string_hash(TELEMINT_TOKEN_NAME)
+    nft_item_address = TelegramGiftsCollection.calculate_nft_item_address(
+        index=token_index,
+        nft_item_code=NFT_ITEM_CODE,
+        collection_address=NFT_COLLECTION_ADDRESS,
+    )
+    print(f"NFT item address: {nft_item_address.to_str()}")
+
+
+if __name__ == "__main__":
+    main()
+```

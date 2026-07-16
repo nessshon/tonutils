@@ -1,0 +1,62 @@
+---
+title: Use FunC Hash Functions
+description: Compute cell, slice, and string hashes matching the FunC stdlib functions.
+---
+
+The `ton_core` package provides Python equivalents of the FunC stdlib hash functions `cell_hash`, `slice_hash`, and `string_hash`. Use them to reproduce on-chain hash computations off-chain, for example when signing or verifying data structured as cells.
+
+## cell_hash
+
+Calculates the representation hash of the given cell `c` and returns it as a 256-bit unsigned integer `x`. This function is handy for signing and verifying signatures of arbitrary entities structured as a tree of cells.
+
+```python
+from ton_core import begin_cell, cell_hash
+
+
+def main() -> None:
+    c = begin_cell().store_string("ness").end_cell()
+    x = cell_hash(c)
+    print(x)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## slice_hash
+
+Computes the hash of the given slice `s` and returns it as a 256-bit unsigned integer `x`. The result is equivalent to creating a standard cell containing only the data and references from `s` and then computing its hash using `cell_hash`.
+
+```python
+from ton_core import begin_cell, slice_hash
+
+
+def main() -> None:
+    s = begin_cell().store_string("ness").to_slice()
+    x = slice_hash(s)
+    print(x)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## string_hash
+
+Calculates the SHA-256 hash of the UTF-8 bytes of the given string `s` and returns it as a 256-bit unsigned integer `x`.
+
+```python
+from ton_core import string_hash
+
+
+def main() -> None:
+    s = "ness"
+    x = string_hash(s)
+    print(x)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+These helpers are used by [Get NFT Item Address](/how-to/get-nft-item-address) to derive item indexes for TON DNS domains and Telemint tokens.
