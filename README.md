@@ -33,6 +33,11 @@ Wallets, transfers, smart contracts, and on-chain tools via lite servers (ADNL) 
 pip install tonutils
 ```
 
+## Documentation
+
+[Documentation](https://tonutils.ness.uz/) — API reference, guides, and examples.  
+[llms.txt](https://tonutils.ness.uz/llms.txt) — machine-readable docs for AI tools.
+
 ## Examples
 
 - [Client initialization](https://github.com/nessshon/tonutils/blob/main/examples/client/)
