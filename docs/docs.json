@@ -259,6 +259,14 @@
     }
   ],
   "seo": {
-    "indexing": "navigable"
+    "indexing": "navigable",
+    "metatags": {
+      "google-site-verification": "WTH_4ps4rwX98goUKW7vcjJ3hljEHShsxBjNIpDTU9A"
+    }
+  },
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-0RQ412VL3J"
+    }
   }
 }
