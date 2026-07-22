@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from dataclasses import dataclass, field
 
@@ -6,7 +8,7 @@ from ton_core import BlockIdExt, Transaction
 from tonutils.clients import LiteBalancer, LiteClient
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class _BaseEvent:
     """Base event for ``BlockScanner``."""
 
@@ -20,7 +22,7 @@ class _BaseEvent:
     """Shared user context."""
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ErrorEvent(_BaseEvent):
     """Error raised during scanning or handler execution."""
 
@@ -37,7 +39,7 @@ class ErrorEvent(_BaseEvent):
     """Related shard block, or ``None``."""
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class BlockEvent(_BaseEvent):
     """Shard block discovered by the scanner."""
 
@@ -45,7 +47,7 @@ class BlockEvent(_BaseEvent):
     """Shard block identifier."""
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class TransactionsEvent(_BaseEvent):
     """Transactions fetched for a shard block."""
 

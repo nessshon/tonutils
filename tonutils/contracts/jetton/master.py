@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import typing as t
 
@@ -26,17 +28,17 @@ from tonutils.contracts.jetton.methods import (
 
 _D = t.TypeVar(
     "_D",
-    bound=JettonMasterStandardData | JettonMasterStablecoinData,
+    bound=t.Union[JettonMasterStandardData, JettonMasterStablecoinData],
 )
 _C = t.TypeVar(
     "_C",
-    bound=OnchainContent | OffchainContent,
+    bound=t.Union[OnchainContent, OffchainContent],
 )
 
 _DStandard = t.TypeVar("_DStandard", bound=JettonMasterStandardData)
 _DStablecoin = t.TypeVar("_DStablecoin", bound=JettonMasterStablecoinData)
 
-_CStandard = t.TypeVar("_CStandard", bound=OnchainContent | OffchainContent)
+_CStandard = t.TypeVar("_CStandard", bound=t.Union[OnchainContent, OffchainContent])
 _CStablecoin = t.TypeVar("_CStablecoin", bound=OnchainContent)
 
 

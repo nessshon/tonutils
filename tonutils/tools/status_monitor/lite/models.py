@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from tonutils.tools.status_monitor.models import ServerInfo

@@ -16,7 +16,7 @@ from tonutils.contracts.jetton.methods import (
 
 _D = t.TypeVar(
     "_D",
-    bound=JettonWalletStandardData | JettonWalletStablecoinData | JettonWalletStablecoinV2Data,
+    bound=t.Union[JettonWalletStandardData, JettonWalletStablecoinData, JettonWalletStablecoinV2Data],
 )
 
 

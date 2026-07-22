@@ -44,4 +44,4 @@ class DhtConsole(Console):
             self._fmt_ms(status.request_ms),
             status.neighbors if status.neighbors is not None else "-",
         ]
-        return " \u2502 ".join(c.ljust(w) for c, w in zip(cells, self.WIDTHS, strict=True))
+        return " \u2502 ".join(c.ljust(w) for c, w in zip(cells, self.WIDTHS))

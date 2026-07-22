@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 
 from ton_core import AddressLike, Cell, DNSCategory, begin_cell

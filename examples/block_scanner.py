@@ -1,16 +1,18 @@
+from __future__ import annotations
+
 import time
 from pathlib import Path
 
 from ton_core import NetworkGlobalID
 
 from tonutils.clients import LiteBalancer
-from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
 from tonutils.tools.block_scanner import (
     BlockEvent,
     BlockScanner,
     ErrorEvent,
     TransactionsEvent,
 )
+from tonutils.types import DEFAULT_ADNL_RETRY_POLICY
 
 # Path to the file where the last processed masterchain seqno is persisted
 # Used by scanner.resume() to continue from where it left off after a restart

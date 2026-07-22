@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import typing as t
 from collections import deque
@@ -123,7 +125,7 @@ class Console:
 
     def _format_header(self) -> str:
         """Format the column header row."""
-        return " \u2502 ".join(h.ljust(w) for h, w in zip(self.HEADERS, self.WIDTHS, strict=True))
+        return " \u2502 ".join(h.ljust(w) for h, w in zip(self.HEADERS, self.WIDTHS))
 
     def _format_separator(self) -> str:
         """Format the header/body separator row."""

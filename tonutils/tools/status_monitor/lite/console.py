@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import ClassVar
 
 from tonutils.tools.status_monitor.console import Console
@@ -48,7 +50,7 @@ class LiteConsole(Console):
             self._fmt_block(status.last_bc_block),
             self._fmt_date(status.archive_from),
         ]
-        return " \u2502 ".join(c.ljust(w) for c, w in zip(cells, self.WIDTHS, strict=True))
+        return " \u2502 ".join(c.ljust(w) for c, w in zip(cells, self.WIDTHS))
 
     @staticmethod
     def _fmt_block(block: BlockInfo | None) -> str:

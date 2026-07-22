@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import typing as t
 
@@ -48,9 +50,9 @@ from tonutils.providers.http.tonapi.models import (
     GaslessSendPayload,
 )
 
-_C = t.TypeVar("_C", bound=WalletV5Config | WalletV5BetaConfig)
-_D = t.TypeVar("_D", bound=WalletV5Data | WalletV5BetaData)
-_P = t.TypeVar("_P", bound=WalletV5Params | WalletV5BetaParams)
+_C = t.TypeVar("_C", bound=t.Union[WalletV5Config, WalletV5BetaConfig])
+_D = t.TypeVar("_D", bound=t.Union[WalletV5Data, WalletV5BetaData])
+_P = t.TypeVar("_P", bound=t.Union[WalletV5Params, WalletV5BetaParams])
 
 _TWalletV5 = t.TypeVar("_TWalletV5", bound="_WalletV5[t.Any, t.Any, t.Any]")
 

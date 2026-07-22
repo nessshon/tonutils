@@ -133,7 +133,7 @@ class ContractInfo:
         return f"< {self.__class__.__name__} {parts} >"
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class RetryRule:
     """Retry rule matched by error code and/or message substrings.
 
@@ -204,7 +204,7 @@ class RetryRule:
         return min(delay, self.max_delay)
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class RetryPolicy:
     """Ordered collection of ``RetryRule`` instances (first match wins)."""
 

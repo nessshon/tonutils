@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 
 from ton_core import (
@@ -19,7 +21,7 @@ from tonutils.contracts.nft.methods import (
 
 _D = t.TypeVar(
     "_D",
-    bound=NFTItemEditableData | NFTItemSoulboundData | NFTItemStandardData,
+    bound=t.Union[NFTItemEditableData, NFTItemSoulboundData, NFTItemStandardData],
 )
 _C = t.TypeVar("_C", bound=OffchainItemContent)
 

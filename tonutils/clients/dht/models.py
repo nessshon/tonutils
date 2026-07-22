@@ -24,7 +24,7 @@ __all__ = [
     "normalize_pub_key",
 ]
 
-KeyLike = bytes | str | Binary
+KeyLike = t.Union[bytes, str, Binary]
 """Key input: raw ``bytes``, hex ``str``, ``Binary`` subclass (e.g. ``ADNL``)."""
 
 
@@ -85,7 +85,7 @@ class DhtUpdateRule(str, Enum):
     OVERLAY_NODES = "dht.updateRule.overlayNodes"
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class DhtKey:
     """DHT key used for store/lookup operations."""
 
@@ -125,7 +125,7 @@ class DhtKey:
         return prefix + value + b"\x00" * padding_len
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class DhtKeyDescription:
     """DHT key descriptor with ownership proof."""
 
@@ -135,7 +135,7 @@ class DhtKeyDescription:
     signature: bytes = b""
 
 
-@dataclass(slots=True)
+@dataclass
 class DhtValue:
     """DHT stored value with key descriptor and TTL."""
 

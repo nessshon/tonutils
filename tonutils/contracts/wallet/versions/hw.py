@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ton_core import (
     Builder,
     Cell,

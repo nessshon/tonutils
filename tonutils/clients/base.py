@@ -18,7 +18,7 @@ from ton_core import (
 )
 
 from tonutils.exceptions import ProviderError
-from tonutils.types import ClientType  # noqa: TC001
+from tonutils.types import ClientType
 
 if t.TYPE_CHECKING:
     from ton_core import (
