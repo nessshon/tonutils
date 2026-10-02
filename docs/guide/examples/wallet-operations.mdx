@@ -627,7 +627,7 @@ The same flow is also available as a standalone recipe: [Send Gasless Transactio
 
 ### Rotate Signing Key
 
-`change_public_key_from_mnemonic()` replaces the wallet's on-chain signing key. The request is signed twice — by the current key, which authorizes the change, and by the new key, which proves ownership of the key being installed. The wallet **address does not change**: the balance and history stay in place, only the key that controls them changes.
+`change_public_key_from_mnemonic()` replaces the wallet's on-chain signing key. The request is signed twice — by the current key, which authorizes the change, and by the new key, which proves ownership of the key being installed. The request also carries the old key encrypted with the new one, so the holder of the new key can still decrypt comments sent to the old one. The wallet **address does not change**: the balance and history stay in place, only the key that controls them changes.
 
 ```python
 from ton_core import NetworkGlobalID
@@ -667,6 +667,10 @@ if __name__ == "__main__":
 <Warning>
 After the rotation is accepted on-chain, the old mnemonic no longer controls the wallet. Reopen it with the new mnemonic using `from_address_and_mnemonic()` — `from_mnemonic()` would derive a different, empty address.
 </Warning>
+
+<Note>
+The old key is encrypted with the new one and a key-change salt, `WALLET_TG_KEY_CHANGE_SALT` by default. Recover it from the rotation's external-out body with `WalletTgKeyChangedBody.decrypt()`. A custom `salt` passed to the rotation methods is known only to you: clients using the default salt cannot recover the old key, and losing the salt loses it for good.
+</Note>
 
 ### Open by Address
 

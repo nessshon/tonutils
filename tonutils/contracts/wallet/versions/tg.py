@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 
 from ton_core import (
+    WALLET_TG_KEY_CHANGE_SALT,
     WALLET_TG_KEY_ROTATION_PROOF_TAG,
     WALLET_TG_SUBWALLET_ID,
     WALLET_TG_SUBWALLET_ID_TESTNET,
@@ -17,8 +18,10 @@ from ton_core import (
     SendMode,
     SignatureDomain,
     WalletMessage,
+    WalletTgChangePublicKeyBody,
     WalletTgConfig,
     WalletTgData,
+    WalletTgKeyChangedBody,
     WalletTgParams,
     WorkchainID,
     begin_cell,
@@ -163,6 +166,7 @@ class WalletTg(
         self,
         new_private_key: PrivateKey,
         params: WalletTgParams | None = None,
+        salt: bytes = WALLET_TG_KEY_CHANGE_SALT,
     ) -> ExternalMessage:
         """Build a signed key-rotation external message.
 
@@ -170,9 +174,11 @@ class WalletTg(
         and a key-rotation proof payload (tag + wallet address) by the new
         key, proving ownership of the key being installed. The proof is signed
         over the raw payload hash, without a network signature-domain prefix.
+        The request also carries the old private key encrypted with the new one.
 
         :param new_private_key: Ed25519 private key to rotate to.
         :param params: Transaction parameters, or ``None``.
+        :param salt: Key-change salt; with a custom one, clients using the default salt cannot recover the old key.
         :return: Signed ``ExternalMessage``.
         :raises ContractError: If private key is not set.
         """
@@ -197,11 +203,17 @@ class WalletTg(
             new_private_key.keypair.as_bytes,
         )
 
-        cell = begin_cell()
-        cell.store_cell(self._build_request_header(op_code, params))
-        cell.store_bytes(new_private_key.public_key.as_bytes)
-        cell.store_ref(begin_cell().store_bytes(rotation_signature).end_cell())
-        signing_msg = cell.end_cell()
+        key_changed = WalletTgKeyChangedBody.from_keys(self._private_key, new_private_key, salt)
+        seqno, valid_until = self._resolve_seqno_and_valid_until(params)
+        signing_msg = WalletTgChangePublicKeyBody(
+            new_public_key=new_private_key.public_key,
+            rotation_signature=rotation_signature,
+            encrypted_old_private_key=key_changed.encrypted_old_private_key,
+            seqno=seqno,
+            valid_until=valid_until,
+            subwallet_id=self._resolve_subwallet_id(),
+            op_code=op_code,
+        ).serialize()
 
         domain = SignatureDomain(self.client.network)
         signature = sign_message(
@@ -216,6 +228,7 @@ class WalletTg(
         self,
         new_private_key: PrivateKey,
         params: WalletTgParams | None = None,
+        salt: bytes = WALLET_TG_KEY_CHANGE_SALT,
     ) -> ExternalMessage:
         """Build, sign, and send a key-rotation request.
 
@@ -225,9 +238,10 @@ class WalletTg(
 
         :param new_private_key: Ed25519 private key to rotate to.
         :param params: Transaction parameters, or ``None``.
+        :param salt: Key-change salt; with a custom one, clients using the default salt cannot recover the old key.
         :return: Sent ``ExternalMessage``.
         """
-        external_msg = await self.build_change_public_key_message(new_private_key, params)
+        external_msg = await self.build_change_public_key_message(new_private_key, params, salt)
         await self.client.send_message(external_msg.as_hex)
         return external_msg
 
@@ -236,6 +250,7 @@ class WalletTg(
         new_mnemonic: list[str] | str,
         validate: bool = True,
         params: WalletTgParams | None = None,
+        salt: bytes = WALLET_TG_KEY_CHANGE_SALT,
     ) -> tuple[ExternalMessage, PublicKey, PrivateKey, list[str]]:
         """Build, sign, and send a key-rotation request to a new mnemonic.
 
@@ -246,10 +261,11 @@ class WalletTg(
         :param new_mnemonic: BIP39 mnemonic to rotate to (list or space-separated string).
         :param validate: Validate mnemonic checksum.
         :param params: Transaction parameters, or ``None``.
+        :param salt: Key-change salt; with a custom one, clients using the default salt cannot recover the old key.
         :return: Tuple of (external_message, public_key, private_key, mnemonic_list) for the new key.
         """
         public_key, private_key, mnemonic = self._mnemonic_to_keys(new_mnemonic, validate)
-        external_msg = await self.change_public_key(private_key, params)
+        external_msg = await self.change_public_key(private_key, params, salt)
         return external_msg, public_key, private_key, mnemonic
 
     async def _build_msg_cell(
@@ -309,8 +325,7 @@ class WalletTg(
         :param params: Transaction parameters.
         :return: Header ``Cell`` (opcode, subwallet ID, valid-until, seqno).
         """
-        seqno = params.seqno if params.seqno is not None else self.state_data.seqno if self.is_active else 0
-        valid_until = params.valid_until if params.valid_until is not None else calc_valid_until(seqno)
+        seqno, valid_until = self._resolve_seqno_and_valid_until(params)
 
         cell = begin_cell()
         cell.store_uint(op_code, 32)
@@ -318,6 +333,16 @@ class WalletTg(
         cell.store_uint(valid_until, 32)
         cell.store_uint(seqno, 32)
         return cell.end_cell()
+
+    def _resolve_seqno_and_valid_until(self, params: WalletTgParams) -> tuple[int, int]:
+        """Resolve request seqno and expiration from params or on-chain state.
+
+        :param params: Transaction parameters.
+        :return: Tuple of (seqno, valid_until).
+        """
+        seqno = params.seqno if params.seqno is not None else self.state_data.seqno if self.is_active else 0
+        valid_until = params.valid_until if params.valid_until is not None else calc_valid_until(seqno)
+        return seqno, valid_until
 
     @classmethod
     def _build_msg_array(cls, messages: list[WalletMessage]) -> Cell:

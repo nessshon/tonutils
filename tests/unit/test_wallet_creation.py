@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from ton_core import (
@@ -10,10 +10,15 @@ from ton_core import (
     NetworkGlobalID,
     PrivateKey,
     PublicKey,
+    TextCipher,
+    WalletTgChangePublicKeyBody,
+    WalletTgKeyChangedBody,
 )
 
+from tests.constants import ZERO_ADDRESS
 from tonutils.contracts.wallet import WalletTg, WalletV3R2, WalletV4R1, WalletV4R2
 from tonutils.exceptions import ContractError
+from tonutils.types import ContractInfo
 
 mock_client = MagicMock()
 
@@ -98,3 +103,33 @@ class TestWalletTg:
         testnet_client.network = NetworkGlobalID.TESTNET
         wallet = WalletTg.from_private_key(testnet_client, PrivateKey(bytes(32)))
         assert wallet.config.subwallet_id == WALLET_TG_SUBWALLET_ID_TESTNET
+
+    def test_key_changed_body_pins_encryption(self):
+        # sha256(new_seed || WALLET_TG_KEY_CHANGE_SALT) XOR old_seed: part of the on-chain format.
+        body = WalletTgKeyChangedBody.from_keys(PrivateKey(bytes([0x11]) * 32), PrivateKey(bytes([0x22]) * 32))
+        assert (
+            body.encrypted_old_private_key.hex() == "57a12a6e8d1d18cf5dfdc42a8a63b30630522d31a9530a692f9713fd14815255"
+        )
+
+    async def test_change_public_key_with_custom_salt(self):
+        client = MagicMock()
+        client.network = NetworkGlobalID.TESTNET
+        old_key, new_key = PrivateKey(bytes([1]) * 32), PrivateKey(bytes([2]) * 32)
+        wallet = WalletTg.from_private_key(client, old_key)
+        wallet.refresh = AsyncMock()
+        wallet._info = ContractInfo()
+
+        msg = await wallet.build_change_public_key_message(new_key, salt=b"custom")
+        cs = msg.body.begin_parse()
+        cs.skip_bits(512)
+        request = WalletTgChangePublicKeyBody.deserialize(cs)
+        key_changed = WalletTgKeyChangedBody(request.encrypted_old_private_key)
+        assert key_changed.decrypt(new_key, salt=b"custom").as_bytes == old_key.as_bytes
+        assert key_changed.decrypt(new_key).as_bytes != old_key.as_bytes
+
+    def test_decrypt_with_wrong_key_raises_value_error(self):
+        sender, recipient = PrivateKey(bytes([1]) * 32), PrivateKey(bytes([2]) * 32)
+        body = TextCipher.encrypt("hi", ZERO_ADDRESS, sender, recipient.public_key)
+        for i in range(32):
+            with pytest.raises(ValueError):
+                TextCipher.decrypt(body, ZERO_ADDRESS, PrivateKey(bytes([0x80 + i]) * 32))
