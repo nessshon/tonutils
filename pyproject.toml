@@ -14,7 +14,7 @@ maintainers = [
 ]
 dependencies = [
     "aiohttp>=3.9.0",
-    "ton-core>=0.6.0",
+    "ton-core>=0.6.1",
 ]
 keywords = [
     "ADNL",
