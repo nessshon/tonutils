@@ -124,7 +124,9 @@ class AdnlTcpTransport:
             raise self._error("send", "writer not initialized")
         try:
             await self.writer.drain()
-        except ConnectionError as exc:
+        except OSError as exc:
+            # drain() re-raises whatever killed the socket (ETIMEDOUT too) before yielding.
+            self._connected = False
             await self.close()
             raise self._error("send", "connection lost") from exc
 
@@ -205,6 +207,11 @@ class AdnlTcpTransport:
                 endpoint=self.node.endpoint,
                 operation="send",
             )
+        if self.writer.transport.is_closing():
+            # asyncio silently drops writes to a closing transport.
+            self._connected = False
+            await self.close()
+            raise self._error("send", "connection lost")
 
         packet = self._build_frame(payload)
         encrypted = self.encrypt_frame(packet)

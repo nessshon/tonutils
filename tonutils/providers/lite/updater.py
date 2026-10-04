@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import typing as t
 
 from tonutils.exceptions import ProviderError
@@ -58,5 +57,7 @@ class UpdaterWorker(BaseWorker):
                 info = MasterchainInfo.from_dict(raw)
                 self._last_mc_block = info.last_block()
 
-            except (ProviderError, asyncio.TimeoutError):
+            # Not asyncio.TimeoutError: since Python 3.11 it is also the socket's ETIMEDOUT,
+            # and retrying a dead socket here never yields; the worker wrapper backs off instead.
+            except ProviderError:
                 continue
