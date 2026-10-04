@@ -180,13 +180,18 @@ class WalletTg(
         :param params: Transaction parameters, or ``None``.
         :param salt: Key-change salt; with a custom one, clients using the default salt cannot recover the old key.
         :return: Signed ``ExternalMessage``.
-        :raises ContractError: If private key is not set.
+        :raises ContractError: If private key is not set, or the new key equals the current one.
         """
         if self._private_key is None:
             raise ContractError(
                 self,
                 f"Cannot sign message: `private_key` is not set for wallet `{self.VERSION!r}`.",
                 hint="Use .from_mnemonic() or .from_private_key() to create a wallet with signing capability.",
+            )
+        if new_private_key.public_key.as_bytes == self._private_key.public_key.as_bytes:
+            raise ContractError(
+                self,
+                f"For `{self.VERSION!r}`, the new public key must differ from the current one.",
             )
 
         await self.refresh()

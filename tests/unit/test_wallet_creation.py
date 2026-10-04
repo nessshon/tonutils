@@ -133,3 +133,11 @@ class TestWalletTg:
         for i in range(32):
             with pytest.raises(ValueError):
                 TextCipher.decrypt(body, ZERO_ADDRESS, PrivateKey(bytes([0x80 + i]) * 32))
+
+    async def test_change_public_key_rejects_same_key(self):
+        client = MagicMock()
+        client.network = NetworkGlobalID.TESTNET
+        key = PrivateKey(bytes([1]) * 32)
+        wallet = WalletTg.from_private_key(client, key)
+        with pytest.raises(ContractError):
+            await wallet.build_change_public_key_message(key)
