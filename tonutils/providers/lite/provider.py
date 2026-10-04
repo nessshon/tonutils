@@ -34,6 +34,7 @@ from tonutils.exceptions import (
     ProviderError,
     ProviderTimeoutError,
     RunGetMethodError,
+    TransportError,
 )
 from tonutils.providers.lite.pinger import PingerWorker
 from tonutils.providers.lite.reader import ReaderWorker
@@ -154,13 +155,21 @@ class LiteProvider:
         await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _do_close(self) -> None:
-        """Stop workers, cancel pending queries, and close transport."""
+        """Stop workers, fail pending queries, and close transport."""
         tasks = [self.updater.stop(), self.pinger.stop(), self.reader.stop()]
         await asyncio.gather(*tasks, return_exceptions=True)
 
+        # Fail rather than cancel: callers did not ask to be cancelled,
+        # and TransportError lets LiteBalancer fail over to another server.
         for fut in self.pending.values():
             if not fut.done():
-                fut.cancel()
+                fut.set_exception(
+                    TransportError(
+                        endpoint=self.node.endpoint,
+                        operation="request",
+                        reason="connection closed before the answer arrived",
+                    )
+                )
         self.pending.clear()
 
         await self.transport.close()

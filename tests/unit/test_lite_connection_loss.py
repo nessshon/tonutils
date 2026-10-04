@@ -8,6 +8,7 @@ import pytest
 from ton_core import LiteServerConfig, PrivateKey
 
 from tonutils.exceptions import ProviderTimeoutError, TransportError
+from tonutils.providers.lite.provider import LiteProvider
 from tonutils.providers.lite.updater import UpdaterWorker
 from tonutils.transports.adnl.tcp import AdnlTcpTransport
 
@@ -39,6 +40,19 @@ class TestTransportConnectionLoss:
             await transport.send_adnl_packet(b"payload")
         writer.write.assert_not_called()
         assert not transport.connected
+
+
+class TestProviderClose:
+    async def test_pending_queries_fail_with_transport_error(self):
+        provider = LiteProvider(NODE)
+        provider.transport.close = AsyncMock()  # type: ignore[method-assign]
+        fut: asyncio.Future[object] = asyncio.get_running_loop().create_future()
+        provider.pending["query"] = fut
+
+        await provider._do_close()
+
+        assert not fut.cancelled()
+        assert isinstance(fut.exception(), TransportError)
 
 
 class TestUpdaterTimeouts:
