@@ -67,9 +67,9 @@ else:
     print(f"Network: {connector.account.network.name}")
 ```
 
-After a successful connection, `connector.account` exposes the wallet's `address`, `network`, `public_key`, and `state_init`; `connector.app_wallet` is the matched wallet descriptor.
+After a successful connection, `connector.account` exposes the wallet's `address`, `network`, `public_key`, and `state_init`; `connector.app_wallet` is the matched wallet descriptor, found by the wallet's app name and then by its bridge URL.
 
-If the user never responds, the pending connect times out after `connect()`'s `timeout` (default `Connector.DEFAULT_CONNECT_TIMEOUT`, 15 minutes) and `wait_connect()` returns `(None, RequestTimeoutError)`. To cancel a pending connect early (for example, when the user closes the dialog), call `connector.drop_connect()`.
+If the user never responds, the pending connect times out after `connect()`'s `timeout` (default and maximum `Connector.DEFAULT_CONNECT_TIMEOUT`, 15 minutes) and `wait_connect()` returns `(None, RequestTimeoutError)`. To cancel a pending connect early (for example, when the user closes the dialog), call `connector.drop_connect()`.
 
 Complete flow:
 
@@ -86,7 +86,7 @@ STORAGE_PATH = "./tonconnect-storage.json"
 
 async def main() -> None:
     storage = FileStorage(STORAGE_PATH)
-    app_wallets_loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+    app_wallets_loader = AppWalletsLoader()
 
     tc = TonConnect(
         storage=storage,
@@ -112,10 +112,9 @@ async def main() -> None:
         )
         print(f"Connect URL: {standard_url}")
 
-        # Wallet-specific universal link — opens directly in the target wallet app
-        tonkeeper = app_wallets_loader.get_wallet("tonkeeper")
-        tonkeeper_url = connector.make_connect_url(request, tonkeeper)
-        print(f"Tonkeeper URL: {tonkeeper_url}")
+        # Wallet-specific universal links — each opens directly in its wallet app
+        for app_wallet in app_wallets_loader.get_wallets():
+            print(f"{app_wallet.name}: {connector.make_connect_url(request, app_wallet)}")
 
         # Block until the wallet responds (approve or reject)
         wallet, error = await connector.wait_connect()
@@ -143,8 +142,9 @@ if __name__ == "__main__":
 A plain connection only tells you which address the wallet claims. TON Proof adds cryptographic proof of ownership: your backend issues a challenge payload, the wallet signs it together with your app domain, and you verify the signature after connecting.
 
 ```python
+import aiohttp
 from nacl.exceptions import BadSignatureError
-from ton_core import NetworkGlobalID
+from ton_core import Address, NetworkGlobalID, PublicKey
 
 from ton_connect import (
     AppWalletsLoader,
@@ -165,12 +165,31 @@ STORAGE_PATH = "./tonconnect-storage.json"
 TON_PROOF_SECRET = "your-secret-key"
 
 # Domain your app is served from — must match your tonconnect-manifest.json
-APP_DOMAIN = "github.com"
+APP_DOMAIN = "raw.githubusercontent.com"
+
+# Toncenter API for the network the example connects to (testnet)
+TONCENTER_API = "https://testnet.toncenter.com/api/v2"
+
+
+async def get_wallet_public_key(address: Address) -> PublicKey | None:
+    # Current key from the get_public_key get-method; None falls back to the initial key
+    body = {"address": address.to_str(), "method": "get_public_key", "stack": []}
+    timeout = aiohttp.ClientTimeout(total=15)
+    async with (
+        aiohttp.ClientSession(timeout=timeout) as session,
+        session.post(f"{TONCENTER_API}/runGetMethod", json=body) as resp,
+    ):
+        if not resp.ok:
+            return None
+        result = (await resp.json())["result"]
+    if result["exit_code"] != 0 or not result["stack"]:
+        return None
+    return PublicKey(result["stack"][0][1])
 
 
 async def main() -> None:
     storage = FileStorage(STORAGE_PATH)
-    app_wallets_loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+    app_wallets_loader = AppWalletsLoader()
 
     tc = TonConnect(
         storage=storage,
@@ -196,9 +215,8 @@ async def main() -> None:
     )
     print(f"Connect URL: {standard_url}")
 
-    tonkeeper = app_wallets_loader.get_wallet("tonkeeper")
-    tonkeeper_url = connector.make_connect_url(request, tonkeeper)
-    print(f"Tonkeeper URL: {tonkeeper_url}")
+    for app_wallet in app_wallets_loader.get_wallets():
+        print(f"{app_wallet.name}: {connector.make_connect_url(request, app_wallet)}")
 
     wallet, error = await connector.wait_connect()
 
@@ -227,9 +245,11 @@ async def main() -> None:
             wallet_state_init=wallet.account.state_init,
             proof=wallet.ton_proof,
         )
+        # get_wallet_public_key: optional, checks the Telegram wallet against its current key
         await VerifyTonProof(proof_payload).verify(
             allowed_domains=[APP_DOMAIN],
             valid_auth_time=15 * 60,  # 15 minutes
+            get_wallet_public_key=get_wallet_public_key,
         )
         print("TonProof verified")
     except BadSignatureError as e:

@@ -95,13 +95,14 @@ except BadSignatureError as e:
     print(f"SignData verification failed: {e}")
 ```
 
-Verification performs five cryptographic checks — the full list, and how to verify a signature received from a frontend as a raw dict, is in [Backend Verification](/ton-connect/backend-verification#verifying-signed-data).
+Verification performs five cryptographic checks — the full list, the optional `get_wallet_public_key` resolver, and how to verify a signature received from a frontend as a raw dict, are in [Backend Verification](/ton-connect/backend-verification#verifying-signed-data).
 
 ## Complete Example
 
 ```python
+import aiohttp
 from nacl.exceptions import BadSignatureError
-from ton_core import NetworkGlobalID
+from ton_core import Address, NetworkGlobalID, PublicKey
 
 from ton_connect import AppWalletsLoader, FileStorage, TonConnect, VerifySignData
 from ton_connect.models import (
@@ -115,15 +116,34 @@ SESSION_KEY = "user-123"
 STORAGE_PATH = "./tonconnect-storage.json"
 
 # Domain your app is served from — must match your tonconnect-manifest.json
-APP_DOMAIN = "github.com"
+APP_DOMAIN = "raw.githubusercontent.com"
+
+# Toncenter API for the network the example connects to (testnet)
+TONCENTER_API = "https://testnet.toncenter.com/api/v2"
 
 # Text the user will be asked to sign in their wallet UI
 SIGN_TEXT = "I agree to the Terms of Service"
 
 
+async def get_wallet_public_key(address: Address) -> PublicKey | None:
+    # Current key from the get_public_key get-method; None falls back to the initial key
+    body = {"address": address.to_str(), "method": "get_public_key", "stack": []}
+    timeout = aiohttp.ClientTimeout(total=15)
+    async with (
+        aiohttp.ClientSession(timeout=timeout) as session,
+        session.post(f"{TONCENTER_API}/runGetMethod", json=body) as resp,
+    ):
+        if not resp.ok:
+            return None
+        result = (await resp.json())["result"]
+    if result["exit_code"] != 0 or not result["stack"]:
+        return None
+    return PublicKey(result["stack"][0][1])
+
+
 async def main() -> None:
     storage = FileStorage(STORAGE_PATH)
-    app_wallets_loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+    app_wallets_loader = AppWalletsLoader(require_sign_data=True)
 
     tc = TonConnect(
         storage=storage,
@@ -142,9 +162,8 @@ async def main() -> None:
             network=NetworkGlobalID.TESTNET,
         )
 
-        tonkeeper = app_wallets_loader.get_wallet("tonkeeper")
-        tonkeeper_url = connector.make_connect_url(request, tonkeeper)
-        print(f"Tonkeeper URL: {tonkeeper_url}")
+        for app_wallet in app_wallets_loader.get_wallets():
+            print(f"{app_wallet.name}: {connector.make_connect_url(request, app_wallet)}")
 
         wallet, error = await connector.wait_connect()
 
@@ -185,9 +204,11 @@ async def main() -> None:
             domain=result.domain,
             payload=result.payload,
         )
+        # get_wallet_public_key: optional, checks the Telegram wallet against its current key
         await VerifySignData(sign_data_payload).verify(
             allowed_domains=[APP_DOMAIN],
             valid_auth_time=5 * 60,  # 5 minutes
+            get_wallet_public_key=get_wallet_public_key,
         )
         print("SignData verified")
     except BadSignatureError as e:

@@ -47,6 +47,9 @@ Validate the dict into a typed DTO with `TonProofPayloadDto.model_validate(...)`
 5. The Ed25519 signature over the `ton-proof-item-v2` message is valid.
 
 ```python
+import aiohttp
+from ton_core import Address, PublicKey
+
 from ton_connect import VerifyTonProof
 from ton_connect.models import TonProofPayloadDto
 
@@ -55,17 +58,36 @@ PAYLOAD = {
     "address": "0:83ae019a23a8162beaa5cb0ebdc56668b2eac6c6ba51808812915b206a152dc5",
     "network": "-239",
     "publicKey": "79c446597dbf81b9987e9059de95dc557bcd9e2c431a6db1677768783d0b99f7",
-    "walletStateInit": "te6cck...",
+    "walletStateInit": "te6cckECFgEAArEAAgE0AgEAUYAAAAA///+IvOIjLL7fwNzMP0gs70ruKr3mzxYhjTbYs7u0PB6FzPugART/APSkE/S88sgLAwIBIAYEAQLyBQEeINcLH4IQc2lnbrry4Ip/EQIBSBAHAgEgCQgAGb5fD2omhAgKDrkPoCwCASANCgIBSAwLABGyYvtRNDXCgCAAF7Ml+1E0HHXIdcLH4AIBbg8OABmvHfaiaEAQ65DrhY/AABmtznaiaEAg65Drhf/AAtzQINdJwSCRW49jINcLHyCCEGV4dG69IYIQc2ludL2wkl8D4IIQZXh0brqOtIAg1yEB0HTXIfpAMPpE+Cj6RDBYvZFb4O1E0IEBQdch9AWDB/QOb6ExkTDhgEDXIXB/2zzgMSDXSYECgLmRMOBw4hIRAeaO8O2i7fshgwjXIgKDCNcjIIAg1yHTH9Mf0x/tRNDSANMfINMf0//XCgAK+QFAzPkQmiiUXwrbMeHywIffArNQB7Dy0IRRJbry4IVQNrry4Ib4I7vy0IgikvgA3gGkf8jKAMsfAc8Wye1UIJL4D95w2zzYEgP27aLt+wL0BCFukmwhjkwCIdc5MHCUIccAs44tAdcoIHYeQ2wg10nACPLgkyDXSsAC8uCTINcdBscSwgBSMLDy0InXTNc5MAGk6GwShAe78uCT10rAAPLgk+1V4tIAAcAAkVvg69csCBQgkXCWAdcsCBwS4lIQseMPINdKFRQTABCTW9sx4ddM0AByMNcsCCSOLSHy4JLSAO1E0NIAURO68tCPVFAwkTGcAYEBQNch1woA8uCO4sjKAFjPFsntVJPywI3iAJYB+kAB+kT4KPpEMFi68uCR7UTQgQFB1xj0BQSdf8jKAEAEgwf0U/Lgi44UA4MH9Fvy4Iwi1woAIW4Bs7Dy0JDiyFADzxYS9ADJ7VSiwRtT",
     "proof": {
         "timestamp": 1754535788,
         "domain": {
             "lengthBytes": 10,
             "value": "github.com",
         },
-        "signature": "d8GGkz...CQ==",
+        "signature": "d8GGkzgRbyPCiAt4a2EN+xiNK6fLHo/ptQdDT3YQcUD4cg3TUnE2Airf37y+xRkEP/aiQq38ytS4Ho4ZDHM5CQ==",
         "payload": "f85774c9762007d20000000068941ae3",
     },
 }
+
+# Toncenter API for the network of the payload (mainnet)
+TONCENTER_API = "https://toncenter.com/api/v2"
+
+
+async def get_wallet_public_key(address: Address) -> PublicKey | None:
+    # Current key from the get_public_key get-method; None falls back to the initial key
+    body = {"address": address.to_str(), "method": "get_public_key", "stack": []}
+    timeout = aiohttp.ClientTimeout(total=15)
+    async with (
+        aiohttp.ClientSession(timeout=timeout) as session,
+        session.post(f"{TONCENTER_API}/runGetMethod", json=body) as resp,
+    ):
+        if not resp.ok:
+            return None
+        result = (await resp.json())["result"]
+    if result["exit_code"] != 0 or not result["stack"]:
+        return None
+    return PublicKey(result["stack"][0][1])
 
 
 async def main() -> None:
@@ -75,9 +97,12 @@ async def main() -> None:
     # Raises BadSignatureError if any check fails
     # allowed_domains: list of domains your backend accepts — reject anything else
     # valid_auth_time: max age of the proof in seconds (15 min is typical)
+    # get_wallet_public_key: optional, checks the Telegram wallet against its current key
+    # The sample proof is old, so this run ends with "Signature expired"
     await VerifyTonProof(payload).verify(
         allowed_domains=["github.com"],
         valid_auth_time=15 * 60,  # 15 minutes
+        get_wallet_public_key=get_wallet_public_key,
     )
     print("TonProof verified")
 
@@ -89,7 +114,7 @@ if __name__ == "__main__":
 ```
 
 <Note>
-  The public key can only be extracted locally from `walletStateInit` for known standard wallet contracts (V1-V5). For wallet contracts the library does not recognize, pass an async resolver as `get_wallet_public_key` to `verify(...)` — it receives the wallet `Address` and should return the `PublicKey` (for example, by calling the contract's `get_public_key` get method on-chain) or `None`.
+  The public key is extracted locally from `walletStateInit` for known wallet contracts. The optional `get_wallet_public_key` resolver receives the wallet `Address` and returns its current `PublicKey` (for example, from the `get_public_key` get-method) or `None`. It is called for contracts the library does not recognize and for the Telegram wallet, whose key can be rotated: without it, a Telegram wallet is checked against the initial key from `walletStateInit`, which still accepts a key the owner has rotated out.
 </Note>
 
 ## Verifying Signed Data
@@ -112,6 +137,9 @@ Unlike TON Proof, `signData` is called explicitly to sign off-chain content — 
 `payload` is the data the user signed; supported types are `text`, `binary`, and `cell`. Verification follows the same pattern with `SignDataPayloadDto` and `VerifySignData`, performing the same five checks. The canonical signing message varies by payload type: text and binary use SHA-256, cell payloads use a TL-B cell hash with a CRC32 schema fingerprint.
 
 ```python
+import aiohttp
+from ton_core import Address, PublicKey
+
 from ton_connect import VerifySignData
 from ton_connect.models import SignDataPayloadDto
 
@@ -120,12 +148,31 @@ PAYLOAD = {
     "address": "0:83ae019a23a8162beaa5cb0ebdc56668b2eac6c6ba51808812915b206a152dc5",
     "network": "-239",
     "publicKey": "79c446597dbf81b9987e9059de95dc557bcd9e2c431a6db1677768783d0b99f7",
-    "walletStateInit": "te6cck...",
-    "signature": "D802oc...DA==",
+    "walletStateInit": "te6cckECFgEAArEAAgE0AgEAUYAAAAA///+IvOIjLL7fwNzMP0gs70ruKr3mzxYhjTbYs7u0PB6FzPugART/APSkE/S88sgLAwIBIAYEAQLyBQEeINcLH4IQc2lnbrry4Ip/EQIBSBAHAgEgCQgAGb5fD2omhAgKDrkPoCwCASANCgIBSAwLABGyYvtRNDXCgCAAF7Ml+1E0HHXIdcLH4AIBbg8OABmvHfaiaEAQ65DrhY/AABmtznaiaEAg65Drhf/AAtzQINdJwSCRW49jINcLHyCCEGV4dG69IYIQc2ludL2wkl8D4IIQZXh0brqOtIAg1yEB0HTXIfpAMPpE+Cj6RDBYvZFb4O1E0IEBQdch9AWDB/QOb6ExkTDhgEDXIXB/2zzgMSDXSYECgLmRMOBw4hIRAeaO8O2i7fshgwjXIgKDCNcjIIAg1yHTH9Mf0x/tRNDSANMfINMf0//XCgAK+QFAzPkQmiiUXwrbMeHywIffArNQB7Dy0IRRJbry4IVQNrry4Ib4I7vy0IgikvgA3gGkf8jKAMsfAc8Wye1UIJL4D95w2zzYEgP27aLt+wL0BCFukmwhjkwCIdc5MHCUIccAs44tAdcoIHYeQ2wg10nACPLgkyDXSsAC8uCTINcdBscSwgBSMLDy0InXTNc5MAGk6GwShAe78uCT10rAAPLgk+1V4tIAAcAAkVvg69csCBQgkXCWAdcsCBwS4lIQseMPINdKFRQTABCTW9sx4ddM0AByMNcsCCSOLSHy4JLSAO1E0NIAURO68tCPVFAwkTGcAYEBQNch1woA8uCO4sjKAFjPFsntVJPywI3iAJYB+kAB+kT4KPpEMFi68uCR7UTQgQFB1xj0BQSdf8jKAEAEgwf0U/Lgi44UA4MH9Fvy4Iwi1woAIW4Bs7Dy0JDiyFADzxYS9ADJ7VSiwRtT",
+    "signature": "D802ocFTDfQsBtG8RDOI7jiBAfhr9J0GJxArXmbspB6WfzcyVsX/+iTjdCPObLEX9fAT/QE9EkeFusUvwAnoDA==",
     "timestamp": 1754503448,
     "domain": "github.com",
     "payload": {"type": "text", "text": "Hello from ton-connect!"},
 }
+
+# Toncenter API for the network of the payload (mainnet)
+TONCENTER_API = "https://toncenter.com/api/v2"
+
+
+async def get_wallet_public_key(address: Address) -> PublicKey | None:
+    # Current key from the get_public_key get-method; None falls back to the initial key
+    body = {"address": address.to_str(), "method": "get_public_key", "stack": []}
+    timeout = aiohttp.ClientTimeout(total=15)
+    async with (
+        aiohttp.ClientSession(timeout=timeout) as session,
+        session.post(f"{TONCENTER_API}/runGetMethod", json=body) as resp,
+    ):
+        if not resp.ok:
+            return None
+        result = (await resp.json())["result"]
+    if result["exit_code"] != 0 or not result["stack"]:
+        return None
+    return PublicKey(result["stack"][0][1])
 
 
 async def main() -> None:
@@ -134,9 +181,12 @@ async def main() -> None:
 
     # Raises BadSignatureError if any check fails
     # valid_auth_time: max age of the signature in seconds (keep short, 5 min typical)
+    # get_wallet_public_key: optional, checks the Telegram wallet against its current key
+    # The sample signature is old, so this run ends with "Signature expired"
     await VerifySignData(payload).verify(
         allowed_domains=["github.com"],
         valid_auth_time=5 * 60,  # 5 minutes
+        get_wallet_public_key=get_wallet_public_key,
     )
     print("SignData verified")
 
@@ -165,15 +215,15 @@ ton_proof_payload = create_ton_proof_payload(secret_key=SECRET_KEY, ttl=15 * 60)
 verify_ton_proof_payload(secret_key=SECRET_KEY, ton_proof_payload=proof_payload_from_wallet)
 ```
 
-The payload contains random bytes, an expiry timestamp, and an HMAC-SHA256 signature under your secret key. `verify_ton_proof_payload` confirms the nonce was issued by your backend and is still within its TTL, which binds the proof to your service and prevents replay. Run it before `VerifyTonProof(...).verify(...)`.
+The payload is 32 bytes, hex-encoded: an 8-byte random nonce, an 8-byte expiry timestamp, and an HMAC-SHA256 (keyed with your secret, truncated to 16 bytes). `verify_ton_proof_payload` confirms the nonce was issued by your backend and is still within its TTL, which binds the proof to your service and prevents replay. Run it before `VerifyTonProof(...).verify(...)`.
 
 For the full connect-time flow where the same Python process both connects the wallet and verifies the proof, see [Connect Wallet](/ton-connect/connect-wallet#connecting-with-ton-proof).
 
 <CardGroup cols={2}>
-  <Card title="check_ton_proof.py" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples/check_ton_proof.py">
+  <Card title="check_ton_proof.py" icon="github" href="https://github.com/nessshon/ton-connect/blob/main/examples/check_ton_proof.py">
     Standalone TON Proof verification example on GitHub.
   </Card>
-  <Card title="check_sign_data.py" icon="github" href="https://github.com/nessshon/ton-connect/tree/main/examples/check_sign_data.py">
+  <Card title="check_sign_data.py" icon="github" href="https://github.com/nessshon/ton-connect/blob/main/examples/check_sign_data.py">
     Standalone signed-data verification example on GitHub.
   </Card>
 </CardGroup>

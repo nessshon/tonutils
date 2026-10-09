@@ -81,7 +81,7 @@ async def on_error(connector: Connector, error: TonConnectError) -> None: ...
 `SendTransactionResult`, `SignDataResult`, and `WalletMessage` are importable from `ton_connect.models`. For `TRANSACTION` and `SIGN_DATA`, exactly one of `result` and `error` is set.
 
 <Note>
-  An exception raised inside a handler is caught, wrapped in `TonConnectError` if needed, and dispatched to the `Event.ERROR` handler. Exceptions raised inside the `ERROR` handler itself are swallowed.
+  An exception raised inside a handler is caught, wrapped in `TonConnectError` if needed, and dispatched to the `Event.ERROR` handler. Exceptions raised inside the `ERROR` handler itself are logged and not dispatched again.
 </Note>
 
 ## Passing Context

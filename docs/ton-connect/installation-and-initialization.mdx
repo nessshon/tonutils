@@ -12,7 +12,7 @@ Everything needed before connecting a wallet: package installation, the applicat
 pip install ton-connect
 ```
 
-Requires Python 3.10 or later.
+Requires Python 3.10–3.14.
 
 ## Creating the Manifest
 
@@ -51,10 +51,10 @@ It is a `typing.Protocol` — any object with these three async methods works, n
 
 Two implementations ship with the package:
 
-- `FileStorage(path)` — persists sessions to a JSON file. Suitable for single-process apps; sessions survive restarts.
+- `FileStorage(path)` — persists sessions to a JSON file. Suitable for single-process apps; sessions survive restarts. A file that is not valid JSON raises `JSONDecodeError` — fix or delete it.
 - `MemoryStorage()` — keeps sessions in a plain dict. Suitable for tests and short-lived scripts; all sessions are lost on restart.
 
-For distributed or database-backed setups, implement the protocol over your own store:
+For distributed or database-backed setups, implement the protocol over your own store. Each session is stored under a single key and rewritten as a whole, so writes must be atomic per key:
 
 <Accordion title="Custom storage example">
   A Redis-backed implementation (the `redis` part is illustrative — any async key-value store works the same way):
@@ -107,7 +107,7 @@ app_wallets = loader.get_wallets()
 | `cache_ttl`         | Cache lifetime in seconds, or `None` for no expiry.                                            |
 | `timeout`           | HTTP fetch timeout in seconds (default: `5.0`).                                                |
 
-`get_wallets()` is synchronous and returns `list[AppWallet]`; `get_wallet(app_name)` returns a single descriptor or `None`. Only wallets with an SSE bridge URL are kept — others cannot receive requests from a backend. If the remote source fails and no usable fallback exists, `FetchWalletsError` is raised.
+`get_wallets()` is synchronous and returns `list[AppWallet]`; `get_wallet(app_name)` returns a single descriptor or `None`. Only wallets with an SSE bridge URL are kept — others cannot receive requests from a backend. Invalid entries in the catalogue are skipped with a warning. If the remote source fails and no usable fallback exists, or no valid entries remain, `FetchWalletsError` is raised.
 
 <Tip>
   Set `fallback_path` in production so a registry outage does not prevent your app from starting.

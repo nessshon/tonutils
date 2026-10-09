@@ -29,7 +29,7 @@ payload = SendTransactionPayload(
 
 | Field | Description |
 | --- | --- |
-| `address` | Destination address — `Address` or raw string. |
+| `address` | Destination address — `Address` or string. It is sent with its own bounce flag: a raw or `UQ...` address is non-bounceable, so use `EQ...` for contracts. |
 | `amount` | Transfer amount in nanotons (`int`; 1 TON = 1,000,000,000 nanotons). |
 | `payload` | Optional message body. Pass a `Cell` for structured bodies (jetton transfers, contract calls) or a `str`, which is automatically wrapped as a text comment. |
 | `state_init` | Optional contract `StateInit`, e.g. when the transfer deploys a contract. |
@@ -39,9 +39,9 @@ payload = SendTransactionPayload(
 
 | Field | Description |
 | --- | --- |
-| `network` | Target network. Defaults to the network passed to `connect()`. |
+| `network` | Target network. Defaults to the connected wallet's network. |
 | `from_address` | Sender address override. Defaults to the connected account's address. |
-| `valid_until` | Unix timestamp after which the wallet rejects the transaction. Defaults to now + 5 minutes; also used as the request timeout, and the wallet UI shows it as a countdown. |
+| `valid_until` | Unix timestamp after which the wallet rejects the transaction. Defaults to now + 5 minutes; the wallet UI shows it as a countdown, and the request waits for a response until 30 seconds past it. |
 | `messages` | List of outgoing messages. |
 
 ## Sending
@@ -52,7 +52,7 @@ payload = SendTransactionPayload(
 request_id = await connector.send_transaction(payload)
 ```
 
-Before sending, the connector automatically verifies that the connected wallet declares the `SendTransaction` feature, supports the number of messages in the payload (each wallet advertises a `max_messages` limit, typically 4), and supports extra currencies if any message uses them. A failed check raises `WalletNotSupportFeatureError`; calling without a connected wallet raises `WalletNotConnectedError`.
+Before sending, the connector automatically verifies that the connected wallet declares the `SendTransaction` feature, supports the number of messages in the payload (each wallet advertises a `max_messages` limit, typically 4), and supports extra currencies if any message uses them. A failed check raises `WalletNotSupportFeatureError`; a `network` different from the wallet's network raises `WalletWrongNetworkError`; calling without a connected wallet raises `WalletNotConnectedError`.
 
 ## Waiting for the Result
 
@@ -70,7 +70,7 @@ else:
 
 `result.boc` is the signed external message BoC returned by the wallet. `result.normalized_hash` is the locally computed normalized external-message hash — it can be used to look the transaction up in explorers and indexers, but it is not the on-chain transaction hash.
 
-Common errors are `UserRejectsError` (the user declined in the wallet UI) and `RequestTimeoutError` (no response before `valid_until`) — see [Errors](/ton-connect/errors) for the full list. To stop waiting for a pending request (for example, when the user navigates away), call `connector.drop_request(request_id)`.
+Common errors are `UserRejectsError` (the user declined in the wallet UI) and `RequestTimeoutError` (no response within 30 seconds past `valid_until`) — see [Errors](/ton-connect/errors) for the full list. To stop waiting for a pending request (for example, when the user navigates away), call `connector.drop_request(request_id)`.
 
 ## Complete Example
 
@@ -96,7 +96,7 @@ TRANSFER_AMOUNT = to_nano(0.01)
 
 async def main() -> None:
     storage = FileStorage(STORAGE_PATH)
-    app_wallets_loader = AppWalletsLoader(include_wallets=["tonkeeper"])
+    app_wallets_loader = AppWalletsLoader()
 
     tc = TonConnect(
         storage=storage,
@@ -115,9 +115,8 @@ async def main() -> None:
             network=NetworkGlobalID.TESTNET,
         )
 
-        tonkeeper = app_wallets_loader.get_wallet("tonkeeper")
-        tonkeeper_url = connector.make_connect_url(request, tonkeeper)
-        print(f"Tonkeeper URL: {tonkeeper_url}")
+        for app_wallet in app_wallets_loader.get_wallets():
+            print(f"{app_wallet.name}: {connector.make_connect_url(request, app_wallet)}")
 
         wallet, error = await connector.wait_connect()
 

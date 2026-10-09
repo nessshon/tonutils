@@ -15,8 +15,10 @@ Raised or delivered by the library itself:
 | `WalletNotConnectedError` | `send_transaction()`, `sign_data()`, or `disconnect()` was called while no wallet is connected. |
 | `WalletMissingRequiredFeaturesError` | The connected wallet does not declare the minimum required features. Delivered as the `error` of the connect result. |
 | `WalletNotSupportFeatureError` | The wallet does not support the requested feature — for example, more messages than its `maxMessages`, extra currencies, or the requested sign-data type. |
-| `WalletWrongNetworkError` | The wallet is connected to a different network than the one passed to `connect(network=...)`. Delivered as the `error` of the connect result. |
+| `WalletWrongNetworkError` | The wallet is on a different network than requested. If requested via `connect(network=...)`, delivered as the `error` of the connect result; if via a request's `network`, raised by `send_transaction()` / `sign_data()`. |
 | `FetchWalletsError` | `AppWalletsLoader` could not fetch or parse the wallets list. |
+
+`connect()` raises a plain `TonConnectError` when none of the wallet bridges is reachable.
 
 ## Wallet Error Codes
 
