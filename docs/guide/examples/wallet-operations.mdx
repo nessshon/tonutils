@@ -257,6 +257,8 @@ If you also need to send transactions, initialize the wallet from a mnemonic ins
 
 Use `wallet.transfer()` to send TON with an optional text comment.
 
+The recipient can be an address or a `.ton` / `.t.me` domain; a domain resolves to its wallet record and is sent non-bounceable. The same applies to `destination` of `TONTransferBuilder`, `JettonTransferBuilder` and `NFTTransferBuilder`.
+
 ```python
 from ton_core import Address, NetworkGlobalID, to_nano
 
@@ -721,19 +723,18 @@ The library supports end-to-end encrypted comments using elliptic curve Diffie-H
 
 ### Encrypt
 
-Fetch the recipient's public key with `get_public_key_get_method()`, encrypt the text with `TextCipher.encrypt()`, and send the resulting body with a regular transfer. The recipient's wallet must be deployed (`active` state) and expose the `get_public_key` get-method.
+Pass `encrypt=True` to `transfer()` (or to `TONTransferBuilder` in a batch) to send the text comment encrypted; `JettonTransferBuilder` and `NFTTransferBuilder` take the same flag for a text `forward_payload`. The recipient's public key is fetched from its wallet via the `get_public_key` get-method; for an undeployed recipient, pass it as `recipient_public_key`.
 
 ```python
-from ton_core import Address, NetworkGlobalID, TextCipher, to_nano
+from ton_core import Address, NetworkGlobalID, to_nano
 
 from tonutils.clients import ToncenterClient
-from tonutils.contracts import WalletV4R2, get_public_key_get_method
+from tonutils.contracts import WalletV4R2
 
 # Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 # Destination address (recipient)
-# Recipient must have a deployed wallet with an accessible public key
 DESTINATION_ADDRESS = Address("UQ...")
 
 
@@ -741,29 +742,14 @@ async def main() -> None:
     client = ToncenterClient(network=NetworkGlobalID.MAINNET)
     await client.connect()
 
-    # Keep private_key for encryption as our_private_key
-    wallet, _, our_private_key, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    # Retrieve recipient's public key from blockchain
-    # Calls get_public_key() get-method on recipient's wallet contract
-    their_public_key = await get_public_key_get_method(
-        client=client,
-        address=DESTINATION_ADDRESS,
-    )
-
-    # Encrypt message using end-to-end encryption (ECDH)
-    body = TextCipher.encrypt(
-        payload="Hello from tonutils!",
-        sender_address=wallet.address,
-        our_private_key=our_private_key,
-        their_public_key=their_public_key,
-    )
-
-    # Send TON with encrypted message body
+    # Send TON with a comment encrypted end-to-end (ECDH) for the recipient
     msg = await wallet.transfer(
         destination=DESTINATION_ADDRESS,
         amount=to_nano(0.01),
-        body=body,
+        body="Hello from tonutils!",
+        encrypt=True,
     )
 
     print(f"Transaction hash: {msg.normalized_hash}")
@@ -779,10 +765,8 @@ if __name__ == "__main__":
 
 **Parameters:**
 
-- `payload` — plaintext message to encrypt (`str`).
-- `sender_address` — sender's address, used as a salt for message-key derivation and verification; the recipient must pass the same address to decrypt (`Address`).
-- `our_private_key` — sender's private key for ECDH (`PrivateKey`).
-- `their_public_key` — recipient's public key for ECDH (`PublicKey`).
+- `encrypt` — encrypt the text `body` for the recipient (`bool`).
+- `recipient_public_key` — recipient's public key, or `None` to fetch it (`PublicKey | None`).
 
 ### Decrypt
 

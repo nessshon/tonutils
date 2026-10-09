@@ -157,15 +157,19 @@ class WalletProtocol(ContractProtocol[_D], t.Protocol[_D, _C, _P]):
         send_mode: SendMode | int = DEFAULT_SENDMODE,
         bounce: bool | None = None,
         params: _P | None = None,
+        encrypt: bool = False,
+        recipient_public_key: PublicKey | None = None,
     ) -> ExternalMessage:
         """Send a simple TON transfer.
 
-        :param destination: Recipient address.
+        :param destination: Recipient address or ``.ton``/``.t.me`` domain.
         :param amount: Amount in nanotons.
         :param body: Message body (``Cell`` or text comment), or ``None``.
         :param state_init: ``StateInit`` for deployment, or ``None``.
         :param send_mode: Send mode flags.
         :param bounce: Bounce on error, or ``None`` for auto-detect.
         :param params: Transaction parameters, or ``None``.
+        :param encrypt: Encrypt the text comment for the recipient.
+        :param recipient_public_key: Recipient public key for ``encrypt``, or ``None`` to fetch it.
         :return: Sent ``ExternalMessage``.
         """

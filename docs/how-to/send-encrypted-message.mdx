@@ -7,20 +7,18 @@ This example shows how to send a **TON transfer with an encrypted comment**. The
 
 ## Encrypt and Send
 
-Retrieve the recipient's public key from their deployed wallet contract with `get_public_key_get_method`, encrypt the comment with `TextCipher.encrypt`, and send it as the transfer body.
+Pass `encrypt=True` to `transfer()`. The recipient's public key is fetched from its wallet via the `get_public_key` get-method; for an undeployed recipient, pass it as `recipient_public_key`.
 
 ```python
-from ton_core import Address, NetworkGlobalID, TextCipher, to_nano
+from ton_core import Address, NetworkGlobalID, to_nano
 
 from tonutils.clients import ToncenterClient
-from tonutils.contracts import WalletV4R2, get_public_key_get_method
+from tonutils.contracts import WalletV4R2
 
 # Mnemonic phrase
 MNEMONIC = "word1 word2 word3 ..."
 
 # Destination address (recipient)
-# Recipient must have a deployed wallet contract with a public key
-# accessible via the get_public_key get-method
 DESTINATION_ADDRESS = Address("UQ...")
 
 
@@ -28,28 +26,14 @@ async def main() -> None:
     client = ToncenterClient(network=NetworkGlobalID.MAINNET)
     await client.connect()
 
-    # Keep private_key for encryption as our_private_key
-    wallet, _, our_private_key, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
+    wallet, _, _, _ = WalletV4R2.from_mnemonic(client, MNEMONIC)
 
-    # Retrieve recipient's public key from the blockchain
-    # Raises an error if the wallet is uninit or lacks the get_public_key method
-    their_public_key = await get_public_key_get_method(
-        client=client,
-        address=DESTINATION_ADDRESS,
-    )
-
-    # Encrypt the message; only the sender and the recipient can decrypt it
-    body = TextCipher.encrypt(
-        payload="Hello from tonutils!",
-        sender_address=wallet.address,
-        our_private_key=our_private_key,
-        their_public_key=their_public_key,
-    )
-
+    # Send TON with a comment encrypted end-to-end (ECDH) for the recipient
     msg = await wallet.transfer(
         destination=DESTINATION_ADDRESS,
         amount=to_nano(0.01),
-        body=body,
+        body="Hello from tonutils!",
+        encrypt=True,
     )
 
     # Normalized hash of the signed external message (computed locally) —

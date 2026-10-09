@@ -216,7 +216,7 @@ class _WalletV5(
         Builds a jetton transfer message and sends it to the gasless
         estimation endpoint. Parameters mirror ``JettonTransferBuilder``.
 
-        :param destination: Recipient address.
+        :param destination: Recipient address or ``.ton``/``.t.me`` domain.
         :param jetton_amount: Jetton amount in base units.
         :param jetton_master_address: Jetton master address (also used for gas payment).
         :param response_address: Address for excess funds, or ``None`` for wallet address.
