@@ -200,3 +200,9 @@ class TestWalletTg:
         wallet = WalletTg.from_private_key(client, key)
         with pytest.raises(ContractError):
             await wallet.build_change_public_key_message(key)
+
+
+class TestMessageCount:
+    def test_error_names_wallet(self):
+        with pytest.raises(ContractError, match="WalletV4R2 failed"):
+            WalletV4R2._validate_message_count([MagicMock()] * 5)

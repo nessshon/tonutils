@@ -394,7 +394,7 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
         """
         if len(messages) > cls.MAX_MESSAGES:
             raise ContractError(
-                cls.__name__,
+                cls,
                 f"For `{cls.VERSION!r}`, maximum messages amount is {cls.MAX_MESSAGES}, but got {len(messages)}.",
                 hint="Split into multiple sends or use a wallet version with higher limit (e.g. v5 supports 255).",
             )
