@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
-from ton_core import DEFAULT_SENDMODE, WorkchainID
+from ton_core import DEFAULT_SENDMODE, MnemonicType, WorkchainID
 
 from tonutils.contracts.protocol import ContractProtocol
 
@@ -79,14 +79,17 @@ class WalletProtocol(ContractProtocol[_D], t.Protocol[_D, _C, _P]):
         validate: bool = True,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         config: t.Any | None = None,
+        mnemonic_type: MnemonicType | None = None,
     ) -> tuple[_TWallet, PublicKey, PrivateKey, list[str]]:
         """Create wallet from a mnemonic phrase.
 
         :param client: TON client.
-        :param mnemonic: BIP39 mnemonic (list or space-separated string).
-        :param validate: Validate mnemonic checksum.
+        :param mnemonic: Mnemonic (list or space-separated string).
+        :param validate: Validate mnemonic length, words and checksum.
         :param workchain: Target workchain.
         :param config: Wallet configuration, or ``None``.
+        :param mnemonic_type: Key derivation scheme, or ``None`` to detect it by checksum
+            (the wallet scheme if not validated).
         :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         """
 
@@ -94,16 +97,18 @@ class WalletProtocol(ContractProtocol[_D], t.Protocol[_D, _C, _P]):
     def create(
         cls: type[_TWallet],
         client: ClientProtocol,
-        mnemonic_length: int = 24,
+        mnemonic_length: int | None = None,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         config: t.Any | None = None,
+        mnemonic_type: MnemonicType | None = None,
     ) -> tuple[_TWallet, PublicKey, PrivateKey, list[str]]:
         """Create a new wallet with a random mnemonic.
 
         :param client: TON client.
-        :param mnemonic_length: Word count (12, 18, or 24).
+        :param mnemonic_length: Word count (12, 15, 18, 21 or 24), or ``None`` for the scheme default (12 or 24).
         :param workchain: Target workchain.
         :param config: Wallet configuration, or ``None``.
+        :param mnemonic_type: Mnemonic scheme, or ``None`` to choose it by word count.
         :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         """
 

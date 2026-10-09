@@ -6,12 +6,14 @@ import typing as t
 from ton_core import (
     CONTRACT_CODES,
     DEFAULT_SENDMODE,
+    MNEMONIC_LENGTHS,
     Address,
     AddressLike,
     BaseWalletConfig,
     BaseWalletData,
     BaseWalletParams,
     Cell,
+    MnemonicType,
     PrivateKey,
     PublicKey,
     SendMode,
@@ -20,10 +22,15 @@ from ton_core import (
     WalletMessage,
     WorkchainID,
     begin_cell,
-    mnemonic_new,
+    detect_mnemonic_type,
     mnemonic_to_private_key,
+    multichain_mnemonic_is_valid,
+    multichain_mnemonic_new,
+    multichain_mnemonic_to_private_key,
     sign_message,
     to_cell,
+    ton_mnemonic_is_valid,
+    ton_mnemonic_new,
     words,
 )
 
@@ -46,9 +53,6 @@ _P = t.TypeVar("_P", bound=BaseWalletParams)
 
 _TWallet = t.TypeVar("_TWallet", bound="BaseWallet[t.Any, t.Any, t.Any]")
 
-VALID_MNEMONIC_LENGTHS: t.Final[tuple[int, ...]] = (12, 18, 24)
-"""Valid mnemonic phrase lengths in words."""
-
 
 class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
     """Base implementation for TON wallet contracts."""
@@ -61,6 +65,9 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
 
     _params_model: type[_P]
     """Transaction parameters model class for this wallet version."""
+
+    _mnemonic_type: t.ClassVar[MnemonicType] = MnemonicType.TON
+    """Default mnemonic scheme, used when neither the caller nor the checksum determines it."""
 
     MAX_MESSAGES: t.ClassVar[int]
     """Maximum number of messages allowed in a single transaction."""
@@ -201,25 +208,20 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
         validate: bool = True,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         config: _C | None = None,
+        mnemonic_type: MnemonicType | None = None,
     ) -> tuple[_TWallet, PublicKey, PrivateKey, list[str]]:
         """Create wallet from a mnemonic phrase.
 
         :param client: TON client.
-        :param mnemonic: BIP39 mnemonic (list or space-separated string).
-        :param validate: Validate mnemonic checksum.
+        :param mnemonic: Mnemonic (list or space-separated string).
+        :param validate: Validate mnemonic length, words and checksum.
         :param workchain: Target workchain.
         :param config: Wallet configuration, or ``None``.
+        :param mnemonic_type: Key derivation scheme, or ``None`` to detect it by checksum
+            (the wallet scheme if not validated).
         :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         """
-        if isinstance(mnemonic, str):
-            mnemonic = mnemonic.strip().lower().split()
-        if validate:
-            cls.validate_mnemonic(mnemonic)
-
-        pub_key_bytes, priv_key_bytes = mnemonic_to_private_key(mnemonic)
-        private_key = PrivateKey(priv_key_bytes)
-        public_key = PublicKey(pub_key_bytes)
-
+        public_key, private_key, mnemonic = cls._mnemonic_to_keys(mnemonic, validate, mnemonic_type)
         wallet = cls.from_private_key(client, private_key, workchain, config)
         return wallet, public_key, private_key, mnemonic
 
@@ -227,23 +229,36 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
     def create(
         cls: type[_TWallet],
         client: ClientProtocol,
-        mnemonic_length: int = 24,
+        mnemonic_length: int | None = None,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         config: _C | None = None,
+        mnemonic_type: MnemonicType | None = None,
     ) -> tuple[_TWallet, PublicKey, PrivateKey, list[str]]:
         """Create a new wallet with a random mnemonic.
 
+        Without ``mnemonic_type``, a 12-word mnemonic is Multichain (BIP-39) and a longer one is TON;
+        without both, the wallet scheme applies (Multichain for ``WalletTg``).
+
         :param client: TON client.
-        :param mnemonic_length: Word count (12, 18, or 24).
+        :param mnemonic_length: Word count (12, 15, 18, 21 or 24), or ``None`` for the scheme default (12 or 24).
         :param workchain: Target workchain.
         :param config: Wallet configuration, or ``None``.
+        :param mnemonic_type: Mnemonic scheme, or ``None`` to choose it by word count.
         :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         :raises ContractError: If mnemonic length is invalid.
         """
+        if mnemonic_type is None:
+            if mnemonic_length is None:
+                mnemonic_type = cls._mnemonic_type
+            else:
+                mnemonic_type = MnemonicType.MULTICHAIN if mnemonic_length == 12 else MnemonicType.TON
+        multichain = mnemonic_type == MnemonicType.MULTICHAIN
+        if mnemonic_length is None:
+            mnemonic_length = 12 if multichain else 24
         cls._validate_mnemonic_length(mnemonic_length)
 
-        mnemonic = mnemonic_new(mnemonic_length)
-        return cls.from_mnemonic(client, mnemonic, True, workchain, config)
+        mnemonic = multichain_mnemonic_new(mnemonic_length) if multichain else ton_mnemonic_new(mnemonic_length)
+        return cls.from_mnemonic(client, mnemonic, True, workchain, config, mnemonic_type)
 
     async def build_external_message(
         self,
@@ -386,31 +401,77 @@ class BaseWallet(BaseContract[_D], WalletProtocol[_D, _C, _P], abc.ABC):
         """Validate mnemonic word count.
 
         :param mnemonic_length: Number of words.
-        :raises ContractError: If not in (12, 18, 24).
+        :raises ContractError: If not in ``MNEMONIC_LENGTHS``.
         """
-        if mnemonic_length not in VALID_MNEMONIC_LENGTHS:
+        if mnemonic_length not in MNEMONIC_LENGTHS:
             raise ContractError(
                 cls,
-                f"Invalid mnemonic length: {mnemonic_length}. Expected one of {VALID_MNEMONIC_LENGTHS}.",
+                f"Invalid mnemonic length: {mnemonic_length}. Expected one of {MNEMONIC_LENGTHS}.",
             )
 
     @classmethod
-    def validate_mnemonic(cls, mnemonic: str | list[str]) -> None:
+    def _mnemonic_to_keys(
+        cls,
+        mnemonic: list[str] | str,
+        validate: bool,
+        mnemonic_type: MnemonicType | None,
+    ) -> tuple[PublicKey, PrivateKey, list[str]]:
+        """Normalize a mnemonic and derive its key pair.
+
+        :param mnemonic: Mnemonic (list or space-separated string).
+        :param validate: Validate mnemonic length, words and checksum.
+        :param mnemonic_type: Key derivation scheme, or ``None`` to detect it by checksum
+            (the wallet scheme if not validated).
+        :return: Tuple of (public_key, private_key, mnemonic_list).
+        """
+        if isinstance(mnemonic, str):
+            mnemonic = mnemonic.strip().lower().split()
+        else:
+            mnemonic = [w.strip().lower() for w in mnemonic]
+        if validate:
+            cls.validate_mnemonic(mnemonic, mnemonic_type)
+        if mnemonic_type is None and validate:
+            mnemonic_type = detect_mnemonic_type(mnemonic)
+        if mnemonic_type is None:
+            mnemonic_type = cls._mnemonic_type
+
+        if mnemonic_type == MnemonicType.MULTICHAIN:
+            pub_key_bytes, priv_key_bytes = multichain_mnemonic_to_private_key(mnemonic)
+        else:
+            pub_key_bytes, priv_key_bytes = mnemonic_to_private_key(mnemonic)
+        return PublicKey(pub_key_bytes), PrivateKey(priv_key_bytes), mnemonic
+
+    @classmethod
+    def validate_mnemonic(
+        cls,
+        mnemonic: str | list[str],
+        mnemonic_type: MnemonicType | None = None,
+    ) -> None:
         """Validate mnemonic phrase.
 
         :param mnemonic: Mnemonic (list or space-separated string).
-        :raises ValueError: If length is invalid or words are not in the wordlist.
+        :param mnemonic_type: Scheme whose checksum must hold, or ``None`` to accept either scheme.
+        :raises ValueError: If length is invalid, words are not in the wordlist, or the checksum fails.
         """
         if isinstance(mnemonic, str):
             mnemonic_words = mnemonic.strip().lower().split()
         else:
             mnemonic_words = [w.strip().lower() for w in mnemonic]
-        if len(mnemonic_words) not in VALID_MNEMONIC_LENGTHS:
-            raise ValueError(
-                f"Invalid mnemonic length: {len(mnemonic_words)}. Expected one of {sorted(VALID_MNEMONIC_LENGTHS)}."
-            )
+        if len(mnemonic_words) not in MNEMONIC_LENGTHS:
+            raise ValueError(f"Invalid mnemonic length: {len(mnemonic_words)}. Expected one of {MNEMONIC_LENGTHS}.")
 
         invalid = [(i + 1, w) for i, w in enumerate(mnemonic_words) if w not in words]
         if invalid:
             formatted = ", ".join(f"{idx}. {word}" for idx, word in invalid)
             raise ValueError(f"Invalid mnemonic word(s): {formatted}")
+        ton_valid = ton_mnemonic_is_valid(mnemonic_words)
+        multichain_valid = multichain_mnemonic_is_valid(mnemonic_words)
+        if mnemonic_type == MnemonicType.TON and not ton_valid:
+            raise ValueError(
+                "Invalid mnemonic checksum for a TON mnemonic. "
+                "For a Multichain (BIP-39) mnemonic pass `mnemonic_type=MnemonicType.MULTICHAIN`."
+            )
+        if mnemonic_type == MnemonicType.MULTICHAIN and not multichain_valid:
+            raise ValueError("Invalid mnemonic checksum for a Multichain (BIP-39) mnemonic.")
+        if not (ton_valid or multichain_valid):
+            raise ValueError("Invalid mnemonic checksum: not a valid TON or Multichain (BIP-39) mnemonic.")

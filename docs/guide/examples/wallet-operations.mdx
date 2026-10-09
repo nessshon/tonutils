@@ -40,6 +40,8 @@ The library supports multiple wallet versions and types, all importable from `to
 
 To create a new wallet, use the `.create()` classmethod of the wallet class you select. It returns a 4-tuple: the wallet instance, its **public key**, **private key**, and a freshly generated **mnemonic** phrase. Each wallet class takes an optional `config=` argument (`WalletV4Config`, `WalletV5Config`, etc. from `ton_core`), where you can customize `subwallet_id` to derive multiple wallets from the same mnemonic.
 
+By default `.create()` generates a 24-word TON mnemonic, and `WalletTg` a 12-word Multichain (BIP-39) mnemonic, the format used by Telegram Wallet. Without `mnemonic_type`, `mnemonic_length=12` gives a Multichain mnemonic and a longer one a TON mnemonic; pass `mnemonic_type` to choose the scheme explicitly, for example a 24-word Multichain mnemonic.
+
 ```python
 from ton_core import NetworkGlobalID, WalletV4Config
 
@@ -87,7 +89,7 @@ You can import a wallet either from a **mnemonic** phrase or directly from a **p
 
 ### From Mnemonic
 
-Mnemonics can be 24 words (TON-native) or 12/18/24 words (BIP-39 import).
+Both mnemonic schemes are supported: TON mnemonics and Multichain (BIP-39) mnemonics, such as those from Telegram Wallet. The scheme is detected by checksum, and a phrase valid in both schemes uses the wallet default; to set it explicitly, pass `mnemonic_type=MnemonicType.TON` or `mnemonic_type=MnemonicType.MULTICHAIN` (from `ton_core`).
 
 ```python
 from ton_core import NetworkGlobalID, WalletV4Config
@@ -95,7 +97,7 @@ from ton_core import NetworkGlobalID, WalletV4Config
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 
@@ -162,7 +164,7 @@ from ton_core import NetworkGlobalID, to_nano
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 
@@ -261,7 +263,7 @@ from ton_core import Address, NetworkGlobalID, to_nano
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 # Destination address (recipient)
@@ -309,7 +311,7 @@ from ton_core import Address, NetworkGlobalID, to_nano
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import NFTTransferBuilder, WalletV4R2
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 # NFT item address (specific NFT token)
@@ -366,7 +368,7 @@ from ton_core import Address, NetworkGlobalID, to_nano
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import JettonTransferBuilder, WalletV4R2
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 # Destination address (jetton recipient)
@@ -433,7 +435,7 @@ from ton_core import Address, NetworkGlobalID, to_nano
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import TONTransferBuilder, WalletV4R2
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 
@@ -490,7 +492,7 @@ from ton_core import Address, NetworkGlobalID, to_nano
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import SeqnoGuard, TONTransferBuilder, WalletV4R2
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 # Destination addresses (recipients)
@@ -561,7 +563,7 @@ from tonutils.contracts import WalletV5R1
 # Tonapi API key (required for gasless transfers)
 API_KEY = "YOUR_API_KEY"
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 # Jetton master contract address (identifies the token type)
@@ -727,7 +729,7 @@ from ton_core import Address, NetworkGlobalID, TextCipher, to_nano
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2, get_public_key_get_method
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 # Destination address (recipient)
@@ -792,7 +794,7 @@ from ton_core import Address, NetworkGlobalID, TextCipher
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 MNEMONIC = "word1 word2 word3 ..."
 
 # Sender address (original message sender)

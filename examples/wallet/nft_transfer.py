@@ -3,7 +3,7 @@ from ton_core import Address, NetworkGlobalID, to_nano
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import NFTTransferBuilder, WalletV4R2
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 

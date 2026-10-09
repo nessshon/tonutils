@@ -1,7 +1,4 @@
-from .base import (
-    VALID_MNEMONIC_LENGTHS,
-    BaseWallet,
-)
+from .base import BaseWallet
 from .guard import SeqnoGuard
 from .messages import (
     BaseMessageBuilder,
@@ -44,7 +41,6 @@ from .versions import (
 )
 
 __all__ = [
-    "VALID_MNEMONIC_LENGTHS",
     "BaseMessageBuilder",
     "BaseWallet",
     "ExternalMessage",

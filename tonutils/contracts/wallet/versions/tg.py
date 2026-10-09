@@ -11,6 +11,7 @@ from ton_core import (
     AddressLike,
     Cell,
     ContractVersion,
+    MnemonicType,
     NetworkGlobalID,
     OpCode,
     PrivateKey,
@@ -26,7 +27,6 @@ from ton_core import (
     WorkchainID,
     begin_cell,
     calc_valid_until,
-    mnemonic_to_private_key,
     sign_message,
 )
 
@@ -60,6 +60,7 @@ class WalletTg(
     _data_model = WalletTgData
     _config_model = WalletTgConfig
     _params_model = WalletTgParams
+    _mnemonic_type = MnemonicType.MULTICHAIN
     VERSION = ContractVersion.WalletTg
     MAX_MESSAGES = 255
 
@@ -95,6 +96,8 @@ class WalletTg(
         client: ClientProtocol,
         address: AddressLike,
         private_key: PrivateKey,
+        workchain: WorkchainID = WorkchainID.BASECHAIN,
+        config: WalletTgConfig | None = None,
     ) -> _TWalletTg:
         """Open an existing wallet by address with its current signing key.
 
@@ -108,6 +111,8 @@ class WalletTg(
         :param client: TON client.
         :param address: Wallet address.
         :param private_key: Ed25519 private key.
+        :param workchain: Target workchain, used to derive the address of an undeployed wallet.
+        :param config: Wallet configuration, or ``None``.
         :return: Wallet instance bound to the address with signing capability.
         :raises ContractError: If the key does not control the address.
         """
@@ -127,13 +132,13 @@ class WalletTg(
                 )
             return wallet
 
-        derived = cls.from_private_key(client, private_key)
+        derived = cls.from_private_key(client, private_key, workchain, config)
         if derived.address != address:
             raise ContractError(
                 cls,
                 f"Address {address.to_str()} is not deployed and does not derive from this key "
                 f"(derived address: {derived.address.to_str()}).",
-                hint="Check the key and network, or pass the wallet's subwallet_id via from_private_key config.",
+                hint="Check the key and network, or pass the wallet's workchain and config.",
             )
         return cls(client, address, derived.state_init, info, derived.config, private_key)
 
@@ -144,6 +149,9 @@ class WalletTg(
         address: AddressLike,
         mnemonic: list[str] | str,
         validate: bool = True,
+        workchain: WorkchainID = WorkchainID.BASECHAIN,
+        config: WalletTgConfig | None = None,
+        mnemonic_type: MnemonicType | None = None,
     ) -> tuple[_TWalletTg, PublicKey, PrivateKey, list[str]]:
         """Open an existing wallet by address with its current mnemonic.
 
@@ -153,13 +161,17 @@ class WalletTg(
 
         :param client: TON client.
         :param address: Wallet address.
-        :param mnemonic: BIP39 mnemonic (list or space-separated string).
-        :param validate: Validate mnemonic checksum.
+        :param mnemonic: Mnemonic (list or space-separated string).
+        :param validate: Validate mnemonic length, words and checksum.
+        :param workchain: Target workchain, used to derive the address of an undeployed wallet.
+        :param config: Wallet configuration, or ``None``.
+        :param mnemonic_type: Key derivation scheme, or ``None`` to detect it by checksum
+            (the wallet scheme if not validated).
         :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
         :raises ContractError: If the key does not control the address.
         """
-        public_key, private_key, mnemonic = cls._mnemonic_to_keys(mnemonic, validate)
-        wallet = await cls.from_address_and_private_key(client, address, private_key)
+        public_key, private_key, mnemonic = cls._mnemonic_to_keys(mnemonic, validate, mnemonic_type)
+        wallet = await cls.from_address_and_private_key(client, address, private_key, workchain, config)
         return wallet, public_key, private_key, mnemonic
 
     async def build_change_public_key_message(
@@ -256,6 +268,7 @@ class WalletTg(
         validate: bool = True,
         params: WalletTgParams | None = None,
         salt: bytes = WALLET_TG_KEY_CHANGE_SALT,
+        mnemonic_type: MnemonicType | None = None,
     ) -> tuple[ExternalMessage, PublicKey, PrivateKey, list[str]]:
         """Build, sign, and send a key-rotation request to a new mnemonic.
 
@@ -263,13 +276,15 @@ class WalletTg(
         accepted on-chain, reopen the wallet with
         ``from_address_and_mnemonic(client, wallet.address, new_mnemonic)``.
 
-        :param new_mnemonic: BIP39 mnemonic to rotate to (list or space-separated string).
-        :param validate: Validate mnemonic checksum.
+        :param new_mnemonic: Mnemonic to rotate to (list or space-separated string).
+        :param validate: Validate mnemonic length, words and checksum.
         :param params: Transaction parameters, or ``None``.
         :param salt: Key-change salt; with a custom one, clients using the default salt cannot recover the old key.
+        :param mnemonic_type: Key derivation scheme of the new mnemonic, or ``None`` to detect it by checksum
+            (the wallet scheme if not validated).
         :return: Tuple of (external_message, public_key, private_key, mnemonic_list) for the new key.
         """
-        public_key, private_key, mnemonic = self._mnemonic_to_keys(new_mnemonic, validate)
+        public_key, private_key, mnemonic = self._mnemonic_to_keys(new_mnemonic, validate, mnemonic_type)
         external_msg = await self.change_public_key(private_key, params, salt)
         return external_msg, public_key, private_key, mnemonic
 
@@ -405,26 +420,6 @@ class WalletTg(
                     f"SEND_MODE_IGNORE_ERRORS (+2), but message #{i} has send_mode={msg.send_mode}.",
                     hint="Add SendMode.IGNORE_ERRORS to the message send mode.",
                 )
-
-    @classmethod
-    def _mnemonic_to_keys(
-        cls,
-        mnemonic: list[str] | str,
-        validate: bool,
-    ) -> tuple[PublicKey, PrivateKey, list[str]]:
-        """Normalize a mnemonic and derive its key pair.
-
-        :param mnemonic: BIP39 mnemonic (list or space-separated string).
-        :param validate: Validate mnemonic checksum.
-        :return: Tuple of (public_key, private_key, mnemonic_list).
-        """
-        if isinstance(mnemonic, str):
-            mnemonic = mnemonic.strip().lower().split()
-        if validate:
-            cls.validate_mnemonic(mnemonic)
-
-        pub_key_bytes, priv_key_bytes = mnemonic_to_private_key(mnemonic)
-        return PublicKey(pub_key_bytes), PrivateKey(priv_key_bytes), mnemonic
 
     def _resolve_subwallet_id(self) -> int:
         """Return subwallet ID from config, or from on-chain state.

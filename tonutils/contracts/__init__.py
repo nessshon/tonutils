@@ -68,7 +68,6 @@ from .vanity import (
     VanitySpecial,
 )
 from .wallet import (
-    VALID_MNEMONIC_LENGTHS,
     BaseMessageBuilder,
     BaseWallet,
     ExternalMessage,
@@ -107,7 +106,6 @@ from .wallet import (
 )
 
 __all__ = [
-    "VALID_MNEMONIC_LENGTHS",
     "BaseContract",
     "BaseJettonMaster",
     "BaseJettonWallet",

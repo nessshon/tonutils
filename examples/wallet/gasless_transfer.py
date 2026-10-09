@@ -7,7 +7,7 @@ from tonutils.contracts import WalletV5R1
 # Get one at https://tonconsole.com/
 API_KEY = "YOUR_API_KEY"
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 # Used to derive the wallet's private key
 MNEMONIC = "word1 word2 word3 ..."
 

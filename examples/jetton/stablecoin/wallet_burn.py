@@ -3,7 +3,7 @@ from ton_core import Address, JettonBurnBody, NetworkGlobalID, to_nano
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletV4R2, get_wallet_address_get_method
 
-# Mnemonic phrase — 24 words (TON-native) or 12/18/24 words (BIP-39 import)
+# Mnemonic phrase — TON or Multichain (BIP-39)
 # Used to derive the wallet's private key
 # Note: Burn is supported in stablecoin V2 contracts only.
 # The original stablecoin V1 contract (e.g. USDT) does not implement the burn opcode.

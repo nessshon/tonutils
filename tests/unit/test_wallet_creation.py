@@ -7,12 +7,17 @@ from ton_core import (
     WALLET_TG_SUBWALLET_ID,
     WALLET_TG_SUBWALLET_ID_TESTNET,
     Address,
+    MnemonicType,
     NetworkGlobalID,
     PrivateKey,
     PublicKey,
     TextCipher,
     WalletTgChangePublicKeyBody,
+    WalletTgConfig,
     WalletTgKeyChangedBody,
+    detect_mnemonic_type,
+    mnemonic_to_private_key,
+    multichain_mnemonic_to_private_key,
 )
 
 from tests.constants import ZERO_ADDRESS
@@ -36,6 +41,23 @@ class TestCreate:
         with pytest.raises(ContractError):
             WalletV4R2.create(mock_client, mnemonic_length=10)
 
+    @pytest.mark.parametrize(
+        ("cls", "mnemonic_length", "mnemonic_type", "expected_length", "expected_type"),
+        [
+            (WalletV4R2, None, None, 24, MnemonicType.TON),
+            (WalletV4R2, 12, None, 12, MnemonicType.MULTICHAIN),
+            (WalletV4R2, 18, None, 18, MnemonicType.TON),
+            (WalletV4R2, None, MnemonicType.MULTICHAIN, 12, MnemonicType.MULTICHAIN),
+            (WalletV4R2, 24, MnemonicType.MULTICHAIN, 24, MnemonicType.MULTICHAIN),
+            (WalletTg, None, None, 12, MnemonicType.MULTICHAIN),
+            (WalletTg, 24, None, 24, MnemonicType.TON),
+        ],
+    )
+    def test_mnemonic_scheme(self, cls, mnemonic_length, mnemonic_type, expected_length, expected_type):
+        *_, mnemonic = cls.create(mock_client, mnemonic_length, mnemonic_type=mnemonic_type)
+        assert len(mnemonic) == expected_length
+        assert detect_mnemonic_type(mnemonic) == expected_type
+
 
 class TestFromMnemonic:
     def test_deterministic(self):
@@ -51,7 +73,8 @@ class TestFromMnemonic:
         mnemonic_str = " ".join(mnemonic_list)
         w_list, _, _, _ = WalletV4R2.from_mnemonic(mock_client, mnemonic_list)
         w_str, _, _, _ = WalletV4R2.from_mnemonic(mock_client, mnemonic_str)
-        assert w_list.address == w_str.address
+        w_upper, _, _, _ = WalletV4R2.from_mnemonic(mock_client, [w.upper() for w in mnemonic_list])
+        assert w_list.address == w_str.address == w_upper.address
 
     def test_different_mnemonics_different_addresses(self):
         w1, _, _, _ = WalletV4R2.create(mock_client)
@@ -65,6 +88,33 @@ class TestFromMnemonic:
     def test_validates_short_mnemonic(self):
         with pytest.raises(ValueError, match="Invalid mnemonic length"):
             WalletV4R2.from_mnemonic(mock_client, "word word word")
+
+    def test_multichain_key(self):
+        # BIP-39 reference phrase; key at m/44'/607'/0'
+        mnemonic = "abandon " * 11 + "about"
+        _, pub, _, _ = WalletV4R2.from_mnemonic(mock_client, mnemonic)
+        assert pub.as_hex == "7952e94118f34607c75e23258dd9220d66ccac5a3ee074125c25068e8107bfbf"
+
+    def test_without_validation_uses_wallet_scheme(self):
+        mnemonic = "abandon " * 11 + "about"
+        _, pub, _, _ = WalletV4R2.from_mnemonic(mock_client, mnemonic, validate=False)
+        assert pub.as_bytes == mnemonic_to_private_key(mnemonic.split())[0]
+
+    def test_multichain_rejects_bad_checksum(self):
+        with pytest.raises(ValueError, match="checksum"):
+            WalletV4R2.from_mnemonic(mock_client, "abandon " * 12, mnemonic_type=MnemonicType.MULTICHAIN)
+
+    def test_ton_rejects_multichain_mnemonic(self):
+        with pytest.raises(ValueError, match="MULTICHAIN"):
+            WalletV4R2.from_mnemonic(mock_client, "abandon " * 11 + "about", mnemonic_type=MnemonicType.TON)
+
+    def test_ambiguous_mnemonic_uses_wallet_scheme(self):
+        # valid as both a TON and a BIP-39 mnemonic
+        mnemonic = "today loyal inhale category human link conduct member heart bleak gate modify"
+        _, ton_pub, _, _ = WalletV4R2.from_mnemonic(mock_client, mnemonic)
+        _, tg_pub, _, _ = WalletTg.from_mnemonic(mock_client, mnemonic)
+        assert ton_pub.as_bytes == mnemonic_to_private_key(mnemonic.split())[0]
+        assert tg_pub.as_bytes == multichain_mnemonic_to_private_key(mnemonic.split())[0]
 
 
 class TestDifferentVersions:
@@ -103,6 +153,15 @@ class TestWalletTg:
         testnet_client.network = NetworkGlobalID.TESTNET
         wallet = WalletTg.from_private_key(testnet_client, PrivateKey(bytes(32)))
         assert wallet.config.subwallet_id == WALLET_TG_SUBWALLET_ID_TESTNET
+
+    async def test_from_address_derives_undeployed_with_config(self, monkeypatch):
+        key = PrivateKey(bytes([1]) * 32)
+        address = WalletTg.from_private_key(mock_client, key, config=WalletTgConfig(subwallet_id=1)).address
+        monkeypatch.setattr(WalletTg, "_load_info", AsyncMock(return_value=ContractInfo()))
+        wallet = await WalletTg.from_address_and_private_key(
+            mock_client, address, key, config=WalletTgConfig(subwallet_id=1)
+        )
+        assert wallet.address == address
 
     def test_key_changed_body_pins_encryption(self):
         # sha256(new_seed || WALLET_TG_KEY_CHANGE_SALT) XOR old_seed: part of the on-chain format.
