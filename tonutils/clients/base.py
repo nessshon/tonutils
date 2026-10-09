@@ -17,7 +17,7 @@ from ton_core import (
     encode_dns_name,
 )
 
-from tonutils.exceptions import ProviderError
+from tonutils.exceptions import ProviderError, ProviderResponseError, RunGetMethodError
 from tonutils.types import ClientType
 
 if t.TYPE_CHECKING:
@@ -208,7 +208,7 @@ class BaseClient(abc.ABC):
         :param domain: Domain name string or encoded DNS bytes.
         :param category: DNS record category to query.
         :param dns_root_address: Custom DNS root address, or ``None`` for config param 4.
-        :return: Parsed DNS record, raw ``Cell``, or ``None``.
+        :return: Parsed DNS record, raw ``Cell``, or ``None`` if the domain has no such record or is not registered.
         """
         from ton_core import DNSRecordDNSNextResolver, DNSRecords
 
@@ -232,9 +232,9 @@ class BaseClient(abc.ABC):
         blen = len(domain) * 8
         rlen = t.cast("int", res[0])
 
-        cell: Cell | None = res[1]
+        cell = res[1]
 
-        if cell is None:
+        if not isinstance(cell, Cell):
             return None
 
         if rlen % 8 != 0 or rlen > blen:
@@ -252,4 +252,11 @@ class BaseClient(abc.ABC):
 
         next_domain = domain[rlen // 8 :]
         next_dns_root = DNSRecordDNSNextResolver.deserialize(cell.begin_parse())
-        return await self.dnsresolve(next_domain, category, next_dns_root.value)
+        try:
+            return await self.dnsresolve(next_domain, category, next_dns_root.value)
+        except RunGetMethodError:
+            return None
+        except ProviderResponseError as exc:
+            if exc.code != 404:
+                raise
+            return None
