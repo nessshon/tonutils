@@ -11,7 +11,7 @@ This section provides a complete guide to managing wallets using the `tonutils` 
 - Sending transactions (TON, NFTs, jettons)
 - Performing batch and sequential transfers
 - Sending gasless (relayed) jetton transfers
-- Rotating the signing key of a Telegram wallet (WalletTg)
+- Rotating the mnemonic of a Telegram Wallet
 - Encrypting and decrypting on-chain messages
 
 ## Supported Wallets
@@ -40,7 +40,7 @@ The library supports multiple wallet versions and types, all importable from `to
 
 To create a new wallet, use the `.create()` classmethod of the wallet class you select. It returns a 4-tuple: the wallet instance, its **public key**, **private key**, and a freshly generated **mnemonic** phrase. Each wallet class takes an optional `config=` argument (`WalletV4Config`, `WalletV5Config`, etc. from `ton_core`), where you can customize `subwallet_id` to derive multiple wallets from the same mnemonic.
 
-By default `.create()` generates a 24-word TON mnemonic, and `WalletTg` a 12-word Multichain (BIP-39) mnemonic, the format used by Telegram Wallet. Without `mnemonic_type`, `mnemonic_length=12` gives a Multichain mnemonic and a longer one a TON mnemonic; pass `mnemonic_type` to choose the scheme explicitly, for example a 24-word Multichain mnemonic.
+By default `.create()` generates a 24-word TON mnemonic. Without `mnemonic_type`, `mnemonic_length=12` gives a Multichain (BIP-39) mnemonic and a longer one a TON mnemonic; pass `mnemonic_type` to choose the scheme explicitly, for example a 24-word Multichain mnemonic. `WalletTg` always generates a 12-word Multichain mnemonic, the format used by Telegram Wallet.
 
 ```python
 from ton_core import NetworkGlobalID, WalletV4Config
@@ -89,7 +89,7 @@ You can import a wallet either from a **mnemonic** phrase or directly from a **p
 
 ### From Mnemonic
 
-Both mnemonic schemes are supported: TON mnemonics and Multichain (BIP-39) mnemonics, such as those from Telegram Wallet. The scheme is detected by checksum, and a phrase valid in both schemes uses the wallet default; to set it explicitly, pass `mnemonic_type=MnemonicType.TON` or `mnemonic_type=MnemonicType.MULTICHAIN` (from `ton_core`).
+Both mnemonic schemes are supported: TON mnemonics and Multichain (BIP-39) mnemonics. The scheme is detected by checksum, and a phrase valid in both schemes uses the wallet default; to set it explicitly, pass `mnemonic_type=MnemonicType.TON` or `mnemonic_type=MnemonicType.MULTICHAIN`. `WalletTg` uses the rotation mnemonic format: 12 words, or 24 after a key rotation; see [Telegram Wallet](#telegram-wallet).
 
 ```python
 from ton_core import NetworkGlobalID, WalletV4Config
@@ -625,25 +625,24 @@ A Tonapi API key is required — get one at [tonconsole.com](https://tonconsole.
 
 The same flow is also available as a standalone recipe: [Send Gasless Transaction](/how-to/send-gasless-transaction).
 
-## Telegram Wallet (WalletTg)
+## Telegram Wallet
 
 `WalletTg` is the wallet contract used by Telegram. Its account code is a small immutable trampoline that runs shared logic stored in the blockchain config, so every `WalletTg` uses the same latest contract version, updated by validator voting. It supports up to 255 messages per transaction and adds one capability the standard wallets do not have: rotating its signing key on-chain. Its default `subwallet_id` is network-specific and resolved automatically from the client's network.
 
-### Rotate Signing Key
+A Telegram Wallet mnemonic has 12 words, or 24 after a key rotation. Words 1–12 derive the address and never change; words 13–24 hold the current signing key. Each half is a separate 12-word Multichain (BIP-39) mnemonic. `from_mnemonic()` accepts both forms; TON mnemonics are not supported, open such a wallet with `from_private_key()`. With only the private key of a rotated wallet, open it by address: `WalletTg(client, address, private_key=key)`.
 
-`change_public_key_from_mnemonic()` replaces the wallet's on-chain signing key. The request is signed twice — by the current key, which authorizes the change, and by the new key, which proves ownership of the key being installed. The request also carries the old key encrypted with the new one, so the holder of the new key can still decrypt comments sent to the old one. The wallet **address does not change**: the balance and history stay in place, only the key that controls them changes.
+### Rotate Mnemonic
+
+`rotate_mnemonic()` replaces the wallet's on-chain signing key with the key from words 13–24 of a new mnemonic. The wallet **address does not change**: the balance and history stay in place.
 
 ```python
-from ton_core import NetworkGlobalID
+from ton_core import NetworkGlobalID, multichain_mnemonic_new
 
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletTg
 
-# Current mnemonic controlling the wallet
+# Current mnemonic — 12 or 24 words
 MNEMONIC = "word1 word2 word3 ..."
-
-# New mnemonic to rotate the signing key to
-NEW_MNEMONIC = "word1 word2 word3 ..."
 
 
 async def main() -> None:
@@ -653,9 +652,12 @@ async def main() -> None:
     # Open the wallet with its current mnemonic
     wallet, _, _, _ = WalletTg.from_mnemonic(client, MNEMONIC)
 
-    # Rotate the signing key to NEW_MNEMONIC
-    # Returns: (external_message, public_key, private_key, mnemonic)
-    msg, _, _, _ = await wallet.change_public_key_from_mnemonic(NEW_MNEMONIC)
+    # Words 1-12 of the current mnemonic and a new 12-word half
+    new_mnemonic = MNEMONIC.split()[:12] + multichain_mnemonic_new()
+    print(f"New mnemonic: {' '.join(new_mnemonic)}")
+
+    # Rotate the signing key to words 13-24 of the new mnemonic
+    msg = await wallet.rotate_mnemonic(new_mnemonic)
 
     print(f"Transaction hash: {msg.normalized_hash}")
 
@@ -669,53 +671,8 @@ if __name__ == "__main__":
 ```
 
 <Warning>
-After the rotation is accepted on-chain, the old mnemonic no longer controls the wallet. Reopen it with the new mnemonic using `from_address_and_mnemonic()` — `from_mnemonic()` would derive a different, empty address.
+Store the new mnemonic before the call: it is the only copy of the new key. Once the rotation is accepted, the old mnemonic no longer controls the wallet.
 </Warning>
-
-<Note>
-The old key is encrypted with the new one and a key-change salt, `WALLET_TG_KEY_CHANGE_SALT` by default. Recover it from the rotation's external-out body with `WalletTgKeyChangedBody.decrypt()`. A custom `salt` passed to the rotation methods is known only to you: clients using the default salt cannot recover the old key, and losing the salt loses it for good.
-</Note>
-
-### Open by Address
-
-After a key rotation, the wallet's address no longer derives from its mnemonic. Open it by its known address instead: `from_address_and_mnemonic()` binds the current key to the address and verifies the key actually controls it.
-
-```python
-from ton_core import Address, NetworkGlobalID
-
-from tonutils.clients import ToncenterClient
-from tonutils.contracts import WalletTg
-
-# Address of the existing wallet to open
-WALLET_ADDRESS = Address("UQ...")
-
-# Current mnemonic controlling that wallet
-MNEMONIC = "word1 word2 word3 ..."
-
-
-async def main() -> None:
-    client = ToncenterClient(network=NetworkGlobalID.MAINNET)
-    await client.connect()
-
-    # Open the wallet by address with the current mnemonic
-    # Verifies the key controls the address before returning
-    # Returns: (wallet, public_key, private_key, mnemonic)
-    wallet, _, _, _ = await WalletTg.from_address_and_mnemonic(client, WALLET_ADDRESS, MNEMONIC)
-
-    print(f"Wallet address: {wallet.address.to_str(is_bounceable=False)}")
-
-    await client.close()
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())
-```
-
-<Note>
-`from_address_and_private_key()` is the private-key equivalent of `from_address_and_mnemonic()`, and `change_public_key()` rotates to a `PrivateKey` directly instead of a mnemonic.
-</Note>
 
 ## Encrypted Messages
 
