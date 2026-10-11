@@ -1,14 +1,11 @@
-from ton_core import NetworkGlobalID
+from ton_core import NetworkGlobalID, multichain_mnemonic_new
 
 from tonutils.clients import ToncenterClient
 from tonutils.contracts import WalletTg
 
-# Mnemonic phrase — TON or Multichain (BIP-39)
-# Used to derive the wallet's private key
+# Telegram wallet mnemonic — 12 words, or 24 after a key rotation
+# Words 1-12 derive the address, words 13-24 hold the current signing key
 MNEMONIC = "word1 word2 word3 ..."
-
-# New mnemonic to rotate the signing key to
-NEW_MNEMONIC = "word1 word2 word3 ..."
 
 
 async def main() -> None:
@@ -20,22 +17,18 @@ async def main() -> None:
 
     # Create wallet instance from mnemonic (full access mode)
     # Returns: (wallet, public_key, private_key, mnemonic)
-    # If the key was already rotated, the address no longer derives from the
-    # mnemonic — open it with from_address_and_mnemonic (see wallet_tg_open_by_address.py)
     wallet, _, _, _ = WalletTg.from_mnemonic(client, MNEMONIC)
 
-    # Rotate the signing key to NEW_MNEMONIC
-    # The request is signed twice: by the current key (authorizes the change)
-    # and by the new key (proves ownership of the key being installed)
+    # New mnemonic: words 1-12 of the current one and a new 12-word half
+    # Store it before rotating: it is the only copy of the new key
+    new_mnemonic = MNEMONIC.split()[:12] + multichain_mnemonic_new()
+    print(f"New mnemonic: {' '.join(new_mnemonic)}")
+
+    # Rotate the signing key to words 13-24 of the new mnemonic
     # The wallet address does not change — only the on-chain public key does,
     # so the balance and history stay on the same address
-    # After acceptance, reopen the wallet with NEW_MNEMONIC via from_address_and_mnemonic
-    # Returns: (external_message, public_key, private_key, mnemonic)
-    msg, _, _, _ = await wallet.change_public_key_from_mnemonic(NEW_MNEMONIC)
-
-    # Get wallet address in user-friendly format
-    # is_bounceable=False: standard for wallet contracts (UQ...)
-    print(f"Wallet address: {wallet.address.to_str(is_bounceable=False)}")
+    # After acceptance, open the wallet with from_mnemonic(client, new_mnemonic)
+    msg = await wallet.rotate_mnemonic(new_mnemonic)
 
     # Normalized hash of the signed external message (computed locally before sending)
     # Not a blockchain transaction hash — use it to track whether the message
