@@ -14,6 +14,7 @@ from ton_core import (
     TextCipher,
     WalletTgChangePublicKeyBody,
     WalletTgConfig,
+    WalletTgData,
     WalletTgKeyChangedBody,
     detect_mnemonic_type,
     mnemonic_to_private_key,
@@ -21,11 +22,36 @@ from ton_core import (
 )
 
 from tests.constants import ZERO_ADDRESS
-from tonutils.contracts.wallet import WalletTg, WalletV3R2, WalletV4R1, WalletV4R2
+from tonutils.contracts.wallet import TONTransferBuilder, WalletTg, WalletV3R2, WalletV4R1, WalletV4R2
 from tonutils.exceptions import ContractError
-from tonutils.types import ContractInfo
+from tonutils.types import ContractInfo, ContractState
 
 mock_client = MagicMock()
+
+TG_ANCHOR = "legal winner thank year wave sausage worth useful legal winner thank yellow"
+TG_SIGNING = "letter advice cage absurd amount doctor acoustic avoid letter advice cage above"
+TG_NEXT = "abandon " * 11 + "about"
+TON_MNEMONIC = (
+    "occur tooth miss avocado base hat scout pattern moral narrow hover fancy "
+    "other bamboo initial worth liquid picnic weird calm security rib bottom universe"
+)
+
+
+def _tg_wallet(
+    mnemonic: str,
+    onchain_key: PublicKey | None = None,
+    config: WalletTgConfig | None = None,
+) -> WalletTg:
+    client = MagicMock()
+    client.network = NetworkGlobalID.TESTNET
+    client.send_message = AsyncMock()
+    wallet, _, _, _ = WalletTg.from_mnemonic(client, mnemonic, config=config)
+    wallet.refresh = AsyncMock()
+    wallet._info = ContractInfo()
+    if onchain_key is not None:
+        data = WalletTgData(onchain_key, subwallet_id=wallet.config.subwallet_id).serialize()
+        wallet._info = ContractInfo(data_raw=data.to_boc().hex(), state=ContractState.ACTIVE)
+    return wallet
 
 
 class TestCreate:
@@ -50,7 +76,6 @@ class TestCreate:
             (WalletV4R2, None, MnemonicType.MULTICHAIN, 12, MnemonicType.MULTICHAIN),
             (WalletV4R2, 24, MnemonicType.MULTICHAIN, 24, MnemonicType.MULTICHAIN),
             (WalletTg, None, None, 12, MnemonicType.MULTICHAIN),
-            (WalletTg, 24, None, 24, MnemonicType.TON),
         ],
     )
     def test_mnemonic_scheme(self, cls, mnemonic_length, mnemonic_type, expected_length, expected_type):
@@ -123,11 +148,9 @@ class TestDifferentVersions:
         w_v3, _, _, _ = WalletV3R2.from_mnemonic(mock_client, mnemonic)
         w_v4r1, _, _, _ = WalletV4R1.from_mnemonic(mock_client, mnemonic)
         w_v4r2, _, _, _ = WalletV4R2.from_mnemonic(mock_client, mnemonic)
-        w_tg, _, _, _ = WalletTg.from_mnemonic(mock_client, mnemonic)
         assert w_v3.address != w_v4r1.address
         assert w_v3.address != w_v4r2.address
         assert w_v4r1.address != w_v4r2.address
-        assert w_tg.address != w_v4r2.address
 
 
 class TestFromPrivateKey:
@@ -154,37 +177,12 @@ class TestWalletTg:
         wallet = WalletTg.from_private_key(testnet_client, PrivateKey(bytes(32)))
         assert wallet.config.subwallet_id == WALLET_TG_SUBWALLET_ID_TESTNET
 
-    async def test_from_address_derives_undeployed_with_config(self, monkeypatch):
-        key = PrivateKey(bytes([1]) * 32)
-        address = WalletTg.from_private_key(mock_client, key, config=WalletTgConfig(subwallet_id=1)).address
-        monkeypatch.setattr(WalletTg, "_load_info", AsyncMock(return_value=ContractInfo()))
-        wallet = await WalletTg.from_address_and_private_key(
-            mock_client, address, key, config=WalletTgConfig(subwallet_id=1)
-        )
-        assert wallet.address == address
-
     def test_key_changed_body_pins_encryption(self):
         # sha256(new_seed || WALLET_TG_KEY_CHANGE_SALT) XOR old_seed: part of the on-chain format.
         body = WalletTgKeyChangedBody.from_keys(PrivateKey(bytes([0x11]) * 32), PrivateKey(bytes([0x22]) * 32))
         assert (
             body.encrypted_old_private_key.hex() == "57a12a6e8d1d18cf5dfdc42a8a63b30630522d31a9530a692f9713fd14815255"
         )
-
-    async def test_change_public_key_with_custom_salt(self):
-        client = MagicMock()
-        client.network = NetworkGlobalID.TESTNET
-        old_key, new_key = PrivateKey(bytes([1]) * 32), PrivateKey(bytes([2]) * 32)
-        wallet = WalletTg.from_private_key(client, old_key)
-        wallet.refresh = AsyncMock()
-        wallet._info = ContractInfo()
-
-        msg = await wallet.build_change_public_key_message(new_key, salt=b"custom")
-        cs = msg.body.begin_parse()
-        cs.skip_bits(512)
-        request = WalletTgChangePublicKeyBody.deserialize(cs)
-        key_changed = WalletTgKeyChangedBody(request.encrypted_old_private_key)
-        assert key_changed.decrypt(new_key, salt=b"custom").as_bytes == old_key.as_bytes
-        assert key_changed.decrypt(new_key).as_bytes != old_key.as_bytes
 
     def test_decrypt_with_wrong_key_raises_value_error(self):
         sender, recipient = PrivateKey(bytes([1]) * 32), PrivateKey(bytes([2]) * 32)
@@ -193,13 +191,90 @@ class TestWalletTg:
             with pytest.raises(ValueError):
                 TextCipher.decrypt(body, ZERO_ADDRESS, PrivateKey(bytes([0x80 + i]) * 32))
 
-    async def test_change_public_key_rejects_same_key(self):
-        client = MagicMock()
-        client.network = NetworkGlobalID.TESTNET
-        key = PrivateKey(bytes([1]) * 32)
-        wallet = WalletTg.from_private_key(client, key)
+
+class TestWalletTgMnemonic:
+    def test_anchor_half_derives_address(self):
+        wallet, _, _, _ = WalletTg.from_mnemonic(mock_client, f"{TG_ANCHOR} {TG_ANCHOR}")
+        assert wallet.address.to_str(is_bounceable=False) == "UQDKVhPwBvA7RBgCE6khE6GZheeVPis1yY0d0Y0Ww4cHAwjF"
+        assert WalletTg.from_mnemonic(mock_client, TG_ANCHOR)[0].address == wallet.address
+
+    def test_signing_half_signs(self):
+        anchored, anchor_pub, _, _ = WalletTg.from_mnemonic(mock_client, TG_ANCHOR)
+        wallet, pub, _, mnemonic = WalletTg.from_mnemonic(mock_client, f"{TG_ANCHOR} {TG_SIGNING}")
+        assert wallet.address == anchored.address
+        assert wallet.config.public_key == anchor_pub
+        assert pub == WalletTg.from_mnemonic(mock_client, TG_SIGNING)[1]
+        assert len(mnemonic) == 24
+
+    @pytest.mark.parametrize(
+        ("mnemonic", "match"),
+        [
+            (f"{TG_ANCHOR} abandon", "length"),
+            (TON_MNEMONIC, "from_private_key"),
+            (f"{TG_ANCHOR} {'abandon ' * 12}", "checksum"),
+        ],
+    )
+    def test_rejects_mnemonic(self, mnemonic, match):
+        with pytest.raises(ValueError, match=match):
+            WalletTg.from_mnemonic(mock_client, mnemonic)
+
+    def test_rejects_ton_scheme(self):
+        with pytest.raises(ValueError, match="Multichain"):
+            WalletTg.from_mnemonic(mock_client, TG_ANCHOR, validate=False, mnemonic_type=MnemonicType.TON)
+
+    @pytest.mark.parametrize(("mnemonic_length", "mnemonic_type"), [(24, None), (None, MnemonicType.TON)])
+    def test_create_only_12_words(self, mnemonic_length, mnemonic_type):
         with pytest.raises(ContractError):
-            await wallet.build_change_public_key_message(key)
+            WalletTg.create(mock_client, mnemonic_length, mnemonic_type=mnemonic_type)
+
+    async def test_rejects_rotated_key(self):
+        anchor_pub = WalletTg.from_mnemonic(mock_client, TG_ANCHOR)[1]
+        wallet = _tg_wallet(f"{TG_ANCHOR} {TG_SIGNING}", onchain_key=anchor_pub)
+        with pytest.raises(ContractError, match="does not control"):
+            await wallet.build_external_message([TONTransferBuilder(ZERO_ADDRESS, 1)])
+
+    async def test_rotated_mnemonic_cannot_deploy(self):
+        wallet = _tg_wallet(f"{TG_ANCHOR} {TG_SIGNING}")
+        with pytest.raises(ContractError, match="not deployed"):
+            await wallet.build_external_message([TONTransferBuilder(ZERO_ADDRESS, 1)])
+
+    async def test_rotate_mnemonic(self):
+        wallet = _tg_wallet(TG_ANCHOR)
+        new_mnemonic = f"{TG_ANCHOR} {TG_SIGNING}"
+        msg = await wallet.rotate_mnemonic(new_mnemonic)
+
+        cs = msg.body.begin_parse()
+        cs.skip_bits(512)
+        request = WalletTgChangePublicKeyBody.deserialize(cs)
+        _, new_pub, new_key, _ = WalletTg.from_mnemonic(wallet.client, new_mnemonic)
+        assert request.new_public_key == new_pub
+        old_key = WalletTgKeyChangedBody(request.encrypted_old_private_key).decrypt(new_key)
+        assert old_key.as_bytes == wallet.private_key.as_bytes
+        assert msg.init is not None
+        wallet.client.send_message.assert_awaited_once()
+
+    async def test_rotate_mnemonic_keeps_initial_data(self):
+        wallet = _tg_wallet(TG_ANCHOR, config=WalletTgConfig(seqno=3))
+        await wallet.rotate_mnemonic(f"{TG_ANCHOR} {TG_SIGNING}")
+        wallet.client.send_message.assert_awaited_once()
+
+    @pytest.mark.parametrize(
+        ("wallet_mnemonic", "onchain_half", "new_mnemonic", "error", "match"),
+        [
+            (TG_ANCHOR, None, TG_SIGNING, ValueError, "Expected 24"),
+            (TG_ANCHOR, None, f"{TG_NEXT} {TG_SIGNING}", ContractError, "do not derive"),
+            (TG_ANCHOR, None, f"{TG_ANCHOR} {TG_ANCHOR}", ContractError, "differ from words 1-12"),
+            (f"{TG_ANCHOR} {TG_SIGNING}", TG_SIGNING, f"{TG_ANCHOR} {TG_SIGNING}", ContractError, "current one"),
+            (f"{TG_ANCHOR} {TG_SIGNING}", None, f"{TG_ANCHOR} {TG_NEXT}", ContractError, "not deployed"),
+        ],
+    )
+    async def test_rotate_mnemonic_rejects(self, wallet_mnemonic, onchain_half, new_mnemonic, error, match):
+        onchain_key = WalletTg.from_mnemonic(mock_client, onchain_half)[1] if onchain_half else None
+        wallet = _tg_wallet(wallet_mnemonic, onchain_key)
+        with pytest.raises(error, match=match):
+            await wallet.rotate_mnemonic(new_mnemonic)
+        wallet.client.send_message.assert_not_awaited()
+        assert wallet.config.public_key == WalletTg.from_mnemonic(mock_client, TG_ANCHOR)[1]
 
 
 class TestMessageCount:

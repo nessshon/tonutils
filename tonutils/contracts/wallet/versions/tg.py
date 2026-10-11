@@ -7,8 +7,6 @@ from ton_core import (
     WALLET_TG_KEY_ROTATION_PROOF_TAG,
     WALLET_TG_SUBWALLET_ID,
     WALLET_TG_SUBWALLET_ID_TESTNET,
-    Address,
-    AddressLike,
     Cell,
     ContractVersion,
     MnemonicType,
@@ -27,7 +25,11 @@ from ton_core import (
     WorkchainID,
     begin_cell,
     calc_valid_until,
+    multichain_mnemonic_is_valid,
+    multichain_mnemonic_to_private_key,
     sign_message,
+    ton_mnemonic_is_valid,
+    words,
 )
 
 from tonutils.clients.protocol import ClientProtocol
@@ -91,106 +93,141 @@ class WalletTg(
         return super().from_private_key(client, private_key, workchain, config)
 
     @classmethod
-    async def from_address_and_private_key(
+    def from_mnemonic(
         cls: type[_TWalletTg],
         client: ClientProtocol,
-        address: AddressLike,
-        private_key: PrivateKey,
-        workchain: WorkchainID = WorkchainID.BASECHAIN,
-        config: WalletTgConfig | None = None,
-    ) -> _TWalletTg:
-        """Open an existing wallet by address with its current signing key.
-
-        After an on-chain key rotation the wallet keeps its original address
-        while the signing key is new, so ``from_private_key`` would derive a
-        different (empty) address. This constructor binds the key to a known
-        address instead, verifying that the key actually controls it: against
-        on-chain storage for an active wallet, against the derived address
-        for an undeployed one.
-
-        :param client: TON client.
-        :param address: Wallet address.
-        :param private_key: Ed25519 private key.
-        :param workchain: Target workchain, used to derive the address of an undeployed wallet.
-        :param config: Wallet configuration, or ``None``.
-        :return: Wallet instance bound to the address with signing capability.
-        :raises ContractError: If the key does not control the address.
-        """
-        if isinstance(address, str):
-            address = Address(address)
-
-        info = await cls._load_info(client, address)
-        wallet = cls(client, address, None, info, None, private_key)
-        if wallet.is_active:
-            onchain_key = wallet.state_data.public_key
-            if onchain_key.as_bytes != private_key.public_key.as_bytes:
-                raise ContractError(
-                    cls,
-                    f"Private key does not control wallet at {address.to_str()}: "
-                    f"on-chain public key is {onchain_key.as_hex}, this key derives {private_key.public_key.as_hex}.",
-                    hint="The wallet key may have been rotated; use the current key.",
-                )
-            return wallet
-
-        derived = cls.from_private_key(client, private_key, workchain, config)
-        if derived.address != address:
-            raise ContractError(
-                cls,
-                f"Address {address.to_str()} is not deployed and does not derive from this key "
-                f"(derived address: {derived.address.to_str()}).",
-                hint="Check the key and network, or pass the wallet's workchain and config.",
-            )
-        return cls(client, address, derived.state_init, info, derived.config, private_key)
-
-    @classmethod
-    async def from_address_and_mnemonic(
-        cls: type[_TWalletTg],
-        client: ClientProtocol,
-        address: AddressLike,
         mnemonic: list[str] | str,
         validate: bool = True,
         workchain: WorkchainID = WorkchainID.BASECHAIN,
         config: WalletTgConfig | None = None,
         mnemonic_type: MnemonicType | None = None,
     ) -> tuple[_TWalletTg, PublicKey, PrivateKey, list[str]]:
-        """Open an existing wallet by address with its current mnemonic.
+        """Create wallet from a Telegram wallet mnemonic.
 
-        Mnemonic counterpart of ``from_address_and_private_key``; use it for
-        a wallet whose key was rotated on-chain (the address no longer
-        derives from the mnemonic).
+        A 24-word mnemonic holds two 12-word Multichain (BIP-39) halves: the
+        anchor half (words 1-12) derives the address and never changes, the
+        signing half (words 13-24) holds the current key and is replaced on
+        each rotation. A 12-word mnemonic is the anchor half of a wallet whose
+        key was never rotated.
 
         :param client: TON client.
-        :param address: Wallet address.
-        :param mnemonic: Mnemonic (list or space-separated string).
-        :param validate: Validate mnemonic length, words and checksum.
-        :param workchain: Target workchain, used to derive the address of an undeployed wallet.
+        :param mnemonic: Mnemonic of 12 or 24 words (list or space-separated string).
+        :param validate: Validate words and the checksum of each half.
+        :param workchain: Target workchain.
         :param config: Wallet configuration, or ``None``.
-        :param mnemonic_type: Key derivation scheme, or ``None`` to detect it by checksum
-            (the wallet scheme if not validated).
-        :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
-        :raises ContractError: If the key does not control the address.
+        :param mnemonic_type: ``MnemonicType.MULTICHAIN`` or ``None``.
+        :return: Tuple of (wallet, public_key, private_key, mnemonic_list) with the signing key pair.
         """
-        public_key, private_key, mnemonic = cls._mnemonic_to_keys(mnemonic, validate, mnemonic_type)
-        wallet = await cls.from_address_and_private_key(client, address, private_key, workchain, config)
-        return wallet, public_key, private_key, mnemonic
+        if validate:
+            cls.validate_mnemonic(mnemonic, mnemonic_type)
+        halves = cls._mnemonic_halves(mnemonic, mnemonic_type)
+        anchor_key = PrivateKey(multichain_mnemonic_to_private_key(halves[0])[1])
+        signing_key = PrivateKey(multichain_mnemonic_to_private_key(halves[-1])[1])
 
-    async def build_change_public_key_message(
+        anchored = cls.from_private_key(client, anchor_key, workchain, config)
+        wallet = cls(client, anchored.address, anchored.state_init, None, anchored.config, signing_key)
+        return wallet, signing_key.public_key, signing_key, [w for half in halves for w in half]
+
+    @classmethod
+    def create(
+        cls: type[_TWalletTg],
+        client: ClientProtocol,
+        mnemonic_length: int | None = None,
+        workchain: WorkchainID = WorkchainID.BASECHAIN,
+        config: WalletTgConfig | None = None,
+        mnemonic_type: MnemonicType | None = None,
+    ) -> tuple[_TWalletTg, PublicKey, PrivateKey, list[str]]:
+        """Create a new wallet with a random 12-word Multichain (BIP-39) mnemonic.
+
+        :param client: TON client.
+        :param mnemonic_length: ``12`` or ``None``.
+        :param workchain: Target workchain.
+        :param config: Wallet configuration, or ``None``.
+        :param mnemonic_type: ``MnemonicType.MULTICHAIN`` or ``None``.
+        :return: Tuple of (wallet, public_key, private_key, mnemonic_list).
+        :raises ContractError: If another length or scheme is requested.
+        """
+        if mnemonic_length not in (None, 12) or mnemonic_type not in (None, MnemonicType.MULTICHAIN):
+            raise ContractError(
+                cls,
+                f"For `{cls.VERSION!r}`, `create()` generates only 12-word Multichain (BIP-39) mnemonics.",
+            )
+        return super().create(client, mnemonic_length, workchain, config, mnemonic_type)
+
+    async def rotate_mnemonic(
+        self,
+        new_mnemonic: list[str] | str,
+        params: WalletTgParams | None = None,
+    ) -> ExternalMessage:
+        """Build, sign, and send a key-rotation request to a new mnemonic.
+
+        ``new_mnemonic`` is 24 words: words 1-12 of the current mnemonic, which
+        keep the address, and a new 12-word half that becomes the signing key
+        (generate it with ``multichain_mnemonic_new()``).
+        Store it before the call: it is the only copy of the new key. After the
+        request is accepted on-chain, open the wallet with ``from_mnemonic()``.
+
+        :param new_mnemonic: New 24-word mnemonic (list or space-separated string).
+        :param params: Transaction parameters, or ``None``.
+        :return: Sent ``ExternalMessage``.
+        :raises ValueError: If the mnemonic is invalid or not 24 words.
+        :raises ContractError: If words 1-12 do not derive this wallet, or words 13-24
+            repeat words 1-12 or the current key.
+        """
+        initial = self._config or WalletTgConfig(subwallet_id=self._resolve_subwallet_id())
+        rotated, _, private_key, mnemonic = self.from_mnemonic(
+            self.client,
+            new_mnemonic,
+            workchain=WorkchainID(self.address.wc),
+            config=WalletTgConfig(**initial.to_dict()),
+        )
+        if len(mnemonic) != 24:
+            raise ValueError(f"Invalid new mnemonic length: {len(mnemonic)}. Expected 24.")
+        if rotated.address != self.address:
+            raise ContractError(
+                self,
+                f"Words 1-12 of the new mnemonic do not derive wallet at {self.address.to_str()}.",
+                hint="Keep words 1-12 of the current mnemonic.",
+            )
+        if mnemonic[:12] == mnemonic[12:]:
+            raise ContractError(
+                self,
+                f"For `{self.VERSION!r}`, words 13-24 of the new mnemonic must differ from words 1-12.",
+            )
+
+        external_msg = await self._build_rotation_message(private_key, params)
+        await self.client.send_message(external_msg.as_hex)
+        return external_msg
+
+    async def _build_signed_msg_cell(
+        self,
+        messages: list[WalletMessage],
+        params: WalletTgParams | None = None,
+    ) -> Cell:
+        """Build and sign a message cell, checking the signing key first.
+
+        :param messages: Internal messages to include.
+        :param params: Transaction parameters, or ``None``.
+        :return: Signed message cell.
+        """
+        self._check_signing_key()
+        return await super()._build_signed_msg_cell(messages, params)
+
+    async def _build_rotation_message(
         self,
         new_private_key: PrivateKey,
         params: WalletTgParams | None = None,
-        salt: bytes = WALLET_TG_KEY_CHANGE_SALT,
     ) -> ExternalMessage:
         """Build a signed key-rotation external message.
 
         The request is signed twice: the message itself by the current key,
         and a key-rotation proof payload (tag + wallet address) by the new
-        key, proving ownership of the key being installed. The proof is signed
-        over the raw payload hash, without a network signature-domain prefix.
+        key, proving ownership of the key being installed. The contract checks
+        both signatures the same way, so both use the network signature domain.
         The request also carries the old private key encrypted with the new one.
 
         :param new_private_key: Ed25519 private key to rotate to.
         :param params: Transaction parameters, or ``None``.
-        :param salt: Key-change salt; with a custom one, clients using the default salt cannot recover the old key.
         :return: Signed ``ExternalMessage``.
         :raises ContractError: If private key is not set, or the new key equals the current one.
         """
@@ -207,20 +244,22 @@ class WalletTg(
             )
 
         await self.refresh()
+        self._check_signing_key()
         params = params or self._params_model()
         self._validate_params_type(params)
         op_code = params.op_code if params.op_code is not None else OpCode.WALLET_TG_CHANGE_PUBLIC_KEY_EXTERNAL
 
+        domain = SignatureDomain(self.client.network)
         proof_payload = begin_cell()
         proof_payload.store_uint(WALLET_TG_KEY_ROTATION_PROOF_TAG, 96)
         proof_payload.store_int(self.address.wc, 8)
         proof_payload.store_bytes(self.address.hash_part)
         rotation_signature = sign_message(
-            proof_payload.end_cell().hash,
+            domain.data_to_sign(proof_payload.end_cell().hash),
             new_private_key.keypair.as_bytes,
         )
 
-        key_changed = WalletTgKeyChangedBody.from_keys(self._private_key, new_private_key, salt)
+        key_changed = WalletTgKeyChangedBody.from_keys(self._private_key, new_private_key, WALLET_TG_KEY_CHANGE_SALT)
         seqno, valid_until = self._resolve_seqno_and_valid_until(params)
         signing_msg = WalletTgChangePublicKeyBody(
             new_public_key=new_private_key.public_key,
@@ -232,7 +271,6 @@ class WalletTg(
             op_code=op_code,
         ).serialize()
 
-        domain = SignatureDomain(self.client.network)
         signature = sign_message(
             domain.data_to_sign(signing_msg.hash),
             self._private_key.keypair.as_bytes,
@@ -240,53 +278,6 @@ class WalletTg(
         body = await self._build_sign_msg_cell(signing_msg, signature)
         state_init = self.state_init if not self.is_active else None
         return ExternalMessage(dest=self.address, body=body, state_init=state_init)
-
-    async def change_public_key(
-        self,
-        new_private_key: PrivateKey,
-        params: WalletTgParams | None = None,
-        salt: bytes = WALLET_TG_KEY_CHANGE_SALT,
-    ) -> ExternalMessage:
-        """Build, sign, and send a key-rotation request.
-
-        On success the on-chain public key changes; this instance keeps the
-        old signing key, so reopen the wallet with
-        ``from_address_and_private_key`` for further use.
-
-        :param new_private_key: Ed25519 private key to rotate to.
-        :param params: Transaction parameters, or ``None``.
-        :param salt: Key-change salt; with a custom one, clients using the default salt cannot recover the old key.
-        :return: Sent ``ExternalMessage``.
-        """
-        external_msg = await self.build_change_public_key_message(new_private_key, params, salt)
-        await self.client.send_message(external_msg.as_hex)
-        return external_msg
-
-    async def change_public_key_from_mnemonic(
-        self,
-        new_mnemonic: list[str] | str,
-        validate: bool = True,
-        params: WalletTgParams | None = None,
-        salt: bytes = WALLET_TG_KEY_CHANGE_SALT,
-        mnemonic_type: MnemonicType | None = None,
-    ) -> tuple[ExternalMessage, PublicKey, PrivateKey, list[str]]:
-        """Build, sign, and send a key-rotation request to a new mnemonic.
-
-        Mnemonic counterpart of ``change_public_key``. After the request is
-        accepted on-chain, reopen the wallet with
-        ``from_address_and_mnemonic(client, wallet.address, new_mnemonic)``.
-
-        :param new_mnemonic: Mnemonic to rotate to (list or space-separated string).
-        :param validate: Validate mnemonic length, words and checksum.
-        :param params: Transaction parameters, or ``None``.
-        :param salt: Key-change salt; with a custom one, clients using the default salt cannot recover the old key.
-        :param mnemonic_type: Key derivation scheme of the new mnemonic, or ``None`` to detect it by checksum
-            (the wallet scheme if not validated).
-        :return: Tuple of (external_message, public_key, private_key, mnemonic_list) for the new key.
-        """
-        public_key, private_key, mnemonic = self._mnemonic_to_keys(new_mnemonic, validate, mnemonic_type)
-        external_msg = await self.change_public_key(private_key, params, salt)
-        return external_msg, public_key, private_key, mnemonic
 
     async def _build_msg_cell(
         self,
@@ -424,10 +415,87 @@ class WalletTg(
     def _resolve_subwallet_id(self) -> int:
         """Return subwallet ID from config, or from on-chain state.
 
-        After a key rotation the wallet is controlled via address + new key
-        (``from_address_and_private_key``), with no config: the subwallet ID
-        is then read from the refreshed on-chain storage.
+        A wallet opened by address has no config: the subwallet ID is then
+        read from the refreshed on-chain storage.
         """
         if self._config is not None and self._config.subwallet_id is not None:
             return self._config.subwallet_id
         return self.state_data.subwallet_id
+
+    def _check_signing_key(self) -> None:
+        """Check that the signing key controls the wallet, on refreshed state.
+
+        An active wallet accepts only its current on-chain key; an undeployed
+        one is deployed with the anchor key, so a rotated key cannot deploy it.
+
+        :raises ContractError: If the signing key does not control the wallet.
+        """
+        if self._public_key is None:
+            return
+        if self.is_active:
+            onchain_key = self.state_data.public_key
+            if onchain_key.as_bytes != self._public_key.as_bytes:
+                raise ContractError(
+                    self,
+                    f"Signing key does not control wallet at {self.address.to_str()}: "
+                    f"on-chain public key is {onchain_key.as_hex}, this key is {self._public_key.as_hex}.",
+                    hint="The wallet key was rotated; use the current mnemonic.",
+                )
+        elif self._config is not None and self._config.public_key is not None:
+            if self._config.public_key.as_bytes != self._public_key.as_bytes:
+                raise ContractError(
+                    self,
+                    f"Wallet at {self.address.to_str()} is not deployed; only words 1-12 can deploy it.",
+                    hint="Open the wallet with words 1-12 to deploy it.",
+                )
+
+    @classmethod
+    def _mnemonic_halves(
+        cls,
+        mnemonic: list[str] | str,
+        mnemonic_type: MnemonicType | None,
+    ) -> list[list[str]]:
+        """Normalize a Telegram wallet mnemonic and split it into 12-word halves.
+
+        :param mnemonic: Mnemonic (list or space-separated string).
+        :param mnemonic_type: ``MnemonicType.MULTICHAIN`` or ``None``.
+        :return: ``[anchor]`` for 12 words, ``[anchor, signing]`` for 24.
+        :raises ValueError: If the scheme is not Multichain, or the length is not 12 or 24.
+        """
+        if mnemonic_type not in (None, MnemonicType.MULTICHAIN):
+            raise ValueError(f"{cls.__name__} supports only Multichain (BIP-39) mnemonics.")
+        if isinstance(mnemonic, str):
+            mnemonic = mnemonic.strip().lower().split()
+        else:
+            mnemonic = [w.strip().lower() for w in mnemonic]
+        if len(mnemonic) not in (12, 24):
+            raise ValueError(f"Invalid mnemonic length: {len(mnemonic)}. Expected 12 or 24.")
+        return [mnemonic[:12], mnemonic[12:]] if len(mnemonic) == 24 else [mnemonic]
+
+    @classmethod
+    def validate_mnemonic(
+        cls,
+        mnemonic: str | list[str],
+        mnemonic_type: MnemonicType | None = None,
+    ) -> None:
+        """Validate a Telegram wallet mnemonic.
+
+        :param mnemonic: Mnemonic of 12 or 24 words (list or space-separated string).
+        :param mnemonic_type: ``MnemonicType.MULTICHAIN`` or ``None``.
+        :raises ValueError: If length is invalid, words are not in the wordlist, or a half's checksum fails.
+        """
+        halves = cls._mnemonic_halves(mnemonic, mnemonic_type)
+        mnemonic_words = [w for half in halves for w in half]
+        invalid = [(i + 1, w) for i, w in enumerate(mnemonic_words) if w not in words]
+        if invalid:
+            formatted = ", ".join(f"{idx}. {word}" for idx, word in invalid)
+            raise ValueError(f"Invalid mnemonic word(s): {formatted}")
+        invalid_halves = [i for i, half in enumerate(halves) if not multichain_mnemonic_is_valid(half)]
+        if not invalid_halves:
+            return
+        if ton_mnemonic_is_valid(mnemonic_words):
+            raise ValueError(f"TON mnemonics are not supported by {cls.__name__}; use `from_private_key()`.")
+        first = invalid_halves[0] * 12
+        raise ValueError(
+            f"Invalid mnemonic checksum: words {first + 1}-{first + 12} are not a valid Multichain (BIP-39) mnemonic."
+        )
