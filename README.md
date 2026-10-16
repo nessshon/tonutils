@@ -1,7 +1,7 @@
 # 📦 Tonutils
 
 [![TON](https://img.shields.io/badge/TON-grey?logo=TON&logoColor=40AEF0)](https://ton.org)
-![Python Versions](https://img.shields.io/badge/Python-3.9%20--%203.14-black?color=FFE873&labelColor=3776AB)
+![Python Versions](https://img.shields.io/badge/Python-3.9%20--%203.15-black?color=FFE873&labelColor=3776AB)
 [![PyPI](https://img.shields.io/pypi/v/tonutils.svg?color=FFE873&labelColor=3776AB)](https://pypi.python.org/pypi/tonutils)
 [![License](https://img.shields.io/github/license/nessshon/tonutils)](https://github.com/nessshon/tonutils/blob/main/LICENSE)
 [![Donate](https://img.shields.io/badge/Donate-TON-blue)](https://tonviewer.com/UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness)
@@ -24,7 +24,7 @@ Wallets, transfers, smart contracts, and on-chain tools via lite servers (ADNL) 
 - **Contracts** — deploy, mint, and manage on-chain contracts
 - **Tools** — lite server and DHT monitoring, block scanning
 
-> Support this project — TON: `donate.ness.ton`  
+> Support this project — TON: `donate.ness.ton`
 > `UQCZq3_Vd21-4y4m7Wc-ej9NFOhh_qvdfAkAYAOHoQ__Ness`
 
 ## Installation
@@ -35,7 +35,7 @@ pip install tonutils
 
 ## Documentation
 
-[Documentation](https://tonutils.ness.uz/) — API reference, guides, and examples.  
+[Documentation](https://tonutils.ness.uz/) — API reference, guides, and examples.
 [llms.txt](https://tonutils.ness.uz/llms.txt) — machine-readable docs for AI tools.
 
 ## Examples
